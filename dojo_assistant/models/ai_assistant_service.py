@@ -620,11 +620,16 @@ class AiAssistantService(models.AbstractModel):
             step_log.session_key = f"{header_log.session_key}_step_{n}"
 
             # Execute step
+            step_start = time.time()
             result = self._execute_intent(intent_type, intent, resolved, step_log)
+            step_elapsed_ms = int((time.time() - step_start) * 1000)
+            # is_undoable=False: undo is chain-level (via _execute_compound_chain rollback),
+            # not per-step. Snapshots created by _execute_intent are still usable for rollback
+            # but the step log itself does not advertise as undoable in the audit trail.
             step_log.log_execution(
                 success=result.get("success", False),
                 result=result,
-                execution_time_ms=0,
+                execution_time_ms=step_elapsed_ms,
                 is_undoable=False,
             )
 
