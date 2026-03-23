@@ -66,6 +66,21 @@ Response format:
   "reasoning": "<brief explanation of why you chose this intent>"
 }}
 
+COMPOUND COMMANDS: If the user clearly requests multiple sequential actions in one message,
+return an "intents" array instead of a single intent object:
+
+{{
+  "intents": [
+    {{"intent_type": "<type>", "parameters": {{...}}, "confidence": 0.0-1.0, "resolved_entities": {{}}}},
+    ...
+  ],
+  "reasoning": "<why you split into multiple intents>"
+}}
+
+Only use the "intents" array when the user's message contains two or more clearly distinct
+actions with separate targets (e.g. "enroll John AND text his guardian"). Never split a
+single action with multiple parameters into compound intents. If in doubt, use single intent.
+
 User input: {user_input}
 """
 
@@ -496,6 +511,12 @@ class AIProcessorIntentExt(models.AbstractModel):
 
             intent = json.loads(cleaned)
 
+            # Compound response — return raw dict with "intents" key intact
+            # All validation (confidence, role permissions, max chain) happens in
+            # handle_compound_command() on the service side.
+            if "intents" in intent:
+                return intent
+
             # Validate required fields
             if "intent_type" not in intent:
                 intent["intent_type"] = "unknown"
@@ -516,6 +537,9 @@ class AIProcessorIntentExt(models.AbstractModel):
             if json_match:
                 try:
                     intent = json.loads(json_match.group())
+                    # Compound response — return raw dict with "intents" key intact
+                    if "intents" in intent:
+                        return intent
                     intent.setdefault("intent_type", "unknown")
                     intent.setdefault("parameters", {})
                     intent.setdefault("confidence", 0.5)

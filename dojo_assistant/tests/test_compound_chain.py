@@ -38,3 +38,38 @@ class TestCompoundPhraseDetection(TransactionCase):
     def test_and_without_verb(self):
         """'and' without a recognisable action verb should not trigger."""
         self.assertFalse(self.svc._is_compound_phrase("John and Mary attendance"))
+
+
+class TestCompoundParsing(TransactionCase):
+    """Tests for compound intent detection in _parse_intent_response."""
+
+    def setUp(self):
+        super().setUp()
+        self.proc = self.env["ai.processor"]
+
+    def test_single_intent_unchanged(self):
+        """Single-intent JSON response still works normally."""
+        raw = '{"intent_type": "member_lookup", "parameters": {"member_name": "John"}, "confidence": 0.9, "resolved_entities": {}, "reasoning": "lookup"}'
+        result = self.proc._parse_intent_response(raw)
+        self.assertEqual(result["intent_type"], "member_lookup")
+        self.assertNotIn("intents", result)
+
+    def test_compound_intent_detected(self):
+        """Response with 'intents' key is returned as-is (compound)."""
+        raw = '''{
+            "intents": [
+                {"intent_type": "member_enroll", "parameters": {"member_name": "John"}, "confidence": 0.9, "resolved_entities": {}},
+                {"intent_type": "contact_parent", "parameters": {"member_name": "John"}, "confidence": 0.85, "resolved_entities": {}}
+            ],
+            "reasoning": "two actions"
+        }'''
+        result = self.proc._parse_intent_response(raw)
+        self.assertIn("intents", result)
+        self.assertEqual(len(result["intents"]), 2)
+        self.assertEqual(result["intents"][0]["intent_type"], "member_enroll")
+
+    def test_compound_missing_fields_preserved(self):
+        """Compound response is not modified — validation is in handle_compound_command()."""
+        raw = '{"intents": [{"intent_type": "member_enroll", "confidence": 0.9}], "reasoning": ""}'
+        result = self.proc._parse_intent_response(raw)
+        self.assertIn("intents", result)
