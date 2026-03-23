@@ -516,6 +516,8 @@ class AiAssistantService(models.AbstractModel):
             intent_type = intent.get("intent_type", "unknown")
             confidence = intent.get("confidence", 0.0)
 
+            # "unknown" is in _KNOWN_INTENT_TYPES for single-intent routing only;
+            # it must never appear as a compound chain step.
             if intent_type not in _KNOWN_INTENT_TYPES or intent_type == "unknown":
                 return self._error_response(
                     f"Step {i}: unrecognised intent type '{intent_type}'."
@@ -548,7 +550,7 @@ class AiAssistantService(models.AbstractModel):
         min_confidence = min(i.get("confidence", 0.0) for i in intents)
         ActionLog = self.env["dojo.ai.action.log"]
         log = ActionLog.log_parse(
-            input_text=compound_data.get("reasoning", "compound command"),
+            input_text=compound_data.get("reasoning") or "compound command",
             role=role,
             intent_type="compound_chain",
             parsed_intent={"intents": intents},

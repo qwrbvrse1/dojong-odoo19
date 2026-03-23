@@ -91,6 +91,12 @@ class TestHandleCompoundCommand(TransactionCase):
             "resolved_entities": {},
         }
 
+    def test_empty_intents_rejected(self):
+        """Empty intents list returns an error."""
+        result = self.svc.handle_compound_command({"intents": [], "reasoning": ""}, role="instructor")
+        self.assertFalse(result["success"])
+        self.assertIn("no intents", result["error"].lower())
+
     def test_max_chain_exceeded(self):
         """More than 5 intents returns an error."""
         intents = [self._make_intent("member_lookup") for _ in range(6)]
@@ -119,6 +125,7 @@ class TestHandleCompoundCommand(TransactionCase):
             {"intents": intents, "reasoning": ""}, role="instructor"
         )
         self.assertFalse(result["success"])
+        self.assertIn("unrecognised", result["error"].lower())
 
     def test_valid_chain_returns_pending_confirmation(self):
         """A valid 2-step chain returns state pending_confirmation."""
