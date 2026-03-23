@@ -74,3 +74,77 @@ class TestCompoundParsing(TransactionCase):
         result = self.proc._parse_intent_response(raw)
         self.assertIn("intents", result)
         self.assertNotIn("parameters", result["intents"][0])
+
+
+class TestHandleCompoundCommand(TransactionCase):
+    """Tests for compound command validation and confirmation building."""
+
+    def setUp(self):
+        super().setUp()
+        self.svc = self.env["ai.assistant.service"]
+
+    def _make_intent(self, intent_type, confidence=0.9, params=None):
+        return {
+            "intent_type": intent_type,
+            "parameters": params or {},
+            "confidence": confidence,
+            "resolved_entities": {},
+        }
+
+    def test_max_chain_exceeded(self):
+        """More than 5 intents returns an error."""
+        intents = [self._make_intent("member_lookup") for _ in range(6)]
+        result = self.svc.handle_compound_command(
+            {"intents": intents, "reasoning": "test"}, role="instructor"
+        )
+        self.assertFalse(result["success"])
+        self.assertIn("maximum", result["error"].lower())
+
+    def test_low_confidence_rejected(self):
+        """Any intent with confidence < 0.7 rejects the whole chain."""
+        intents = [
+            self._make_intent("member_lookup", confidence=0.9),
+            self._make_intent("member_enroll", confidence=0.5),
+        ]
+        result = self.svc.handle_compound_command(
+            {"intents": intents, "reasoning": ""}, role="instructor"
+        )
+        self.assertFalse(result["success"])
+        self.assertIn("confidence", result["error"].lower())
+
+    def test_unknown_intent_type_rejected(self):
+        """An unrecognised intent_type rejects the chain."""
+        intents = [self._make_intent("made_up_intent", confidence=0.9)]
+        result = self.svc.handle_compound_command(
+            {"intents": intents, "reasoning": ""}, role="instructor"
+        )
+        self.assertFalse(result["success"])
+
+    def test_valid_chain_returns_pending_confirmation(self):
+        """A valid 2-step chain returns state pending_confirmation."""
+        intents = [
+            self._make_intent("member_lookup", confidence=0.9, params={"member_name": "Test"}),
+            self._make_intent("attendance_history", confidence=0.85, params={"member_name": "Test"}),
+        ]
+        result = self.svc.handle_compound_command(
+            {"intents": intents, "reasoning": ""}, role="instructor"
+        )
+        self.assertTrue(result["success"])
+        self.assertEqual(result["state"], "pending_confirmation")
+        self.assertIn("session_key", result)
+        self.assertIn("1.", result["confirmation_prompt"])
+        self.assertIn("2.", result["confirmation_prompt"])
+
+    def test_compound_chain_log_record_created(self):
+        """A compound_chain log record is written to dojo.ai.action.log."""
+        intents = [
+            self._make_intent("member_lookup", confidence=0.9, params={"member_name": "Test"}),
+        ]
+        result = self.svc.handle_compound_command(
+            {"intents": intents, "reasoning": ""}, role="instructor"
+        )
+        log = self.env["dojo.ai.action.log"].search(
+            [("session_key", "=", result.get("session_key"))]
+        )
+        self.assertEqual(len(log), 1)
+        self.assertEqual(log.intent_type, "compound_chain")

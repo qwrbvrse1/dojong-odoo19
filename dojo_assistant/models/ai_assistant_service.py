@@ -488,6 +488,93 @@ class AiAssistantService(models.AbstractModel):
         return self.parse_and_confirm(text, role, input_type, audio_attachment_id)
 
     @api.model
+    def handle_compound_command(self, compound_data, role="instructor"):
+        """
+        Validate a compound intent chain and return a combined confirmation prompt.
+
+        Args:
+            compound_data: dict with "intents" list and optional "reasoning" string
+            role: user role for permission checks
+
+        Returns:
+            Standard response dict with state "pending_confirmation" on success.
+            On validation failure: {"success": False, "state": "error", "error": "<explanation>"}
+        """
+        intents = compound_data.get("intents", [])
+
+        # ── Validation ────────────────────────────────────────────────────────────
+        if not intents:
+            return self._error_response("No intents found in compound command.")
+
+        if len(intents) > _MAX_COMPOUND_CHAIN:
+            return self._error_response(
+                f"Compound command exceeds maximum of {_MAX_COMPOUND_CHAIN} steps."
+            )
+
+        IntentSchema = self.env["dojo.ai.intent.schema"]
+        for i, intent in enumerate(intents, 1):
+            intent_type = intent.get("intent_type", "unknown")
+            confidence = intent.get("confidence", 0.0)
+
+            if intent_type not in _KNOWN_INTENT_TYPES or intent_type == "unknown":
+                return self._error_response(
+                    f"Step {i}: unrecognised intent type '{intent_type}'."
+                )
+            if confidence < _MIN_CONFIDENCE:
+                return self._error_response(
+                    f"Step {i}: confidence {confidence:.2f} is below threshold ({_MIN_CONFIDENCE}). "
+                    "Please rephrase the command."
+                )
+            schema = IntentSchema.get_by_type(intent_type)
+            if schema and not schema.check_role_permission(role):
+                return self._error_response(
+                    f"Step {i}: you don't have permission to execute '{intent_type}'."
+                )
+
+        # ── Build confirmation prompt ─────────────────────────────────────────────
+        lines = ["I'll do the following in order:"]
+        for i, intent in enumerate(intents, 1):
+            intent_type = intent.get("intent_type", "")
+            schema = IntentSchema.get_by_type(intent_type)
+            label = schema.name if schema else intent_type.replace("_", " ").title()
+            params = intent.get("parameters", {})
+            member = params.get("member_name") or params.get("name") or ""
+            detail = f" — {member}" if member else ""
+            lines.append(f"{i}. {label}{detail}")
+        lines.append(f"Confirm all {len(intents)}?")
+        confirmation_prompt = "\n".join(lines)
+
+        # ── Create compound header log record ─────────────────────────────────────
+        min_confidence = min(i.get("confidence", 0.0) for i in intents)
+        ActionLog = self.env["dojo.ai.action.log"]
+        log = ActionLog.log_parse(
+            input_text=compound_data.get("reasoning", "compound command"),
+            role=role,
+            intent_type="compound_chain",
+            parsed_intent={"intents": intents},
+            confidence=round(min_confidence * 100, 1),
+            resolved_data={},
+            confirmation_prompt=confirmation_prompt,
+            requires_confirmation=True,
+            input_type="text",
+            audio_attachment_id=None,
+        )
+
+        return {
+            "success": True,
+            "state": "pending_confirmation",
+            "session_key": log.session_key,
+            "compound": True,
+            "intent": {"intent_type": "compound_chain", "steps": len(intents)},
+            "confirmation_prompt": confirmation_prompt,
+            "resolved_data": {},
+            "auto_executed": False,
+            "result": None,
+            "response": confirmation_prompt,
+            "error": None,
+        }
+
+    @api.model
     def parse_and_confirm(self, text, role="instructor", input_type="text", audio_attachment_id=None):
         """
         Phase 1: Parse natural language input into a structured intent.
