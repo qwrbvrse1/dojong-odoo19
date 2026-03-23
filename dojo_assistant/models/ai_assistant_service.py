@@ -973,14 +973,18 @@ class AiAssistantService(models.AbstractModel):
 
         # ── Compound chain execution ──────────────────────────────────────────────
         if log.intent_type == "compound_chain":
-            intents_raw = json.loads(log.parsed_intent) if log.parsed_intent else {}
+            intents_raw = json.loads(log.parsed_intent) if log.parsed_intent else []
             # Handle both list (direct) and wrapped dict {"intents": [...]}
             if isinstance(intents_raw, dict):
                 intents_raw = intents_raw.get("intents", [])
             if not intents_raw:
                 return self._error_response("Compound chain data is missing or corrupt.")
 
-            chain_result = self._execute_compound_chain(intents_raw, log.role, log)
+            try:
+                chain_result = self._execute_compound_chain(intents_raw, log.role, log)
+            except Exception as e:
+                _logger.error("Compound chain execution failed: %s", e, exc_info=True)
+                return self._error_response(f"Compound chain execution failed: {e}")
             return {
                 "success": chain_result["success"],
                 "state": "executed",
