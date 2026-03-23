@@ -34,6 +34,14 @@ _ACTION_END = "##END_ACTION##"
 # ─── Confidence threshold ────────────────────────────────────────────────────
 _MIN_CONFIDENCE = 0.7
 
+# ─── Compound command configuration ──────────────────────────────────────────
+_MAX_COMPOUND_CHAIN = 5
+
+_COMPOUND_SIGNALS = re.compile(
+    r'\b(and\s+(then\s+)?|then\s+)(enroll|create|cancel|text|send|add|remove|promote|check\s+in|schedule)',
+    re.IGNORECASE
+)
+
 # ─── Read-only intents that auto-execute without confirmation ────────────────
 _AUTO_EXECUTE_INTENTS = {
     "member_lookup",
@@ -72,6 +80,7 @@ _KNOWN_INTENT_TYPES = {
     "martial_art_style_create", "subscription_plan_create", "program_enrollment_create",
     "belt_test_registration_create", "marketing_card_create",
     "kiosk_announcement_create", "course_auto_enroll_create",
+    "compound_chain",
 }
 
 # ─── Intent Handler Configuration (for generic read handler) ──────────────────
@@ -427,6 +436,21 @@ class AiAssistantService(models.AbstractModel):
     """
     _name = "ai.assistant.service"
     _description = "AI Assistant Service"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Compound Phrase Detection
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _is_compound_phrase(self, text):
+        """
+        Detect whether a user's input likely contains multiple sequential actions.
+
+        This is a routing hint only — the LLM is the authoritative arbiter.
+        False positives are safe: they just skip the conversational path.
+        False negatives are also safe: single intents are handled normally.
+        """
+        return bool(_COMPOUND_SIGNALS.search(text))
 
     # ═══════════════════════════════════════════════════════════════════════════
     # Main API: Two-Phase Confirmation Flow
