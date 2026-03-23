@@ -717,6 +717,27 @@ class AiAssistantService(models.AbstractModel):
 
         start_time = time.time()
 
+        # ── Compound command routing ───────────────────────────────────────────────
+        # Detect multi-action phrases and route straight to JSON-mode parsing,
+        # bypassing the conversational path which does not support array output.
+        try:
+            ai_proc = self.env["ai.processor"]
+            provider = ai_proc._get_provider()
+            if self._is_compound_phrase(text):
+                # Gemini does not support JSON-mode compound output — return explicit message
+                if provider == "gemini":
+                    return self._error_response(
+                        "I can only do one action at a time with the current AI provider."
+                    )
+                db_ctx = self._build_db_context(text)
+                compound_result = ai_proc.process_intent_query(text, role, db_ctx)
+                if "intents" in compound_result:
+                    return self.handle_compound_command(compound_result, role=role)
+                # LLM returned single intent despite compound phrase — fall through to normal flow
+        except Exception as e:
+            _logger.warning("Compound detection failed, falling back to normal flow: %s", e)
+
+        # ── Normal single-intent flow (unchanged below) ─────────────────────────────
         try:
             # Get conversational response with potential intent
             ai_proc = self.env["ai.processor"]
