@@ -79,7 +79,7 @@ return an "intents" array instead of a single intent object:
 
 Only use the "intents" array when the user's message contains two or more clearly distinct
 actions with separate targets (e.g. "enroll John AND text his guardian"). Never split a
-single action with multiple parameters into compound intents. If in doubt, use single intent.
+single action with multiple parameters into compound intents. If in doubt, return a single intent.
 
 User input: {user_input}
 """

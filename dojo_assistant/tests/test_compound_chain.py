@@ -73,3 +73,4 @@ class TestCompoundParsing(TransactionCase):
         raw = '{"intents": [{"intent_type": "member_enroll", "confidence": 0.9}], "reasoning": ""}'
         result = self.proc._parse_intent_response(raw)
         self.assertIn("intents", result)
+        self.assertNotIn("parameters", result["intents"][0])
