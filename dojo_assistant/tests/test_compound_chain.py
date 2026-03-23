@@ -155,3 +155,69 @@ class TestHandleCompoundCommand(TransactionCase):
         )
         self.assertEqual(len(log), 1)
         self.assertEqual(log.intent_type, "compound_chain")
+
+
+class TestExecuteCompoundChain(TransactionCase):
+    """Tests for compound chain execution and rollback."""
+
+    def setUp(self):
+        super().setUp()
+        self.svc = self.env["ai.assistant.service"]
+
+    def test_read_only_chain_executes_on_confirm(self):
+        """A chain of two read-only intents executes successfully."""
+        intents = [
+            {
+                "intent_type": "schedule_today",
+                "parameters": {},
+                "confidence": 0.9,
+                "resolved_entities": {},
+            },
+            {
+                "intent_type": "class_list",
+                "parameters": {},
+                "confidence": 0.85,
+                "resolved_entities": {},
+            },
+        ]
+        confirm_result = self.svc.handle_compound_command(
+            {"intents": intents, "reasoning": "test"}, role="instructor"
+        )
+        self.assertEqual(confirm_result["state"], "pending_confirmation")
+
+        session_key = confirm_result["session_key"]
+        exec_result = self.svc.execute_confirmed(session_key, confirmed=True)
+
+        self.assertTrue(exec_result["success"])
+        self.assertEqual(exec_result["state"], "executed")
+        self.assertTrue(exec_result.get("compound"))
+        steps = exec_result["steps"]
+        self.assertEqual(len(steps), 2)
+        self.assertTrue(steps[0]["success"])
+        self.assertTrue(steps[1]["success"])
+
+    def test_chain_step_records_linked_to_header(self):
+        """Step log records have parent_action_id pointing to the header."""
+        intents = [
+            {"intent_type": "schedule_today", "parameters": {}, "confidence": 0.9, "resolved_entities": {}},
+        ]
+        confirm_result = self.svc.handle_compound_command(
+            {"intents": intents, "reasoning": "test"}, role="instructor"
+        )
+        self.svc.execute_confirmed(confirm_result["session_key"], confirmed=True)
+
+        header = self.env["dojo.ai.action.log"].search(
+            [("session_key", "=", confirm_result["session_key"])]
+        )
+        self.assertEqual(len(header.child_action_ids), 1)
+
+    def test_rejected_compound_does_not_execute(self):
+        """Rejecting a compound confirmation returns state rejected."""
+        intents = [
+            {"intent_type": "schedule_today", "parameters": {}, "confidence": 0.9, "resolved_entities": {}},
+        ]
+        confirm_result = self.svc.handle_compound_command(
+            {"intents": intents, "reasoning": "test"}, role="instructor"
+        )
+        exec_result = self.svc.execute_confirmed(confirm_result["session_key"], confirmed=False)
+        self.assertEqual(exec_result["state"], "rejected")

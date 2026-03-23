@@ -577,6 +577,124 @@ class AiAssistantService(models.AbstractModel):
         }
 
     @api.model
+    def _execute_compound_chain(self, intents, role, header_log):
+        """
+        Execute a validated compound intent chain step by step.
+
+        On failure at step N:
+        - Attempts best-effort rollback of completed steps via snapshot.execute_undo()
+        - Remaining steps are skipped (no log records created for skipped steps)
+        - Does not ask for user confirmation before rolling back
+
+        Args:
+            intents: list of intent dicts (from parsed_intent on header log)
+            role: user role string
+            header_log: dojo.ai.action.log record for the compound header
+
+        Returns:
+            dict with "success", "state", "compound", "steps", "rollback_failures"
+        """
+        ActionLog = self.env["dojo.ai.action.log"]
+        steps_output = []
+        completed_step_log_ids = []
+
+        for n, intent in enumerate(intents, 1):
+            intent_type = intent.get("intent_type", "unknown")
+            resolved = self._resolve_entities(intent) or {}
+
+            # Create per-step log record, linked to the compound header
+            step_log = ActionLog.log_parse(
+                input_text=f"Step {n}: {intent_type}",
+                role=role,
+                intent_type=intent_type,
+                parsed_intent=intent,
+                confidence=round(intent.get("confidence", 0.0) * 100, 1),
+                resolved_data=resolved,
+                confirmation_prompt=None,
+                requires_confirmation=False,
+                input_type="text",
+                audio_attachment_id=None,
+            )
+            # Link to parent + set deterministic session key for audit trail
+            step_log.parent_action_id = header_log.id
+            step_log.session_key = f"{header_log.session_key}_step_{n}"
+
+            # Execute step
+            result = self._execute_intent(intent_type, intent, resolved, step_log)
+            step_log.log_execution(
+                success=result.get("success", False),
+                result=result,
+                execution_time_ms=0,
+                is_undoable=False,
+            )
+
+            if result.get("success"):
+                completed_step_log_ids.append(step_log.id)
+                steps_output.append({
+                    "step": n,
+                    "intent_type": intent_type,
+                    "success": True,
+                    "summary": result.get("message") or result.get("response") or f"{intent_type} completed",
+                })
+            else:
+                # Append failed step entry in order (before skipped entries)
+                steps_output.append({
+                    "step": n,
+                    "intent_type": intent_type,
+                    "success": False,
+                    "error": result.get("error") or result.get("message") or "Step failed",
+                })
+
+                # Best-effort rollback of completed steps
+                rollback_failures = []
+                snapshots = self.env["dojo.ai.undo.snapshot"].search(
+                    [("action_log_id", "in", completed_step_log_ids)]
+                )
+                for snap in snapshots:
+                    undo_result = snap.execute_undo()
+                    if not undo_result.get("success"):
+                        rollback_failures.append({
+                            "step_log_id": snap.action_log_id.id,
+                            "error": undo_result.get("error", "unknown rollback error"),
+                        })
+
+                # Mark remaining steps as skipped — no log records created for skipped steps
+                for m in range(n + 1, len(intents) + 1):
+                    steps_output.append({
+                        "step": m,
+                        "intent_type": intents[m - 1].get("intent_type"),
+                        "skipped": True,
+                    })
+
+                # Update header record
+                header_log.write({
+                    "execution_status": "error",
+                    "error_message": f"Step {n} ({intent_type}) failed: {result.get('error', '')}",
+                    "undone": not bool(rollback_failures),
+                    "undone_at": fields.Datetime.now() if not rollback_failures else False,
+                })
+
+                return {
+                    "success": False,
+                    "state": "executed",
+                    "compound": True,
+                    "steps": steps_output,
+                    "rollback_failures": rollback_failures,
+                    "error": f"Step {n} failed. {len(completed_step_log_ids)} completed step(s) rolled back.",
+                }
+
+        # All steps succeeded — update header
+        header_log.write({"execution_status": "success"})
+        return {
+            "success": True,
+            "state": "executed",
+            "compound": True,
+            "steps": steps_output,
+            "rollback_failures": [],
+            "error": None,
+        }
+
+    @api.model
     def parse_and_confirm(self, text, role="instructor", input_type="text", audio_attachment_id=None):
         """
         Phase 1: Parse natural language input into a structured intent.
@@ -852,6 +970,29 @@ class AiAssistantService(models.AbstractModel):
                 "undo_expires_in_minutes": None,
                 "error": None,
             }
+
+        # ── Compound chain execution ──────────────────────────────────────────────
+        if log.intent_type == "compound_chain":
+            intents_raw = json.loads(log.parsed_intent) if log.parsed_intent else {}
+            # Handle both list (direct) and wrapped dict {"intents": [...]}
+            if isinstance(intents_raw, dict):
+                intents_raw = intents_raw.get("intents", [])
+            if not intents_raw:
+                return self._error_response("Compound chain data is missing or corrupt.")
+
+            chain_result = self._execute_compound_chain(intents_raw, log.role, log)
+            return {
+                "success": chain_result["success"],
+                "state": "executed",
+                "compound": True,
+                "steps": chain_result.get("steps", []),
+                "rollback_failures": chain_result.get("rollback_failures", []),
+                "result": chain_result,
+                "undo_available": False,
+                "undo_expires_in_minutes": None,
+                "error": chain_result.get("error"),
+            }
+        # ── Single-intent execution (unchanged below) ─────────────────────────────
 
         # Execute the intent
         start_time = time.time()
