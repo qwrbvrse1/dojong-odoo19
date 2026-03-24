@@ -28,6 +28,12 @@ class DojoProgram(models.Model):
     template_count = fields.Integer(
         compute="_compute_template_count", store=True
     )
+    manager_instructor_id = fields.Many2one(
+        "dojo.instructor.profile",
+        string="Program Instructor",
+        help="The instructor responsible for this program. Used as the CRM salesperson for leads from this program.",
+        ondelete="set null",
+    )
 
     # ── Computed ───────────────────────────────────────────────────────────
     @api.depends("template_ids")

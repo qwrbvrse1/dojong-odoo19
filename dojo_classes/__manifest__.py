@@ -1,7 +1,7 @@
 {
     "name": "Dojang Classes",
     "summary": "Courses, sessions, and enrollment",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.3.1",
     "category": "Services",
     "license": "LGPL-3",
     "author": "Dojang",
@@ -16,4 +16,10 @@
     "application": True,
     "auto_install": True,
     "installable": True,
+    "assets": {
+        "web.assets_backend": [
+            "dojo_classes/static/src/xml/float_time_12h.xml",
+            "dojo_classes/static/src/js/float_time_12h.js",
+        ],
+    },
 }

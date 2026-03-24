@@ -1,3 +1,5 @@
+import pytz
+
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
@@ -65,9 +67,17 @@ class DojoClassSession(models.Model):
     def _compute_name(self):
         for session in self:
             if session.template_id and session.start_datetime:
+                tz_name = (
+                    session.env.context.get("tz")
+                    or session.env.user.tz
+                    or "UTC"
+                )
+                tz = pytz.timezone(tz_name)
+                local_dt = pytz.utc.localize(session.start_datetime).astimezone(tz)
+                time_str = local_dt.strftime("%-I:%M %p")
                 session.name = "%s - %s" % (
                     session.template_id.name,
-                    fields.Datetime.to_string(session.start_datetime),
+                    local_dt.strftime("%b %d, %Y ") + time_str,
                 )
             else:
                 session.name = "New Session"

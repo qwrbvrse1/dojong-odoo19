@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+    <t t-name="dojo_classes.FloatTime12hField">
+        <t t-if="props.readonly">
+            <span t-esc="timeValue"/>
+        </t>
+        <t t-else="">
+            <input
+                type="time"
+                class="o_field_float_time o_input"
+                t-att-value="timeValue"
+                t-on-change="onChange"
+            />
+        </t>
+    </t>
+</templates>

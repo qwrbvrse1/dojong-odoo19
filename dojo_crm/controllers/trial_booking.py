@@ -347,12 +347,62 @@ class DojoTrialBooking(http.Controller):
             if disc_tag:
                 tag_ids.append((4, disc_tag.id))
 
-        # Find "New Lead" stage
+        # Find "New" stage (matches crm_stage.xml)
         new_lead_stage = (
             request.env["crm.stage"]
             .sudo()
-            .search([("name", "=", "New Lead")], limit=1)
+            .search([("name", "=", "New")], limit=1)
         )
+
+        # Resolve the salesperson from the trial program's instructor.
+        # We look for a trial program whose name also matches the chosen discipline
+        # (e.g. "Free Trial – Adult BJJ") and fall back to any trial program.
+        salesperson_id = False
+        disc_name = discipline_tag_map.get(discipline, "")
+        trial_program = (
+            request.env["dojo.program"]
+            .sudo()
+            .search(
+                [("name", "ilike", "trial"), ("name", "ilike", disc_name)],
+                limit=1,
+            )
+            if disc_name
+            else request.env["dojo.program"].sudo().browse()
+        )
+        if not trial_program:
+            # Fall back to any program with "trial" in the name
+            trial_program = (
+                request.env["dojo.program"]
+                .sudo()
+                .search([("name", "ilike", "trial")], limit=1)
+            )
+        if trial_program:
+            # Use the program's dedicated instructor first, then fall back to courses
+            instructor = trial_program.manager_instructor_id
+            if not instructor:
+                instructor = (
+                    request.env["dojo.class.template"]
+                    .sudo()
+                    .search(
+                        [("program_id", "=", trial_program.id),
+                         ("recurrence_instructor_id", "!=", False)],
+                        limit=1,
+                    )
+                    .recurrence_instructor_id
+                )
+            if not instructor:
+                instructor = (
+                    request.env["dojo.class.template"]
+                    .sudo()
+                    .search(
+                        [("program_id", "=", trial_program.id),
+                         ("instructor_profile_ids", "!=", False)],
+                        limit=1,
+                    )
+                    .instructor_profile_ids[:1]
+                )
+            if instructor and instructor.user_id:
+                salesperson_id = instructor.user_id.id
 
         # Find or create a res.partner so automations (no-show email, SMS fallback) work
         Partner = request.env["res.partner"].sudo()
@@ -372,6 +422,8 @@ class DojoTrialBooking(http.Controller):
             "email_from": email,
             "partner_id": partner.id,
         }
+        if salesperson_id:
+            vals["user_id"] = salesperson_id
         if phone:
             vals["phone"] = phone
         if tag_ids:
@@ -382,6 +434,7 @@ class DojoTrialBooking(http.Controller):
             vals["description"] = message
 
         lead = request.env["crm.lead"].sudo().create(vals)
+        lead._generate_trial_tokens()
         lead.message_post(
             body="Lead created via website trial sign-up form.",
             subtype_xmlid="mail.mt_note",

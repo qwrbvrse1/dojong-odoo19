@@ -75,6 +75,7 @@
                             <field name="sequence"/>
                             <field name="color"/>
                             <field name="style_id"/>
+                            <field name="manager_instructor_id"/>
                             <field name="active"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>
@@ -153,7 +154,7 @@
                                         invisible="not recurrence_active"/>
                                     <field name="recurrence_time"
                                         invisible="not recurrence_active"
-                                        widget="float_time"/>
+                                        widget="float_time_12h"/>
                                     <field name="recurrence_instructor_id"
                                         invisible="not recurrence_active"/>
                                 </group>

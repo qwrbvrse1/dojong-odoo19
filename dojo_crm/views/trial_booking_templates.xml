@@ -48,7 +48,7 @@
                         <h5 class="card-title" t-esc="session.name"/>
                         <p class="card-text">
                             <strong>Date &amp; Time:</strong>
-                            <span t-field="session.start_datetime"/>
+                            <span t-field="session.start_datetime" t-options='{"format": "EEE, MMM d, yyyy h:mm a"}'/>
                         </p>
                         <t t-if="session.instructor_profile_id">
                             <p class="card-text">
@@ -106,7 +106,7 @@
                                     <strong t-esc="s.name"/>
                                     <br/>
                                     <small class="text-muted">
-                                        <span t-field="s.start_datetime"/> —
+                                        <span t-field="s.start_datetime" t-options='{"format": "EEE, MMM d, yyyy h:mm a"}'/> —
                                         <t t-if="s.instructor_profile_id">
                                             Instructor: <span t-esc="s.instructor_profile_id.name"/>
                                         </t>
@@ -144,7 +144,7 @@
                         <h5 class="card-title" t-esc="session.name"/>
                         <p class="card-text">
                             <strong>Date &amp; Time:</strong>
-                            <span t-field="session.start_datetime"/>
+                            <span t-field="session.start_datetime" t-options='{"format": "EEE, MMM d, yyyy h:mm a"}'/>
                         </p>
                         <t t-if="session.instructor_profile_id">
                             <p class="card-text">
@@ -210,7 +210,7 @@
                         <h5 class="card-title" t-esc="session.name"/>
                         <p class="card-text">
                             <strong>Date &amp; Time:</strong>
-                            <span t-field="session.start_datetime"/>
+                            <span t-field="session.start_datetime" t-options='{"format": "EEE, MMM d, yyyy h:mm a"}'/>
                         </p>
                         <t t-if="session.instructor_profile_id">
                             <p class="card-text">
@@ -261,7 +261,7 @@
                                             <strong t-esc="s.name"/>
                                             <br/>
                                             <small class="text-muted">
-                                                <span t-field="s.start_datetime"/>
+                                                <span t-field="s.start_datetime" t-options='{"format": "EEE, MMM d, yyyy h:mm a"}'/>
                                                 <t t-if="s.instructor_profile_id">
                                                     — <span t-esc="s.instructor_profile_id.name"/>
                                                 </t>
