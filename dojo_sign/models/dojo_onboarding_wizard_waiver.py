@@ -1,5 +1,3 @@
-import base64
-
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
@@ -116,9 +114,11 @@ class DojoOnboardingWizard(models.TransientModel):
         """Create the student via super, then apply the signed waiver."""
         member = super()._create_student_member()
         if member and self.waiver_signature:
-            if not self.waiver_signed_by and self.student_name:
-                self.waiver_signed_by = self.student_name
-            self._apply_waiver_to_member(member)
+            signed_by = self.waiver_signed_by or self.student_name or member.name
+            member.apply_waiver(
+                signature=self.waiver_signature,
+                signed_by=signed_by,
+            )
         return member
 
     # ── Reset waiver fields between students ──────────────────────────────────
@@ -129,52 +129,4 @@ class DojoOnboardingWizard(models.TransientModel):
             'waiver_signed_by': False,
             'waiver_legal_authority': False,
         })
-
-    # ── Waiver application helper ─────────────────────────────────────────────
-    def _apply_waiver_to_member(self, member):
-        """Write signature fields to *member* and generate/attach the signed PDF.
-
-        Called from ``_create_student_member()`` after the member record is
-        created.  PDF generation failure is non-fatal: the signature data is
-        already saved on the member, so staff can regenerate the PDF manually.
-        """
-        now = fields.Datetime.now()
-        signed_by = self.waiver_signed_by or member.name
-
-        member.sudo().write(
-            {
-                "waiver_signature": self.waiver_signature,
-                "waiver_signed_by": signed_by,
-                "waiver_signed_on": now,
-            }
-        )
-
-        # Generate the signed PDF and store it as an attachment
-        try:
-            pdf_content, _mime = (
-                self.env["ir.actions.report"]
-                .sudo()
-                ._render_qweb_pdf(
-                    "dojo_sign.action_report_member_waiver", member.ids
-                )
-            )
-            attachment = (
-                self.env["ir.attachment"]
-                .sudo()
-                .create(
-                    {
-                        "name": f"Waiver \u2013 {member.name}.pdf",
-                        "type": "binary",
-                        "datas": base64.b64encode(pdf_content),
-                        "res_model": "dojo.member",
-                        "res_id": member.id,
-                        "mimetype": "application/pdf",
-                    }
-                )
-            )
-            member.sudo().waiver_attachment_id = attachment.id
-        except Exception:
-            # Non-fatal: signature image is already saved on the member record.
-            # Staff can print the waiver PDF manually from the member form.
-            pass
 

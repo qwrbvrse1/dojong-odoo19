@@ -11,6 +11,7 @@ class DojoProgram(models.Model):
     sequence = fields.Integer(default=10)
     color = fields.Integer()
     active = fields.Boolean(default=True)
+    is_trial = fields.Boolean(string="Is Trial", default=False, help="Mark this program as a trial program. Used to identify trial sessions for booking and kiosk check-in.")
     description = fields.Html()
     company_id = fields.Many2one(
         "res.company", default=lambda self: self.env.company, index=True
@@ -27,6 +28,12 @@ class DojoProgram(models.Model):
     )
     template_count = fields.Integer(
         compute="_compute_template_count", store=True
+    )
+    manager_instructor_id = fields.Many2one(
+        "dojo.instructor.profile",
+        string="Program Instructor",
+        help="The instructor responsible for this program. Used as the CRM salesperson for leads from this program.",
+        ondelete="set null",
     )
 
     # ── Computed ───────────────────────────────────────────────────────────

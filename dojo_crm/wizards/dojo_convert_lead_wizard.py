@@ -244,6 +244,22 @@ class DojoConvertLeadWizard(models.TransientModel):
 
         lead.active = False  # archive
 
+        # ---- Copy trial waiver from lead to the new member ---------------
+        if lead.lead_has_signed_waiver and member:
+            try:
+                member.sudo().apply_waiver(
+                    signature=lead.lead_waiver_signature,
+                    signed_by=lead.lead_waiver_signed_by,
+                    signed_on=lead.lead_waiver_signed_on,
+                )
+            except Exception:
+                _logger.warning(
+                    "dojo_crm: could not copy waiver from lead %d to member %d",
+                    lead.id,
+                    member.id,
+                    exc_info=True,
+                )
+
         _logger.info(
             "dojo_crm: lead %d converted to member %d (%s)",
             lead.id,

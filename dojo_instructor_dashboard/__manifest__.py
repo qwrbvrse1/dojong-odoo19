@@ -21,6 +21,7 @@
         'dojo_classes',
         'dojo_attendance',
         'dojo_communications',
+        'dojo_crm',
         'project',
         'account',
         'dojo_assistant',  # AI assistant functionality
