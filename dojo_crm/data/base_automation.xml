@@ -130,7 +130,7 @@ template = env.ref('dojo_crm.mail_template_trial_attended', raise_if_not_found=F
 for rec in records:
     if template and rec.email_from:
         template.send_mail(rec.id, force_send=True)
-    rec.write({'offer_sent_date': fields.Date.today(), 'trial_attended': True})
+    rec.write({'offer_sent_date': datetime.date.today(), 'trial_attended': True})
     rec._schedule_post_trial_followups()
                 ]]></field>
             </record>

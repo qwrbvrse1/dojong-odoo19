@@ -325,6 +325,8 @@ class DojoKioskService(models.AbstractModel):
                 "id": s.id,
                 "name": s.name,
                 "template_name": s.template_id.name if s.template_id else "",
+                "program_name": s.template_id.program_id.name if (s.template_id and s.template_id.program_id) else "",
+                "is_trial": s.template_id.program_id.is_trial if (s.template_id and s.template_id.program_id) else False,
                 "start": fields.Datetime.to_string(s.start_datetime),
                 "end": fields.Datetime.to_string(s.end_datetime),
                 "seats_taken": s.seats_taken,
@@ -362,6 +364,30 @@ class DojoKioskService(models.AbstractModel):
             # Prefer the log status (supports "late"); fall back to enrollment state
             att_state = log_by_member.get(member.id) or enr.attendance_state
             result.append(self._member_roster_entry(member, enr, att_state))
+
+        # Append trial leads booked for this session
+        trial_leads = self.env["crm.lead"].search([
+            ("trial_session_id", "=", session_id),
+            ("dojo_member_id", "=", False),
+        ])
+        for lead in trial_leads:
+            program_name = ""
+            if session.template_id and session.template_id.program_id:
+                program_name = session.template_id.program_id.name
+            partner_id = lead.partner_id.id if lead.partner_id else False
+            result.append({
+                "member_id": None,
+                "lead_id": lead.id,
+                "name": lead.contact_name or lead.partner_name or "Unknown",
+                "is_trial": True,
+                "trial_program": program_name,
+                "partner_id": partner_id,
+                "attendance_state": "present" if lead.trial_attended else "pending",
+                "membership_state": "trial",
+                "belt_rank": "",
+                "belt_color": "",
+                "issues": [],
+            })
         return result
 
     def _member_roster_entry(self, member, enrollment=None, attendance_state=None):
@@ -408,6 +434,79 @@ class DojoKioskService(models.AbstractModel):
         ]
         members = self.env["dojo.member"].search(domain, limit=limit, order="name asc")
         return [self._member_profile_dict(m) for m in members]
+
+    def search_trial_leads(self, query, limit=10):
+        """Search CRM leads with a booked trial session by name or email."""
+        if not query or len(query.strip()) < 2:
+            return []
+        domain = [
+            ("trial_session_id", "!=", False),
+            ("trial_attended", "=", False),
+            ("dojo_member_id", "=", False),
+            "|",
+            ("contact_name", "ilike", query.strip()),
+            ("email_from", "ilike", query.strip()),
+        ]
+        leads = self.env["crm.lead"].search(domain, limit=limit, order="contact_name asc")
+        return [self._trial_lead_dict(lead) for lead in leads]
+
+    def _trial_lead_dict(self, lead):
+        session = lead.trial_session_id
+        program_name = ""
+        if session and session.template_id and session.template_id.program_id:
+            program_name = session.template_id.program_id.name
+        session_dict = {}
+        if session:
+            session_dict = {
+                "id": session.id,
+                "name": session.name,
+                "template_name": session.template_id.name if session.template_id else session.name,
+                "program_name": program_name,
+                "start": str(session.start_datetime) if session.start_datetime else "",
+                "end": str(session.end_datetime) if session.end_datetime else "",
+                "instructor": "",
+            }
+        partner_id = lead.partner_id.id if lead.partner_id else False
+        return {
+            "member_id": None,
+            "lead_id": lead.id,
+            "name": lead.contact_name or lead.partner_name or "Unknown",
+            "email": lead.email_from or "",
+            "is_trial": True,
+            "trial_program": program_name,
+            "trial_session": session_dict,
+            "partner_id": partner_id,
+            "membership_state": "trial",
+            "belt_rank": "",
+            "issues": [],
+        }
+
+    def checkin_trial_lead(self, lead_id, session_id=None):
+        """Mark a trial lead as attended and record attendance on their session."""
+        lead = self.env["crm.lead"].browse(lead_id)
+        if not lead.exists():
+            return {"success": False, "error": "Trial lead not found."}
+        session = lead.trial_session_id
+        if not session:
+            return {"success": False, "error": "No trial session booked for this lead."}
+        if session_id and session.id != session_id:
+            return {"success": False, "error": "Session mismatch."}
+        lead.write({"trial_attended": True})
+        # Attempt to move to Trial-in-progress stage
+        stage = self.env["crm.stage"].search([("name", "ilike", "Trial-in-progress")], limit=1)
+        if not stage:
+            stage = self.env["crm.stage"].search([("name", "ilike", "trial")], limit=1)
+        if stage:
+            lead.write({"stage_id": stage.id})
+        program_name = ""
+        if session.template_id and session.template_id.program_id:
+            program_name = session.template_id.program_id.name
+        return {
+            "success": True,
+            "session_name": session.template_id.name if session.template_id else session.name,
+            "program_name": program_name,
+            "status": "present",
+        }
 
     # -------------------------------------------------------------------------
     # Member profile + issue flags

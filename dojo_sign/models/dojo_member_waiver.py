@@ -83,3 +83,55 @@ class DojoMember(models.Model):
             "target": "new",
         }
 
+    # ── Reusable waiver application ───────────────────────────────────────────
+    def apply_waiver(self, signature=None, signed_by=None, signed_on=None):
+        """Write waiver data to the member and generate the signed PDF attachment.
+
+        Can be called from the onboarding wizard, the CRM convert-to-member
+        wizard, or any other flow that has collected a signature.
+
+        :param signature: Base64-encoded image (bytes or str); the drawn signature.
+        :param signed_by: Full name of the signatory.
+        :param signed_on: ``datetime`` of signing (defaults to ``now()``).
+        """
+        self.ensure_one()
+        if signed_on is None:
+            signed_on = fields.Datetime.now()
+        if not signed_by:
+            signed_by = self.name
+
+        self.sudo().write(
+            {
+                "waiver_signature": signature,
+                "waiver_signed_by": signed_by,
+                "waiver_signed_on": signed_on,
+            }
+        )
+
+        try:
+            pdf_content, _mime = (
+                self.env["ir.actions.report"]
+                .sudo()
+                ._render_qweb_pdf(
+                    "dojo_sign.action_report_member_waiver", self.ids
+                )
+            )
+            attachment = (
+                self.env["ir.attachment"]
+                .sudo()
+                .create(
+                    {
+                        "name": f"Waiver \u2013 {self.name}.pdf",
+                        "type": "binary",
+                        "datas": base64.b64encode(pdf_content),
+                        "res_model": "dojo.member",
+                        "res_id": self.id,
+                        "mimetype": "application/pdf",
+                    }
+                )
+            )
+            self.sudo().waiver_attachment_id = attachment.id
+        except Exception:
+            # Non-fatal: signature image is already saved on the member record.
+            pass
+

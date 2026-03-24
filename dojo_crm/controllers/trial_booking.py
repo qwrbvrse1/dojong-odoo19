@@ -35,9 +35,8 @@ class DojoTrialBooking(http.Controller):
     def _get_trial_sessions(self):
         """Return upcoming open trial-program sessions with available capacity.
 
-        Trial sessions are identified by their program name containing 'trial'
-        (case-insensitive). Owners create these manually in the normal
-        Program → Course → Session flow.
+        Trial sessions are identified by their program's `is_trial` flag.
+        Owners enable this on the program record in the Classes configuration.
         """
         from odoo import fields as odoo_fields
 
@@ -47,7 +46,7 @@ class DojoTrialBooking(http.Controller):
             .sudo()
             .search(
                 [
-                    ("template_id.program_id.name", "ilike", "trial"),
+                    ("template_id.program_id.is_trial", "=", True),
                     ("state", "in", ["draft", "open"]),
                     ("start_datetime", ">", now),
                 ],
@@ -128,7 +127,168 @@ class DojoTrialBooking(http.Controller):
         if session.seats_taken >= session.capacity:
             return request.redirect(f"/trial/book/{token}?error=Session+is+full")
 
-        # Book the trial
+        # If they haven't signed the waiver yet, redirect to the waiver page first.
+        if not lead.lead_has_signed_waiver:
+            return request.redirect(
+                f"/trial/book/{token}/waiver?session_id={session_id}"
+            )
+
+        # Waiver already on file — book the trial directly.
+        return self._do_book_trial(token, lead, session)
+
+    # ── Waiver signing step ───────────────────────────────────────────────
+
+    @http.route(
+        "/trial/book/<string:token>/waiver",
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=False,
+    )
+    def trial_waiver_page(self, token, **kw):
+        """Display the liability waiver for the prospect to read and sign."""
+        lead = self._get_lead_by_booking_token(token)
+        if not lead:
+            return request.render("dojo_crm.trial_token_expired")
+
+        from odoo import fields as odoo_fields
+
+        if lead.trial_token_expires and lead.trial_token_expires < odoo_fields.Datetime.now():
+            return request.render("dojo_crm.trial_token_expired")
+
+        session_id = int(kw.get("session_id", 0))
+        if not session_id:
+            return request.redirect(f"/trial/book/{token}?error=Please+select+a+session")
+
+        session = (
+            request.env["dojo.class.session"]
+            .sudo()
+            .browse(session_id)
+            .exists()
+        )
+        if not session or session.state not in ("draft", "open"):
+            return request.redirect(f"/trial/book/{token}?error=Session+no+longer+available")
+
+        waiver_config = (
+            request.env["dojo.waiver.config"]
+            .sudo()
+            .get_singleton()
+        )
+
+        return request.render(
+            "dojo_crm.trial_waiver_page",
+            {
+                "lead": lead,
+                "session": session,
+                "waiver_config": waiver_config,
+                "error": kw.get("error"),
+            },
+        )
+
+    @http.route(
+        "/trial/book/<string:token>/waiver",
+        type="http",
+        auth="public",
+        website=True,
+        methods=["POST"],
+        csrf=True,
+        sitemap=False,
+    )
+    def trial_waiver_submit(self, token, **kw):
+        """Validate and store the signed waiver, then book the trial."""
+        lead = self._get_lead_by_booking_token(token)
+        if not lead:
+            return request.render("dojo_crm.trial_token_expired")
+
+        from odoo import fields as odoo_fields
+
+        if lead.trial_token_expires and lead.trial_token_expires < odoo_fields.Datetime.now():
+            return request.render("dojo_crm.trial_token_expired")
+
+        session_id = int(kw.get("session_id", 0))
+        if not session_id:
+            return request.redirect(f"/trial/book/{token}?error=Please+select+a+session")
+
+        session = (
+            request.env["dojo.class.session"]
+            .sudo()
+            .browse(session_id)
+            .exists()
+        )
+        if not session or session.state not in ("draft", "open"):
+            return request.redirect(f"/trial/book/{token}?error=Session+no+longer+available")
+
+        if session.seats_taken >= session.capacity:
+            return request.redirect(
+                f"/trial/book/{token}?error=Session+is+full"
+            )
+
+        # ── Validate waiver inputs ──────────────────────────────────────────
+        signed_by = (kw.get("signed_by") or "").strip()
+        agreed = kw.get("agreed")
+        signature_data = (kw.get("signature_data") or "").strip()
+
+        error = None
+        if not agreed:
+            error = "You must tick the agreement checkbox to proceed."
+        elif not signed_by:
+            error = "Please enter your full name in the 'Signing as' field."
+        elif not signature_data or signature_data == "data:,":
+            error = "A drawn signature is required. Please sign in the box above."
+
+        if error:
+            import urllib.parse
+            return request.redirect(
+                f"/trial/book/{token}/waiver?session_id={session_id}"
+                f"&error={urllib.parse.quote(error)}"
+            )
+
+        # ── Strip the data-URI prefix and store as binary ──────────────────
+        import base64
+        if "," in signature_data:
+            signature_data = signature_data.split(",", 1)[1]
+        try:
+            signature_bytes = base64.b64decode(signature_data)
+            # Re-encode as a clean base64 string (Odoo Image field expects this)
+            signature_b64 = base64.b64encode(signature_bytes).decode("ascii")
+        except Exception:
+            return request.redirect(
+                f"/trial/book/{token}/waiver?session_id={session_id}"
+                "&error=Invalid+signature+data.+Please+try+again."
+            )
+
+        remote_ip = (
+            request.httprequest.environ.get("HTTP_X_FORWARDED_FOR", "")
+            .split(",")[0]
+            .strip()
+            or request.httprequest.remote_addr
+            or ""
+        )
+
+        lead.sudo().write(
+            {
+                "lead_waiver_signature": signature_b64,
+                "lead_waiver_signed_by": signed_by,
+                "lead_waiver_signed_on": odoo_fields.Datetime.now(),
+                "lead_waiver_ip": remote_ip,
+                "booking_link_clicked": True,
+            }
+        )
+
+        lead.message_post(
+            body=(
+                f"Waiver signed via public portal by {signed_by} "
+                f"(IP: {remote_ip})"
+            ),
+            subtype_xmlid="mail.mt_note",
+        )
+
+        return self._do_book_trial(token, lead, session)
+
+    # ── Shared booking helper ─────────────────────────────────────────────
+
+    def _do_book_trial(self, token, lead, session):
+        """Write the trial booking, advance the stage, and return the confirmation page."""
         trial_booked_stage = (
             request.env["crm.stage"]
             .sudo()

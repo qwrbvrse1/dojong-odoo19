@@ -1,7 +1,7 @@
 {
     "name": "Dojang Kiosk",
     "summary": "Tablet check-in kiosk for Dojang members and instructors",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "category": "Services",
     "license": "LGPL-3",
     "author": "Dojang",
@@ -11,6 +11,7 @@
         "dojo_belt_progression",
         "dojo_subscriptions",
         "dojo_assistant",
+        "dojo_crm",
     ],
     "data": [
         "security/ir.model.access.csv",

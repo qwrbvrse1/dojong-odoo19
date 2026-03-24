@@ -11,6 +11,7 @@ class DojoProgram(models.Model):
     sequence = fields.Integer(default=10)
     color = fields.Integer()
     active = fields.Boolean(default=True)
+    is_trial = fields.Boolean(string="Is Trial", default=False, help="Mark this program as a trial program. Used to identify trial sessions for booking and kiosk check-in.")
     description = fields.Html()
     company_id = fields.Many2one(
         "res.company", default=lambda self: self.env.company, index=True

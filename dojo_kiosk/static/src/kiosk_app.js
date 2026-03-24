@@ -28,6 +28,10 @@ function avatarUrl(memberId) {
     return `/web/image/dojo.member/${memberId}/image_128`;
 }
 
+function partnerAvatarUrl(partnerId) {
+    return `/web/image/res.partner/${partnerId}/image_128`;
+}
+
 function initials(name) {
     if (!name) return "?";
     const parts = name.trim().split(/\s+/);
@@ -1007,7 +1011,7 @@ class HomeContent extends Component {
             </t>
             <t t-elif="props.results.length">
                 <div class="k-results-grid">
-                    <t t-foreach="props.results" t-as="m" t-key="m.member_id">
+                    <t t-foreach="props.results" t-as="m" t-key="m.is_trial ? 'lead_' + m.lead_id : m.member_id">
                         <MemberCard member="m" onSelect="props.onSelect"/>
                     </t>
                 </div>
@@ -1031,15 +1035,24 @@ class MemberCard extends Component {
         <div class="k-member-tile" t-on-click="() => props.onSelect(props.member)">
             <div class="k-member-tile__avatar-wrap">
                 <img class="k-member-tile__avatar"
-                    t-att-src="avatarUrl(props.member.member_id)"
+                    t-att-src="memberAvatarUrl(props.member)"
                     t-att-alt="props.member.name"
                     t-on-error="onImgError"/>
             </div>
+            <t t-if="props.member.is_trial">
+                <div class="k-member-tile__trial-badge">TRIAL</div>
+                <t t-if="props.member.trial_program">
+                    <div class="k-member-tile__trial-program" t-esc="props.member.trial_program"/>
+                </t>
+            </t>
             <div class="k-member-tile__name" t-esc="props.member.name"/>
         </div>
     `;
     static props = ["member", "onSelect"];
-    avatarUrl(id) { return avatarUrl(id); }
+    memberAvatarUrl(member) {
+        if (member.is_trial && member.partner_id) return partnerAvatarUrl(member.partner_id);
+        return avatarUrl(member.member_id);
+    }
     onImgError(ev) {
         const img = ev.target;
         const ph = document.createElement("div");
@@ -1196,15 +1209,20 @@ class InstructorRosterTile extends Component {
                 <div class="k-roster-tile__warn" title="Account issues">⚠</div>
             </t>
 
-            <!-- Remove button: top-left (when present or late) -->
-            <t t-if="props.entry.attendance_state === 'present' or props.entry.attendance_state === 'late'">
+            <!-- Trial badge: top-left area -->
+            <t t-if="props.entry.is_trial">
+                <div class="k-roster-tile__trial-badge">TRIAL</div>
+            </t>
+
+            <!-- Remove button: top-left (when present or late, non-trial) -->
+            <t t-elif="props.entry.attendance_state === 'present' or props.entry.attendance_state === 'late'">
                 <button class="k-roster-tile__remove"
                     t-on-click.stop="onRemove"
                     title="Remove attendance">✕</button>
             </t>
 
             <!-- Mark present button: bottom-right (when pending/absent) -->
-            <t t-elif="props.entry.attendance_state === 'pending' or props.entry.attendance_state === 'absent' or !props.entry.attendance_state">
+            <t t-if="props.entry.attendance_state === 'pending' or props.entry.attendance_state === 'absent' or !props.entry.attendance_state">
                 <button class="k-roster-tile__check"
                     t-on-click.stop="onCheck"
                     title="Mark present">✓</button>
@@ -1212,34 +1230,46 @@ class InstructorRosterTile extends Component {
 
             <div class="k-roster-tile__photo-wrap">
                 <img class="k-roster-tile__photo"
-                    t-att-src="avatarUrl(props.entry.member_id)"
+                    t-att-src="rosterAvatarUrl(props.entry)"
                     t-att-alt="props.entry.name"
                     t-on-error="onImgError"/>
             </div>
 
             <div class="k-roster-tile__name" t-esc="props.entry.name"/>
-            <!-- Manage indicator -->
-            <div class="k-roster-tile__info-hint">👤</div>
+            <!-- Manage indicator (non-trial only) -->
+            <t t-if="!props.entry.is_trial">
+                <div class="k-roster-tile__info-hint">👤</div>
+            </t>
         </div>
     `;
 
     static props = ["entry", "sessionId", "onMark", "onProfile", "onRemoveAttendance"];
 
-    avatarUrl(id) { return avatarUrl(id); }
+    rosterAvatarUrl(entry) {
+        if (entry.is_trial && entry.partner_id) return partnerAvatarUrl(entry.partner_id);
+        return avatarUrl(entry.member_id);
+    }
 
     hasWarning() {
+        if (this.props.entry.is_trial) return false;
         if (this.props.entry.issues && this.props.entry.issues.length) return true;
         const state = this.props.entry.membership_state;
         return state && state !== "active" && state !== "trial";
     }
 
     onTileTap(ev) {
-        // Don't open profile when clicking action buttons
         if (ev.target.closest(".k-roster-tile__check, .k-roster-tile__remove")) return;
+        if (this.props.entry.is_trial) return;  // no profile for trial leads
         this.props.onProfile(this.props.entry.member_id);
     }
 
-    onCheck() { this.props.onMark(this.props.entry.member_id, "present"); }
+    onCheck() {
+        if (this.props.entry.is_trial) {
+            this.props.onMark("trial:" + this.props.entry.lead_id, "present");
+        } else {
+            this.props.onMark(this.props.entry.member_id, "present");
+        }
+    }
     onRemove() { this.props.onRemoveAttendance(this.props.entry.member_id); }
 
     onImgError(ev) {
@@ -1281,7 +1311,7 @@ class InstructorSessionCard extends Component {
             </t>
             <t t-else="">
                 <div class="k-roster-grid">
-                    <t t-foreach="props.roster" t-as="entry" t-key="entry.member_id">
+                    <t t-foreach="props.roster" t-as="entry" t-key="entry.is_trial ? 'lead_' + entry.lead_id : entry.member_id">
                         <InstructorRosterTile
                             entry="entry"
                             sessionId="props.session.id"
@@ -2653,7 +2683,13 @@ class KioskApp extends Component {
     _updateSessionRosterEntry(sessionId, memberId, changes) {
         const roster = this.state.sessionRosters[sessionId];
         if (!roster) return;
-        const idx = roster.findIndex(r => r.member_id === memberId);
+        let idx;
+        if (typeof memberId === "string" && memberId.startsWith("trial:")) {
+            const leadId = parseInt(memberId.slice(6), 10);
+            idx = roster.findIndex(r => r.is_trial && r.lead_id === leadId);
+        } else {
+            idx = roster.findIndex(r => r.member_id === memberId);
+        }
         if (idx !== -1) Object.assign(roster[idx], changes);
     }
 
@@ -2684,6 +2720,15 @@ class KioskApp extends Component {
     async studentConfirm(member) {
         // Open the modal immediately with a spinner, then load the member's enrolled sessions
         this.state.checkinModal = { member, sessions: [], loading: true, result: null, checkedInSession: null };
+
+        // Trial leads — show only their booked session directly, no enrolled_sessions lookup
+        if (member.is_trial) {
+            const session = member.trial_session;
+            this.state.checkinModal.sessions = session && session.id ? [session] : [];
+            this.state.checkinModal.loading = false;
+            return;
+        }
+
         try {
             const sessions = await jsonPost("/kiosk/member/enrolled_sessions", {
                 member_id: member.member_id,
@@ -2743,18 +2788,26 @@ class KioskApp extends Component {
         if (!modal) return;
         const member = modal.member;
         try {
-            const result = await jsonPost("/kiosk/checkin", {
-                member_id: member.member_id,
-                session_id: session.id,
-            });
-            if (result.success) {
-                this._updateSessionRosterEntry(session.id, member.member_id, { attendance_state: result.status });
+            let result;
+            if (member.is_trial) {
+                result = await jsonPost("/kiosk/trial/checkin", {
+                    lead_id: member.lead_id,
+                    session_id: session.id,
+                });
+            } else {
+                result = await jsonPost("/kiosk/checkin", {
+                    member_id: member.member_id,
+                    session_id: session.id,
+                });
+                if (result.success) {
+                    this._updateSessionRosterEntry(session.id, member.member_id, { attendance_state: result.status });
+                }
             }
             // Show result inside the modal itself
             modal.result = {
                 success: result.success,
                 sessionName: result.session_name || session.template_name || session.name,
-                programName: session.program_name || "",
+                programName: result.program_name || session.program_name || "",
                 error: result.error || "",
             };
             // Auto-dismiss after 3.5s
@@ -2845,11 +2898,16 @@ class KioskApp extends Component {
 
     async markAttendance(memberId, sessionId, status) {
         try {
-            await jsonPost("/kiosk/instructor/attendance", {
-                session_id: sessionId,
-                member_id: memberId,
-                status,
-            });
+            if (typeof memberId === "string" && memberId.startsWith("trial:")) {
+                const leadId = parseInt(memberId.slice(6), 10);
+                await jsonPost("/kiosk/trial/checkin", { lead_id: leadId, session_id: sessionId });
+            } else {
+                await jsonPost("/kiosk/instructor/attendance", {
+                    session_id: sessionId,
+                    member_id: memberId,
+                    status,
+                });
+            }
             this._updateSessionRosterEntry(sessionId, memberId, { attendance_state: status });
         } catch (e) {
             console.error("Kiosk: mark attendance failed", e);

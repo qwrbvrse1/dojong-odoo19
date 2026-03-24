@@ -59,6 +59,13 @@
                             <field name="dojo_member_id" readonly="1"/>
                             <field name="is_converted" readonly="1"/>
                         </group>
+                        <group string="Waiver">
+                            <field name="lead_has_signed_waiver" readonly="1" widget="boolean_toggle"/>
+                            <field name="lead_waiver_signed_by" readonly="1"
+                                   invisible="not lead_has_signed_waiver"/>
+                            <field name="lead_waiver_signed_on" readonly="1"
+                                   invisible="not lead_has_signed_waiver"/>
+                        </group>
                     </group>
                 </page>
 

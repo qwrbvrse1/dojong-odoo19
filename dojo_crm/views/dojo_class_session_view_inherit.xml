@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_dojo_class_session_form_crm_inherit" model="ir.ui.view">
+        <field name="name">dojo.class.session.form.crm.inherit</field>
+        <field name="model">dojo.class.session</field>
+        <field name="inherit_id" ref="dojo_classes.view_dojo_class_session_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Trial Leads">
+                    <field name="trial_lead_ids">
+                        <list>
+                            <field name="contact_name" string="Name"/>
+                            <field name="email_from" string="Email"/>
+                            <field name="phone" string="Phone"/>
+                            <field name="stage_id" string="Stage"/>
+                            <field name="trial_attended" string="Attended"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
