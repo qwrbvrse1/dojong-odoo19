@@ -398,7 +398,17 @@ export class DojoVoiceAssistant extends Component {
                     this._pushMsg("assistant", "You can say \"undo\" to reverse this action.");
                 }
             } else {
-                this._pushMsg("assistant", "⚠️ " + (result.error || "Action failed."));
+                if (result.compound && result.steps && result.steps.length) {
+                    const lines = result.steps.map(s => {
+                        if (s.skipped) return `⏭️ Step ${s.step} skipped`;
+                        if (s.success) return `✅ ${s.summary || "Completed"}`;
+                        return `❌ Step ${s.step}: ${s.error || "Failed"}`;
+                    });
+                    lines.push("⚠️ " + (result.error || "Compound action failed."));
+                    this._pushMsg("assistant", lines.join("\n\n"));
+                } else {
+                    this._pushMsg("assistant", "⚠️ " + (result.error || "Action failed."));
+                }
             }
         } catch (err) {
             const errMsg = err?.data?.message || err?.message || "Network error during confirmation.";
