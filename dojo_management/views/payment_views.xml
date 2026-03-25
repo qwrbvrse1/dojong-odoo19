@@ -1,0 +1,49 @@
+<odoo>
+    <record id="view_dojo_payment_tree" model="ir.ui.view">
+        <field name="name">dojo.payment.tree</field>
+        <field name="model">dojo.payment</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'paid'" decoration-danger="state == 'late'" decoration-warning="state == 'pending'">
+                <field name="student_id"/>
+                <field name="amount"/>
+                <field name="payment_date"/>
+                <field name="due_date"/>
+                <field name="state" widget="badge" decoration-success="state == 'paid'" decoration-danger="state == 'late'" decoration-warning="state == 'pending'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dojo_payment_form" model="ir.ui.view">
+        <field name="name">dojo.payment.form</field>
+        <field name="model">dojo.payment</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_mark_paid" string="Mark as Paid" type="object" class="btn-success"/>
+                    <button name="action_mark_pending" string="Mark as Pending" type="object" class="btn-warning"/>
+                    <button name="action_mark_late" string="Mark as Late" type="object" class="btn-danger"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="amount"/>
+                            <field name="payment_date"/>
+                        </group>
+                        <group>
+                            <field name="due_date"/>
+                            <field name="state" widget="radio"/>
+                            <field name="notes"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dojo_payment" model="ir.actions.act_window">
+        <field name="name">Payments</field>
+        <field name="res_model">dojo.payment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

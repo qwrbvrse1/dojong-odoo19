@@ -1,0 +1,23 @@
+<odoo>
+    <!-- Root Menu -->
+    <menuitem id="menu_dojo_root" name="Dojo Management" sequence="10"/>
+    
+    <!-- Dashboard Menu -->
+    <menuitem id="menu_dojo_dashboard" name="Dashboard" parent="menu_dojo_root" action="action_dojo_dashboard" sequence="1"/>
+    
+    <!-- Student Menu -->
+    <menuitem id="menu_dojo_student" name="Students" parent="menu_dojo_root" action="action_dojo_student" sequence="20"/>
+    
+    <!-- Payment Menu -->
+    <menuitem id="menu_dojo_payment" name="Payments" parent="menu_dojo_root" action="action_dojo_payment" sequence="30"/>
+    
+    <!-- Session Menu -->
+    <menuitem id="menu_dojo_session" name="Sessions" parent="menu_dojo_root" action="action_dojo_session" sequence="15"/>
+    
+    <!-- Attendance Menu -->
+    <menuitem id="menu_dojo_attendance" name="Attendance" parent="menu_dojo_root" action="action_dojo_attendance" sequence="40"/>
+    
+    <!-- Configuration Menu -->
+    <menuitem id="menu_dojo_configuration" name="Configuration" parent="menu_dojo_root" sequence="100"/>
+    <menuitem id="menu_martial_arts_styles" name="Martial Arts Styles" parent="menu_dojo_configuration" action="action_martial_arts_style" sequence="10"/>
+</odoo>

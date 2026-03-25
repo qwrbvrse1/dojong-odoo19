@@ -1,0 +1,250 @@
+<odoo>
+    <data noupdate="1">
+        <!-- Martial Arts Styles -->
+        <record id="style_karate" model="dojo.martial_arts_style">
+            <field name="name">Karate</field>
+            <field name="code">karate</field>
+            <field name="description">Traditional Shotokan Karate</field>
+        </record>
+
+        <record id="style_judo" model="dojo.martial_arts_style">
+            <field name="name">Judo</field>
+            <field name="code">judo</field>
+            <field name="description">Kodokan Judo</field>
+        </record>
+
+        <record id="style_bjj" model="dojo.martial_arts_style">
+            <field name="name">Brazilian Jiu-Jitsu</field>
+            <field name="code">bjj</field>
+            <field name="description">Gracie Jiu-Jitsu</field>
+        </record>
+
+        <!-- Belts: Karate -->
+        <record id="belt_karate_white" model="dojo.belt_rank">
+            <field name="name">White Belt</field>
+            <field name="style_id" ref="style_karate"/>
+            <field name="sequence">1</field>
+            <field name="color">#FFFFFF</field>
+            <field name="icon">⚪</field>
+        </record>
+        <record id="belt_karate_yellow" model="dojo.belt_rank">
+            <field name="name">Yellow Belt</field>
+            <field name="style_id" ref="style_karate"/>
+            <field name="sequence">2</field>
+            <field name="color">#FFFF00</field>
+            <field name="icon">🟡</field>
+        </record>
+        <record id="belt_karate_orange" model="dojo.belt_rank">
+            <field name="name">Orange Belt</field>
+            <field name="style_id" ref="style_karate"/>
+            <field name="sequence">3</field>
+            <field name="color">#FFA500</field>
+            <field name="icon">🟠</field>
+        </record>
+        <record id="belt_karate_green" model="dojo.belt_rank">
+            <field name="name">Green Belt</field>
+            <field name="style_id" ref="style_karate"/>
+            <field name="sequence">4</field>
+            <field name="color">#008000</field>
+            <field name="icon">🟢</field>
+        </record>
+        <record id="belt_karate_blue" model="dojo.belt_rank">
+            <field name="name">Blue Belt</field>
+            <field name="style_id" ref="style_karate"/>
+            <field name="sequence">5</field>
+            <field name="color">#0000FF</field>
+            <field name="icon">🔵</field>
+        </record>
+        <record id="belt_karate_black" model="dojo.belt_rank">
+            <field name="name">Black Belt</field>
+            <field name="style_id" ref="style_karate"/>
+            <field name="sequence">10</field>
+            <field name="color">#000000</field>
+            <field name="icon">⚫</field>
+            <field name="has_dan_ranks">True</field>
+        </record>
+
+        <!-- Belts: Judo -->
+        <record id="belt_judo_white" model="dojo.belt_rank">
+            <field name="name">White Belt</field>
+            <field name="style_id" ref="style_judo"/>
+            <field name="sequence">1</field>
+            <field name="color">#FFFFFF</field>
+            <field name="icon">⚪</field>
+        </record>
+        <record id="belt_judo_black" model="dojo.belt_rank">
+            <field name="name">Black Belt</field>
+            <field name="style_id" ref="style_judo"/>
+            <field name="sequence">10</field>
+            <field name="color">#000000</field>
+            <field name="icon">⚫</field>
+            <field name="has_dan_ranks">True</field>
+        </record>
+
+        <!-- Belts: BJJ -->
+        <record id="belt_bjj_white" model="dojo.belt_rank">
+            <field name="name">White Belt</field>
+            <field name="style_id" ref="style_bjj"/>
+            <field name="sequence">1</field>
+            <field name="color">#FFFFFF</field>
+            <field name="icon">⚪</field>
+        </record>
+         <record id="belt_bjj_blue" model="dojo.belt_rank">
+            <field name="name">Blue Belt</field>
+            <field name="style_id" ref="style_bjj"/>
+            <field name="sequence">2</field>
+            <field name="color">#0000FF</field>
+            <field name="icon">🔵</field>
+        </record>
+        <record id="belt_bjj_purple" model="dojo.belt_rank">
+            <field name="name">Purple Belt</field>
+            <field name="style_id" ref="style_bjj"/>
+            <field name="sequence">3</field>
+            <field name="color">#800080</field>
+            <field name="icon">🟣</field>
+        </record>
+        <record id="belt_bjj_brown" model="dojo.belt_rank">
+            <field name="name">Brown Belt</field>
+            <field name="style_id" ref="style_bjj"/>
+            <field name="sequence">4</field>
+            <field name="color">#A52A2A</field>
+            <field name="icon">🟤</field>
+        </record>
+        <record id="belt_bjj_black" model="dojo.belt_rank">
+            <field name="name">Black Belt</field>
+            <field name="style_id" ref="style_bjj"/>
+            <field name="sequence">10</field>
+            <field name="color">#000000</field>
+            <field name="icon">⚫</field>
+            <field name="has_dan_ranks">True</field>
+        </record>
+
+        <!-- Sessions -->
+        <record id="session_today" model="dojo.session">
+            <field name="name">Training Today</field>
+            <field name="date" eval="(DateTime.today()).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="start_time">18.0</field>
+            <field name="end_time">19.5</field>
+            <field name="state">completed</field>
+        </record>
+        <record id="session_yesterday" model="dojo.session">
+            <field name="name">Training Yesterday</field>
+            <field name="date" eval="(DateTime.today() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="start_time">18.0</field>
+            <field name="end_time">19.5</field>
+            <field name="state">completed</field>
+        </record>
+        <record id="session_last_week" model="dojo.session">
+            <field name="name">Training Last Week</field>
+            <field name="date" eval="(DateTime.today() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="start_time">18.0</field>
+            <field name="end_time">19.5</field>
+            <field name="state">completed</field>
+        </record>
+
+        <!-- Students: Karate -->
+        <record id="student_daniel" model="dojo.student">
+            <field name="name">Daniel LaRusso</field>
+            <field name="martial_arts_style_id" ref="style_karate"/>
+            <field name="belt_level_id" ref="belt_karate_black"/>
+            <field name="belt_rank">5</field>
+            <field name="email">daniel@miyagi-do.com</field>
+        </record>
+        <record id="student_johnny" model="dojo.student">
+            <field name="name">Johnny Lawrence</field>
+            <field name="martial_arts_style_id" ref="style_karate"/>
+            <field name="belt_level_id" ref="belt_karate_black"/>
+            <field name="belt_rank">3</field>
+            <field name="email">johnny@eaglefang.com</field>
+        </record>
+        <record id="student_miguel" model="dojo.student">
+            <field name="name">Miguel Diaz</field>
+            <field name="martial_arts_style_id" ref="style_karate"/>
+            <field name="belt_level_id" ref="belt_karate_black"/>
+            <field name="email">miguel@eaglefang.com</field>
+        </record>
+        <record id="student_robby" model="dojo.student">
+            <field name="name">Robby Keene</field>
+            <field name="martial_arts_style_id" ref="style_karate"/>
+            <field name="belt_level_id" ref="belt_karate_blue"/>
+        </record>
+        <record id="student_samantha" model="dojo.student">
+            <field name="name">Samantha LaRusso</field>
+            <field name="martial_arts_style_id" ref="style_karate"/>
+            <field name="belt_level_id" ref="belt_karate_green"/>
+        </record>
+
+        <!-- Students: BJJ -->
+        <record id="student_gordon" model="dojo.student">
+            <field name="name">Gordon Ryan</field>
+            <field name="martial_arts_style_id" ref="style_bjj"/>
+            <field name="belt_level_id" ref="belt_bjj_black"/>
+        </record>
+        <record id="student_craig" model="dojo.student">
+            <field name="name">Craig Jones</field>
+            <field name="martial_arts_style_id" ref="style_bjj"/>
+            <field name="belt_level_id" ref="belt_bjj_brown"/>
+        </record>
+        <record id="student_bjj_beginner" model="dojo.student">
+            <field name="name">New BJJ Student</field>
+            <field name="martial_arts_style_id" ref="style_bjj"/>
+            <field name="belt_level_id" ref="belt_bjj_white"/>
+        </record>
+
+        <!-- Students: Judo -->
+        <record id="student_ronda" model="dojo.student">
+            <field name="name">Ronda Rousey</field>
+            <field name="martial_arts_style_id" ref="style_judo"/>
+            <field name="belt_level_id" ref="belt_judo_black"/>
+        </record>
+        <record id="student_teddy" model="dojo.student">
+            <field name="name">Teddy Riner</field>
+            <field name="martial_arts_style_id" ref="style_judo"/>
+            <field name="belt_level_id" ref="belt_judo_black"/>
+        </record>
+
+        <!-- Attendance -->
+        <record id="att_daniel_today" model="dojo.attendance">
+            <field name="student_id" ref="student_daniel"/>
+            <field name="session_id" ref="session_today"/>
+            <field name="date" eval="(DateTime.today()).strftime('%Y-%m-%d')"/>
+            <field name="status">present</field>
+            <field name="performance_rating">excellent</field>
+            <field name="arrival_time">17.9</field>
+            <field name="departure_time">19.5</field>
+        </record>
+        <record id="att_johnny_today" model="dojo.attendance">
+            <field name="student_id" ref="student_johnny"/>
+            <field name="session_id" ref="session_today"/>
+            <field name="date" eval="(DateTime.today()).strftime('%Y-%m-%d')"/>
+            <field name="status">present</field>
+            <field name="performance_rating">good</field>
+        </record>
+        <record id="att_daniel_yesterday" model="dojo.attendance">
+            <field name="student_id" ref="student_daniel"/>
+            <field name="session_id" ref="session_yesterday"/>
+            <field name="date" eval="(DateTime.today() - timedelta(days=1)).strftime('%Y-%m-%d')"/>
+            <field name="status">present</field>
+        </record>
+        
+        <!-- Payments -->
+        <record id="pay_daniel_1" model="dojo.payment">
+            <field name="student_id" ref="student_daniel"/>
+            <field name="amount">120.00</field>
+            <field name="payment_date" eval="(DateTime.today() - timedelta(days=5)).strftime('%Y-%m-%d')"/>
+            <field name="state">paid</field>
+        </record>
+        <record id="pay_johnny_1" model="dojo.payment">
+            <field name="student_id" ref="student_johnny"/>
+            <field name="amount">100.00</field>
+            <field name="payment_date" eval="(DateTime.today() - timedelta(days=2)).strftime('%Y-%m-%d')"/>
+            <field name="state">paid</field>
+        </record>
+        <record id="pay_ronda_late" model="dojo.payment">
+            <field name="student_id" ref="student_ronda"/>
+            <field name="amount">80.00</field>
+            <field name="payment_date" eval="(DateTime.today() - timedelta(days=40)).strftime('%Y-%m-%d')"/>
+            <field name="state">late</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Grant instructors access to the CRM top-level menu. -->
+    <menuitem
+        id="crm.crm_menu_root"
+        name="CRM"
+        groups="sales_team.group_sale_salesman,sales_team.group_sale_manager,dojo_base.group_dojo_instructor"/>
+</odoo>

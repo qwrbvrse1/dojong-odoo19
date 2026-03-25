@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════
+         SHARED: Font loader (injected into <head>)
+    ═══════════════════════════════════════════ -->
+    <template id="dojo_fonts" inherit_id="website.layout" name="Dojo Fonts">
+        <xpath expr="//head" position="inside">
+            <link rel="preconnect" href="https://fonts.googleapis.com"/>
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin"/>
+            <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+        </xpath>
+    </template>
+
+    <!-- ═══════════════════════════════════════════
+         HOME PAGE
+    ═══════════════════════════════════════════ -->
+    <template id="home" name="Dojo Home">
+        <t t-call="website.layout">
+            <div id="wrap" class="dojo-page">
+
+                <!-- ── HERO ── -->
+                <section class="dj-hero">
+                    <div class="dj-hero-overlay"/>
+                    <div class="dj-container dj-hero-content">
+                        <p class="dj-eyebrow">Your City's Trusted Martial Arts School</p>
+                        <h1 class="dj-hero-headline">Many Families.<br/><span>One Strength.</span></h1>
+                        <p class="dj-hero-sub">Families trust United Family Taekwondo to build confidence, focus, and lifelong skills — often seeing real improvement in just weeks.</p>
+                        <div class="dj-hero-btns">
+                            <a href="/contact" class="dj-btn dj-btn-primary dj-btn-lg">Join Us For A Trial Lesson</a>
+                            <a href="/programs" class="dj-btn dj-btn-outline dj-btn-lg">Explore Programs</a>
+                        </div>
+                        <div class="dj-hero-badges">
+                            <div class="dj-badge"><i class="fa fa-star"/> <span>5-Star Rated</span></div>
+                            <div class="dj-badge"><i class="fa fa-users"/> <span>200+ Active Students</span></div>
+                            <div class="dj-badge"><i class="fa fa-award"/> <span>20+ Years Experience</span></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ── TRUST BAR ── -->
+                <div class="dj-trust-bar">
+                    <div class="dj-container dj-trust-inner">
+                        <div class="dj-trust-item"><i class="fa fa-shield-alt"/> <span>Safe &amp; Structured</span></div>
+                        <div class="dj-trust-item"><i class="fa fa-child"/> <span>Classes for Ages 3 &amp; Up</span></div>
+                        <div class="dj-trust-item"><i class="fa fa-certificate"/> <span>Certified Instructors</span></div>
+                        <div class="dj-trust-item"><i class="fa fa-heart"/> <span>Family Community</span></div>
+                    </div>
+                </div>
+
+                <!-- ── WHY CHOOSE US ── -->
+                <section class="dj-section dj-why-section">
+                    <div class="dj-container">
+                        <div class="dj-section-header">
+                            <p class="dj-eyebrow">Why United Family Taekwondo?</p>
+                            <h2>Why Choose <span>United Family Taekwondo?</span></h2>
+                            <p class="dj-section-sub">We go beyond kicks and punches — we shape character, build community, and transform lives.</p>
+                        </div>
+                        <div class="dj-why-grid">
+                            <div class="dj-why-card">
+                                <div class="dj-why-icon"><i class="fa fa-dumbbell"/></div>
+                                <h3>Programs for All Ages</h3>
+                                <p>Customized classes designed to build confidence, strength, and respect at every stage of life.</p>
+                            </div>
+                            <div class="dj-why-card">
+                                <div class="dj-why-icon"><i class="fa fa-chalkboard-teacher"/></div>
+                                <h3>Certified Instructors</h3>
+                                <p>Caring professionals who teach, encourage, and celebrate every student's growth and milestones.</p>
+                            </div>
+                            <div class="dj-why-card">
+                                <div class="dj-why-icon"><i class="fa fa-users"/></div>
+                                <h3>A True Dojang Family</h3>
+                                <p>Students and parents become part of a supportive community where everyone belongs.</p>
+                            </div>
+                            <div class="dj-why-card">
+                                <div class="dj-why-icon"><i class="fa fa-chart-line"/></div>
+                                <h3>Proven Results in Weeks</h3>
+                                <p>Most students notice real improvements in focus, discipline, and fitness within the first few weeks.</p>
+                            </div>
+                            <div class="dj-why-card">
+                                <div class="dj-why-icon"><i class="fa fa-brain"/></div>
+                                <h3>Mind &amp; Body Development</h3>
+                                <p>Taekwondo trains the whole person — improving mental focus and self-confidence alongside physical skill.</p>
+                            </div>
+                            <div class="dj-why-card">
+                                <div class="dj-why-icon"><i class="fa fa-trophy"/></div>
+                                <h3>Belt Progression System</h3>
+                                <p>A clear path from white belt to black belt keeps students engaged with achievable goals.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ── PROGRAMS PREVIEW ── -->
+                <section class="dj-section dj-programs-section">
+                    <div class="dj-programs-bg"/>
+                    <div class="dj-container">
+                        <div class="dj-section-header dj-light">
+                            <p class="dj-eyebrow">What We Offer</p>
+                            <h2>Find the Perfect Class for <span>Every Age &amp; Skill Level</span></h2>
+                        </div>
+                        <div class="dj-programs-grid">
+                            <div class="dj-program-card">
+                                <div class="dj-program-img" style="background-image:url('https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=600&amp;q=80')">
+                                    <div class="dj-program-badge">Ages 3–5</div>
+                                </div>
+                                <div class="dj-program-body">
+                                    <h3>Preschool Martial Arts</h3>
+                                    <p>Build motor skills, focus, and confidence in a fun, safe environment.</p>
+                                    <a href="/programs#preschool" class="dj-btn dj-btn-primary">Learn More</a>
+                                </div>
+                            </div>
+                            <div class="dj-program-card dj-program-featured">
+                                <div class="dj-program-feat-tag">Most Popular</div>
+                                <div class="dj-program-img" style="background-image:url('https://images.unsplash.com/photo-1555597673-b21d5c935865?w=600&amp;q=80')">
+                                    <div class="dj-program-badge">Ages 6–12</div>
+                                </div>
+                                <div class="dj-program-body">
+                                    <h3>Kids Taekwondo</h3>
+                                    <p>Self-defense plus life skills: focus, discipline, respect, and confidence.</p>
+                                    <a href="/programs#kids" class="dj-btn dj-btn-primary">Learn More</a>
+                                </div>
+                            </div>
+                            <div class="dj-program-card">
+                                <div class="dj-program-img" style="background-image:url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&amp;q=80')">
+                                    <div class="dj-program-badge">Ages 13+</div>
+                                </div>
+                                <div class="dj-program-body">
+                                    <h3>Teen &amp; Adult Taekwondo</h3>
+                                    <p>Build strength, confidence, and technique at your own pace.</p>
+                                    <a href="/programs#adults" class="dj-btn dj-btn-primary">Learn More</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ── STATS ── -->
+                <section class="dj-stats-section">
+                    <div class="dj-container">
+                        <div class="dj-stats-grid">
+                            <div class="dj-stat-item"><div class="dj-stat-num" data-target="200">0</div><div class="dj-stat-suffix">+</div><div class="dj-stat-label">Active Students</div></div>
+                            <div class="dj-stat-item"><div class="dj-stat-num" data-target="20">0</div><div class="dj-stat-suffix">+</div><div class="dj-stat-label">Years Experience</div></div>
+                            <div class="dj-stat-item"><div class="dj-stat-num" data-target="98">0</div><div class="dj-stat-suffix">%</div><div class="dj-stat-label">Parent Satisfaction</div></div>
+                            <div class="dj-stat-item"><div class="dj-stat-num" data-target="100">0</div><div class="dj-stat-suffix">+</div><div class="dj-stat-label">5-Star Reviews</div></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ── TESTIMONIALS ── -->
+                <section class="dj-section dj-testimonials-section">
+                    <div class="dj-testi-bg"/>
+                    <div class="dj-container">
+                        <div class="dj-section-header dj-light">
+                            <p class="dj-eyebrow">Real Stories</p>
+                            <h2>Discover How Taekwondo Has <span>Transformed Lives</span></h2>
+                            <div class="dj-review-stars">
+                                <i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/>
+                                <span>100+ Reviews on Google</span>
+                            </div>
+                        </div>
+                        <div class="dj-testi-slider">
+                            <div class="dj-testi-track" id="dj-testi-track">
+                                <div class="dj-testi-card">
+                                    <div class="dj-testi-stars"><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/></div>
+                                    <p>"Excellent school! Always clean and neat. The instructors are very professional and genuinely care about each student."</p>
+                                    <div class="dj-testi-author"><div class="dj-avatar">JS</div><div><strong>Janet Solorio</strong><span>Parent</span></div></div>
+                                </div>
+                                <div class="dj-testi-card">
+                                    <div class="dj-testi-stars"><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/></div>
+                                    <p>"Joining was a life-changing experience! Taekwondo helped me become more confident and boosted my overall mental health."</p>
+                                    <div class="dj-testi-author"><div class="dj-avatar">AG</div><div><strong>Alex Gautreaux</strong><span>Adult Student</span></div></div>
+                                </div>
+                                <div class="dj-testi-card">
+                                    <div class="dj-testi-stars"><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/></div>
+                                    <p>"I love this place. The master cares about the kids and trains them really well. My kids have more confidence since joining."</p>
+                                    <div class="dj-testi-author"><div class="dj-avatar">FW</div><div><strong>Felix Wushu</strong><span>Parent of 2</span></div></div>
+                                </div>
+                                <div class="dj-testi-card">
+                                    <div class="dj-testi-stars"><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/></div>
+                                    <p>"Beyond martial arts, my kids have gained confidence, discipline, and respect — all while having fun. Highly recommend!"</p>
+                                    <div class="dj-testi-author"><div class="dj-avatar">KS</div><div><strong>Krishna S.</strong><span>Parent</span></div></div>
+                                </div>
+                                <div class="dj-testi-card">
+                                    <div class="dj-testi-stars"><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/><i class="fa fa-star"/></div>
+                                    <p>"UFT has been a wonderful experience for my daughter for the past four years and still going. So glad we made the decision!"</p>
+                                    <div class="dj-testi-author"><div class="dj-avatar">KV</div><div><strong>Kathryn Vaughn</strong><span>Parent</span></div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dj-slider-controls">
+                            <button class="dj-slider-btn" id="dj-prev"><i class="fa fa-chevron-left"/></button>
+                            <div class="dj-dots" id="dj-dots"/>
+                            <button class="dj-slider-btn" id="dj-next"><i class="fa fa-chevron-right"/></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ── TRIAL LESSON CTA ── -->
+                <section class="dj-section dj-trial-section" id="trial">
+                    <div class="dj-container">
+                        <div class="dj-trial-inner">
+                            <div class="dj-trial-text">
+                                <p class="dj-eyebrow">Get Started Today</p>
+                                <h2>Schedule Your Free Trial Lesson <span>&amp; School Tour</span></h2>
+                                <p>No commitment — just come in, experience a class, and see why hundreds of families have made us their Taekwondo home.</p>
+                                <ul class="dj-trial-perks">
+                                    <li><i class="fa fa-check-circle"/> No experience needed</li>
+                                    <li><i class="fa fa-check-circle"/> All ages welcome</li>
+                                    <li><i class="fa fa-check-circle"/> No obligation to enroll</li>
+                                    <li><i class="fa fa-check-circle"/> Meet our instructors</li>
+                                </ul>
+                            </div>
+                            <div class="dj-form-wrap">
+                                <form class="dj-trial-form"
+                                      action="/trial/submit"
+                                      method="post">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <!-- Redirect back to our styled thank-you page -->
+                                    <input type="hidden" name="success_url" value="/thank-you"/>
+                                    <input type="hidden" name="error_url" value="/#trial"/>
+                                    <h3>Book Your Free Trial</h3>
+                                    <div class="dj-form-group">
+                                        <label for="h_name">Full Name *</label>
+                                        <input class="form-control" type="text" id="h_name" name="name" placeholder="Jane Smith" required="required" autocomplete="name"/>
+                                    </div>
+                                    <div class="dj-form-row">
+                                        <div class="dj-form-group">
+                                            <label for="h_email">Email *</label>
+                                            <input class="form-control" type="email" id="h_email" name="email" placeholder="jane@example.com" required="required" autocomplete="email"/>
+                                        </div>
+                                        <div class="dj-form-group">
+                                            <label for="h_phone">Phone *</label>
+                                            <input class="form-control" type="tel" id="h_phone" name="phone" placeholder="(555) 123-4567" required="required" autocomplete="tel"/>
+                                        </div>
+                                    </div>
+                                    <div class="dj-form-group">
+                                        <label for="h_discipline">Program Interest</label>
+                                        <t t-set="programs" t-value="request.env['dojo.program'].sudo().search([('active','=',True),('is_trial','=',False)])"/>
+                                        <select class="form-select" id="h_discipline" name="discipline">
+                                            <option value="">&#x2014; Select a program &#x2014;</option>
+                                            <t t-foreach="programs" t-as="prog">
+                                                <option t-att-value="prog.name" t-esc="prog.name"/>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <div class="dj-form-group">
+                                        <label for="h_message">Anything else? (optional)</label>
+                                        <textarea class="form-control" id="h_message" name="message" rows="2" placeholder="Age, experience level, questions…"/>
+                                    </div>
+                                    <button type="submit" class="dj-btn dj-btn-primary dj-btn-block">
+                                        Request My Free Trial <i class="fa fa-arrow-right"/>
+                                    </button>
+                                    <p class="dj-form-note"><i class="fa fa-lock"/> We'll email you a link to pick your class time. No commitment.</p>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div><!-- /wrap -->
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════
+         PROGRAMS PAGE
+    ═══════════════════════════════════════════ -->
+    <template id="programs" name="Dojo Programs">
+        <t t-call="website.layout">
+            <div id="wrap" class="dojo-page">
+                <div class="dj-page-hero">
+                    <div class="dj-container">
+                        <p class="dj-eyebrow" style="color:#F39C12">What We Offer</p>
+                        <h1>Our Programs</h1>
+                        <p>Every class is designed with age-appropriate curriculum by certified instructors who genuinely care.</p>
+                    </div>
+                </div>
+
+                <!-- Preschool -->
+                <section class="dj-section dj-prog-section" id="preschool">
+                    <div class="dj-container">
+                        <div class="dj-prog-inner">
+                            <div class="dj-prog-img" style="background-image:url('https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=700&amp;q=80')"/>
+                            <div class="dj-prog-text">
+                                <p class="dj-eyebrow">Ages 3–5</p>
+                                <h2>Preschool <span>Martial Arts</span></h2>
+                                <p>Our youngest students discover the joy of movement while building foundational skills they'll use for life. Using games, music, and structured play, we make Taekwondo fun and age-appropriate.</p>
+                                <div class="dj-prog-details">
+                                    <div class="dj-prog-detail"><i class="fa fa-clock"/> 30-minute classes</div>
+                                    <div class="dj-prog-detail"><i class="fa fa-users"/> Small class sizes</div>
+                                    <div class="dj-prog-detail"><i class="fa fa-child"/> Ages 3 to 5</div>
+                                    <div class="dj-prog-detail"><i class="fa fa-star"/> Beginner friendly</div>
+                                </div>
+                                <a href="/contact" class="dj-btn dj-btn-primary">Schedule a Free Trial</a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Kids -->
+                <section class="dj-section dj-prog-section dj-prog-alt" id="kids">
+                    <div class="dj-container">
+                        <div class="dj-prog-inner dj-prog-reverse">
+                            <div class="dj-prog-img" style="background-image:url('https://images.unsplash.com/photo-1555597673-b21d5c935865?w=700&amp;q=80')"/>
+                            <div class="dj-prog-text">
+                                <p class="dj-eyebrow">Ages 6–12</p>
+                                <h2>Kids <span>Taekwondo</span></h2>
+                                <p>Our most popular program transforms kids into confident, disciplined, and respectful young people. Self-defense skills are taught alongside the life skills that truly make a difference — in school, at home, and beyond.</p>
+                                <div class="dj-prog-details">
+                                    <div class="dj-prog-detail"><i class="fa fa-clock"/> 45–60 minute classes</div>
+                                    <div class="dj-prog-detail"><i class="fa fa-users"/> Grouped by skill level</div>
+                                    <div class="dj-prog-detail"><i class="fa fa-child"/> Ages 6 to 12</div>
+                                    <div class="dj-prog-detail"><i class="fa fa-trophy"/> Belt progression</div>
+                                </div>
+                                <a href="/contact" class="dj-btn dj-btn-primary">Schedule a Free Trial</a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Teen &amp; Adult -->
+                <section class="dj-section dj-prog-section" id="adults">
+                    <div class="dj-container">
+                        <div class="dj-prog-inner">
+                            <div class="dj-prog-img" style="background-image:url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=700&amp;q=80')"/>
+                            <div class="dj-prog-text">
+                                <p class="dj-eyebrow">Ages 13 &amp; Up</p>
+                                <h2>Teen &amp; Adult <span>Taekwondo</span></h2>
+                                <p>It's never too late to start. From beginners to returning martial artists, our teen and adult program meets you where you are and pushes you forward at a pace that works for you.</p>
+                                <div class="dj-prog-details">
+                                    <div class="dj-prog-detail"><i class="fa fa-clock"/> 60-minute classes</div>
+                                    <div class="dj-prog-detail"><i class="fa fa-dumbbell"/> All fitness levels</div>
+                                    <div class="dj-prog-detail"><i class="fa fa-user"/> Ages 13+</div>
+                                    <div class="dj-prog-detail"><i class="fa fa-fire"/> High energy</div>
+                                </div>
+                                <a href="/contact" class="dj-btn dj-btn-primary">Schedule a Free Trial</a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════
+         ABOUT PAGE
+    ═══════════════════════════════════════════ -->
+    <template id="about" name="Dojo About Us">
+        <t t-call="website.layout">
+            <div id="wrap" class="dojo-page">
+                <div class="dj-page-hero">
+                    <div class="dj-container">
+                        <p class="dj-eyebrow" style="color:#F39C12">Our Story</p>
+                        <h1>About Us</h1>
+                        <p>Dedicated instructors, a proven program, and a community that feels like family.</p>
+                    </div>
+                </div>
+                <section class="dj-section">
+                    <div class="dj-container">
+                        <div class="dj-prog-inner">
+                            <div class="dj-prog-img" style="background-image:url('https://images.unsplash.com/photo-1594381898411-846e7d193883?w=700&amp;q=80')"/>
+                            <div class="dj-prog-text">
+                                <p class="dj-eyebrow">Who We Are</p>
+                                <h2>Experienced Instructors, <span>Proven Progress</span></h2>
+                                <p>With over 20 years of experience, our school has helped hundreds of students — from toddlers to adults — discover the life-changing power of Taekwondo.</p>
+                                <p style="margin-top:1rem">We believe that martial arts is more than just fighting techniques. It's a complete system for developing the mind, body, and spirit. Every student who walks through our doors becomes part of our extended dojang family.</p>
+                                <div class="dj-prog-details" style="margin-top:1.5rem">
+                                    <div class="dj-prog-detail"><i class="fa fa-award"/> 20+ Years Teaching</div>
+                                    <div class="dj-prog-detail"><i class="fa fa-users"/> 200+ Active Students</div>
+                                    <div class="dj-prog-detail"><i class="fa fa-star"/> 100+ 5-Star Reviews</div>
+                                    <div class="dj-prog-detail"><i class="fa fa-heart"/> Family-Centered</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section class="dj-section" style="background:#f8f9fa">
+                    <div class="dj-container">
+                        <div class="dj-section-header">
+                            <p class="dj-eyebrow">Our Team</p>
+                            <h2>Guiding Students Toward Skill <span>and Character</span></h2>
+                        </div>
+                        <div class="dj-instructors-grid">
+                            <div class="dj-instructor-card">
+                                <div class="dj-instructor-img" style="background-image:url('https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=400&amp;q=80')"/>
+                                <div class="dj-instructor-body">
+                                    <h3>Grand Master Kim</h3>
+                                    <p class="dj-instructor-title">8th Dan Black Belt — Head Instructor</p>
+                                    <p>With over 25 years of teaching Taekwondo, Grand Master Kim brings wisdom, patience, and an unwavering dedication to excellence.</p>
+                                </div>
+                            </div>
+                            <div class="dj-instructor-card">
+                                <div class="dj-instructor-img" style="background-image:url('https://images.unsplash.com/photo-1566753323558-f4e0952af115?w=400&amp;q=80')"/>
+                                <div class="dj-instructor-body">
+                                    <h3>Master Park</h3>
+                                    <p class="dj-instructor-title">5th Dan Black Belt — Instructor</p>
+                                    <p>Master Park specializes in youth development, bringing energy and encouragement to every class she teaches.</p>
+                                </div>
+                            </div>
+                            <div class="dj-instructor-card">
+                                <div class="dj-instructor-img" style="background-image:url('https://images.unsplash.com/photo-1552058544-f2b08422138a?w=400&amp;q=80')"/>
+                                <div class="dj-instructor-body">
+                                    <h3>Instructor Daniel</h3>
+                                    <p class="dj-instructor-title">3rd Dan Black Belt — Junior Instructor</p>
+                                    <p>Daniel's good-natured approach and technical precision make him a favorite among students and parents alike.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════
+         CONTACT PAGE
+    ═══════════════════════════════════════════ -->
+    <template id="contact" name="Dojo Contact">
+        <t t-call="website.layout">
+            <div id="wrap" class="dojo-page">
+                <div class="dj-page-hero">
+                    <div class="dj-container">
+                        <p class="dj-eyebrow" style="color:#F39C12">We'd Love to Hear From You</p>
+                        <h1>Contact Us</h1>
+                        <p>Have a question or want to schedule a free trial? Reach out — we're happy to help!</p>
+                    </div>
+                </div>
+                <section class="dj-section">
+                    <div class="dj-container">
+                        <div class="dj-contact-grid">
+                            <div class="dj-contact-info">
+                                <h2>Get in <span>Touch</span></h2>
+                                <p>Whether you're ready to enroll or have questions — we're here for you. Reach us by phone, email, or stop by the dojang!</p>
+                                <div class="dj-info-cards">
+                                    <div class="dj-info-card">
+                                        <div class="dj-info-icon"><i class="fa fa-map-marker-alt"/></div>
+                                        <div><h4>Our Location</h4><p>123 Main Street, Suite 100<br/>Your City, State 00000</p></div>
+                                    </div>
+                                    <div class="dj-info-card">
+                                        <div class="dj-info-icon"><i class="fa fa-phone"/></div>
+                                        <div><h4>Call Us</h4><a href="tel:+15550000000">(555) 000-0000</a></div>
+                                    </div>
+                                    <div class="dj-info-card">
+                                        <div class="dj-info-icon"><i class="fa fa-envelope"/></div>
+                                        <div><h4>Email Us</h4><a href="mailto:info@dragonpeaktkd.com">info@dragonpeaktkd.com</a></div>
+                                    </div>
+                                </div>
+                                <div class="dj-hours-card">
+                                    <h4>School Hours</h4>
+                                    <div class="dj-hours-row"><span>Monday – Friday</span><span>1:00 PM – 8:00 PM</span></div>
+                                    <div class="dj-hours-row"><span>Saturday</span><span>10:30 AM – 1:30 PM</span></div>
+                                    <div class="dj-hours-row dj-closed"><span>Sunday</span><span>Closed</span></div>
+                                </div>
+                            </div>
+                            <div class="dj-form-wrap">
+                                <form class="dj-trial-form"
+                                      action="/trial/submit"
+                                      method="post">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="success_url" value="/thank-you"/>
+                                    <input type="hidden" name="error_url" value="/contact"/>
+                                    <h3>Book Your Free Trial</h3>
+                                    <div class="dj-form-group">
+                                        <label for="c_name">Full Name *</label>
+                                        <input class="form-control" type="text" id="c_name" name="name" placeholder="Jane Smith" required="required" autocomplete="name"/>
+                                    </div>
+                                    <div class="dj-form-row">
+                                        <div class="dj-form-group">
+                                            <label for="c_email">Email *</label>
+                                            <input class="form-control" type="email" id="c_email" name="email" placeholder="jane@example.com" required="required" autocomplete="email"/>
+                                        </div>
+                                        <div class="dj-form-group">
+                                            <label for="c_phone">Phone *</label>
+                                            <input class="form-control" type="tel" id="c_phone" name="phone" placeholder="(555) 123-4567" required="required" autocomplete="tel"/>
+                                        </div>
+                                    </div>
+                                    <div class="dj-form-group">
+                                        <label for="c_discipline">Program Interest</label>
+                                        <t t-set="programs" t-value="request.env['dojo.program'].sudo().search([('active','=',True),('is_trial','=',False)])"/>
+                                        <select class="form-select" id="c_discipline" name="discipline">
+                                            <option value="">&#x2014; Select a program &#x2014;</option>
+                                            <t t-foreach="programs" t-as="prog">
+                                                <option t-att-value="prog.name" t-esc="prog.name"/>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <div class="dj-form-group">
+                                        <label for="c_message">Anything else? (optional)</label>
+                                        <textarea class="form-control" id="c_message" name="message" rows="2" placeholder="Age, experience level, questions…"/>
+                                    </div>
+                                    <button type="submit" class="dj-btn dj-btn-primary dj-btn-block">
+                                        Request My Free Trial <i class="fa fa-arrow-right"/>
+                                    </button>
+                                    <p class="dj-form-note"><i class="fa fa-lock"/> We'll email you a link to pick your class time. No commitment.</p>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════
+         THANK YOU PAGE (after form submission)
+    ═══════════════════════════════════════════ -->
+    <template id="thank_you" name="Dojo Thank You">
+        <t t-call="website.layout">
+            <div id="wrap" class="dojo-page">
+                <div class="dj-thankyou-section">
+                    <div class="dj-container" style="text-align:center">
+                        <div class="dj-success-icon"><i class="fa fa-check-circle"/></div>
+                        <h1>You're All Set!</h1>
+                        <p>Thanks for reaching out! We'll contact you within 24 hours to confirm your free trial class. We can't wait to meet you and your family!</p>
+                        <a href="/" class="dj-btn dj-btn-primary" style="margin-top:2rem">Back to Home</a>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>
