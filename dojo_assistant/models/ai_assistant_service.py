@@ -645,7 +645,6 @@ class AiAssistantService(models.AbstractModel):
                     "summary": self._format_exec_result_as_response(intent_type, result) or result.get("message") or f"{intent_type} completed",
                 })
             else:
-                # Append failed step entry in order (before skipped entries)
                 steps_output.append({
                     "step": n,
                     "intent_type": intent_type,
@@ -653,43 +652,27 @@ class AiAssistantService(models.AbstractModel):
                     "error": result.get("error") or result.get("message") or "Step failed",
                 })
 
-                # Best-effort rollback of completed steps
-                rollback_failures = []
-                snapshots = self.env["dojo.ai.undo.snapshot"].search(
-                    [("action_log_id", "in", completed_step_log_ids)]
-                )
-                for snap in snapshots:
-                    undo_result = snap.execute_undo()
-                    if not undo_result.get("success"):
-                        rollback_failures.append({
-                            "step_log_id": snap.action_log_id.id,
-                            "error": undo_result.get("error", "unknown rollback error"),
-                        })
+        # Check for any failures after running all steps
+        failed_steps = [s for s in steps_output if not s.get("success")]
 
-                # Mark remaining steps as skipped — no log records created for skipped steps
-                for m in range(n + 1, len(intents) + 1):
-                    steps_output.append({
-                        "step": m,
-                        "intent_type": intents[m - 1].get("intent_type"),
-                        "skipped": True,
-                    })
-
-                # Update header record
-                header_log.write({
-                    "execution_status": "error",
-                    "error_message": f"Step {n} ({intent_type}) failed: {result.get('error', '')}",
-                    "undone": not bool(rollback_failures),
-                    "undone_at": fields.Datetime.now() if not rollback_failures else False,
-                })
-
-                return {
-                    "success": False,
-                    "state": "executed",
-                    "compound": True,
-                    "steps": steps_output,
-                    "rollback_failures": rollback_failures,
-                    "error": f"Step {n} failed. {len(completed_step_log_ids)} completed step(s) rolled back.",
-                }
+        if failed_steps:
+            header_log.write({
+                "execution_status": "error",
+                "error_message": "; ".join(
+                    f"Step {s['step']} ({s['intent_type']}) failed: {s.get('error', '')}"
+                    for s in failed_steps
+                ),
+                "undone": False,
+            })
+            failed_nums = [str(s["step"]) for s in failed_steps]
+            return {
+                "success": False,
+                "state": "executed",
+                "compound": True,
+                "steps": steps_output,
+                "rollback_failures": [],
+                "error": f"Step(s) {', '.join(failed_nums)} failed.",
+            }
 
         # All steps succeeded — update header
         header_log.write({"execution_status": "success"})
