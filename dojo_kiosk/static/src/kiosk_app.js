@@ -2210,7 +2210,7 @@ class KioskVoiceAssistant extends Component {
 
             this._recognition.onresult = (event) => {
                 let full = "";
-                for (let i = event.resultIndex; i < event.results.length; i++) {
+                for (let i = 0; i < event.results.length; i++) {
                     full += event.results[i][0].transcript;
                 }
                 this._pendingTranscript  = full;
@@ -2232,6 +2232,7 @@ class KioskVoiceAssistant extends Component {
                 this.state.liveTranscript = "";
                 const text = this._pendingTranscript.trim();
                 this._pendingTranscript   = "";
+                this._recognition         = null;
                 if (text) {
                     this._submitVoiceTranscript(text);
                 }
