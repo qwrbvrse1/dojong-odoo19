@@ -38,7 +38,10 @@ _MIN_CONFIDENCE = 0.7
 _MAX_COMPOUND_CHAIN = 5
 
 _COMPOUND_SIGNALS = re.compile(
-    r'\b(and\s+(then\s+)?|then\s+)(enroll|create|cancel|text|send|add|remove|promote|check\s+in|schedule)',
+    r'\band\s+then\b'
+    r'|\b(?:and|then)\s+(?:also\s+)?'
+    r'(?:enroll|create|cancel|text|send|add|remove|promote|check|schedule'
+    r'|look|show|find|book|register|get|update|message|list|display)',
     re.IGNORECASE
 )
 
