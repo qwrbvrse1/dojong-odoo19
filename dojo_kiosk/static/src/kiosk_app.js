@@ -2117,6 +2117,7 @@ class KioskVoiceAssistant extends Component {
         this._speechSupported   = ('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window);
         this._recognition       = null;
         this._pendingTranscript = "";
+        this._silenceTimer      = null;
         this._lastRole = null;
         onWillUnmount(() => {
             if (this._recognition) {
@@ -2133,6 +2134,10 @@ class KioskVoiceAssistant extends Component {
             if (this._recordTimeout) {
                 clearTimeout(this._recordTimeout);
                 this._recordTimeout = null;
+            }
+            if (this._silenceTimer) {
+                clearTimeout(this._silenceTimer);
+                this._silenceTimer = null;
             }
         });
     }
@@ -2201,12 +2206,20 @@ class KioskVoiceAssistant extends Component {
         if (this._speechSupported) {
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
             this._recognition           = new SR();
-            this._recognition.continuous     = false;
+            this._recognition.continuous     = true;
             this._recognition.interimResults = true;
             this._recognition.lang           = "en-US";
             this._pendingTranscript          = "";
             this.state.liveTranscript        = "";
             this.state.recording             = true;
+
+            const resetSilenceTimer = () => {
+                if (this._silenceTimer) clearTimeout(this._silenceTimer);
+                this._silenceTimer = setTimeout(() => {
+                    this._silenceTimer = null;
+                    if (this._recognition) this._recognition.stop();
+                }, 2500);
+            };
 
             this._recognition.onresult = (event) => {
                 let full = "";
@@ -2215,9 +2228,11 @@ class KioskVoiceAssistant extends Component {
                 }
                 this._pendingTranscript  = full;
                 this.state.liveTranscript = full;
+                resetSilenceTimer();
             };
 
             this._recognition.onerror = (event) => {
+                if (this._silenceTimer) { clearTimeout(this._silenceTimer); this._silenceTimer = null; }
                 this._pendingTranscript   = "";
                 this.state.liveTranscript = "";
                 this.state.recording      = false;
@@ -2228,6 +2243,7 @@ class KioskVoiceAssistant extends Component {
             };
 
             this._recognition.onend = () => {
+                if (this._silenceTimer) { clearTimeout(this._silenceTimer); this._silenceTimer = null; }
                 this.state.recording      = false;
                 this.state.liveTranscript = "";
                 const text = this._pendingTranscript.trim();
