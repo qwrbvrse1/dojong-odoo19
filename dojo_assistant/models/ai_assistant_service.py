@@ -642,7 +642,7 @@ class AiAssistantService(models.AbstractModel):
                     "step": n,
                     "intent_type": intent_type,
                     "success": True,
-                    "summary": result.get("message") or result.get("response") or f"{intent_type} completed",
+                    "summary": self._format_exec_result_as_response(intent_type, result) or result.get("message") or f"{intent_type} completed",
                 })
             else:
                 # Append failed step entry in order (before skipped entries)

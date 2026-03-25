@@ -287,11 +287,11 @@ export class DojoVoiceAssistant extends Component {
             if (result.success) {
                 if (result.compound && result.steps && result.steps.length) {
                     const lines = result.steps.map(s => {
-                        if (s.skipped) return `⏭ Step ${s.step}: skipped`;
-                        if (s.success) return `✅ Step ${s.step}: ${s.summary || s.intent_type}`;
-                        return `❌ Step ${s.step}: ${s.error || "failed"}`;
-                    });
-                    this._pushMsg("assistant", lines.join("\n"));
+                        if (s.skipped) return null;
+                        if (s.success) return s.summary || null;
+                        return `⚠️ ${s.error || "Step failed"}`;
+                    }).filter(Boolean);
+                    this._pushMsg("assistant", lines.join("\n\n"));
                 } else {
                     const msg = result.result && result.result.message
                         ? "✅ " + result.result.message
