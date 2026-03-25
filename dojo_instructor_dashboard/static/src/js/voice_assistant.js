@@ -285,10 +285,19 @@ export class DojoVoiceAssistant extends Component {
                 confirmed: true,
             });
             if (result.success) {
-                const msg = result.result && result.result.message
-                    ? "✅ " + result.result.message
-                    : "✅ Done!";
-                this._pushMsg("assistant", msg);
+                if (result.compound && result.steps && result.steps.length) {
+                    const lines = result.steps.map(s => {
+                        if (s.skipped) return `⏭ Step ${s.step}: skipped`;
+                        if (s.success) return `✅ Step ${s.step}: ${s.summary || s.intent_type}`;
+                        return `❌ Step ${s.step}: ${s.error || "failed"}`;
+                    });
+                    this._pushMsg("assistant", lines.join("\n"));
+                } else {
+                    const msg = result.result && result.result.message
+                        ? "✅ " + result.result.message
+                        : "✅ Done!";
+                    this._pushMsg("assistant", msg);
+                }
                 if (result.undo_available) {
                     this._pushMsg("assistant", "You can say \"undo\" to reverse this action.");
                 }
