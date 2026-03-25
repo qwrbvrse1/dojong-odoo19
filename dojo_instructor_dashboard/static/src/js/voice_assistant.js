@@ -171,7 +171,7 @@ export class DojoVoiceAssistant extends Component {
 
             this._recognition.onresult = (event) => {
                 let full = "";
-                for (let i = 0; i < event.results.length; i++) {
+                for (let i = event.resultIndex; i < event.results.length; i++) {
                     full += event.results[i][0].transcript;
                 }
                 this._pendingTranscript   = full;
@@ -219,7 +219,12 @@ export class DojoVoiceAssistant extends Component {
     }
 
     _submitVoiceTranscript(text) {
-        if (this.state.processing) return;
+        if (this.state.processing) {
+            // AI is still responding — put transcript in input so user can submit manually
+            this.state.input = text;
+            this.state.liveTranscript = "";
+            return;
+        }
         this.state.liveTranscript = "";
         this._submitText(text);
     }
