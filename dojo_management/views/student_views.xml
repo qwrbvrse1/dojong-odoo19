@@ -1,0 +1,168 @@
+<odoo>
+    <record id="view_dojo_student_tree" model="ir.ui.view">
+        <field name="name">dojo.student.tree</field>
+        <field name="model">dojo.student</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="belt_level_id" widget="badge"/>
+                <field name="martial_arts_style_id"/>
+                <field name="attendance_rate" widget="progressbar"/>
+                <field name="payment_status" widget="badge" decoration-success="payment_status == 'current'" decoration-warning="payment_status == 'late'" decoration-danger="payment_status == 'overdue'"/>
+                <field name="email"/>
+                <field name="phone"/>
+                <field name="enrollment_date"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dojo_student_form" model="ir.ui.view">
+        <field name="name">dojo.student.form</field>
+        <field name="model">dojo.student</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_promote_belt" string="Promote Belt" type="object" class="btn-success" icon="fa-trophy"/>
+                    <button name="action_view_attendance" string="View Attendance" type="object" class="btn-primary" icon="fa-calendar-check"/>
+                    <button name="action_view_payments" string="View Payments" type="object" class="btn-info" icon="fa-money-bill"/>
+                </header>
+                <sheet>
+                    <field name="photo" widget="image" class="oe_avatar"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Student Name"/>
+                        </h1>
+                        <h3>
+                            <field name="belt_level_id" widget="badge"/>
+                            <field name="martial_arts_style_id" widget="badge"/>
+                        </h3>
+                    </div>
+                    <group>
+                        <group string="Personal Information">
+                            <field name="dob"/>
+                            <field name="gender"/>
+                            <field name="email" widget="email"/>
+                            <field name="phone" widget="phone"/>
+                            <field name="enrollment_date"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Belt Information">
+                            <field name="martial_arts_style_id"/>
+                            <field name="belt_level_id" domain="[('style_id', '=', martial_arts_style_id)]" options="{'no_create': True}"/>
+                            <field name="belt_rank" invisible="belt_rank == '0'"/>
+                            <field name="promotion_date"/>
+                            <field name="next_promotion_date"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Emergency Contact">
+                            <field name="emergency_contact"/>
+                            <field name="emergency_phone"/>
+                        </group>
+                        <group string="Address">
+                            <field name="address" placeholder="Full address..."/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Medical Info" name="medical">
+                            <group>
+                                <field name="medical_conditions" placeholder="Any medical conditions or allergies..."/>
+                            </group>
+                        </page>
+                        <page string="Performance Stats" name="performance">
+                            <group>
+                                <group>
+                                    <field name="total_sessions"/>
+                                    <field name="attendance_rate"/>
+                                    <field name="average_performance"/>
+                                </group>
+                                <group>
+                                    <field name="current_streak"/>
+                                    <field name="longest_streak"/>
+                                    <field name="payment_status"/>
+                                    <field name="outstanding_balance" widget="monetary"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Student Kanban View -->
+    <record id="view_dojo_student_kanban" model="ir.ui.view">
+        <field name="name">dojo.student.kanban</field>
+        <field name="model">dojo.student</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="belt_level_id" quick_create="false">
+                <field name="id"/>
+                <field name="name"/>
+                <field name="photo"/>
+                <field name="belt_level_id"/>
+                <field name="martial_arts_style_id"/>
+                <field name="attendance_rate"/>
+                <field name="total_sessions"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click" style="padding: 10px;">
+                            <div class="row">
+                                <div class="col-3">
+                                    <field name="photo" widget="image" class="o_image_64_cover" style="border-radius: 50%;"/>
+                                </div>
+                                <div class="col-9">
+                                    <div>
+                                        <strong style="font-size: 16px;"><field name="name"/></strong>
+                                    </div>
+                                    <div style="margin-top: 5px;">
+                                        <field name="belt_level_id" widget="badge"/>
+                                    </div>
+                                    <div style="margin-top: 5px; font-size: 13px; color: #6b7280;">
+                                        <field name="martial_arts_style_id"/>
+                                    </div>
+                                    <div style="margin-top: 8px; font-size: 12px;">
+                                        <span>📚 <field name="total_sessions"/> sessions</span> | 
+                                        <span>📊 <field name="attendance_rate"/>%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Student Search View -->
+    <record id="view_dojo_student_search" model="ir.ui.view">
+        <field name="name">dojo.student.search</field>
+        <field name="model">dojo.student</field>
+        <field name="arch" type="xml">
+            <search string="Search Students">
+                <field name="name" string="Name"/>
+                <field name="email" string="Email"/>
+                <field name="phone" string="Phone"/>
+                <field name="belt_level_id" string="Belt Level"/>
+                <field name="martial_arts_style_id" string="Martial Arts Style"/>
+                <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Inactive" name="inactive" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_dojo_student" model="ir.actions.act_window">
+        <field name="name">Students</field>
+        <field name="res_model">dojo.student</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first student!
+            </p>
+            <p>
+                Track students with belt ranks, martial arts styles, attendance, and payments.
+            </p>
+        </field>
+    </record>
+</odoo>

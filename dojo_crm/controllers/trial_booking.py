@@ -443,23 +443,6 @@ class DojoTrialBooking(http.Controller):
             f"/trial/manage/{token}?success=Your+trial+has+been+rescheduled"
         )
 
-    # ── Public Trial Sign-Up Form ─────────────────────────────────────────
-
-    @http.route(
-        "/trial",
-        type="http",
-        auth="public",
-        website=True,
-        sitemap=True,
-        methods=["GET"],
-    )
-    def trial_signup_page(self, **kw):
-        """Public website form — capture interest and create a new CRM lead."""
-        return request.render(
-            "dojo_crm.trial_signup_form",
-            {"error": kw.get("error")},
-        )
-
     @http.route(
         "/trial/submit",
         type="http",
@@ -470,22 +453,37 @@ class DojoTrialBooking(http.Controller):
         csrf=True,
     )
     def trial_signup_submit(self, **kw):
-        """Handle trial sign-up form submission — creates a New Lead in CRM."""
+        """Handle trial sign-up form submission — creates a New Lead in CRM.
+
+        Accepts an optional ``success_url`` POST field so embedded forms on
+        other pages can redirect to their own thank-you page instead of the
+        default dojo_crm success template.
+        """
         name = (kw.get("name") or "").strip()
         email = (kw.get("email") or "").strip()
         phone = (kw.get("phone") or "").strip()
         discipline = (kw.get("discipline") or "").strip()
         message = (kw.get("message") or "").strip()
+        # Where to send the visitor after a successful submission.
+        # Embedded forms pass their own thank-you URL; standalone /trial page uses None.
+        success_url = (kw.get("success_url") or "").strip() or None
+        # Where to redirect on validation error (default: the standalone /trial page).
+        error_url = (kw.get("error_url") or "/trial").strip()
 
         # Basic validation
         if not name or not email:
-            return request.redirect("/trial?error=Please+provide+your+name+and+email+address")
+            return request.redirect(f"{error_url}?error=Please+provide+your+name+and+email+address")
 
         if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-            return request.redirect("/trial?error=Please+provide+a+valid+email+address")
+            return request.redirect(f"{error_url}?error=Please+provide+a+valid+email+address")
 
         # Resolve tags
         discipline_tag_map = {
+            # Taekwondo programs (United Family Taekwondo)
+            "preschool_tkd": "Preschool Taekwondo",
+            "kids_tkd": "Kids Taekwondo",
+            "teen_adult_tkd": "Teen & Adult Taekwondo",
+            # Legacy / multi-discipline values kept for backwards compatibility
             "adult_bjj": "Adult BJJ",
             "kids_bjj": "Kids BJJ",
             "muay_thai": "Muay Thai",
@@ -498,11 +496,13 @@ class DojoTrialBooking(http.Controller):
         if online_tag:
             tag_ids.append((4, online_tag.id))
 
-        if discipline in discipline_tag_map:
+        # Resolve discipline tag: slug key → mapped name, or use value directly as tag name
+        disc_tag_name = discipline_tag_map.get(discipline, discipline)
+        if disc_tag_name:
             disc_tag = (
                 request.env["crm.tag"]
                 .sudo()
-                .search([("name", "=", discipline_tag_map[discipline])], limit=1)
+                .search([("name", "=", disc_tag_name)], limit=1)
             )
             if disc_tag:
                 tag_ids.append((4, disc_tag.id))
@@ -518,7 +518,7 @@ class DojoTrialBooking(http.Controller):
         # We look for a trial program whose name also matches the chosen discipline
         # (e.g. "Free Trial – Adult BJJ") and fall back to any trial program.
         salesperson_id = False
-        disc_name = discipline_tag_map.get(discipline, "")
+        disc_name = discipline_tag_map.get(discipline, discipline)
         trial_program = (
             request.env["dojo.program"]
             .sudo()
@@ -600,7 +600,4 @@ class DojoTrialBooking(http.Controller):
             subtype_xmlid="mail.mt_note",
         )
 
-        return request.render(
-            "dojo_crm.trial_signup_success",
-            {"contact_name": name},
-        )
+        return request.redirect(success_url or "/")

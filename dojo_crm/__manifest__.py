@@ -20,12 +20,12 @@
     "data": [
         "security/ir.model.access.csv",
         "data/crm_tag.xml",
-        "data/website_menu.xml",
         "data/crm_stage.xml",
         "data/mail_template_crm.xml",
         "data/base_automation.xml",
         "data/ir_cron.xml",
         "data/ai_intent_schema_crm.xml",
+        "views/crm_menu_inherit.xml",
         "views/trial_booking_templates.xml",
         "views/dojo_book_trial_wizard_view.xml",
         "views/dojo_convert_lead_wizard_view.xml",

@@ -1,0 +1,141 @@
+<odoo>
+    <!-- Dashboard Form View -->
+    <record id="view_dojo_dashboard" model="ir.ui.view">
+        <field name="name">dojo.dashboard</field>
+        <field name="model">dojo.dashboard</field>
+        <field name="arch" type="xml">
+            <form string="Dojo Dashboard" create="false" edit="false">
+                <sheet>
+                    <div class="o_dashboard">
+                        <!-- Main Statistics -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; display: flex; align-items: center;">
+                                    <div style="background-color: #dbeafe; padding: 12px; border-radius: 50%; margin-right: 15px;">
+                                        <i class="fa fa-users fa-2x" style="color: #2563eb;"></i>
+                                    </div>
+                                    <div>
+                                        <h2 style="margin: 0; font-weight: bold; color: #111827;"><field name="student_count"/></h2>
+                                        <div style="color: #6b7280; font-size: 0.9em;">Total Students</div>
+                                        <div style="color: #059669; font-size: 0.8em; margin-top: 4px;">
+                                            <i class="fa fa-arrow-up"></i> <field name="students_this_month"/> this month
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; display: flex; align-items: center;">
+                                    <div style="background-color: #dcfce7; padding: 12px; border-radius: 50%; margin-right: 15px;">
+                                        <i class="fa fa-money fa-2x" style="color: #059669;"></i>
+                                    </div>
+                                    <div>
+                                        <h2 style="margin: 0; font-weight: bold; color: #111827;"><field name="payment_count"/></h2>
+                                        <div style="color: #6b7280; font-size: 0.9em;">Total Payments</div>
+                                        <div style="color: #059669; font-size: 0.8em; margin-top: 4px;">
+                                            <i class="fa fa-arrow-up"></i> <field name="payments_this_month" widget="monetary"/> this month
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; display: flex; align-items: center;">
+                                    <div style="background-color: #f3e8ff; padding: 12px; border-radius: 50%; margin-right: 15px;">
+                                        <i class="fa fa-calendar fa-2x" style="color: #7c3aed;"></i>
+                                    </div>
+                                    <div>
+                                        <h2 style="margin: 0; font-weight: bold; color: #111827;"><field name="attendance_count"/></h2>
+                                        <div style="color: #6b7280; font-size: 0.9em;">Total Attendances</div>
+                                        <div style="color: #4b5563; font-size: 0.8em; margin-top: 4px;">
+                                            <i class="fa fa-check-circle"></i> <field name="attendance_rate" widget="float" digits="[0,1]"/>% Attendance Rate
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Belt Distribution Title -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h3 style="color: #374151; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
+                                    🥋 Belt Rank Distribution
+                                </h3>
+                            </div>
+                        </div>
+                        
+                        <!-- Dynamic Belt Stats -->
+                        <field name="belt_stat_ids" mode="kanban">
+                            <kanban>
+                                <field name="name"/>
+                                <field name="style_name"/>
+                                <field name="count"/>
+                                <field name="color"/>
+                                <field name="text_color"/>
+                                <field name="icon"/>
+                                <templates>
+                                    <t t-name="card">
+                                        <div t-attf-style="background-color: {{record.color.raw_value}}; color: {{record.text_color.raw_value}} !important; padding: 15px; border-radius: 12px; text-align: center; margin: 5px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid rgba(0,0,0,0.1);">
+                                            <div t-attf-style="color: {{record.text_color.raw_value}} !important; font-size: 0.8em; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px;">
+                                                <t t-esc="record.style_name.value"/>
+                                            </div>
+                                            <h4 t-attf-style="color: {{record.text_color.raw_value}} !important; margin: 0; font-weight: 600;">
+                                                <t t-esc="record.icon.value"/> <t t-esc="record.name.value"/>
+                                            </h4>
+                                            <h1 t-attf-style="color: {{record.text_color.raw_value}} !important; margin: 10px 0; font-weight: 800; font-size: 2.5em;">
+                                                <field name="count"/>
+                                            </h1>
+                                        </div>
+                                    </t>
+                                </templates>
+                            </kanban>
+                        </field>
+
+                        <!-- Martial Arts Styles Title -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h3 style="color: #374151; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
+                                    🥊 Martial Arts Styles
+                                </h3>
+                            </div>
+                        </div>
+                        
+                        <!-- Dynamic Style Stats -->
+                        <field name="style_stat_ids" mode="kanban">
+                            <kanban>
+                                <field name="name"/>
+                                <field name="count"/>
+                                <field name="code"/>
+                                <templates>
+                                    <t t-name="card">
+                                        <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border-left: 4px solid #2563eb; margin: 5px;">
+                                            <h5 style="margin: 0; color: #1e40af;"><t t-esc="record.name.value"/></h5>
+                                            <h3 style="margin: 5px 0;"><field name="count"/> students</h3>
+                                        </div>
+                                    </t>
+                                </templates>
+                            </kanban>
+                        </field>
+
+                        <!-- Alerts -->
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div style="background: #fee2e2; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626; margin: 5px;">
+                                    <h5 style="margin: 0; color: #991b1b;">⚠️ Late Payments</h5>
+                                    <h3 style="margin: 5px 0; color: #7f1d1d;"><field name="late_payments"/> payments</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Dashboard Action -->
+    <record id="action_dojo_dashboard" model="ir.actions.act_window">
+        <field name="name">Dojo Dashboard</field>
+        <field name="res_model">dojo.dashboard</field>
+        <field name="view_mode">form</field>
+        <field name="target">main</field>
+    </record>
+
+</odoo>

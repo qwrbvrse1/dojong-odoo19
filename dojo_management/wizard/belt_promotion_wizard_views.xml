@@ -1,0 +1,30 @@
+<odoo>
+    <!-- Belt Promotion Wizard Form View -->
+    <record id="view_belt_promotion_wizard_form" model="ir.ui.view">
+        <field name="name">belt.promotion.wizard.form</field>
+        <field name="model">belt.promotion.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Promote Students">
+                <group>
+                    <field name="student_ids" widget="many2many_tags"/>
+                    <field name="new_belt_level" widget="radio"/>
+                    <field name="promotion_date"/>
+                    <field name="notes" placeholder="Add any notes about this promotion..."/>
+                </group>
+                <footer>
+                    <button name="action_promote" type="object" string="Promote" class="btn-primary" icon="fa-trophy"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Belt Promotion Wizard Action -->
+    <record id="action_belt_promotion_wizard" model="ir.actions.act_window">
+        <field name="name">Promote Belt Rank</field>
+        <field name="res_model">belt.promotion.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

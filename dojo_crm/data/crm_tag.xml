@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
+<odoo>
     <!-- ================================================================
          Dojo CRM Tags — segmentation (source, interest, age group)
          noupdate=1 so manual customisations are preserved on upgrades
@@ -23,18 +23,31 @@
         <field name="color">4</field>
     </record>
 
-    <!-- Interest / discipline -->
+    <!-- Interest / discipline — Taekwondo programs -->
+    <record id="crm_tag_interest_preschool_tkd" model="crm.tag">
+        <field name="name">Preschool Taekwondo</field>
+        <field name="color">5</field>
+    </record>
+    <record id="crm_tag_interest_kids_tkd" model="crm.tag">
+        <field name="name">Kids Taekwondo</field>
+        <field name="color">6</field>
+    </record>
+    <record id="crm_tag_interest_teen_adult_tkd" model="crm.tag">
+        <field name="name">Teen &amp; Adult Taekwondo</field>
+        <field name="color">7</field>
+    </record>
+    <!-- Legacy multi-discipline tags (kept for backwards compatibility) -->
     <record id="crm_tag_interest_adult_bjj" model="crm.tag">
         <field name="name">Adult BJJ</field>
-        <field name="color">5</field>
+        <field name="color">8</field>
     </record>
     <record id="crm_tag_interest_kids_bjj" model="crm.tag">
         <field name="name">Kids BJJ</field>
-        <field name="color">6</field>
+        <field name="color">9</field>
     </record>
     <record id="crm_tag_interest_muay_thai" model="crm.tag">
         <field name="name">Muay Thai</field>
-        <field name="color">7</field>
+        <field name="color">10</field>
     </record>
 
     <!-- Age group -->

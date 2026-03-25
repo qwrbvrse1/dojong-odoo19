@@ -1,0 +1,59 @@
+<odoo>
+    <record id="view_dojo_session_tree" model="ir.ui.view">
+        <field name="name">dojo.session.tree</field>
+        <field name="model">dojo.session</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'completed'" decoration-warning="state == 'in_progress'" decoration-danger="state == 'cancelled'" decoration-info="state == 'draft'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="session_type"/>
+                <field name="instructor_id"/>
+                <field name="max_students"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'completed'" decoration-warning="state == 'in_progress'" decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dojo_session_form" model="ir.ui.view">
+        <field name="name">dojo.session.form</field>
+        <field name="model">dojo.session</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm_session" string="Confirm" type="object" class="btn-primary"/>
+                    <button name="action_start_session" string="Start Session" type="object" class="btn-warning"/>
+                    <button name="action_complete_session" string="Complete" type="object" class="btn-success"/>
+                    <button name="action_cancel_session" string="Cancel" type="object" class="btn-danger"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="date"/>
+                            <field name="session_type"/>
+                            <field name="instructor_id"/>
+                        </group>
+                        <group>
+                            <field name="start_time" widget="float_time"/>
+                            <field name="end_time" widget="float_time"/>
+                            <field name="max_students"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="student_ids" widget="many2many_tags"/>
+                    </group>
+                    <group>
+                        <field name="notes"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dojo_session" model="ir.actions.act_window">
+        <field name="name">Sessions</field>
+        <field name="res_model">dojo.session</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

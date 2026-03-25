@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="menu_dojo_home" model="website.menu">
+            <field name="name">Home</field>
+            <field name="url">/home</field>
+            <field name="sequence">5</field>
+        </record>
+
+        <record id="menu_dojo_programs" model="website.menu">
+            <field name="name">Programs</field>
+            <field name="url">/programs</field>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="menu_dojo_about" model="website.menu">
+            <field name="name">About Us</field>
+            <field name="url">/about</field>
+            <field name="sequence">15</field>
+        </record>
+
+        <record id="menu_dojo_contact" model="website.menu">
+            <field name="name">Contact</field>
+            <field name="url">/contact</field>
+            <field name="sequence">20</field>
+        </record>
+
+    </data>
+</odoo>
