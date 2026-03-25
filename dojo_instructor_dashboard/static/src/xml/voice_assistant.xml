@@ -59,6 +59,23 @@
                 </div>
             </t>
 
+            <!-- Live transcript bubble (shown while recording) -->
+            <t t-if="state.recording">
+                <div class="dojo-va-msg dojo-va-msg--user dojo-va-msg--live">
+                    <div class="dojo-va-msg-bubble">
+                        <div class="dojo-va-msg-text">
+                            <i class="fa fa-microphone dojo-va-live-mic"/>
+                            <t t-if="state.liveTranscript">
+                                <t t-esc="state.liveTranscript"/>
+                            </t>
+                            <t t-else="">
+                                <em>Listening…</em>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+            </t>
+
             <!-- Typing indicator -->
             <t t-if="state.processing">
                 <div class="dojo-va-msg dojo-va-msg--assistant">
@@ -189,7 +206,12 @@
         <t t-if="state.recording">
             <div class="dojo-va-recording-strip">
                 <span class="dojo-va-rec-dot"/>
-                Recording… click the stop button when done
+                <t t-if="state.liveTranscript">
+                    Speaking… <t t-esc="state.liveTranscript.slice(0, 40)"/><t t-if="state.liveTranscript.length > 40">…</t>
+                </t>
+                <t t-else="">
+                    Listening… click stop when done
+                </t>
             </div>
         </t>
 
