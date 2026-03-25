@@ -64,7 +64,7 @@
                 <div class="dojo-va-msg dojo-va-msg--user dojo-va-msg--live">
                     <div class="dojo-va-msg-bubble">
                         <div class="dojo-va-msg-text">
-                            <i class="fa fa-microphone dojo-va-live-mic"/>
+                            <i class="fa fa-microphone dojo-va-live-mic" aria-hidden="true"/>
                             <t t-if="state.liveTranscript">
                                 <t t-esc="state.liveTranscript"/>
                             </t>
@@ -207,7 +207,7 @@
             <div class="dojo-va-recording-strip">
                 <span class="dojo-va-rec-dot"/>
                 <t t-if="state.liveTranscript">
-                    Speaking… <t t-esc="state.liveTranscript.slice(0, 40)"/><t t-if="state.liveTranscript.length > 40">…</t>
+                    Speaking… <t t-esc="state.liveTranscript.length > 40 ? state.liveTranscript.slice(0, 40) + '…' : state.liveTranscript"/>
                 </t>
                 <t t-else="">
                     Listening… click stop when done
