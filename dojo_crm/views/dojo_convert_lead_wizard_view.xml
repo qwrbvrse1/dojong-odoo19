@@ -32,7 +32,7 @@
                             <field name="mobile"/>
                         </group>
                     </group>
-                    <group string="Household">
+                    <group string="Household" invisible="role == 'both'">
                         <field name="create_household"/>
                         <field name="household_id"
                                invisible="create_household == True"
@@ -51,6 +51,16 @@
                                required="create_subscription == True"/>
                         <field name="subscription_start_date"
                                invisible="create_subscription == False"/>
+                        <field name="defer_payment"
+                               invisible="create_subscription == False"/>
+                    </group>
+                    <group string="Portal Access">
+                        <field name="create_portal_login"/>
+                        <div class="text-muted small" colspan="2"
+                             invisible="create_portal_login == False">
+                            A "Set your password" invitation email will be sent to the member
+                            (and guardian, if created) so they can log in to the portal.
+                        </div>
                     </group>
                 </sheet>
                 <footer>

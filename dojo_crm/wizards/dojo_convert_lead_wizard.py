@@ -86,6 +86,23 @@ class DojoConvertLeadWizard(models.TransientModel):
         string="Start Date",
         default=fields.Date.today,
     )
+    defer_payment = fields.Boolean(
+        string="Pay Later",
+        default=False,
+        help="Create the subscription in Pending state. Billing will begin on the start date "
+             "once payment is collected separately.",
+    )
+
+    # ------------------------------------------------------------------
+    # Portal
+    # ------------------------------------------------------------------
+
+    create_portal_login = fields.Boolean(
+        string="Create Portal Account",
+        default=True,
+        help="Grant the member (and guardian, if created) access to the member portal. "
+             "An email will be sent for them to set their own password.",
+    )
 
     # ------------------------------------------------------------------
     # Defaults from lead
@@ -151,13 +168,13 @@ class DojoConvertLeadWizard(models.TransientModel):
 
         # ---- Resolve / create household ----
         household = None
-        if self.create_household:
+        guardian_partner = None
+        # Standalone ('both') members are self-sufficient adults — no household/guardian needed.
+        if self.create_household and self.role != "both":
             if not self.guardian_name and self.role == "student":
                 raise UserError(
                     _("Please provide a guardian name when creating a household for a student.")
                 )
-            # Create guardian partner (if guardian name provided)
-            guardian_partner = None
             if self.guardian_name:
                 guardian_partner = self.env["res.partner"].create(
                     {
@@ -185,7 +202,7 @@ class DojoConvertLeadWizard(models.TransientModel):
                         "is_company": True,
                     }
                 )
-        elif self.household_id:
+        elif self.household_id and self.role != "both":
             household = self.household_id
 
         # ---- Create member or partner ----
@@ -221,12 +238,15 @@ class DojoConvertLeadWizard(models.TransientModel):
         if self.create_subscription and self.plan_id and member:
             plan = self.plan_id
             start = self.subscription_start_date or fields.Date.today()
+            # defer_payment=True → subscription is active but billing is paused
+            # (next_billing_date=None) so the cron skips it until admin sets a date.
+            # defer_payment=False → billing starts normally from start_date.
             self.env["dojo.member.subscription"].create(
                 {
                     "member_id": member.id,
                     "plan_id": plan.id,
                     "start_date": start,
-                    "next_billing_date": start,  # first invoice covers start → start+period
+                    "next_billing_date": False if self.defer_payment else start,
                     "state": "active",
                 }
             )
@@ -259,6 +279,29 @@ class DojoConvertLeadWizard(models.TransientModel):
                     member.id,
                     exc_info=True,
                 )
+
+        # ---- Grant portal access ----
+        if self.create_portal_login:
+            partners_to_invite = []
+            if partner.email:
+                partners_to_invite.append(partner)
+            # Also invite the guardian if we just created them
+            if self.create_household and guardian_partner and guardian_partner.email:
+                partners_to_invite.append(guardian_partner)
+            for p in partners_to_invite:
+                try:
+                    p._grant_portal_access_credentials()
+                    user = self.env["res.users"].sudo().search(
+                        [("partner_id", "=", p.id)], limit=1
+                    )
+                    if user:
+                        user.sudo().action_reset_password()
+                except Exception:
+                    _logger.warning(
+                        "dojo_crm: could not grant portal access to partner %d",
+                        p.id,
+                        exc_info=True,
+                    )
 
         _logger.info(
             "dojo_crm: lead %d converted to member %d (%s)",

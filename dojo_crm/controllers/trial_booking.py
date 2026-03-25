@@ -502,10 +502,11 @@ class DojoTrialBooking(http.Controller):
             disc_tag = (
                 request.env["crm.tag"]
                 .sudo()
-                .search([("name", "=", disc_tag_name)], limit=1)
+                .search([("name", "=ilike", disc_tag_name)], limit=1)
             )
-            if disc_tag:
-                tag_ids.append((4, disc_tag.id))
+            if not disc_tag:
+                disc_tag = request.env["crm.tag"].sudo().create({"name": disc_tag_name})
+            tag_ids.append((4, disc_tag.id))
 
         # Find "New" stage (matches crm_stage.xml)
         new_lead_stage = (

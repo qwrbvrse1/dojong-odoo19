@@ -12,7 +12,7 @@ Boss direction as of 2026-03 — scope decisions should favor CRM connectivity o
 Non-technical, gives vague requests. Ask "what would you do differently Monday morning?" to extract concrete scope.
 
 ## Active Workstreams (2026-03)
-CRM connections build order: Connection 1 (public `/dojo/book-trial` page) → Connection 3 (subscription cancel/expire re-engagement lead) → Connection 2 (attendance check-in → auto-advance lead stage) → Connection 4 (onboarding wizard → auto-create/link CRM lead) → Connection 5 (belt promotion → CRM chatter note)
+CRM connections build order: Connection 1 (public `/dojo/trial` page) → Connection 3 (subscription cancel/expire re-engagement lead) → Connection 2 (attendance check-in → auto-advance lead stage) → Connection 4 (onboarding wizard → auto-create/link CRM lead) → Connection 5 (belt promotion → CRM chatter note)
 Kiosk pending: camera capture modal in instructor mode (photo upload to `res.partner.image_1920`)
 
 ## Stack
@@ -20,6 +20,44 @@ Kiosk pending: camera capture modal in instructor mode (photo upload to `res.par
 - PostgreSQL (Docker container: dojo-odoo19-db-1)
 - Custom modules: all dojo_* folders
 - Theme: muk_web_* modules (third-party Odoo theme framework)
+
+## VM Commands (Production — GCP Instance)
+
+```bash
+# --- Service control ---
+sudo systemctl restart odoo19          # restart after controller/Python changes
+sudo systemctl stop odoo19
+sudo systemctl start odoo19
+systemctl is-active odoo19             # check it's running
+
+# --- Logs ---
+sudo journalctl -u odoo19 -f           # live tail
+sudo journalctl -u odoo19 -n 100       # last 100 lines
+sudo journalctl -u odoo19 --since "5 min ago" | grep -i error
+
+# --- Upgrade a module (no restart needed for pure Python/XML changes) ---
+sudo -u odoo19 /opt/odoo19/odoo19-venv/bin/python3 /opt/odoo19/odoo19/odoo-bin \
+  -c /etc/odoo19.conf -d prod -u <module_name> --stop-after-init
+
+# upgrade multiple modules
+sudo -u odoo19 /opt/odoo19/odoo19-venv/bin/python3 /opt/odoo19/odoo19/odoo-bin \
+  -c /etc/odoo19.conf -d prod -u dojo_website,dojo_crm --stop-after-init
+
+# upgrade all (slow — only when needed)
+sudo -u odoo19 /opt/odoo19/odoo19-venv/bin/python3 /opt/odoo19/odoo19/odoo-bin \
+  -c /etc/odoo19.conf -d prod -u all --stop-after-init
+
+# --- After CSS/JS/QWeb changes (no upgrade needed) ---
+sudo systemctl restart odoo19
+# Then hard-refresh browser: Ctrl+Shift+R
+
+# --- Key paths ---
+# Config:        /etc/odoo19.conf
+# Custom addons: /opt/odoo19/odoo19/custom-addons/
+# Venv python:   /opt/odoo19/odoo19-venv/bin/python3
+# Odoo binary:   /opt/odoo19/odoo19/odoo-bin
+# DB:            prod  @  127.0.0.1:5432  (user: odoo19)
+```
 
 ## Running Locally
 ```bash
