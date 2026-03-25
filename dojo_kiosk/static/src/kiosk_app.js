@@ -2082,6 +2082,16 @@ class KioskVoiceAssistant extends Component {
                             ➤
                         </button>
                     </div>
+                    <t t-if="state.recording">
+                        <div class="k-ai-live-transcript">
+                            <t t-if="state.liveTranscript">
+                                <t t-esc="state.liveTranscript"/>
+                            </t>
+                            <t t-else="">
+                                Listening…
+                            </t>
+                        </div>
+                    </t>
                 </div>
             </t>
         </div>
@@ -2096,6 +2106,7 @@ class KioskVoiceAssistant extends Component {
             input: "",
             recording: false,
             processing: false,
+            liveTranscript: "",
         });
         this._msgListRef = useRef("msgList");
         this._msgEndRef  = useRef("msgEnd");
@@ -2103,7 +2114,32 @@ class KioskVoiceAssistant extends Component {
         this._audioChunks   = [];
         this._stream        = null;
         this._recordTimeout = null;
+        this._speechSupported   = ('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window);
+        this._recognition       = null;
+        this._pendingTranscript = "";
+        this._silenceTimer      = null;
         this._lastRole = null;
+        onWillUnmount(() => {
+            if (this._recognition) {
+                this._recognition.abort();
+                this._recognition = null;
+            }
+            if (this._mediaRecorder && this._mediaRecorder.state !== "inactive") {
+                this._mediaRecorder.stop();
+            }
+            if (this._stream) {
+                this._stream.getTracks().forEach(t => t.stop());
+                this._stream = null;
+            }
+            if (this._recordTimeout) {
+                clearTimeout(this._recordTimeout);
+                this._recordTimeout = null;
+            }
+            if (this._silenceTimer) {
+                clearTimeout(this._silenceTimer);
+                this._silenceTimer = null;
+            }
+        });
     }
 
     get _role() {
@@ -2160,10 +2196,90 @@ class KioskVoiceAssistant extends Component {
 
     async toggleRecording() {
         if (this.state.recording) {
-            this._stopRecording();
+            this._stopVoiceInput();
         } else {
-            await this._startRecording();
+            await this._startVoiceInput();
         }
+    }
+
+    async _startVoiceInput() {
+        if (this._speechSupported) {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            this._recognition           = new SR();
+            this._recognition.continuous     = true;
+            this._recognition.interimResults = true;
+            this._recognition.lang           = "en-US";
+            this._pendingTranscript          = "";
+            this.state.liveTranscript        = "";
+            this.state.recording             = true;
+
+            const resetSilenceTimer = () => {
+                if (this._silenceTimer) clearTimeout(this._silenceTimer);
+                this._silenceTimer = setTimeout(() => {
+                    this._silenceTimer = null;
+                    if (this._recognition) this._recognition.stop();
+                }, 2500);
+            };
+
+            this._recognition.onresult = (event) => {
+                let full = "";
+                for (let i = 0; i < event.results.length; i++) {
+                    full += event.results[i][0].transcript;
+                }
+                this._pendingTranscript  = full;
+                this.state.liveTranscript = full;
+                resetSilenceTimer();
+            };
+
+            this._recognition.onerror = (event) => {
+                if (this._silenceTimer) { clearTimeout(this._silenceTimer); this._silenceTimer = null; }
+                this._pendingTranscript   = "";
+                this.state.liveTranscript = "";
+                this.state.recording      = false;
+                const msg = event.error === "not-allowed"
+                    ? "⚠️ Microphone access denied."
+                    : "⚠️ Voice recognition failed, please try again.";
+                this._push("assistant", msg);
+            };
+
+            this._recognition.onend = () => {
+                if (this._silenceTimer) { clearTimeout(this._silenceTimer); this._silenceTimer = null; }
+                this.state.recording      = false;
+                this.state.liveTranscript = "";
+                const text = this._pendingTranscript.trim();
+                this._pendingTranscript   = "";
+                this._recognition         = null;
+                if (text) {
+                    this._submitVoiceTranscript(text);
+                }
+            };
+
+            this._recognition.start();
+        } else {
+            // Fallback: existing MediaRecorder push-to-talk
+            await this._startRecording();
+            this.state.liveTranscript = "Listening…";
+        }
+    }
+
+    _stopVoiceInput() {
+        if (this._speechSupported && this._recognition) {
+            this._recognition.stop();
+        } else {
+            this._stopRecording();
+            this.state.liveTranscript = "";
+        }
+    }
+
+    _submitVoiceTranscript(text) {
+        if (this.state.processing) {
+            // AI is still responding — put transcript in input so user can submit manually
+            this.state.input = text;
+            this.state.liveTranscript = "";
+            return;
+        }
+        this.state.liveTranscript = "";
+        this._submitText(text);
     }
 
     async _startRecording() {
@@ -2203,6 +2319,7 @@ class KioskVoiceAssistant extends Component {
     }
 
     async _processRecording() {
+        this.state.liveTranscript = "";
         if (!this._audioChunks.length) return;
         const blob = new Blob(this._audioChunks, { type: "audio/webm" });
         this._audioChunks = [];
