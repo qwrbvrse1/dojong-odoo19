@@ -1862,6 +1862,19 @@ html .o_web_client>.o_action_manager {
     }
 }
 
+/* Live transcript bubble */
+.dojo-va-msg--live .dojo-va-msg-bubble {
+    opacity: 0.75;
+    border: 1.5px dashed #b0bec5;
+    font-style: italic;
+}
+
+.dojo-va-live-mic {
+    margin-right: 6px;
+    color: #c5221f;
+    animation: dojo-va-pulse 1s infinite;
+}
+
 
 /* ══════════════════════════════════════════════════════════════════
    Member Profile — Edit Overlay
