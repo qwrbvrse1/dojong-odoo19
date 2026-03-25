@@ -34,6 +34,17 @@ _ACTION_END = "##END_ACTION##"
 # ─── Confidence threshold ────────────────────────────────────────────────────
 _MIN_CONFIDENCE = 0.7
 
+# ─── Compound command configuration ──────────────────────────────────────────
+_MAX_COMPOUND_CHAIN = 5
+
+_COMPOUND_SIGNALS = re.compile(
+    r'\band\s+then\b'
+    r'|\b(?:and|then)\s+(?:also\s+)?'
+    r'(?:enroll|create|cancel|text|send|add|remove|promote|check|schedule'
+    r'|look|show|find|book|register|get|update|message|list|display)',
+    re.IGNORECASE
+)
+
 # ─── Read-only intents that auto-execute without confirmation ────────────────
 _AUTO_EXECUTE_INTENTS = {
     "member_lookup",
@@ -72,6 +83,7 @@ _KNOWN_INTENT_TYPES = {
     "martial_art_style_create", "subscription_plan_create", "program_enrollment_create",
     "belt_test_registration_create", "marketing_card_create",
     "kiosk_announcement_create", "course_auto_enroll_create",
+    "compound_chain",
 }
 
 # ─── Intent Handler Configuration (for generic read handler) ──────────────────
@@ -429,6 +441,21 @@ class AiAssistantService(models.AbstractModel):
     _description = "AI Assistant Service"
 
     # ═══════════════════════════════════════════════════════════════════════════
+    # Compound Phrase Detection
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _is_compound_phrase(self, text):
+        """
+        Detect whether a user's input likely contains multiple sequential actions.
+
+        This is a routing hint only — the LLM is the authoritative arbiter.
+        False positives are safe: they just skip the conversational path.
+        False negatives are also safe: single intents are handled normally.
+        """
+        return bool(_COMPOUND_SIGNALS.search(text))
+
+    # ═══════════════════════════════════════════════════════════════════════════
     # Main API: Two-Phase Confirmation Flow
     # ═══════════════════════════════════════════════════════════════════════════
 
@@ -464,6 +491,218 @@ class AiAssistantService(models.AbstractModel):
         return self.parse_and_confirm(text, role, input_type, audio_attachment_id)
 
     @api.model
+    def handle_compound_command(self, compound_data, role="instructor"):
+        """
+        Validate a compound intent chain and return a combined confirmation prompt.
+
+        Args:
+            compound_data: dict with "intents" list and optional "reasoning" string
+            role: user role for permission checks
+
+        Returns:
+            Standard response dict with state "pending_confirmation" on success.
+            On validation failure: {"success": False, "state": "error", "error": "<explanation>"}
+        """
+        intents = compound_data.get("intents", [])
+
+        # ── Validation ────────────────────────────────────────────────────────────
+        if not intents:
+            return self._error_response("No intents found in compound command.")
+
+        if len(intents) > _MAX_COMPOUND_CHAIN:
+            return self._error_response(
+                f"Compound command exceeds maximum of {_MAX_COMPOUND_CHAIN} steps."
+            )
+
+        IntentSchema = self.env["dojo.ai.intent.schema"]
+        for i, intent in enumerate(intents, 1):
+            intent_type = intent.get("intent_type", "unknown")
+            confidence = intent.get("confidence", 0.0)
+
+            # "unknown" is in _KNOWN_INTENT_TYPES for single-intent routing only;
+            # it must never appear as a compound chain step.
+            if intent_type not in _KNOWN_INTENT_TYPES or intent_type == "unknown":
+                return self._error_response(
+                    f"Step {i}: unrecognised intent type '{intent_type}'."
+                )
+            if confidence < _MIN_CONFIDENCE:
+                return self._error_response(
+                    f"Step {i}: confidence {confidence:.2f} is below threshold ({_MIN_CONFIDENCE}). "
+                    "Please rephrase the command."
+                )
+            schema = IntentSchema.get_by_type(intent_type)
+            if schema and not schema.check_role_permission(role):
+                return self._error_response(
+                    f"Step {i}: you don't have permission to execute '{intent_type}'."
+                )
+
+        # ── Build confirmation prompt ─────────────────────────────────────────────
+        lines = ["I'll do the following in order:"]
+        for i, intent in enumerate(intents, 1):
+            intent_type = intent.get("intent_type", "")
+            schema = IntentSchema.get_by_type(intent_type)
+            label = schema.name if schema else intent_type.replace("_", " ").title()
+            params = intent.get("parameters", {})
+            member = params.get("member_name") or params.get("name") or ""
+            detail = f" — {member}" if member else ""
+            lines.append(f"{i}. {label}{detail}")
+        lines.append(f"Confirm all {len(intents)}?")
+        confirmation_prompt = "\n".join(lines)
+
+        # ── Create compound header log record ─────────────────────────────────────
+        min_confidence = min(i.get("confidence", 0.0) for i in intents)
+        ActionLog = self.env["dojo.ai.action.log"]
+        log = ActionLog.log_parse(
+            input_text=compound_data.get("reasoning") or "compound command",
+            role=role,
+            intent_type="compound_chain",
+            parsed_intent={"intents": intents},
+            confidence=round(min_confidence * 100, 1),
+            resolved_data={},
+            confirmation_prompt=confirmation_prompt,
+            requires_confirmation=True,
+            input_type="text",
+            audio_attachment_id=None,
+        )
+
+        return {
+            "success": True,
+            "state": "pending_confirmation",
+            "session_key": log.session_key,
+            "compound": True,
+            "intent": {"intent_type": "compound_chain", "steps": len(intents)},
+            "confirmation_prompt": confirmation_prompt,
+            "resolved_data": {},
+            "auto_executed": False,
+            "result": None,
+            "response": confirmation_prompt,
+            "error": None,
+        }
+
+    @api.model
+    def _execute_compound_chain(self, intents, role, header_log):
+        """
+        Execute a validated compound intent chain step by step.
+
+        On failure at step N:
+        - Attempts best-effort rollback of completed steps via snapshot.execute_undo()
+        - Remaining steps are skipped (no log records created for skipped steps)
+        - Does not ask for user confirmation before rolling back
+
+        Args:
+            intents: list of intent dicts (from parsed_intent on header log)
+            role: user role string
+            header_log: dojo.ai.action.log record for the compound header
+
+        Returns:
+            dict with "success", "state", "compound", "steps", "rollback_failures"
+        """
+        ActionLog = self.env["dojo.ai.action.log"]
+        steps_output = []
+        completed_step_log_ids = []
+
+        for n, intent in enumerate(intents, 1):
+            intent_type = intent.get("intent_type", "unknown")
+            resolved = self._resolve_entities(intent) or {}
+
+            # Create per-step log record, linked to the compound header
+            step_log = ActionLog.log_parse(
+                input_text=f"Step {n}: {intent_type}",
+                role=role,
+                intent_type=intent_type,
+                parsed_intent=intent,
+                confidence=round(intent.get("confidence", 0.0) * 100, 1),
+                resolved_data=resolved,
+                confirmation_prompt=None,
+                requires_confirmation=False,
+                input_type="text",
+                audio_attachment_id=None,
+            )
+            # Link to parent + set deterministic session key for audit trail
+            step_log.parent_action_id = header_log.id
+            step_log.session_key = f"{header_log.session_key}_step_{n}"
+
+            # Execute step
+            step_start = time.time()
+            result = self._execute_intent(intent_type, intent, resolved, step_log)
+            step_elapsed_ms = int((time.time() - step_start) * 1000)
+            # is_undoable=False: undo is chain-level (via _execute_compound_chain rollback),
+            # not per-step. Snapshots created by _execute_intent are still usable for rollback
+            # but the step log itself does not advertise as undoable in the audit trail.
+            step_log.log_execution(
+                success=result.get("success", False),
+                result=result,
+                execution_time_ms=step_elapsed_ms,
+                is_undoable=False,
+            )
+
+            if result.get("success"):
+                completed_step_log_ids.append(step_log.id)
+                steps_output.append({
+                    "step": n,
+                    "intent_type": intent_type,
+                    "success": True,
+                    "summary": self._format_exec_result_as_response(intent_type, result) or result.get("message") or f"{intent_type} completed",
+                })
+            else:
+                # Append failed step entry in order (before skipped entries)
+                steps_output.append({
+                    "step": n,
+                    "intent_type": intent_type,
+                    "success": False,
+                    "error": result.get("error") or result.get("message") or "Step failed",
+                })
+
+                # Best-effort rollback of completed steps
+                rollback_failures = []
+                snapshots = self.env["dojo.ai.undo.snapshot"].search(
+                    [("action_log_id", "in", completed_step_log_ids)]
+                )
+                for snap in snapshots:
+                    undo_result = snap.execute_undo()
+                    if not undo_result.get("success"):
+                        rollback_failures.append({
+                            "step_log_id": snap.action_log_id.id,
+                            "error": undo_result.get("error", "unknown rollback error"),
+                        })
+
+                # Mark remaining steps as skipped — no log records created for skipped steps
+                for m in range(n + 1, len(intents) + 1):
+                    steps_output.append({
+                        "step": m,
+                        "intent_type": intents[m - 1].get("intent_type"),
+                        "skipped": True,
+                    })
+
+                # Update header record
+                header_log.write({
+                    "execution_status": "error",
+                    "error_message": f"Step {n} ({intent_type}) failed: {result.get('error', '')}",
+                    "undone": not bool(rollback_failures),
+                    "undone_at": fields.Datetime.now() if not rollback_failures else False,
+                })
+
+                return {
+                    "success": False,
+                    "state": "executed",
+                    "compound": True,
+                    "steps": steps_output,
+                    "rollback_failures": rollback_failures,
+                    "error": f"Step {n} failed. {len(completed_step_log_ids)} completed step(s) rolled back.",
+                }
+
+        # All steps succeeded — update header
+        header_log.write({"execution_status": "success"})
+        return {
+            "success": True,
+            "state": "executed",
+            "compound": True,
+            "steps": steps_output,
+            "rollback_failures": [],
+            "error": None,
+        }
+
+    @api.model
     def parse_and_confirm(self, text, role="instructor", input_type="text", audio_attachment_id=None):
         """
         Phase 1: Parse natural language input into a structured intent.
@@ -486,6 +725,27 @@ class AiAssistantService(models.AbstractModel):
 
         start_time = time.time()
 
+        # ── Compound command routing ───────────────────────────────────────────────
+        # Detect multi-action phrases and route straight to JSON-mode parsing,
+        # bypassing the conversational path which does not support array output.
+        try:
+            ai_proc = self.env["ai.processor"]
+            provider = ai_proc._get_provider()
+            if self._is_compound_phrase(text):
+                # Gemini does not support JSON-mode compound output — return explicit message
+                if provider == "gemini":
+                    return self._error_response(
+                        "I can only do one action at a time with the current AI provider."
+                    )
+                db_ctx = self._build_db_context(text)
+                compound_result = ai_proc.process_intent_query(text, role, db_ctx)
+                if "intents" in compound_result:
+                    return self.handle_compound_command(compound_result, role=role)
+                # LLM returned single intent despite compound phrase — fall through to normal flow
+        except Exception as e:
+            _logger.warning("Compound detection failed, falling back to normal flow: %s", e)
+
+        # ── Normal single-intent flow (unchanged below) ─────────────────────────────
         try:
             # Get conversational response with potential intent
             ai_proc = self.env["ai.processor"]
@@ -739,6 +999,33 @@ class AiAssistantService(models.AbstractModel):
                 "undo_expires_in_minutes": None,
                 "error": None,
             }
+
+        # ── Compound chain execution ──────────────────────────────────────────────
+        if log.intent_type == "compound_chain":
+            intents_raw = json.loads(log.parsed_intent) if log.parsed_intent else []
+            # Handle both list (direct) and wrapped dict {"intents": [...]}
+            if isinstance(intents_raw, dict):
+                intents_raw = intents_raw.get("intents", [])
+            if not intents_raw:
+                return self._error_response("Compound chain data is missing or corrupt.")
+
+            try:
+                chain_result = self._execute_compound_chain(intents_raw, log.role, log)
+            except Exception as e:
+                _logger.error("Compound chain execution failed: %s", e, exc_info=True)
+                return self._error_response(f"Compound chain execution failed: {e}")
+            return {
+                "success": chain_result["success"],
+                "state": "executed",
+                "compound": True,
+                "steps": chain_result.get("steps", []),
+                "rollback_failures": chain_result.get("rollback_failures", []),
+                "result": chain_result,
+                "undo_available": False,
+                "undo_expires_in_minutes": None,
+                "error": chain_result.get("error"),
+            }
+        # ── Single-intent execution (unchanged below) ─────────────────────────────
 
         # Execute the intent
         start_time = time.time()
