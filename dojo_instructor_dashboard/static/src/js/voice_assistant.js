@@ -13,7 +13,7 @@
  *  • Optional text-to-speech — browser SpeechSynthesis reads AI responses aloud
  */
 
-import { Component, useState, useRef, onMounted } from "@odoo/owl";
+import { Component, useState, useRef, onMounted, onWillUnmount } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { rpc } from "@web/core/network/rpc";
 
@@ -55,17 +55,40 @@ export class DojoVoiceAssistant extends Component {
             actionSms: true,
             // Two-phase confirmation flow
             pendingConfirm: null,  // {session_key, prompt, intent_type}
+            liveTranscript: "",
         });
 
         this._mediaRecorder = null;
         this._audioChunks   = [];
         this._stream        = null;
+        this._recordTimeout     = null;
+        this._speechSupported   = ('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window);
+        this._recognition       = null;
+        this._pendingTranscript = "";
 
         onMounted(() => {
             // Keyboard shortcut: Ctrl+Shift+A to toggle panel
             document.addEventListener("keydown", (e) => {
                 if (e.ctrlKey && e.shiftKey && e.key === "A") this.toggle();
             });
+        });
+
+        onWillUnmount(() => {
+            if (this._recognition) {
+                this._recognition.abort();
+                this._recognition = null;
+            }
+            if (this._mediaRecorder && this._mediaRecorder.state !== "inactive") {
+                this._mediaRecorder.stop();
+            }
+            if (this._stream) {
+                this._stream.getTracks().forEach(t => t.stop());
+                this._stream = null;
+            }
+            if (this._recordTimeout) {
+                clearTimeout(this._recordTimeout);
+                this._recordTimeout = null;
+            }
         });
     }
 
@@ -128,10 +151,77 @@ export class DojoVoiceAssistant extends Component {
 
     async toggleRecording() {
         if (this.state.recording) {
-            this._stopRecording();
+            this._stopVoiceInput();
         } else {
-            await this._startRecording();
+            await this._startVoiceInput();
         }
+    }
+
+    async _startVoiceInput() {
+        if (this._speechSupported) {
+            // ── Chrome / Edge path ──
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            this._recognition = new SR();
+            this._recognition.continuous      = false;
+            this._recognition.interimResults  = true;
+            this._recognition.lang            = "en-US";
+            this._pendingTranscript           = "";
+            this.state.liveTranscript         = "";
+            this.state.recording              = true;
+
+            this._recognition.onresult = (event) => {
+                let full = "";
+                for (let i = 0; i < event.results.length; i++) {
+                    full += event.results[i][0].transcript;
+                }
+                this._pendingTranscript   = full;
+                this.state.liveTranscript = full;
+            };
+
+            this._recognition.onerror = (event) => {
+                this._pendingTranscript   = "";
+                this.state.liveTranscript = "";
+                this.state.recording      = false;
+                if (event.error === "not-allowed") {
+                    this.notification.add("Microphone access denied.", { type: "warning" });
+                } else {
+                    this._pushMsg("assistant", "⚠️ Voice recognition failed, please try again.");
+                }
+                // onend fires after onerror — _pendingTranscript is '' so it will no-op
+            };
+
+            this._recognition.onend = () => {
+                this.state.recording      = false;
+                this.state.liveTranscript = "";
+                const text = this._pendingTranscript.trim();
+                this._pendingTranscript   = "";
+                if (text) {
+                    this._submitVoiceTranscript(text);
+                }
+            };
+
+            this._recognition.start();
+        } else {
+            // ── Fallback: MediaRecorder ──
+            await this._startRecording();
+            this.state.liveTranscript = "Listening…";
+        }
+    }
+
+    _stopVoiceInput() {
+        if (this._speechSupported && this._recognition) {
+            this._recognition.stop();
+            // onend fires automatically → submits or no-ops
+        } else {
+            this._stopRecording();
+            this.state.liveTranscript = "";
+        }
+    }
+
+    _submitVoiceTranscript(text) {
+        if (this.state.processing) return;
+        this.state.liveTranscript = "";
+        this._submitText(text);
     }
 
     async _startRecording() {
@@ -182,6 +272,7 @@ export class DojoVoiceAssistant extends Component {
     }
 
     async _processRecording() {
+        this.state.liveTranscript = "";
         if (!this._audioChunks.length) return;
         const blob = new Blob(this._audioChunks, { type: "audio/webm" });
         this._audioChunks = [];
