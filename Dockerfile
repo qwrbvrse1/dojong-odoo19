@@ -1,15 +1,56 @@
-FROM odoo:latest
+FROM python:3.12-slim-bookworm
 
-# Install extra dependencies into the system Python (must run as root)
-USER root
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir --break-system-packages -r /tmp/requirements.txt
+ENV LANG C.UTF-8
 
-# Copy all custom addons to /mnt/custom-addons
-COPY . /mnt/custom-addons
+# Install system dependencies required by Odoo saas-19.2
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Build tools
+    build-essential \
+    # PostgreSQL client
+    libpq-dev \
+    postgresql-client \
+    # lxml
+    libxml2-dev \
+    libxslt1-dev \
+    # Pillow
+    libjpeg-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    # LDAP
+    libldap2-dev \
+    libsasl2-dev \
+    # OpenSSL
+    libssl-dev \
+    # Fonts for PDF rendering
+    fonts-dejavu-core \
+    fonts-inconsolata \
+    fonts-font-awesome \
+    fonts-roboto-unhinted \
+    gsfonts \
+    # Node / rtlcss
+    npm \
+    # wkhtmltopdf for PDF reports
+    wkhtmltopdf \
+    # Misc
+    git \
+    curl \
+    && npm install -g rtlcss \
+    && rm -rf /var/lib/apt/lists/*
 
-# Expose Odoo port
-EXPOSE 8069
+# Copy Odoo source into the image
+COPY ./odoo /opt/odoo
 
-# Start Odoo
-CMD ["odoo"]
+# Install Python dependencies from the repo's requirements.txt
+RUN pip install --no-cache-dir -r /opt/odoo/requirements.txt
+
+# Create the odoo user and required directories
+RUN useradd -ms /bin/bash odoo \
+    && mkdir -p /var/lib/odoo /mnt/enterprise-addons /mnt/extra-addons \
+    && chown -R odoo:odoo /var/lib/odoo /mnt/enterprise-addons /mnt/extra-addons /opt/odoo
+
+USER odoo
+
+EXPOSE 8069 8071 8072
+
+ENTRYPOINT ["/opt/odoo/odoo-bin"]
+CMD ["--config=/etc/odoo/odoo.conf"]

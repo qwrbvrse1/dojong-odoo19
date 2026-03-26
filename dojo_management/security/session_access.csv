@@ -1,2 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-dojo_session_access,dojo.session,model_dojo_session,base.group_user,1,1,1,1

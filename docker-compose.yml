@@ -1,34 +1,32 @@
 services:
+  db:
+    image: postgres:17
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=odoo
+      - POSTGRES_USER=odoo
+    volumes:
+      - odoo-db-data-19-2:/var/lib/postgresql/data
+    restart: unless-stopped
+
   web:
     build: .
-    image: odoo-dojo:latest
+    image: odoo-saas-19-2:latest
     depends_on:
       - db
     ports:
-      - "8069:8069"
+      - "8069:8069" # Change the port if needed.
     volumes:
       - odoo-web-data:/var/lib/odoo
-      - ./config:/etc/odoo
-      - .:/mnt/custom-addons
+      - ./enterprise:/mnt/enterprise-addons
+      - ./addons:/mnt/extra-addons
+      - ./config/odoo.conf:/etc/odoo/odoo.conf
     environment:
-      - PASSWORD_FILE=/run/secrets/postgresql_password
-    secrets:
-      - postgresql_password
-  db:
-    image: postgres:latest
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_PASSWORD_FILE=/run/secrets/postgresql_password
-      - POSTGRES_USER=odoo
-      - PGDATA=/var/lib/postgresql/data/pgdata
-    volumes:
-      - odoo-db-data:/var/lib/postgresql/data/pgdata
-    secrets:
-      - postgresql_password
-volumes:
-  odoo-web-data:
-  odoo-db-data:
+      - HOST=db
+      - USER=odoo
+      - PASSWORD=odoo
+    restart: unless-stopped
 
-secrets:
-  postgresql_password:
-    file: odoo_pg_pass
+volumes:
+  odoo-db-data-19-2:
+  odoo-web-data:
