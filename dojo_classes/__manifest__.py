@@ -1,7 +1,7 @@
 {
     "name": "Dojang Classes",
     "summary": "Courses, sessions, and enrollment",
-    "version": "19.0.1.3.1",
+    "version": "saas~19.2.1.3.1",
     "category": "Services",
     "license": "LGPL-3",
     "author": "Dojang",

@@ -15,7 +15,7 @@ class AIProcessor(models.AbstractModel):
 
     def _get_provider(self):
         """Get configured AI provider"""
-        return self.env['ir.config_parameter'].sudo().get_param(
+        return self.env['ir.config_parameter'].sudo().get_str(
             'elevenlabs_connector.ai_provider', 'openai'
         )
 
@@ -48,15 +48,15 @@ class AIProcessor(models.AbstractModel):
         
         # Check API keys are configured
         if provider in ('openai', 'odoo_native'):
-            openai_key = self.env['ir.config_parameter'].sudo().get_param('openai.api_key') or \
-                        self.env['ir.config_parameter'].sudo().get_param('elevenlabs_connector.openai_api_key')
+            openai_key = self.env['ir.config_parameter'].sudo().get_str('openai.api_key') or \
+                        self.env['ir.config_parameter'].sudo().get_str('elevenlabs_connector.openai_api_key')
             if not openai_key:
                 _logger.error('OpenAI API key not configured for provider: %s', provider)
             else:
                 _logger.debug('OpenAI API key found (length: %d)', len(openai_key))
         elif provider == 'gemini':
-            gemini_key = self.env['ir.config_parameter'].sudo().get_param('gemini.api_key') or \
-                        self.env['ir.config_parameter'].sudo().get_param('elevenlabs_connector.gemini_api_key')
+            gemini_key = self.env['ir.config_parameter'].sudo().get_str('gemini.api_key') or \
+                        self.env['ir.config_parameter'].sudo().get_str('elevenlabs_connector.gemini_api_key')
             if not gemini_key:
                 _logger.error('Gemini API key not configured for provider: %s', provider)
         else:
@@ -137,8 +137,8 @@ Database Context:
         """
         _logger.info('Processing OpenAI query - letting API determine model')
         
-        api_key = self.env['ir.config_parameter'].sudo().get_param('openai.api_key') or \
-                  self.env['ir.config_parameter'].sudo().get_param('elevenlabs_connector.openai_api_key')
+        api_key = self.env['ir.config_parameter'].sudo().get_str('openai.api_key') or \
+                  self.env['ir.config_parameter'].sudo().get_str('elevenlabs_connector.openai_api_key')
         
         if not api_key:
             _logger.error('OpenAI API key not found in config parameters')
@@ -271,8 +271,8 @@ Database Context:
         """
         _logger.info('Processing Gemini query - letting API determine model via ListModels')
         
-        api_key = self.env['ir.config_parameter'].sudo().get_param('gemini.api_key') or \
-                  self.env['ir.config_parameter'].sudo().get_param('elevenlabs_connector.gemini_api_key')
+        api_key = self.env['ir.config_parameter'].sudo().get_str('gemini.api_key') or \
+                  self.env['ir.config_parameter'].sudo().get_str('elevenlabs_connector.gemini_api_key')
         
         if not api_key:
             _logger.error('Gemini API key not found in config parameters')

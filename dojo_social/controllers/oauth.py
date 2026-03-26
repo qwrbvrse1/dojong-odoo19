@@ -18,7 +18,7 @@ class DojoSocialOAuth(http.Controller):
         Handle Facebook OAuth redirect.
         'state' contains the dojo.social.account ID.
         """
-        base_url = request.env["ir.config_parameter"].sudo().get_param("web.base.url")
+        base_url = request.env["ir.config_parameter"].sudo().get_str("web.base.url")
 
         if error:
             _logger.warning("Facebook OAuth error: %s", error)
@@ -37,8 +37,8 @@ class DojoSocialOAuth(http.Controller):
             return request.redirect(f"{base_url}/odoo/action-dojo_social.action_dojo_social_account")
 
         icp = request.env["ir.config_parameter"].sudo()
-        app_id = icp.get_param("dojo_social.fb_app_id", "")
-        app_secret = icp.get_param("dojo_social.fb_app_secret", "")
+        app_id = icp.get_str("dojo_social.fb_app_id", "")
+        app_secret = icp.get_str("dojo_social.fb_app_secret", "")
         redirect_uri = f"{base_url}/dojo/social/facebook/callback"
 
         try:

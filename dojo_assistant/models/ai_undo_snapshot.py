@@ -137,7 +137,7 @@ class DojoAiUndoSnapshot(models.Model):
             if "undo_expires_at" not in vals:
                 if expiry_minutes is None:
                     expiry_minutes = int(
-                        self.env["ir.config_parameter"].sudo().get_param(
+                        self.env["ir.config_parameter"].sudo().get_str(
                             "dojo_assistant.undo_expiry_minutes", "60"
                         )
                     )

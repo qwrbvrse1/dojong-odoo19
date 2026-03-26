@@ -1,7 +1,7 @@
 {
     "name": "Dojang Checkout Pages",
     "summary": "Public checkout flow: plan selection, day picker, upsells, invoice or pay-now, portal upgrade",
-    "version": "19.0.2.0.0",
+    "version": "saas~19.2.2.0.0",
     "category": "Services",
     "license": "LGPL-3",
     "author": "Dojang",

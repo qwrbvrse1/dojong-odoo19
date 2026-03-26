@@ -1034,9 +1034,9 @@ class AiAssistantService(models.AbstractModel):
             # Calculate undo expiry
             undo_minutes = None
             if is_undoable:
-                undo_minutes = int(self.env["ir.config_parameter"].sudo().get_param(
-                    "dojo_assistant.undo_expiry_minutes", "60"
-                ))
+                undo_minutes = self.env["ir.config_parameter"].sudo().get_int(
+                    "dojo_assistant.undo_expiry_minutes", 60
+                )
 
             return {
                 "success": result.get("success", False),

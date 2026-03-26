@@ -613,7 +613,7 @@ class KioskController(http.Controller):
                 _logger.warning("Kiosk AI: could not save audio attachment: %s", e)
 
             # Speech-to-text
-            lang = request.env["ir.config_parameter"].sudo().get_param(
+            lang = request.env["ir.config_parameter"].sudo().get_str(
                 "elevenlabs_connector.language", "en"
             )
             try:

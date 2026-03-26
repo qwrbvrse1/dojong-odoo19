@@ -1,6 +1,6 @@
 {
     'name': 'Dojang Instructor Dashboard',
-    'version': '19.0.1.2.0',
+    'version': 'saas~19.2.1.2.0',
     'summary': 'Instructor and admin backend dashboard with quick attendance, student roster, todos, and calendar',
     'description': """
         Provides a dedicated backend dashboard for Dojang instructors and admins:

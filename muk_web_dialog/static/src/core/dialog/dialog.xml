@@ -7,7 +7,7 @@
 		t-inherit="web.Dialog" 
 		t-inherit-mode="extension" 
 	>
-	    <xpath expr="//div[@t-attf-class='modal-{{props.size}}']" position="attributes">
+	    <xpath expr="//div[@t-attf-class='modal-{{ size }}']" position="attributes">
 	    	<attribute name="t-attf-class">modal-{{ this.data?.size || 'lg' }}</attribute>
 	    </xpath>
 	</t>

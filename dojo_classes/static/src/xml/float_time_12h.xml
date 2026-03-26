@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
     <t t-name="dojo_classes.FloatTime12hField">
         <t t-if="props.readonly">
-            <span t-esc="timeValue"/>
+            <span t-out="timeValue"/>
         </t>
         <t t-else="">
             <input

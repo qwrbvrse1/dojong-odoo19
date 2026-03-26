@@ -45,7 +45,7 @@
                 </p>
                 <div class="card mx-auto" style="max-width: 400px;">
                     <div class="card-body">
-                        <h5 class="card-title" t-esc="session.name"/>
+                        <h5 class="card-title" t-out="session.name"/>
                         <p class="card-text">
                             <strong>Date &amp; Time:</strong>
                             <span t-field="session.start_datetime" t-options='{"format": "EEE, MMM d, yyyy h:mm a"}'/>
@@ -53,7 +53,7 @@
                         <t t-if="session.instructor_profile_id">
                             <p class="card-text">
                                 <strong>Instructor:</strong>
-                                <span t-esc="session.instructor_profile_id.name"/>
+                                <span t-out="session.instructor_profile_id.name"/>
                             </p>
                         </t>
                     </div>
@@ -74,13 +74,13 @@
 
             <t t-if="lead.contact_name or lead.partner_name">
                 <p class="text-center lead">
-                    Hi <span t-esc="lead.contact_name or lead.partner_name"/>,
+                    Hi <span t-out="lead.contact_name or lead.partner_name"/>,
                     pick a session below to reserve your spot.
                 </p>
             </t>
 
             <t t-if="error">
-                <div class="alert alert-danger" t-esc="error"/>
+                <div class="alert alert-danger" t-out="error"/>
             </t>
 
             <t t-if="not sessions">
@@ -103,15 +103,15 @@
                                        t-att-value="s.id"
                                        class="form-check-input me-3" required="required"/>
                                 <div>
-                                    <strong t-esc="s.name"/>
+                                    <strong t-out="s.name"/>
                                     <br/>
                                     <small class="text-muted">
                                         <span t-field="s.start_datetime" t-options='{"format": "EEE, MMM d, yyyy h:mm a"}'/> —
                                         <t t-if="s.instructor_profile_id">
-                                            Instructor: <span t-esc="s.instructor_profile_id.name"/>
+                                            Instructor: <span t-out="s.instructor_profile_id.name"/>
                                         </t>
                                         <t t-if="s.capacity">
-                                            | <span t-esc="s.capacity - s.seats_taken"/> spots left
+                                            | <span t-out="s.capacity - s.seats_taken"/> spots left
                                         </t>
                                     </small>
                                 </div>
@@ -141,7 +141,7 @@
                 <h2 class="mb-3">Your Trial is Booked!</h2>
                 <div class="card mx-auto mb-4" style="max-width: 400px;">
                     <div class="card-body">
-                        <h5 class="card-title" t-esc="session.name"/>
+                        <h5 class="card-title" t-out="session.name"/>
                         <p class="card-text">
                             <strong>Date &amp; Time:</strong>
                             <span t-field="session.start_datetime" t-options='{"format": "EEE, MMM d, yyyy h:mm a"}'/>
@@ -149,14 +149,14 @@
                         <t t-if="session.instructor_profile_id">
                             <p class="card-text">
                                 <strong>Instructor:</strong>
-                                <span t-esc="session.instructor_profile_id.name"/>
+                                <span t-out="session.instructor_profile_id.name"/>
                             </p>
                         </t>
                     </div>
                 </div>
                 <p>
                     A confirmation email with a calendar invitation (.ics) has been sent to
-                    <strong t-esc="lead.email_from"/>.
+                    <strong t-out="lead.email_from"/>.
                 </p>
                 <p class="text-muted">
                     Please arrive 10 minutes early and wear comfortable workout clothes.
@@ -194,10 +194,10 @@
             <h2 class="mb-4 text-center">Manage Your Trial Booking</h2>
 
             <t t-if="error">
-                <div class="alert alert-danger" t-esc="error"/>
+                <div class="alert alert-danger" t-out="error"/>
             </t>
             <t t-if="success">
-                <div class="alert alert-success" t-esc="success"/>
+                <div class="alert alert-success" t-out="success"/>
             </t>
 
             <!-- Current booking card -->
@@ -207,7 +207,7 @@
                         <strong>Your Current Booking</strong>
                     </div>
                     <div class="card-body">
-                        <h5 class="card-title" t-esc="session.name"/>
+                        <h5 class="card-title" t-out="session.name"/>
                         <p class="card-text">
                             <strong>Date &amp; Time:</strong>
                             <span t-field="session.start_datetime" t-options='{"format": "EEE, MMM d, yyyy h:mm a"}'/>
@@ -215,7 +215,7 @@
                         <t t-if="session.instructor_profile_id">
                             <p class="card-text">
                                 <strong>Instructor:</strong>
-                                <span t-esc="session.instructor_profile_id.name"/>
+                                <span t-out="session.instructor_profile_id.name"/>
                             </p>
                         </t>
                     </div>
@@ -258,12 +258,12 @@
                                                class="form-check-input me-3"
                                                required="required"/>
                                         <div>
-                                            <strong t-esc="s.name"/>
+                                            <strong t-out="s.name"/>
                                             <br/>
                                             <small class="text-muted">
                                                 <span t-field="s.start_datetime" t-options='{"format": "EEE, MMM d, yyyy h:mm a"}'/>
                                                 <t t-if="s.instructor_profile_id">
-                                                    — <span t-esc="s.instructor_profile_id.name"/>
+                                                    — <span t-out="s.instructor_profile_id.name"/>
                                                 </t>
                                             </small>
                                         </div>
@@ -294,7 +294,7 @@
             <t t-if="error">
                 <div class="alert alert-danger" role="alert">
                     <i class="fa fa-exclamation-circle me-1"/>
-                    <t t-esc="error"/>
+                    <t t-out="error"/>
                 </div>
             </t>
 
@@ -302,7 +302,7 @@
             <div class="card border-primary mb-4">
                 <div class="card-body py-2">
                     <small class="text-muted">Booking for:</small>
-                    <strong class="ms-2" t-esc="session.name"/>
+                    <strong class="ms-2" t-out="session.name"/>
                     <span class="ms-2 text-muted">—</span>
                     <span class="ms-1">
                         <t t-field="session.start_datetime"
@@ -323,7 +323,7 @@
                 <!-- ── Waiver text ──────────────────────────────────────────────── -->
                 <div class="card mb-4">
                     <div class="card-header fw-bold">
-                        <t t-esc="waiver_config.name or 'Liability Waiver'"/>
+                        <t t-out="waiver_config.name or 'Liability Waiver'"/>
                     </div>
                     <div class="card-body" style="max-height:350px; overflow-y:auto;">
                         <t t-out="waiver_config.content_html or ''"/>

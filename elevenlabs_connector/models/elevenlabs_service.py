@@ -21,7 +21,7 @@ class ElevenLabsService(models.AbstractModel):
 
     def _get_api_key(self):
         """Get ElevenLabs API key from settings"""
-        api_key = self.env['ir.config_parameter'].sudo().get_param(
+        api_key = self.env['ir.config_parameter'].sudo().get_str(
             'elevenlabs_connector.api_key'
         )
         if not api_key:
@@ -30,13 +30,13 @@ class ElevenLabsService(models.AbstractModel):
 
     def _get_default_voice_id(self):
         """Get default voice ID from settings"""
-        return self.env['ir.config_parameter'].sudo().get_param(
+        return self.env['ir.config_parameter'].sudo().get_str(
             'elevenlabs_connector.voice_id', '21m00Tcm4TlvDq8ikWAM'
         )
 
     def _get_default_language(self):
         """Get default language from settings"""
-        return self.env['ir.config_parameter'].sudo().get_param(
+        return self.env['ir.config_parameter'].sudo().get_str(
             'elevenlabs_connector.language', 'en'
         )
 
@@ -195,7 +195,7 @@ class ElevenLabsService(models.AbstractModel):
         
         # Default model for STT (valid models: scribe_v1, scribe_v1_experimental, scribe_v2)
         if model_id is None:
-            model_id = self.env['ir.config_parameter'].sudo().get_param(
+            model_id = self.env['ir.config_parameter'].sudo().get_str(
                 'elevenlabs_connector.stt_model_id', 'scribe_v2'
             )
         

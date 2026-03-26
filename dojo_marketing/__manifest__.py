@@ -1,7 +1,7 @@
 {
     "name": "Dojang Marketing Cards",
     "summary": "Marketing cards with QR codes — published to kiosk carousel and member portal",
-    "version": "19.0.1.0.0",
+    "version": "saas~19.2.1.0.0",
     "category": "Services",
     "license": "LGPL-3",
     "author": "Dojang",

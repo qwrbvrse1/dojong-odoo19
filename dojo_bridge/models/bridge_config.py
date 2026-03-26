@@ -37,24 +37,24 @@ class BridgeConfig:
 
     @staticmethod
     def jwt_secret(params) -> str | None:
-        return params.get_param("x_bridge.jwt_secret") or None
+        return params.get_str("x_bridge.jwt_secret") or None
 
     @staticmethod
     def webhook_secret(params) -> str | None:
-        return params.get_param("x_bridge.webhook_secret") or None
+        return params.get_str("x_bridge.webhook_secret") or None
 
     @staticmethod
     def cors_origins(params) -> list[str]:
-        raw = params.get_param("x_bridge.cors_origins", default="")
+        raw = params.get_str("x_bridge.cors_origins", default="")
         return [o.strip() for o in raw.split(",") if o.strip()]
 
     @staticmethod
     def jwt_issuer(params) -> str:
-        return params.get_param("x_bridge.jwt_issuer", default="dojo-control-plane")
+        return params.get_str("x_bridge.jwt_issuer", default="dojo-control-plane")
 
     @staticmethod
     def jwt_audience(params) -> str:
-        return params.get_param("x_bridge.jwt_audience", default="dojo-odoo-bridge")
+        return params.get_str("x_bridge.jwt_audience", default="dojo-odoo-bridge")
 
     @staticmethod
     def tenant_map(params) -> dict:
@@ -62,7 +62,7 @@ class BridgeConfig:
         Returns { tenant_id: db_name, ... }.
         An empty/invalid value returns {}.
         """
-        raw = params.get_param("x_bridge.tenant_map", default="{}")
+        raw = params.get_str("x_bridge.tenant_map", default="{}")
         try:
             mapping = json.loads(raw)
             if not isinstance(mapping, dict):

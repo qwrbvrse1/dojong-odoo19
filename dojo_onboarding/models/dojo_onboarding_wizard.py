@@ -643,7 +643,7 @@ class DojoOnboardingWizard(models.TransientModel):
         number = getattr(partner, 'mobile', None) or partner.phone
         if not number:
             return
-        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '')
+        base_url = self.env['ir.config_parameter'].sudo().get_str('web.base.url', '')
         portal_url = base_url.rstrip('/') + '/my/dojo'
         company_name = self.env.company.name
         body = _(

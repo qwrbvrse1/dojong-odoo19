@@ -121,7 +121,7 @@ class VoiceService(models.AbstractModel):
         """Step 1: Convert speech to text"""
         try:
             elevenlabs_service = self.env['elevenlabs.service']
-            language = self.env['ir.config_parameter'].sudo().get_param(
+            language = self.env['ir.config_parameter'].sudo().get_str(
                 'elevenlabs_connector.language', 'en'
             )
             transcribed_text = elevenlabs_service.transcribe_audio(audio_data, language)

@@ -55,26 +55,26 @@
 
                     <!-- Identity -->
                     <div class="o_mp_hero_info">
-                        <h1 class="o_mp_hero_name" t-esc="state.member.name"/>
+                        <h1 class="o_mp_hero_name" t-out="state.member.name"/>
                         <t t-if="state.member.member_number">
                             <div class="o_mp_member_number">
                                 <i class="fa fa-hashtag me-1"/>
-                                <t t-esc="state.member.member_number"/>
+                                <t t-out="state.member.member_number"/>
                             </div>
                         </t>
                         <div class="o_mp_hero_badges">
                             <span t-attf-class="o_mp_state_badge {{ stateClass(state.member.membership_state) }}">
-                                <t t-esc="stateLabel(state.member.membership_state)"/>
+                                <t t-out="stateLabel(state.member.membership_state)"/>
                             </span>
                             <span class="o_mp_role_badge">
-                                <t t-esc="roleLabel(state.member)"/>
+                                <t t-out="roleLabel(state.member)"/>
                             </span>
                             <t t-if="state.member.current_rank">
                                 <span class="o_mp_belt_badge"
                                       t-att-style="'background:' + rankBgColor(state.member.current_rank.color) + ';color:' + state.member.current_rank.color + ';border:1.5px solid ' + state.member.current_rank.color">
                                     <i class="fa fa-circle me-1"
                                        t-att-style="'color:' + state.member.current_rank.color"/>
-                                    <t t-esc="state.member.current_rank.name"/>
+                                    <t t-out="state.member.current_rank.name"/>
                                 </span>
                             </t>
                             <t t-if="state.member.test_invite_pending">
@@ -89,13 +89,13 @@
                     <div class="o_mp_hero_stats">
                         <div class="o_mp_hero_stat">
                             <span class="o_mp_hero_stat_value"
-                                  t-esc="state.member.total_attendance_count || 0"/>
+                                  t-out="state.member.total_attendance_count || 0"/>
                             <span class="o_mp_hero_stat_label">Classes Attended</span>
                         </div>
                         <div class="o_mp_hero_stat_divider"/>
                         <div class="o_mp_hero_stat">
                             <span class="o_mp_hero_stat_value"
-                                  t-esc="state.member.days_as_member || 0"/>
+                                  t-out="state.member.days_as_member || 0"/>
                             <span class="o_mp_hero_stat_label">Days a Member</span>
                         </div>
                         <div class="o_mp_hero_stat_divider"/>
@@ -106,7 +106,7 @@
                                 </t>
                                 <t t-else="">
                                     <span class="o_mp_hero_stat_value"
-                                          t-esc="state.member.subscription.credit_balance"/>
+                                          t-out="state.member.subscription.credit_balance"/>
                                 </t>
                             </t>
                             <t t-else="">
@@ -124,13 +124,13 @@
         <div class="o_di_stat_row o_mp_stat_row">
             <div class="o_di_stat_chip o_di_stat_blue">
                 <div class="o_di_stat_value"
-                     t-esc="state.member.total_attendance_count || 0"/>
+                     t-out="state.member.total_attendance_count || 0"/>
                 <div class="o_di_stat_label">Total Attendances</div>
                 <div class="o_di_stat_sub">All time (present &amp; late)</div>
             </div>
             <div class="o_di_stat_chip o_di_stat_green">
                 <div class="o_di_stat_value"
-                     t-esc="state.member.days_as_member || 0"/>
+                     t-out="state.member.days_as_member || 0"/>
                 <div class="o_di_stat_label">Days a Member</div>
                 <div class="o_di_stat_sub">Since subscription start</div>
             </div>
@@ -143,10 +143,10 @@
                     </t>
                     <t t-else="">
                         <div class="o_di_stat_value"
-                             t-esc="state.member.subscription.credit_balance"/>
+                             t-out="state.member.subscription.credit_balance"/>
                         <div class="o_di_stat_label">Credits Remaining</div>
                         <div class="o_di_stat_sub"
-                             t-esc="state.member.subscription.credit_pending + ' pending hold'"/>
+                             t-out="state.member.subscription.credit_pending + ' pending hold'"/>
                     </t>
                 </t>
                 <t t-else="">
@@ -159,10 +159,10 @@
                 <t t-if="state.member.current_rank">
                     <div class="o_di_stat_value o_mp_rank_chip_value"
                          t-att-style="'color:' + state.member.current_rank.color"
-                         t-esc="state.member.current_rank.name"/>
+                         t-out="state.member.current_rank.name"/>
                     <div class="o_di_stat_label">Current Belt</div>
                     <div class="o_di_stat_sub"
-                         t-esc="state.member.attendance_since_last_rank + ' classes since promotion'"/>
+                         t-out="state.member.attendance_since_last_rank + ' classes since promotion'"/>
                 </t>
                 <t t-else="">
                     <div class="o_di_stat_value">—</div>
@@ -232,37 +232,37 @@
                         <span class="o_mp_info_value">
                             <t t-if="state.member.email">
                                 <a t-att-href="'mailto:' + state.member.email"
-                                   t-esc="state.member.email"/>
+                                   t-out="state.member.email"/>
                             </t>
                             <t t-else=""><span class="text-muted">—</span></t>
                         </span>
                     </div>
                     <div class="o_mp_info_row">
                         <span class="o_mp_info_label"><i class="fa fa-phone"/> Phone</span>
-                        <span class="o_mp_info_value" t-esc="state.member.phone || '—'"/>
+                        <span class="o_mp_info_value" t-out="state.member.phone || '—'"/>
                     </div>
                     <div class="o_mp_info_row" t-if="state.member.date_of_birth">
                         <span class="o_mp_info_label"><i class="fa fa-birthday-cake"/> DOB</span>
                         <span class="o_mp_info_value"
-                              t-esc="fmtDate(state.member.date_of_birth)"/>
+                              t-out="fmtDate(state.member.date_of_birth)"/>
                     </div>
                     <div class="o_mp_info_row" t-if="state.member.blood_type">
                         <span class="o_mp_info_label"><i class="fa fa-tint"/> Blood Type</span>
                         <span class="o_mp_info_value">
                             <span class="o_di_badge o_di_badge_danger"
-                                  t-esc="state.member.blood_type"/>
+                                  t-out="state.member.blood_type"/>
                         </span>
                     </div>
                     <div class="o_mp_info_row" t-if="state.member.plan_name">
                         <span class="o_mp_info_label"><i class="fa fa-id-badge"/> Plan</span>
-                        <span class="o_mp_info_value" t-esc="state.member.plan_name"/>
+                        <span class="o_mp_info_value" t-out="state.member.plan_name"/>
                     </div>
                     <t t-if="state.member.allergies">
                         <div class="o_mp_medical_box o_mp_allergy_box">
                             <div class="o_mp_medical_title">
                                 <i class="fa fa-warning me-1"/> Allergies
                             </div>
-                            <div class="o_mp_medical_text" t-esc="state.member.allergies"/>
+                            <div class="o_mp_medical_text" t-out="state.member.allergies"/>
                         </div>
                     </t>
                     <t t-if="state.member.medical_notes">
@@ -270,7 +270,7 @@
                             <div class="o_mp_medical_title">
                                 <i class="fa fa-medkit me-1"/> Medical Notes
                             </div>
-                            <div class="o_mp_medical_text" t-esc="state.member.medical_notes"/>
+                            <div class="o_mp_medical_text" t-out="state.member.medical_notes"/>
                         </div>
                     </t>
                     <t t-if="state.member.emergency_note">
@@ -280,7 +280,7 @@
                                 Emergency / Medical Note
                             </div>
                             <div class="o_mp_emergency_text"
-                                 t-esc="state.member.emergency_note"/>
+                                 t-out="state.member.emergency_note"/>
                         </div>
                     </t>                    <div class="o_mp_info_contact_wrap">
                         <button class="o_mp_info_contact_btn" t-on-click="sendMessage">
@@ -307,13 +307,13 @@
                     <t t-else="">
                         <div class="o_mp_hh_header">
                             <i class="fa fa-home me-2 text-muted"/>
-                            <strong t-esc="state.member.household.name"/>
+                            <strong t-out="state.member.household.name"/>
                         </div>
                         <t t-if="state.member.household.primary_guardian">
                             <div class="o_mp_hh_guardian">
                                 <i class="fa fa-star me-1 text-warning"/>
                                 Primary Guardian:
-                                <strong t-esc="state.member.household.primary_guardian"/>
+                                <strong t-out="state.member.household.primary_guardian"/>
                             </div>
                         </t>
                         <table class="o_di_table" style="margin-top:10px">
@@ -324,10 +324,10 @@
                                 <t t-foreach="state.member.household.members"
                                    t-as="hm" t-key="hm.id">
                                     <tr>
-                                        <td t-esc="hm.name"/>
+                                        <td t-out="hm.name"/>
                                         <td>
                                             <span class="o_di_badge o_di_badge_secondary">
-                                                <t t-esc="roleLabel(hm)"/>
+                                                <t t-out="roleLabel(hm)"/>
                                             </span>
                                         </td>
                                         <td>
@@ -354,7 +354,7 @@
                     </div>
                     <t t-if="state.member.subscription">
                         <span t-attf-class="o_di_badge {{ subStateClass(state.member.subscription.state) }}"
-                              t-esc="subStateLabel(state.member.subscription.state)"/>
+                              t-out="subStateLabel(state.member.subscription.state)"/>
                     </t>
                 </div>
                 <div class="o_di_card_body">
@@ -368,26 +368,26 @@
                         <t t-if="state.member.subscription.billing_failure_count > 0">
                             <div class="o_mp_billing_warn">
                                 <i class="fa fa-exclamation-circle me-2"/>
-                                <strong t-esc="state.member.subscription.billing_failure_count"/>
+                                <strong t-out="state.member.subscription.billing_failure_count"/>
                                 billing failure(s).
                                 <t t-if="state.member.subscription.grace_period_end">
                                     Grace period until
-                                    <strong t-esc="fmtDate(state.member.subscription.grace_period_end)"/>.
+                                    <strong t-out="fmtDate(state.member.subscription.grace_period_end)"/>.
                                 </t>
                             </div>
                         </t>
                         <div class="o_mp_info_row">
                             <span class="o_mp_info_label"><i class="fa fa-tag"/> Plan</span>
                             <span class="o_mp_info_value fw-semibold"
-                                  t-esc="state.member.subscription.plan_name || '—'"/>
+                                  t-out="state.member.subscription.plan_name || '—'"/>
                         </div>
                         <div class="o_mp_info_row">
                             <span class="o_mp_info_label"><i class="fa fa-dollar"/> Price</span>
                             <span class="o_mp_info_value">
                                 <t t-if="state.member.subscription.price">
-                                    $<t t-esc="state.member.subscription.price.toFixed(2)"/>
+                                    $<t t-out="state.member.subscription.price.toFixed(2)"/>
                                     <small class="text-muted ms-1"
-                                           t-esc="'/ ' + (state.member.subscription.billing_period || '')"/>
+                                           t-out="'/ ' + (state.member.subscription.billing_period || '')"/>
                                 </t>
                                 <t t-else="">—</t>
                             </span>
@@ -395,12 +395,12 @@
                         <div class="o_mp_info_row">
                             <span class="o_mp_info_label"><i class="fa fa-calendar"/> Start Date</span>
                             <span class="o_mp_info_value"
-                                  t-esc="fmtDate(state.member.subscription.start_date) || '—'"/>
+                                  t-out="fmtDate(state.member.subscription.start_date) || '—'"/>
                         </div>
                         <div class="o_mp_info_row">
                             <span class="o_mp_info_label"><i class="fa fa-refresh"/> Next Billing</span>
                             <span class="o_mp_info_value"
-                                  t-esc="fmtDate(state.member.subscription.next_billing_date) || '—'"/>
+                                  t-out="fmtDate(state.member.subscription.next_billing_date) || '—'"/>
                         </div>
                         <div class="o_mp_credits_summary">
                             <t t-if="state.member.subscription.credits_per_period === 0">
@@ -412,12 +412,12 @@
                             <t t-else="">
                                 <div class="o_mp_credit_pill o_mp_credit_balance">
                                     <span class="o_mp_credit_num"
-                                          t-esc="state.member.subscription.credit_balance"/>
+                                          t-out="state.member.subscription.credit_balance"/>
                                     <span class="o_mp_credit_lbl">Available Credits</span>
                                 </div>
                                 <div class="o_mp_credit_pill o_mp_credit_hold">
                                     <span class="o_mp_credit_num"
-                                          t-esc="state.member.subscription.credit_pending"/>
+                                          t-out="state.member.subscription.credit_pending"/>
                                     <span class="o_mp_credit_lbl">Pending Hold</span>
                                 </div>
                             </t>
@@ -454,7 +454,7 @@
                                 <div class="o_mp_rank_info">
                                     <div class="o_mp_rank_name"
                                          t-att-style="'color:' + state.member.current_rank.color"
-                                         t-esc="state.member.current_rank.name"/>
+                                         t-out="state.member.current_rank.name"/>
                                     <div class="o_mp_rank_sub">Current Rank</div>
                                 </div>
                             </div>
@@ -462,8 +462,8 @@
                                 <div class="o_mp_bar_label">
                                     <span>Classes since last promotion</span>
                                     <span>
-                                        <t t-esc="state.member.attendance_since_last_rank"/>
-                                        / <t t-esc="state.member.rank_threshold"/>
+                                        <t t-out="state.member.attendance_since_last_rank"/>
+                                        / <t t-out="state.member.rank_threshold"/>
                                     </span>
                                 </div>
                                 <div class="o_ad_bar_bg" style="margin:0 20px 12px">
@@ -476,7 +476,7 @@
                                 <div class="o_mp_info_row">
                                     <span class="o_mp_info_label"><i class="fa fa-check-square-o"/> Since Promo</span>
                                     <span class="o_mp_info_value"
-                                          t-esc="state.member.attendance_since_last_rank"/>
+                                          t-out="state.member.attendance_since_last_rank"/>
                                 </div>
                             </t>
                         </t>
@@ -497,10 +497,10 @@
                                     <t t-foreach="state.member.rank_history"
                                        t-as="rh" t-key="rh_index">
                                         <tr>
-                                            <td class="fw-semibold" t-esc="rh.rank_name"/>
-                                            <td t-esc="fmtDate(rh.date_awarded)"/>
-                                            <td class="text-muted" t-esc="rh.awarded_by"/>
-                                            <td class="text-muted" t-esc="rh.program"/>
+                                            <td class="fw-semibold" t-out="rh.rank_name"/>
+                                            <td t-out="fmtDate(rh.date_awarded)"/>
+                                            <td class="text-muted" t-out="rh.awarded_by"/>
+                                            <td class="text-muted" t-out="rh.program"/>
                                         </tr>
                                     </t>
                                 </tbody>
@@ -521,7 +521,7 @@
                     <t t-if="state.member.subscription">
                         <div class="o_mp_ledger_balance">
                             <span class="o_mp_ledger_num"
-                                  t-esc="state.member.subscription.credit_balance"/>
+                                  t-out="state.member.subscription.credit_balance"/>
                             <span class="o_mp_ledger_unit">credits available</span>
                         </div>
                     </t>
@@ -550,23 +550,23 @@
                                    t-as="tx" t-key="tx.id">
                                     <tr>
                                         <td class="text-muted o_mp_txn_ref"
-                                            t-esc="tx.reference"/>
-                                        <td t-esc="fmtDt(tx.date)"/>
+                                            t-out="tx.reference"/>
+                                        <td t-out="fmtDt(tx.date)"/>
                                         <td>
                                             <span t-attf-class="o_di_badge {{ creditTypeClass(tx.transaction_type) }}"
-                                                  t-esc="creditTypeLabel(tx.transaction_type)"/>
+                                                  t-out="creditTypeLabel(tx.transaction_type)"/>
                                         </td>
                                         <td>
                                             <span t-attf-class="o_mp_credit_amount {{ tx.amount >= 0 ? 'o_mp_credit_pos' : 'o_mp_credit_neg' }}">
                                                 <t t-if="tx.amount > 0">+</t>
-                                                <t t-esc="tx.amount"/>
+                                                <t t-out="tx.amount"/>
                                             </span>
                                         </td>
                                         <td>
                                             <span t-attf-class="o_di_badge {{ creditStatusClass(tx.status) }}"
-                                                  t-esc="creditStatusLabel(tx.status)"/>
+                                                  t-out="creditStatusLabel(tx.status)"/>
                                         </td>
-                                        <td class="text-muted" t-esc="tx.note || '—'"/>
+                                        <td class="text-muted" t-out="tx.note || '—'"/>
                                     </tr>
                                 </t>
                             </tbody>
@@ -604,12 +604,12 @@
                                 <t t-foreach="state.member.course_templates"
                                    t-as="ct" t-key="ct.id">
                                     <tr>
-                                        <td class="fw-semibold" t-esc="ct.name"/>
+                                        <td class="fw-semibold" t-out="ct.name"/>
                                         <td>
                                             <span class="o_di_badge o_di_badge_primary"
-                                                  t-esc="ct.level"/>
+                                                  t-out="ct.level"/>
                                         </td>
-                                        <td class="text-muted" t-esc="ct.instructors"/>
+                                        <td class="text-muted" t-out="ct.instructors"/>
                                     </tr>
                                 </t>
                             </tbody>
@@ -649,16 +649,16 @@
                                 <t t-foreach="state.member.upcoming_enrollments"
                                    t-as="e" t-key="e.id">
                                     <tr>
-                                        <td class="fw-semibold" t-esc="e.template_name"/>
-                                        <td t-esc="fmtDt(e.start_datetime)"/>
-                                        <td class="text-muted" t-esc="e.instructor"/>
+                                        <td class="fw-semibold" t-out="e.template_name"/>
+                                        <td t-out="fmtDt(e.start_datetime)"/>
+                                        <td class="text-muted" t-out="e.instructor"/>
                                         <td>
                                             <span class="o_di_badge o_di_badge_secondary"
-                                                  t-esc="enrollmentLabel(e.status)"/>
+                                                  t-out="enrollmentLabel(e.status)"/>
                                         </td>
                                         <td>
                                             <span t-attf-class="o_di_badge {{ attendanceClass(e.attendance_state) }}"
-                                                  t-esc="attendanceLabel(e.attendance_state)"/>
+                                                  t-out="attendanceLabel(e.attendance_state)"/>
                                         </td>
                                     </tr>
                                 </t>
@@ -677,7 +677,7 @@
                         <small class="text-muted fw-normal ms-1">last 10 sessions</small>
                     </div>
                     <div class="o_di_card_subtitle">
-                        <t t-esc="state.member.total_attendance_count || 0"/> total classes attended
+                        <t t-out="state.member.total_attendance_count || 0"/> total classes attended
                     </div>
                 </div>
                 <div class="o_di_card_body">
@@ -701,12 +701,12 @@
                                 <t t-foreach="state.member.recent_attendance"
                                    t-as="log" t-key="log.id">
                                     <tr>
-                                        <td class="fw-semibold" t-esc="log.session_name"/>
-                                        <td t-esc="fmtDt(log.date)"/>
-                                        <td class="text-muted" t-esc="log.instructor"/>
+                                        <td class="fw-semibold" t-out="log.session_name"/>
+                                        <td t-out="fmtDt(log.date)"/>
+                                        <td class="text-muted" t-out="log.instructor"/>
                                         <td>
                                             <span t-attf-class="o_di_badge {{ attendanceClass(log.status) }}"
-                                                  t-esc="attendanceLabel(log.status)"/>
+                                                  t-out="attendanceLabel(log.status)"/>
                                         </td>
                                     </tr>
                                 </t>
@@ -736,7 +736,7 @@
                         <t t-if="state.editOverlay.error">
                             <div class="alert alert-danger py-2 mb-3">
                                 <i class="fa fa-exclamation-triangle me-2"/>
-                                <t t-esc="state.editOverlay.error"/>
+                                <t t-out="state.editOverlay.error"/>
                             </div>
                         </t>
 
@@ -807,7 +807,7 @@
                                     <t t-foreach="['A+','A-','B+','B-','AB+','AB-','O+','O-']" t-as="bt" t-key="bt">
                                         <option t-att-value="bt"
                                                 t-att-selected="state.editOverlay.form.blood_type === bt"
-                                                t-esc="bt"/>
+                                                t-out="bt"/>
                                     </t>
                                 </select>
                             </div>
@@ -888,33 +888,33 @@
                             <t t-if="state.member.subscription.billing_failure_count > 0">
                                 <div class="o_mp_billing_warn mb-3">
                                     <i class="fa fa-exclamation-circle me-2"/>
-                                    <strong t-esc="state.member.subscription.billing_failure_count"/>
+                                    <strong t-out="state.member.subscription.billing_failure_count"/>
                                     billing failure(s).
                                     <t t-if="state.member.subscription.grace_period_end">
                                         Grace period until
-                                        <strong t-esc="fmtDate(state.member.subscription.grace_period_end)"/>.
+                                        <strong t-out="fmtDate(state.member.subscription.grace_period_end)"/>.
                                     </t>
                                 </div>
                             </t>
                             <div class="o_mp_info_row">
                                 <span class="o_mp_info_label"><i class="fa fa-tag"/> Plan</span>
                                 <span class="o_mp_info_value fw-semibold"
-                                      t-esc="state.member.subscription.plan_name || '—'"/>
+                                      t-out="state.member.subscription.plan_name || '—'"/>
                             </div>
                             <div class="o_mp_info_row">
                                 <span class="o_mp_info_label"><i class="fa fa-circle"/> State</span>
                                 <span class="o_mp_info_value">
                                     <span t-attf-class="o_di_badge {{ subStateClass(state.member.subscription.state) }}"
-                                          t-esc="subStateLabel(state.member.subscription.state)"/>
+                                          t-out="subStateLabel(state.member.subscription.state)"/>
                                 </span>
                             </div>
                             <div class="o_mp_info_row">
                                 <span class="o_mp_info_label"><i class="fa fa-dollar"/> Price</span>
                                 <span class="o_mp_info_value">
                                     <t t-if="state.member.subscription.price">
-                                        $<t t-esc="state.member.subscription.price.toFixed(2)"/>
+                                        $<t t-out="state.member.subscription.price.toFixed(2)"/>
                                         <small class="text-muted ms-1"
-                                               t-esc="'/ ' + (state.member.subscription.billing_period || '')"/>
+                                               t-out="'/ ' + (state.member.subscription.billing_period || '')"/>
                                     </t>
                                     <t t-else="">—</t>
                                 </span>
@@ -922,22 +922,22 @@
                             <div class="o_mp_info_row">
                                 <span class="o_mp_info_label"><i class="fa fa-calendar"/> Start Date</span>
                                 <span class="o_mp_info_value"
-                                      t-esc="fmtDate(state.member.subscription.start_date) || '—'"/>
+                                      t-out="fmtDate(state.member.subscription.start_date) || '—'"/>
                             </div>
                             <div class="o_mp_info_row">
                                 <span class="o_mp_info_label"><i class="fa fa-refresh"/> Next Billing</span>
                                 <span class="o_mp_info_value"
-                                      t-esc="fmtDate(state.member.subscription.next_billing_date) || '—'"/>
+                                      t-out="fmtDate(state.member.subscription.next_billing_date) || '—'"/>
                             </div>
                             <div class="o_mp_credits_summary" style="margin-top:14px">
                                 <div class="o_mp_credit_pill o_mp_credit_balance">
                                     <span class="o_mp_credit_num"
-                                          t-esc="state.member.subscription.credit_balance"/>
+                                          t-out="state.member.subscription.credit_balance"/>
                                     <span class="o_mp_credit_lbl">Available Credits</span>
                                 </div>
                                 <div class="o_mp_credit_pill o_mp_credit_hold">
                                     <span class="o_mp_credit_num"
-                                          t-esc="state.member.subscription.credit_pending"/>
+                                          t-out="state.member.subscription.credit_pending"/>
                                     <span class="o_mp_credit_lbl">Pending Hold</span>
                                 </div>
                             </div>
@@ -980,7 +980,7 @@
                                 <div class="o_mp_rank_info">
                                     <div class="o_mp_rank_name"
                                          t-att-style="'color:' + state.member.current_rank.color"
-                                         t-esc="state.member.current_rank.name"/>
+                                         t-out="state.member.current_rank.name"/>
                                     <div class="o_mp_rank_sub">Current Rank</div>
                                 </div>
                             </div>
@@ -988,8 +988,8 @@
                                 <div class="o_mp_bar_label">
                                     <span>Classes since last promotion</span>
                                     <span>
-                                        <t t-esc="state.member.attendance_since_last_rank"/>
-                                        / <t t-esc="state.member.rank_threshold"/>
+                                        <t t-out="state.member.attendance_since_last_rank"/>
+                                        / <t t-out="state.member.rank_threshold"/>
                                     </span>
                                 </div>
                                 <div class="o_ad_bar_bg" style="margin:0 0 16px">

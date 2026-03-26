@@ -1,7 +1,7 @@
 {
     "name": "Dojang Members",
     "summary": "Members and household management",
-    "version": "19.0.1.0.0",
+    "version": "saas~19.2.1.0.0",
     "category": "Services",
     "license": "LGPL-3",
     "author": "Dojang",

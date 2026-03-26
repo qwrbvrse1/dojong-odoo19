@@ -44,7 +44,7 @@
                     <i class="fa fa-check-circle fa-lg flex-shrink-0"/>
                     <div>
                         <div class="fw-semibold">Payment method saved</div>
-                        <div class="text-muted small" t-esc="state.cardDisplay"/>
+                        <div class="text-muted small" t-out="state.cardDisplay"/>
                     </div>
                 </div>
             </t>
@@ -55,7 +55,7 @@
                     <i class="fa fa-exclamation-circle fa-lg flex-shrink-0 mt-1"/>
                     <div>
                         <div class="fw-semibold">Payment error</div>
-                        <div class="small" t-esc="state.errorMessage"/>
+                        <div class="small" t-out="state.errorMessage"/>
                     </div>
                 </div>
                 <button class="btn btn-outline-secondary btn-sm mt-2" t-on-click="onRetry">

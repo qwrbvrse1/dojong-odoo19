@@ -1,7 +1,7 @@
 import { patch } from '@web/core/utils/patch';
 import { browser } from '@web/core/browser/browser';
 
-import { Chatter } from '@mail/chatter/web_portal/chatter';
+import { Chatter } from '@mail/chatter/web_portal_project/chatter';
 import { RecipientsList } from '@muk_web_chatter/core/recipients_list/recipients_list';
 
 patch(Chatter.prototype, {
@@ -11,8 +11,8 @@ patch(Chatter.prototype, {
             'muk_web_chatter.notifications'
         );
         this.state.showNotificationMessages = (
-            showNotificationMessages != null ? 
-            JSON.parse(showNotificationMessages) : true
+            showNotificationMessages != null ?
+                JSON.parse(showNotificationMessages) : true
         );
         this.state.notifyInternalFollowers = false;
     },

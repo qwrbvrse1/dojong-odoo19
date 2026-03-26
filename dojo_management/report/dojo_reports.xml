@@ -13,11 +13,11 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="student">
                 <div class="page">
-                    <h2>Student: <t t-esc="student.name"/></h2>
-                    <p>Date of Birth: <t t-esc="student.dob"/></p>
-                    <p>Email: <t t-esc="student.email"/></p>
-                    <p>Phone: <t t-esc="student.phone"/></p>
-                    <p>Enrollment Date: <t t-esc="student.enrollment_date"/></p>
+                    <h2>Student: <t t-out="student.name"/></h2>
+                    <p>Date of Birth: <t t-out="student.dob"/></p>
+                    <p>Email: <t t-out="student.email"/></p>
+                    <p>Phone: <t t-out="student.phone"/></p>
+                    <p>Enrollment Date: <t t-out="student.enrollment_date"/></p>
                 </div>
             </t>
         </t>
@@ -37,11 +37,11 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="payment">
                 <div class="page">
-                    <h2>Payment for <t t-esc="payment.student_id.name"/></h2>
-                    <p>Amount: <t t-esc="payment.amount"/></p>
-                    <p>Payment Date: <t t-esc="payment.payment_date"/></p>
-                    <p>Due Date: <t t-esc="payment.due_date"/></p>
-                    <p>Status: <t t-esc="payment.state"/></p>
+                    <h2>Payment for <t t-out="payment.student_id.name"/></h2>
+                    <p>Amount: <t t-out="payment.amount"/></p>
+                    <p>Payment Date: <t t-out="payment.payment_date"/></p>
+                    <p>Due Date: <t t-out="payment.due_date"/></p>
+                    <p>Status: <t t-out="payment.state"/></p>
                 </div>
             </t>
         </t>
@@ -61,9 +61,9 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="attendance">
                 <div class="page">
-                    <h2>Attendance for <t t-esc="attendance.student_id.name"/></h2>
-                    <p>Date: <t t-esc="attendance.date"/></p>
-                    <p>Status: <t t-esc="attendance.status"/></p>
+                    <h2>Attendance for <t t-out="attendance.student_id.name"/></h2>
+                    <p>Date: <t t-out="attendance.date"/></p>
+                    <p>Status: <t t-out="attendance.status"/></p>
                 </div>
             </t>
         </t>
@@ -83,16 +83,16 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="student">
                 <div class="page">
-                    <h2>Student: <t t-esc="student.name"/></h2>
-                    <p>Date of Birth: <t t-esc="student.dob"/></p>
-                    <p>Email: <t t-esc="student.email"/></p>
-                    <p>Phone: <t t-esc="student.phone"/></p>
-                    <p>Enrollment Date: <t t-esc="student.enrollment_date"/></p>
+                    <h2>Student: <t t-out="student.name"/></h2>
+                    <p>Date of Birth: <t t-out="student.dob"/></p>
+                    <p>Email: <t t-out="student.email"/></p>
+                    <p>Phone: <t t-out="student.phone"/></p>
+                    <p>Enrollment Date: <t t-out="student.enrollment_date"/></p>
                     <h3>Payments</h3>
                     <ul>
                         <t t-foreach="student.payment_ids" t-as="payment">
                             <li>
-                                <t t-esc="payment.payment_date"/>: <t t-esc="payment.amount"/> (<t t-esc="payment.state"/>)
+                                <t t-out="payment.payment_date"/>: <t t-out="payment.amount"/> (<t t-out="payment.state"/>)
                             </li>
                         </t>
                     </ul>
@@ -100,7 +100,7 @@
                     <ul>
                         <t t-foreach="student.attendance_ids" t-as="attendance">
                             <li>
-                                <t t-esc="attendance.date"/>: <t t-esc="attendance.status"/>
+                                <t t-out="attendance.date"/>: <t t-out="attendance.status"/>
                             </li>
                         </t>
                     </ul>

@@ -8,7 +8,7 @@ class DojoKioskService(models.AbstractModel):
 
     def _get_marketing_cards_data(self, publish_kiosk=True):
         """Return serialisable list of active marketing cards for the kiosk."""
-        base_url = self.env["ir.config_parameter"].sudo().get_param(
+        base_url = self.env["ir.config_parameter"].sudo().get_str(
             "web.base.url", default=""
         )
         domain = [("active", "=", True)]

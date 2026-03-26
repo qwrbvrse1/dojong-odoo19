@@ -84,7 +84,7 @@ class DojoKioskConfig(models.Model):
         }
 
     def _compute_kiosk_url(self):
-        base = self.env["ir.config_parameter"].sudo().get_param("web.base.url") or ""
+        base = self.env["ir.config_parameter"].sudo().get_str("web.base.url") or ""
         for cfg in self:
             if cfg.kiosk_token:
                 cfg.kiosk_url = f"{base}/kiosk/{cfg.kiosk_token}"

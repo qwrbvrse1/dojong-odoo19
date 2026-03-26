@@ -240,7 +240,7 @@
                                         <select class="form-select" id="h_discipline" name="discipline">
                                             <option value="">&#x2014; Select a program &#x2014;</option>
                                             <t t-foreach="programs" t-as="prog">
-                                                <option t-att-value="prog.name" t-esc="prog.name"/>
+                                                <option t-att-value="prog.name" t-out="prog.name"/>
                                             </t>
                                         </select>
                                     </div>
@@ -481,7 +481,7 @@
                                         <select class="form-select" id="c_discipline" name="discipline">
                                             <option value="">&#x2014; Select a program &#x2014;</option>
                                             <t t-foreach="programs" t-as="prog">
-                                                <option t-att-value="prog.name" t-esc="prog.name"/>
+                                                <option t-att-value="prog.name" t-out="prog.name"/>
                                             </t>
                                         </select>
                                     </div>

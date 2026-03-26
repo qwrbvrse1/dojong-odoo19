@@ -56,7 +56,7 @@ class DojoMarketingCard(models.Model):
 
     @api.depends("card_type", "custom_url")
     def _compute_target_url(self):
-        base_url = self.env["ir.config_parameter"].sudo().get_param(
+        base_url = self.env["ir.config_parameter"].sudo().get_str(
             "web.base.url", default=""
         )
         for card in self:

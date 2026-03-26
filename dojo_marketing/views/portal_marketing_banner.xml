@@ -19,10 +19,10 @@
                                 <!-- Text side -->
                                 <div class="dojo-marketing-pill__text">
                                     <span class="dojo-marketing-pill__name"
-                                          t-esc="card['name']"/>
+                                          t-out="card['name']"/>
                                     <t t-if="card['subtitle']">
                                         <span class="dojo-marketing-pill__sub"
-                                              t-esc="card['subtitle']"/>
+                                              t-out="card['subtitle']"/>
                                     </t>
                                 </div>
                                 <!-- QR side -->

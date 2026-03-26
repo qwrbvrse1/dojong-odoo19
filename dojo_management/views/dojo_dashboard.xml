@@ -75,10 +75,10 @@
                                     <t t-name="card">
                                         <div t-attf-style="background-color: {{record.color.raw_value}}; color: {{record.text_color.raw_value}} !important; padding: 15px; border-radius: 12px; text-align: center; margin: 5px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid rgba(0,0,0,0.1);">
                                             <div t-attf-style="color: {{record.text_color.raw_value}} !important; font-size: 0.8em; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px;">
-                                                <t t-esc="record.style_name.value"/>
+                                                <t t-out="record.style_name.value"/>
                                             </div>
                                             <h4 t-attf-style="color: {{record.text_color.raw_value}} !important; margin: 0; font-weight: 600;">
-                                                <t t-esc="record.icon.value"/> <t t-esc="record.name.value"/>
+                                                <t t-out="record.icon.value"/> <t t-out="record.name.value"/>
                                             </h4>
                                             <h1 t-attf-style="color: {{record.text_color.raw_value}} !important; margin: 10px 0; font-weight: 800; font-size: 2.5em;">
                                                 <field name="count"/>
@@ -107,7 +107,7 @@
                                 <templates>
                                     <t t-name="card">
                                         <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border-left: 4px solid #2563eb; margin: 5px;">
-                                            <h5 style="margin: 0; color: #1e40af;"><t t-esc="record.name.value"/></h5>
+                                            <h5 style="margin: 0; color: #1e40af;"><t t-out="record.name.value"/></h5>
                                             <h3 style="margin: 5px 0;"><field name="count"/> students</h3>
                                         </div>
                                     </t>

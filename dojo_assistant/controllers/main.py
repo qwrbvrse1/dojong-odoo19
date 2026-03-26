@@ -186,7 +186,7 @@ class DojoAiAssistantController(http.Controller):
                 _logger.warning("Could not save audio attachment: %s", e)
 
             # Step 1: Speech-to-text via ElevenLabs
-            lang = request.env["ir.config_parameter"].sudo().get_param(
+            lang = request.env["ir.config_parameter"].sudo().get_str(
                 "elevenlabs_connector.language", "en"
             )
             try:

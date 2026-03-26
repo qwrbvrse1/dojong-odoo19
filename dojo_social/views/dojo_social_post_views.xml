@@ -23,17 +23,17 @@
                             </div>
                             <div class="o_kanban_record_body">
                                 <p class="mb-1" style="font-size:13px; line-height:1.4;">
-                                    <t t-esc="record.name.value"/>
+                                    <t t-out="record.name.value"/>
                                 </p>
                             </div>
                             <div class="o_kanban_record_bottom mt-2">
                                 <div class="oe_kanban_bottom_left text-muted" style="font-size:11px;">
-                                    <span t-esc="record.account_id.value"/>
+                                    <span t-out="record.account_id.value"/>
                                     <t t-if="record.scheduled_date.raw_value">
-                                        · <span t-esc="record.scheduled_date.value"/>
+                                        · <span t-out="record.scheduled_date.value"/>
                                     </t>
                                     <t t-if="record.posted_at.raw_value">
-                                        · <span t-esc="record.posted_at.value"/>
+                                        · <span t-out="record.posted_at.value"/>
                                     </t>
                                 </div>
                                 <div class="oe_kanban_bottom_right">

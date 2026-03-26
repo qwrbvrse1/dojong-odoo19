@@ -284,7 +284,7 @@ class DojoMemberPortalMarketing(DojoMemberPortal):
         if not hasattr(response, "qcontext"):
             return response
 
-        base_url = request.env["ir.config_parameter"].sudo().get_param(
+        base_url = request.env["ir.config_parameter"].sudo().get_str(
             "web.base.url", default=""
         )
         cards = request.env["dojo.marketing.card"].sudo().search(

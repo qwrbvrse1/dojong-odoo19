@@ -173,7 +173,7 @@ class DojoCheckout(http.Controller):
             return request.redirect("/checkout")
 
         ICP = request.env["ir.config_parameter"].sudo()
-        stripe_pk = ICP.get_param("stripe.publishable_key", "")
+        stripe_pk = ICP.get_str("stripe.publishable_key", "")
         return request.render("dojo_checkout.checkout_summary", {
             "session": session,
             "stripe_publishable_key": stripe_pk,

@@ -17,7 +17,7 @@ class VoiceQueryProcessor(models.AbstractModel):
 
     def _get_queryable_models(self):
         """Get list of queryable model names from settings"""
-        queryable_models = self.env['ir.config_parameter'].sudo().get_param(
+        queryable_models = self.env['ir.config_parameter'].sudo().get_str(
             'elevenlabs_connector.queryable_models', ''
         )
         

@@ -21,7 +21,7 @@
                 <div class="d-flex align-items-center gap-1 mt-1">
                     <t t-if="record.dojo_lead_score.raw_value">
                         <span t-attf-class="badge #{record.dojo_lead_score.raw_value >= 60 ? 'text-bg-success' : (record.dojo_lead_score.raw_value >= 30 ? 'text-bg-warning' : 'text-bg-secondary')}">
-                            Score: <t t-esc="record.dojo_lead_score.raw_value"/>
+                            Score: <t t-out="record.dojo_lead_score.raw_value"/>
                         </span>
                     </t>
                     <t t-if="record.trial_attended.raw_value">

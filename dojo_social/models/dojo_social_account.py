@@ -41,11 +41,11 @@ class DojoSocialAccount(models.Model):
 
     @api.model
     def _get_app_id(self):
-        return self.env["ir.config_parameter"].sudo().get_param("dojo_social.fb_app_id", "")
+        return self.env["ir.config_parameter"].sudo().get_str("dojo_social.fb_app_id", "")
 
     @api.model
     def _get_app_secret(self):
-        return self.env["ir.config_parameter"].sudo().get_param("dojo_social.fb_app_secret", "")
+        return self.env["ir.config_parameter"].sudo().get_str("dojo_social.fb_app_secret", "")
 
     # ─── Actions ─────────────────────────────────────────────────────────────
 
@@ -58,7 +58,7 @@ class DojoSocialAccount(models.Model):
                 "Facebook App ID is not configured. "
                 "Go to Settings → Technical → System Parameters and set dojo_social.fb_app_id."
             )
-        base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url")
+        base_url = self.env["ir.config_parameter"].sudo().get_str("web.base.url")
         redirect_uri = f"{base_url}/dojo/social/facebook/callback"
         scope = "pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish"
         oauth_url = (

@@ -1,6 +1,6 @@
 {
     'name': 'Dojo Management',
-    'version': '19.0.1.0.0',
+    'version': 'saas~19.2.1.0.0',
     'category': 'Martial Arts',
     'summary': 'Complete martial arts facility management suite',
     'description': """

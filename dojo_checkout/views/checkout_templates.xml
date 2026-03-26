@@ -10,8 +10,8 @@
     <div class="dojo-checkout-progress d-flex align-items-center justify-content-center gap-0 mb-4 mt-2">
         <t t-foreach="[('1','Plan'),('2','Schedule'),('3','Review'),('4','Done')]" t-as="s">
             <div t-attf-class="dojo-cp-step #{int(s[0]) == step and 'active' or (int(s[0]) &lt; step and 'done' or '')}">
-                <div class="dojo-cp-dot"><t t-esc="s[0]"/></div>
-                <div class="dojo-cp-label d-none d-sm-block"><t t-esc="s[1]"/></div>
+                <div class="dojo-cp-dot"><t t-out="s[0]"/></div>
+                <div class="dojo-cp-label d-none d-sm-block"><t t-out="s[1]"/></div>
             </div>
             <t t-if="int(s[0]) &lt; 4">
                 <div t-attf-class="dojo-cp-line #{int(s[0]) &lt; step and 'done' or ''}"/>
@@ -36,7 +36,7 @@
                 <t t-set="prog" t-value="group['program']"/>
                 <div class="mb-5">
                     <h3 class="dojo-program-heading fw-semibold mb-3">
-                        <span t-esc="prog.name or 'General'"/>
+                        <span t-out="prog.name or 'General'"/>
                     </h3>
                     <div class="row g-4">
                         <t t-foreach="group['plans']" t-as="item">
@@ -53,7 +53,7 @@
                                     <!-- Banner text -->
                                     <t t-if="cfg and cfg.banner_text">
                                         <div class="dojo-plan-banner bg-primary text-white text-center py-1 px-3 small fw-semibold" style="border-radius: 8px 8px 0 0;">
-                                            <t t-esc="cfg.banner_text"/>
+                                            <t t-out="cfg.banner_text"/>
                                         </div>
                                     </t>
                                     <!-- Hero image -->
@@ -62,22 +62,22 @@
                                              class="card-img-top dojo-plan-img" alt=""/>
                                     </t>
                                     <div class="card-body d-flex flex-column p-4">
-                                        <h5 class="card-title fw-bold mb-1" t-esc="plan.name"/>
-                                        <p class="text-muted small mb-3" t-esc="plan.description or ''"/>
+                                        <h5 class="card-title fw-bold mb-1" t-out="plan.name"/>
+                                        <p class="text-muted small mb-3" t-out="plan.description or ''"/>
                                         <div class="dojo-price mt-auto mb-3">
-                                            <span class="dojo-price-amount fs-3 fw-bold" t-esc="'$%.0f' % plan.price"/>
+                                            <span class="dojo-price-amount fs-3 fw-bold" t-out="'$%.0f' % plan.price"/>
                                             <span class="text-muted small">
-                                                / <t t-esc="plan.billing_period"/>
+                                                / <t t-out="plan.billing_period"/>
                                             </span>
                                             <t t-if="plan.initial_fee">
                                                 <div class="text-muted small mt-1">
-                                                    + $<t t-esc="'%.0f' % plan.initial_fee"/> enrollment fee
+                                                    + $<t t-out="'%.0f' % plan.initial_fee"/> enrollment fee
                                                 </div>
                                             </t>
                                         </div>
                                         <a t-attf-href="/checkout/plan/#{plan.id}"
                                            class="btn btn-primary w-100 fw-semibold">
-                                            <t t-esc="cfg.cta_label if cfg else 'Join Now'"/>
+                                            <t t-out="cfg.cta_label if cfg else 'Join Now'"/>
                                         </a>
                                     </div>
                                 </div>
@@ -109,23 +109,23 @@
                             <img t-att-src="'/web/image/dojo.checkout.config/' + str(config.id) + '/hero_image_1920'"
                                  class="img-fluid rounded mb-3" alt=""/>
                         </t>
-                        <h5 class="fw-bold mb-1" t-esc="plan.name"/>
-                        <p class="text-muted small mb-3" t-esc="plan.program_id.name or ''"/>
+                        <h5 class="fw-bold mb-1" t-out="plan.name"/>
+                        <p class="text-muted small mb-3" t-out="plan.program_id.name or ''"/>
                         <div class="dojo-price-summary">
                             <div class="d-flex justify-content-between">
                                 <span>Recurring</span>
-                                <strong><t t-esc="'$%.2f' % plan.price"/>/<t t-esc="plan.billing_period"/></strong>
+                                <strong><t t-out="'$%.2f' % plan.price"/>/<t t-out="plan.billing_period"/></strong>
                             </div>
                             <t t-if="plan.initial_fee">
                                 <div class="d-flex justify-content-between mt-1">
                                     <span>Enrollment fee</span>
-                                    <strong><t t-esc="'$%.2f' % plan.initial_fee"/></strong>
+                                    <strong><t t-out="'$%.2f' % plan.initial_fee"/></strong>
                                 </div>
                             </t>
                         </div>
                         <t t-if="plan.description">
                             <hr/>
-                            <p class="small text-muted mb-0" t-esc="plan.description"/>
+                            <p class="small text-muted mb-0" t-out="plan.description"/>
                         </t>
                     </div>
                 </div>
@@ -247,10 +247,10 @@
                                                      class="img-fluid rounded mb-1" alt=""
                                                      style="max-height:80px;object-fit:contain;"/>
                                             </t>
-                                            <div class="fw-semibold small" t-esc="upsell.name"/>
-                                            <div class="text-muted small" t-esc="upsell.description or ''"/>
+                                            <div class="fw-semibold small" t-out="upsell.name"/>
+                                            <div class="text-muted small" t-out="upsell.description or ''"/>
                                             <div class="fw-bold mt-auto">
-                                                <t t-esc="'$%.2f' % upsell.price"/>
+                                                <t t-out="'$%.2f' % upsell.price"/>
                                             </div>
                                         </label>
                                     </div>
@@ -296,8 +296,8 @@
                                        t-att-value="day"
                                        t-attf-id="day_#{day}"
                                        class="dojo-day-check visually-hidden"/>
-                                <div class="fw-bold fs-5" t-esc="day_labels[day][:3]"/>
-                                <div class="small text-muted" t-esc="day_labels[day]"/>
+                                <div class="fw-bold fs-5" t-out="day_labels[day][:3]"/>
+                                <div class="small text-muted" t-out="day_labels[day]"/>
                             </label>
                         </div>
                     </t>
@@ -308,7 +308,7 @@
                         <strong>Your programme includes:</strong>
                         <ul class="mb-0 mt-1">
                             <t t-foreach="templates" t-as="tmpl">
-                                <li><t t-esc="tmpl.name"/></li>
+                                <li><t t-out="tmpl.name"/></li>
                             </t>
                         </ul>
                     </div>
@@ -352,11 +352,11 @@
                             <t t-if="session.enrollment_type == 'family'">Parent / Guardian</t>
                             <t t-else="">Name</t>
                         </div>
-                        <div class="fw-semibold" t-esc="session.member_name"/>
+                        <div class="fw-semibold" t-out="session.member_name"/>
                     </div>
                     <div class="col-6">
                         <div class="text-muted small">Email</div>
-                        <div class="fw-semibold" t-esc="session.member_email"/>
+                        <div class="fw-semibold" t-out="session.member_email"/>
                     </div>
                 </div>
                 <t t-if="session.enrollment_type == 'family' and session.child_name">
@@ -364,12 +364,12 @@
                     <div class="row">
                         <div class="col-6">
                             <div class="text-muted small">Child</div>
-                            <div class="fw-semibold" t-esc="session.child_name"/>
+                            <div class="fw-semibold" t-out="session.child_name"/>
                         </div>
                         <t t-if="session.child_dob">
                             <div class="col-6">
                                 <div class="text-muted small">Child's DOB</div>
-                                <div class="fw-semibold" t-esc="str(session.child_dob)"/>
+                                <div class="fw-semibold" t-out="str(session.child_dob)"/>
                             </div>
                         </t>
                     </div>
@@ -384,7 +384,7 @@
                 <t t-if="session.preferred_days">
                     <div class="mt-2">
                         <div class="text-muted small">Preferred days</div>
-                        <div class="fw-semibold" t-esc="session.preferred_days.upper()"/>
+                        <div class="fw-semibold" t-out="session.preferred_days.upper()"/>
                     </div>
                 </t>
             </div>
@@ -393,25 +393,25 @@
             <div class="card border-0 shadow-sm p-4 mb-4">
                 <h6 class="fw-bold mb-3">Price Breakdown</h6>
                 <div class="d-flex justify-content-between mb-2">
-                    <span><t t-esc="session.plan_id.name"/> (recurring)</span>
-                    <strong><t t-esc="'$%.2f' % session.plan_id.price"/>/<t t-esc="session.plan_id.billing_period"/></strong>
+                    <span><t t-out="session.plan_id.name"/> (recurring)</span>
+                    <strong><t t-out="'$%.2f' % session.plan_id.price"/>/<t t-out="session.plan_id.billing_period"/></strong>
                 </div>
                 <t t-if="session.plan_id.initial_fee">
                     <div class="d-flex justify-content-between mb-2">
                         <span>Enrollment fee (one-time)</span>
-                        <strong><t t-esc="'$%.2f' % session.plan_id.initial_fee"/></strong>
+                        <strong><t t-out="'$%.2f' % session.plan_id.initial_fee"/></strong>
                     </div>
                 </t>
                 <t t-foreach="session.selected_upsell_ids" t-as="upsell">
                     <div class="d-flex justify-content-between mb-2 text-muted">
-                        <span><t t-esc="upsell.name"/></span>
-                        <span><t t-esc="'$%.2f' % upsell.price"/></span>
+                        <span><t t-out="upsell.name"/></span>
+                        <span><t t-out="'$%.2f' % upsell.price"/></span>
                     </div>
                 </t>
                 <hr/>
                 <div class="d-flex justify-content-between fw-bold fs-5">
                     <span>Due today</span>
-                    <span><t t-esc="'$%.2f' % session.checkout_total"/></span>
+                    <span><t t-out="'$%.2f' % session.checkout_total"/></span>
                 </div>
             </div>
 
@@ -454,10 +454,10 @@
                         "Pay Now" captures your card immediately.
                     </t>
                     <t t-if="session.enrollment_type == 'family'">
-                        Invoice will be sent to <strong t-esc="session.member_name"/> (<t t-esc="session.member_email"/>) — your child's membership is activated immediately.
+                        Invoice will be sent to <strong t-out="session.member_name"/> (<t t-out="session.member_email"/>) — your child's membership is activated immediately.
                     </t>
                     <t t-else="">
-                        "Invoice Me" sends an invoice to <strong t-esc="session.member_email"/> — your membership is activated right away.
+                        "Invoice Me" sends an invoice to <strong t-out="session.member_email"/> — your membership is activated right away.
                     </t>
                 </p>
             </div>
@@ -557,7 +557,7 @@
                 We couldn't complete your checkout. Please try again or contact us directly.
             </p>
             <t t-if="error">
-                <div class="alert alert-danger text-start small" t-esc="error"/>
+                <div class="alert alert-danger text-start small" t-out="error"/>
             </t>
             <a href="/checkout" class="btn btn-primary">← Back to plans</a>
         </div>
@@ -574,7 +574,7 @@
             <div class="text-center mb-5">
                 <h1 class="fw-bold">Ready to become a full member?</h1>
                 <p class="text-muted lead">
-                    Hi <strong t-esc="member.display_name"/>! Pick a plan and we'll activate your membership instantly.
+                    Hi <strong t-out="member.display_name"/>! Pick a plan and we'll activate your membership instantly.
                 </p>
             </div>
 
@@ -586,17 +586,17 @@
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <input type="hidden" name="plan_id" t-att-value="plan.id"/>
                             <div class="dojo-plan-card card h-100 shadow-sm border-0 p-4 d-flex flex-column">
-                                <h5 class="fw-bold mb-1" t-esc="plan.name"/>
-                                <p class="text-muted small mb-3" t-esc="plan.program_id.name or ''"/>
+                                <h5 class="fw-bold mb-1" t-out="plan.name"/>
+                                <p class="text-muted small mb-3" t-out="plan.program_id.name or ''"/>
                                 <div class="dojo-price mb-3 mt-auto">
-                                    <span class="fs-3 fw-bold" t-esc="'$%.0f' % plan.price"/>
-                                    <span class="text-muted small">/<t t-esc="plan.billing_period"/></span>
+                                    <span class="fs-3 fw-bold" t-out="'$%.0f' % plan.price"/>
+                                    <span class="text-muted small">/<t t-out="plan.billing_period"/></span>
                                     <t t-if="plan.initial_fee">
-                                        <div class="text-muted small">+ $<t t-esc="'%.0f' % plan.initial_fee"/> enrollment fee</div>
+                                        <div class="text-muted small">+ $<t t-out="'%.0f' % plan.initial_fee"/> enrollment fee</div>
                                     </t>
                                 </div>
                                 <button type="submit" class="btn btn-primary w-100 fw-semibold">
-                                    <t t-esc="cfg.cta_label if cfg else 'Join Now'"/>
+                                    <t t-out="cfg.cta_label if cfg else 'Join Now'"/>
                                 </button>
                             </div>
                         </form>

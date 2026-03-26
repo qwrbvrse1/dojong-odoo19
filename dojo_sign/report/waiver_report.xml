@@ -25,7 +25,7 @@
 
                         <!-- Title block -->
                         <div class="text-center mb-4">
-                            <h2 t-esc="waiver_config.name or 'Member Liability Waiver'"/>
+                            <h2 t-out="waiver_config.name or 'Member Liability Waiver'"/>
                         </div>
 
                         <!-- Member info block -->
@@ -34,22 +34,22 @@
                             <tbody>
                                 <tr>
                                     <th style="width:30%;">Member Name</th>
-                                    <td><t t-esc="o.name"/></td>
+                                    <td><t t-out="o.name"/></td>
                                 </tr>
                                 <tr t-if="o.date_of_birth">
                                     <th>Date of Birth</th>
                                     <td>
-                                        <t t-esc="o.date_of_birth"
+                                        <t t-out="o.date_of_birth"
                                            t-options="{'widget': 'date'}"/>
                                     </td>
                                 </tr>
                                 <tr t-if="o.email">
                                     <th>Email</th>
-                                    <td><t t-esc="o.email"/></td>
+                                    <td><t t-out="o.email"/></td>
                                 </tr>
                                 <tr t-if="o.phone">
                                     <th>Phone</th>
-                                    <td><t t-esc="o.phone"/></td>
+                                    <td><t t-out="o.phone"/></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -74,7 +74,7 @@
                                         <p class="text-muted fst-italic">No signature captured</p>
                                     </t>
                                     <p class="mt-1 mb-0" style="font-size:0.85em;">
-                                        <t t-esc="o.waiver_signed_by or o.name"/>
+                                        <t t-out="o.waiver_signed_by or o.name"/>
                                     </p>
                                 </div>
                                 <!-- Right: signing metadata -->
@@ -85,13 +85,13 @@
                                             <tr>
                                                 <th>Signed by</th>
                                                 <td>
-                                                    <t t-esc="o.waiver_signed_by or o.name"/>
+                                                    <t t-out="o.waiver_signed_by or o.name"/>
                                                 </td>
                                             </tr>
                                             <tr t-if="o.waiver_signed_on">
                                                 <th>Date &amp; Time (UTC)</th>
                                                 <td>
-                                                    <t t-esc="o.waiver_signed_on"
+                                                    <t t-out="o.waiver_signed_on"
                                                        t-options="{'widget': 'datetime'}"/>
                                                 </td>
                                             </tr>

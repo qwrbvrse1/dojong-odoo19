@@ -53,8 +53,8 @@
                         </div>
                     </t>
                     <div class="dojo-va-msg-bubble">
-                        <div class="dojo-va-msg-text" t-esc="msg.text"/>
-                        <div class="dojo-va-msg-time" t-esc="msg.time"/>
+                        <div class="dojo-va-msg-text" t-out="msg.text"/>
+                        <div class="dojo-va-msg-time" t-out="msg.time"/>
                     </div>
                 </div>
             </t>
@@ -66,7 +66,7 @@
                         <div class="dojo-va-msg-text">
                             <i class="fa fa-microphone dojo-va-live-mic" aria-hidden="true"/>
                             <t t-if="state.liveTranscript">
-                                <t t-esc="state.liveTranscript"/>
+                                <t t-out="state.liveTranscript"/>
                             </t>
                             <t t-else="">
                                 <em>Listening…</em>
@@ -96,7 +96,7 @@
                         Confirm Action
                     </div>
                     <div class="dojo-va-action-field">
-                        <p t-esc="state.pendingConfirm.prompt"/>
+                        <p t-out="state.pendingConfirm.prompt"/>
                     </div>
                     <div class="dojo-va-action-btns">
                         <button class="dojo-va-btn-cancel" t-on-click="cancelIntent">
@@ -114,21 +114,21 @@
                 <div class="dojo-va-action-card">
                     <div class="dojo-va-action-header">
                         <i class="fa fa-envelope me-2"/>
-                        Message to parent of <strong t-esc="state.pendingAction.member_name"/>
+                        Message to parent of <strong t-out="state.pendingAction.member_name"/>
                     </div>
                     <div class="dojo-va-action-guardian">
                         <i class="fa fa-user me-1"/>
-                        <t t-esc="state.pendingAction.guardian_name"/>
+                        <t t-out="state.pendingAction.guardian_name"/>
                         <t t-if="state.pendingAction.guardian_email">
                             <span class="ms-2 dojo-va-guardian-detail">
                                 <i class="fa fa-at me-1"/>
-                                <t t-esc="state.pendingAction.guardian_email"/>
+                                <t t-out="state.pendingAction.guardian_email"/>
                             </span>
                         </t>
                         <t t-if="state.pendingAction.guardian_phone">
                             <span class="ms-2 dojo-va-guardian-detail">
                                 <i class="fa fa-phone me-1"/>
-                                <t t-esc="state.pendingAction.guardian_phone"/>
+                                <t t-out="state.pendingAction.guardian_phone"/>
                             </span>
                         </t>
                     </div>
@@ -207,7 +207,7 @@
             <div class="dojo-va-recording-strip">
                 <span class="dojo-va-rec-dot"/>
                 <t t-if="state.liveTranscript">
-                    Speaking… <t t-esc="state.liveTranscript.length > 40 ? state.liveTranscript.slice(0, 40) + '…' : state.liveTranscript"/>
+                    Speaking… <t t-out="state.liveTranscript.length > 40 ? state.liveTranscript.slice(0, 40) + '…' : state.liveTranscript"/>
                 </t>
                 <t t-else="">
                     Listening… click stop when done

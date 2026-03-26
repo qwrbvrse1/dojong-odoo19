@@ -161,7 +161,7 @@ class CrmLead(models.Model):
 
     @api.depends("trial_booking_token", "trial_cancel_token")
     def _compute_trial_urls(self):
-        base = self.env["ir.config_parameter"].sudo().get_param("web.base.url", "")
+        base = self.env["ir.config_parameter"].sudo().get_str("web.base.url", "")
         for rec in self:
             rec.trial_booking_url = (
                 f"{base}/trial/book/{rec.trial_booking_token}"

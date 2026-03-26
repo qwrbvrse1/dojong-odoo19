@@ -1,7 +1,7 @@
 import { expect, test } from "@odoo/hoot";
 
 import { browser } from "@web/core/browser/browser";
-import { Chatter } from "@mail/chatter/web_portal/chatter";
+import { Chatter } from "@mail/chatter/web_portal_project/chatter";
 
 import "@muk_web_chatter/chatter/chatter";
 

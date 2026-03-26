@@ -298,8 +298,8 @@ class AIProcessorIntentExt(models.AbstractModel):
 
     def _process_conversational_openai(self, text, system_prompt):
         """Call OpenAI in normal (non-JSON) mode for a conversational reply."""
-        api_key = self.env["ir.config_parameter"].sudo().get_param("openai.api_key") or \
-                  self.env["ir.config_parameter"].sudo().get_param("elevenlabs_connector.openai_api_key")
+        api_key = self.env["ir.config_parameter"].sudo().get_str("openai.api_key") or \
+                  self.env["ir.config_parameter"].sudo().get_str("elevenlabs_connector.openai_api_key")
 
         if not api_key:
             raise UserError("OpenAI API key not configured.")
@@ -343,8 +343,8 @@ class AIProcessorIntentExt(models.AbstractModel):
 
     def _process_conversational_gemini(self, text, system_prompt):
         """Call Gemini in normal (free-form text) mode for a conversational reply."""
-        api_key = self.env["ir.config_parameter"].sudo().get_param("gemini.api_key") or \
-                  self.env["ir.config_parameter"].sudo().get_param("elevenlabs_connector.gemini_api_key")
+        api_key = self.env["ir.config_parameter"].sudo().get_str("gemini.api_key") or \
+                  self.env["ir.config_parameter"].sudo().get_str("elevenlabs_connector.gemini_api_key")
 
         if not api_key:
             raise UserError("Gemini API key not configured.")
@@ -388,8 +388,8 @@ class AIProcessorIntentExt(models.AbstractModel):
 
     def _process_intent_openai(self, text, system_prompt):
         """Process intent using OpenAI with JSON mode for structured output."""
-        api_key = self.env["ir.config_parameter"].sudo().get_param("openai.api_key") or \
-                  self.env["ir.config_parameter"].sudo().get_param("elevenlabs_connector.openai_api_key")
+        api_key = self.env["ir.config_parameter"].sudo().get_str("openai.api_key") or \
+                  self.env["ir.config_parameter"].sudo().get_str("elevenlabs_connector.openai_api_key")
 
         if not api_key:
             raise UserError("OpenAI API key not configured.")
@@ -439,8 +439,8 @@ class AIProcessorIntentExt(models.AbstractModel):
 
     def _process_intent_gemini(self, text, system_prompt):
         """Process intent using Gemini."""
-        api_key = self.env["ir.config_parameter"].sudo().get_param("gemini.api_key") or \
-                  self.env["ir.config_parameter"].sudo().get_param("elevenlabs_connector.gemini_api_key")
+        api_key = self.env["ir.config_parameter"].sudo().get_str("gemini.api_key") or \
+                  self.env["ir.config_parameter"].sudo().get_str("elevenlabs_connector.gemini_api_key")
 
         if not api_key:
             raise UserError("Gemini API key not configured.")

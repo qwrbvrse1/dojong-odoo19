@@ -1,6 +1,6 @@
 {
     "name": "Dojang CRM — Lead to Member Pipeline",
-    "version": "19.0.2.0.0",
+    "version": "saas~19.2.2.0.0",
     "summary": "CRM stages, automations, lead scoring, trial booking, AI integration, and convert-to-member flow",
     "author": "Dojang",
     "category": "Martial Arts",
