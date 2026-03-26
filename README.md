@@ -1,26 +1,36 @@
-# Odoo saas-19.2 — Docker Setup
+# Odoo saas-19.2 — Setup Guide
 
-Runs Odoo `saas-19.2` from source using Docker Compose. The Odoo source is baked into
-the image at build time; custom addons and enterprise addons are mounted at runtime.
+This repo contains the custom addons, Docker setup, and configuration for running
+Odoo `saas-19.2`. Two installation paths are supported:
 
-## Prerequisites
+| Path | Best for |
+|---|---|
+| [Docker](#docker-installation) | Local dev, staging, quick spin-up |
+| [Direct (VM / bare-metal)](#direct-installation-vm--bare-metal) | Production on a Linux server |
 
-- [Docker](https://docs.docker.com/engine/install/) (with the Compose plugin)
-- Git
+---
 
 ## Directory Structure
 
 ```
-odoo19.2/
+repo-root/
 ├── Dockerfile
 ├── docker-compose.yml
-├── odoo.conf
-├── odoo/               ← saas-19.2 source (cloned below)
-├── enterprise/         ← enterprise addons (optional)
-└── addons/             ← your custom addons go here
+├── requirements.txt          ← extra Python deps (Twilio, Stripe, etc.)
+├── config/
+│   └── odoo.conf.example     ← copy → odoo.conf and fill in secrets
+├── odoo/                     ← Odoo saas-19.2 source (clone manually, gitignored)
+├── enterprise/               ← enterprise addons (optional, gitignored)
+└── addons/                   ← all custom modules live here
 ```
 
-## Installation
+---
+
+## Docker Installation
+
+### Prerequisites
+- [Docker](https://docs.docker.com/engine/install/) with the Compose plugin
+- Git
 
 ### 1. Clone this repo
 
@@ -41,12 +51,13 @@ git clone --depth=1 --branch saas-19.2 https://github.com/odoo/odoo ./odoo
 git clone --depth=1 --branch saas-19.2 https://github.com/odoo/enterprise ./enterprise
 ```
 
-If you don't have enterprise access, the `./enterprise` directory can stay empty.
+Leave `./enterprise` empty if you don't have access — it will still mount fine.
 
-### 4. Fix permissions on addon directories
+### 4. Create your odoo.conf
 
 ```bash
-chmod -R o+rX ./addons ./enterprise
+cp config/odoo.conf.example config/odoo.conf
+# Edit config/odoo.conf — set admin_passwd and db_name at minimum
 ```
 
 ### 5. Build and start
@@ -56,18 +67,161 @@ docker compose build
 docker compose up -d
 ```
 
-The first build takes several minutes as it installs all Python and system dependencies.
+The first build takes several minutes as it compiles all system and Python dependencies.
 
 ### 6. Open Odoo
 
-Navigate to [http://localhost:8069](http://localhost:8069) (or whichever port is set in
-`docker-compose.yml`) and create your first database.
+Go to [http://localhost:8069](http://localhost:8069) and create your first database.
+
+### Day-to-day commands
+
+```bash
+docker compose restart web          # restart after config or addon changes
+docker compose logs -f web          # tail logs
+docker compose down                 # stop everything
+```
+
+---
+
+## Direct Installation (VM / Bare-metal)
+
+Use this path for production on a Linux server (Ubuntu 22.04 / 24.04 recommended).
+
+### Prerequisites
+
+- Python 3.10+
+- PostgreSQL 14+
+- `wkhtmltopdf` (for PDF reports)
+- `npm` + `rtlcss` (for RTL support)
+- `git`
+
+### 1. Install system dependencies
+
+```bash
+sudo apt-get update && sudo apt-get install -y \
+    build-essential libpq-dev postgresql-client \
+    libxml2-dev libxslt1-dev libjpeg-dev libpng-dev libfreetype6-dev \
+    libldap2-dev libsasl2-dev libssl-dev \
+    fonts-dejavu-core fonts-font-awesome fonts-roboto-unhinted gsfonts \
+    wkhtmltopdf npm git curl
+
+sudo npm install -g rtlcss
+```
+
+### 2. Create the odoo system user
+
+```bash
+sudo useradd -ms /bin/bash odoo19
+```
+
+### 3. Clone the Odoo saas-19.2 source
+
+```bash
+sudo mkdir -p /opt/odoo19
+sudo git clone --depth=1 --branch saas-19.2 https://github.com/odoo/odoo /opt/odoo19/odoo
+sudo chown -R odoo19:odoo19 /opt/odoo19
+```
+
+### 4. Set up a Python virtual environment
+
+```bash
+sudo -u odoo19 python3 -m venv /opt/odoo19/venv
+sudo -u odoo19 /opt/odoo19/venv/bin/pip install --upgrade pip
+sudo -u odoo19 /opt/odoo19/venv/bin/pip install -r /opt/odoo19/odoo/requirements.txt
+```
+
+### 5. Install extra Python dependencies from this repo
+
+```bash
+sudo -u odoo19 /opt/odoo19/venv/bin/pip install -r /path/to/this-repo/requirements.txt
+```
+
+### 6. Clone this repo (custom addons)
+
+```bash
+sudo git clone <your-repo-url> /opt/odoo19/custom-addons
+sudo chown -R odoo19:odoo19 /opt/odoo19/custom-addons
+```
+
+### 7. (Optional) Clone enterprise addons
+
+```bash
+sudo -u odoo19 git clone --depth=1 --branch saas-19.2 \
+    https://github.com/odoo/enterprise /opt/odoo19/enterprise
+```
+
+### 8. Create the Odoo config file
+
+```bash
+sudo cp /opt/odoo19/custom-addons/config/odoo.conf.example /etc/odoo19.conf
+sudo nano /etc/odoo19.conf   
+# fill in db credentials, admin_passwd, addons_path
+```
+
+Key `addons_path` for a direct install:
+
+```ini
+addons_path = /opt/odoo19/odoo/addons,/opt/odoo19/custom-addons/addons,/opt/odoo19/enterprise
+```
+
+### 9. Set up PostgreSQL
+
+```bash
+sudo -u postgres createuser -s odoo19
+sudo -u postgres psql -c "ALTER USER odoo19 WITH PASSWORD 'yourpassword';"
+```
+
+### 10. Create a systemd service
+
+```bash
+sudo nano /etc/systemd/system/odoo19.service
+```
+
+Paste:
+
+```ini
+[Unit]
+Description=Odoo 19
+After=network.target postgresql.service
+
+[Service]
+User=odoo19
+ExecStart=/opt/odoo19/venv/bin/python3 /opt/odoo19/odoo/odoo-bin \
+    --config=/etc/odoo19.conf
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now odoo19
+sudo systemctl status odoo19
+```
+
+### 11. Open Odoo
+
+Go to `http://<your-server-ip>:8069` and create your first database.
+
+### Day-to-day commands
+
+```bash
+sudo systemctl restart odoo19                        # restart after Python/model changes
+
+# Upgrade a module (no restart needed after)
+sudo -u odoo19 /opt/odoo19/venv/bin/python3 /opt/odoo19/odoo/odoo-bin \
+    -c /etc/odoo19.conf -d <db_name> -u <module_name> --stop-after-init
+
+sudo journalctl -u odoo19 -f                         # tail logs
+```
 
 ---
 
 ## Custom Addons
 
-Place your custom modules inside `./addons/`:
+Place modules inside `./addons/`. Each module must have `__init__.py` and `__manifest__.py`:
 
 ```
 addons/
@@ -77,26 +231,24 @@ addons/
     └── ...
 ```
 
-No rebuild is needed — the directory is mounted directly. After adding a module,
-restart the container and update the app list from **Settings → Apps → Update Apps List**.
-
-```bash
-docker compose restart web
-```
+After adding a module, update the app list from **Settings → Apps → Update Apps List**
+(or use `-u <module_name>` on the CLI).
 
 ---
 
-## Configuration
+## Configuration Reference
 
-All Odoo settings are in `odoo.conf`. Key options:
+Key options in `config/odoo.conf.example`:
 
-| Option           | Default   | Description                                          |
-| ---------------- | --------- | ---------------------------------------------------- |
-| `db_host`        | `db`      | Postgres host (Docker service name)                  |
-| `db_user`        | `odoo`    | Postgres user                                        |
-| `db_password`    | `odoo`    | Postgres password                                    |
-| `http_interface` | `0.0.0.0` | Listen on all interfaces                             |
-| `workers`        | `0`       | `0` = single-threaded (dev); increase for production |
+| Option | Description |
+|---|---|
+| `addons_path` | Comma-separated list of addon directories |
+| `admin_passwd` | Master password for database management |
+| `db_name` | Default database name |
+| `dbfilter` | Regex filter — restrict which DBs are accessible |
+| `list_db` | Set `False` in production to hide the DB list |
+| `proxy_mode` | Set `True` when behind nginx/reverse proxy |
+| `workers` | `0` = single-threaded (dev); set `4`+ for production |
 
 ---
 
