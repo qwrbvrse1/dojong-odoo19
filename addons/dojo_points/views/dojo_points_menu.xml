@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- ─── Root menu (under Dojo core) ─────────────────────────────────── -->
+    <!-- Standalone app root — appears on the Odoo home screen -->
     <menuitem
-        id="menu_dojo_points_root"
-        name="Points"
-        sequence="70"
-        groups="dojo_base.group_dojo_instructor"/>
+        id="menu_dojo_points_app_root"
+        name="Dojo Points"
+        sequence="6"
+        groups="dojo_base.group_dojo_admin,dojo_base.group_dojo_instructor"
+        web_icon="dojo_points,static/description/icon.png"
+    />
 
-    <!-- ─── Points Ledger ────────────────────────────────────────────────── -->
     <menuitem
         id="menu_dojo_points_ledger"
         name="Points Ledger"
-        parent="menu_dojo_points_root"
+        parent="menu_dojo_points_app_root"
         action="dojo_points.action_dojo_points_transaction"
         sequence="10"
         groups="dojo_base.group_dojo_instructor"/>
 
-    <!-- ─── Points Settings (admin only) ────────────────────────────────── -->
     <menuitem
         id="menu_dojo_points_settings"
         name="Points Settings"
-        parent="menu_dojo_points_root"
+        parent="menu_dojo_points_app_root"
         action="dojo_points.action_dojo_points_config"
         sequence="20"
         groups="dojo_base.group_dojo_admin"/>

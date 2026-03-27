@@ -20,7 +20,7 @@
         "views/dojo_member_points_view_inherit.xml",
         "views/dojo_points_menu.xml",
     ],
-    "application": False,
+    "application": True,
     "auto_install": False,
     "installable": True,
 }

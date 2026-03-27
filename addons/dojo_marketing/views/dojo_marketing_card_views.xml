@@ -111,14 +111,22 @@
     </record>
 
     <!-- ================================================================
-         Menu — under Kiosk app root
+         App root menu + Marketing Cards entry
     ================================================================ -->
+    <menuitem
+        id="menu_dojo_marketing_root"
+        name="Marketing Cards"
+        sequence="5"
+        groups="dojo_base.group_dojo_admin,dojo_base.group_dojo_instructor"
+        web_icon="dojo_marketing,static/description/icon.png"
+    />
+
     <menuitem
         id="menu_dojo_marketing_cards"
         name="Marketing Cards"
-        parent="dojo_kiosk.menu_dojo_kiosk_root"
+        parent="menu_dojo_marketing_root"
         action="action_dojo_marketing_card"
-        sequence="20"
+        sequence="10"
         groups="dojo_base.group_dojo_admin"
     />
 

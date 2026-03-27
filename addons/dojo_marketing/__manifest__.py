@@ -1,5 +1,5 @@
 {
-    "name": "Dojang Marketing Cards",
+    "name": "Marketing Cards",
     "summary": "Marketing cards with QR codes — published to kiosk carousel and member portal",
     "version": "saas~19.2.1.0.0",
     "category": "Services",
@@ -26,6 +26,6 @@
             "dojo_marketing/static/src/dojo_marketing.css",
         ],
     },
-    "application": False,
+    "application": True,
     "installable": True,
 }

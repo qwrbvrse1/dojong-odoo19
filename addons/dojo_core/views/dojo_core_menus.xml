@@ -262,13 +262,6 @@
         sequence="10"/>
 
     <menuitem
-        id="menu_dojo_core_marketing_cards"
-        name="Marketing Cards"
-        parent="menu_dojo_core_comms"
-        action="dojo_marketing.action_dojo_marketing_card"
-        sequence="20"/>
-
-    <menuitem
         id="menu_dojo_core_social_posts"
         name="Social Media"
         parent="menu_dojo_core_comms"

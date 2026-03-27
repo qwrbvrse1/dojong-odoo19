@@ -183,14 +183,14 @@
     </record>
 
     <!-- ================================================================
-         Menu — under Kiosk app root (alongside Marketing Cards)
+         Campaigns entry under the standalone Dojo Marketing app
     ================================================================ -->
     <menuitem
         id="menu_dojo_marketing_campaigns"
         name="Campaigns"
-        parent="dojo_kiosk.menu_dojo_kiosk_root"
+        parent="dojo_marketing.menu_dojo_marketing_root"
         action="action_dojo_marketing_campaign"
-        sequence="25"
+        sequence="20"
         groups="dojo_base.group_dojo_admin,dojo_base.group_dojo_instructor"
     />
 
