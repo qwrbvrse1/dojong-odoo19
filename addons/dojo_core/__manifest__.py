@@ -44,6 +44,7 @@
         'dojo_bridge',
         'dojo_sign',
         'dojo_points',
+        'dojo_events',
     ],
     'data': [
         'views/dojo_core_menus.xml',

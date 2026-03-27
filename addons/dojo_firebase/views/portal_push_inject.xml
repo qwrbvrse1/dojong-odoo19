@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Inject Firebase Web SDK + push init script into the portal layout <head>.
+        Only renders the config and scripts when firebase.push_enabled = True.
+        The firebase_push.js self-disables if window.__FIREBASE_CONFIG__ is falsy.
+    -->
+    <template id="portal_firebase_push_head" name="Firebase Push: Portal Head Inject"
+              inherit_id="portal.portal_layout">
+        <xpath expr="//head" position="inside">
+            <t t-set="_fb_icp" t-value="request.env['ir.config_parameter'].sudo()"/>
+            <t t-set="_fb_push" t-value="_fb_icp.get_param('firebase.push_enabled') == 'True'"/>
+            <t t-if="_fb_push">
+                <!-- Firebase Web compat SDK (loaded before firebase_push.js) -->
+                <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"/>
+                <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-messaging-compat.js"/>
+
+                <!-- Server-injected Firebase config — values escaped to prevent XSS -->
+                <script type="text/javascript">
+window.__FIREBASE_CONFIG__ = {
+  apiKey: "<t t-esc="_fb_icp.get_param('firebase.web_api_key', '')"/>",
+  projectId: "<t t-esc="_fb_icp.get_param('firebase.project_id', '')"/>",
+  messagingSenderId: "<t t-esc="_fb_icp.get_param('firebase.messaging_sender_id', '')"/>",
+  appId: "<t t-esc="_fb_icp.get_param('firebase.app_id', '')"/>",
+  vapidKey: "<t t-esc="_fb_icp.get_param('firebase.vapid_key', '')"/>"
+};
+                </script>
+
+                <!-- Push registration client -->
+                <script src="/dojo_firebase/static/src/firebase_push.js"/>
+            </t>
+        </xpath>
+    </template>
+</odoo>

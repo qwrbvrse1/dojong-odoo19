@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="res_config_settings_view_form_firebase" model="ir.ui.view">
+            <field name="name">res.config.settings.view.form.firebase</field>
+            <field name="model">res.config.settings</field>
+            <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//form" position="inside">
+                    <div class="app_settings_block" data-string="Firebase Integration"
+                         string="Firebase Integration" data-key="dojo_firebase">
+                        <h2>Firebase Integration</h2>
+                        <p class="text-muted">
+                            Route outgoing emails through Gmail via Firebase Cloud Functions
+                            and send FCM push notifications to the member portal.
+                            See <code>firebase-functions/README.md</code> for deployment instructions.
+                        </p>
+
+                        <!-- ── Email Relay ── -->
+                        <h3 class="mt-4">Email Relay (Gmail)</h3>
+                        <div class="row mt16 o_settings_container">
+
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_left_pane">
+                                    <field name="firebase_email_enabled"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <label for="firebase_email_enabled" class="o_setting_name">
+                                        Enable Firebase Email Relay
+                                    </label>
+                                    <div class="text-muted">
+                                        All Odoo outgoing emails will be sent via your Gmail account
+                                        through the Firebase Cloud Function instead of Odoo's SMTP server.
+                                        Disable to fall back to the built-in mail server.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_left_pane"/>
+                                <div class="o_setting_right_pane" style="width: 100%;">
+                                    <label for="firebase_cf_base_url" style="display:block; margin-bottom:6px; font-weight:500;">
+                                        Cloud Functions Base URL
+                                    </label>
+                                    <field name="firebase_cf_base_url"
+                                           placeholder="https://us-central1-YOUR_PROJECT_ID.cloudfunctions.net"
+                                           style="width:100%;"/>
+                                    <div class="text-muted mt4">
+                                        HTTPS base URL shown after <code>firebase deploy --only functions</code>.
+                                        No trailing slash.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_left_pane"/>
+                                <div class="o_setting_right_pane" style="width: 100%;">
+                                    <label for="firebase_cf_secret" style="display:block; margin-bottom:6px; font-weight:500;">
+                                        Cloud Functions Secret
+                                    </label>
+                                    <field name="firebase_cf_secret" password="True"
+                                           placeholder="Shared bearer secret (app.secret)"
+                                           style="width:100%;"/>
+                                    <div class="text-muted mt4">
+                                        Set with:
+                                        <code>firebase functions:config:set app.secret="..."</code>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- ── FCM Push Notifications ── -->
+                        <h3 class="mt-4">FCM Push Notifications (PWA)</h3>
+                        <div class="row mt16 o_settings_container">
+
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_left_pane">
+                                    <field name="firebase_push_enabled"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <label for="firebase_push_enabled" class="o_setting_name">
+                                        Enable Push Notifications
+                                    </label>
+                                    <div class="text-muted">
+                                        Injects Firebase JS into the member portal so members can
+                                        receive browser push notifications for classes, belt promotions,
+                                        and billing events.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_left_pane"/>
+                                <div class="o_setting_right_pane" style="width: 100%;">
+                                    <label for="firebase_project_id" style="display:block; margin-bottom:6px; font-weight:500;">
+                                        Firebase Project ID
+                                    </label>
+                                    <field name="firebase_project_id"
+                                           placeholder="your-project-id"
+                                           style="width:100%;"/>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_left_pane"/>
+                                <div class="o_setting_right_pane" style="width: 100%;">
+                                    <label for="firebase_web_api_key" style="display:block; margin-bottom:6px; font-weight:500;">
+                                        Web API Key
+                                    </label>
+                                    <field name="firebase_web_api_key"
+                                           placeholder="AIzaSy..."
+                                           style="width:100%;"/>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_left_pane"/>
+                                <div class="o_setting_right_pane" style="width: 100%;">
+                                    <label for="firebase_messaging_sender_id" style="display:block; margin-bottom:6px; font-weight:500;">
+                                        Messaging Sender ID
+                                    </label>
+                                    <field name="firebase_messaging_sender_id"
+                                           placeholder="123456789012"
+                                           style="width:100%;"/>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_left_pane"/>
+                                <div class="o_setting_right_pane" style="width: 100%;">
+                                    <label for="firebase_app_id" style="display:block; margin-bottom:6px; font-weight:500;">
+                                        App ID
+                                    </label>
+                                    <field name="firebase_app_id"
+                                           placeholder="1:123456789012:web:abc123..."
+                                           style="width:100%;"/>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_left_pane"/>
+                                <div class="o_setting_right_pane" style="width: 100%;">
+                                    <label for="firebase_vapid_key" style="display:block; margin-bottom:6px; font-weight:500;">
+                                        VAPID Key (Web Push Certificate)
+                                    </label>
+                                    <field name="firebase_vapid_key"
+                                           placeholder="BNT8..."
+                                           style="width:100%;"/>
+                                    <div class="text-muted mt4">
+                                        Firebase console → Project settings → Cloud Messaging →
+                                        Web Push certificates → Generate key pair.
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
