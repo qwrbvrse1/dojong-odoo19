@@ -527,7 +527,7 @@
             </p>
 
             <t t-if="config and config.thank_you_html">
-                <div class="dojo-thank-you-html mb-4 text-start" t-raw="config.thank_you_html"/>
+                <div class="dojo-thank-you-html mb-4 text-start" t-out="config.thank_you_html"/>
             </t>
 
             <t t-if="session.resulting_member_id">

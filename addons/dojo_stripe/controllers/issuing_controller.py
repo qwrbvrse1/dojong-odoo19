@@ -19,7 +19,7 @@ class IssuingController(http.Controller):
     # ── Reveal card details (Issuing Elements nonce) ───────────────────────
     @http.route(
         '/dojo/stripe/issuing/reveal',
-        type='json',
+        type='jsonrpc',
         auth='user',
         methods=['POST'],
     )
@@ -66,7 +66,7 @@ class IssuingController(http.Controller):
     # ── Digital wallet provisioning (Apple Pay / Google Pay) ───────────────
     @http.route(
         '/dojo/stripe/issuing/wallet',
-        type='json',
+        type='jsonrpc',
         auth='user',
         methods=['POST'],
     )

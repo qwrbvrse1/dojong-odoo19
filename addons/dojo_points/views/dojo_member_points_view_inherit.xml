@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ─── Inject Points stat button + tab into dojo.member form ───────── -->
+    <record id="view_dojo_member_form_points_inherit" model="ir.ui.view">
+        <field name="name">dojo.member.form.points.inherit</field>
+        <field name="model">dojo.member</field>
+        <field name="inherit_id" ref="dojo_base.view_dojo_member_form"/>
+        <field name="arch" type="xml">
+
+            <!-- ── Smart button (button_box) ───────────────────────────── -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_points_ledger"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-trophy">
+                    <div class="o_stat_info">
+                        <span class="o_stat_value">
+                            <field name="total_points"/>
+                        </span>
+                        <span class="o_stat_text">Points</span>
+                    </div>
+                </button>
+            </xpath>
+
+            <!-- ── Points &amp; Streaks notebook tab ────────────────────── -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Points &amp; Streaks" name="points_tab">
+                    <!-- Summary row -->
+                    <group string="Overview">
+                        <group>
+                            <field name="total_points" readonly="1"/>
+                            <field name="points_tier" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="current_streak" readonly="1"/>
+                            <field name="longest_streak" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <!-- Award button (admins + instructors) -->
+                    <div class="mb-2" groups="dojo_base.group_dojo_instructor">
+                        <button name="action_open_award_points_wizard"
+                                type="object"
+                                string="🏅 Award Points"
+                                class="btn btn-sm btn-outline-primary"/>
+                    </div>
+
+                    <!-- Recent transactions embedded list -->
+                    <field name="points_transaction_ids"
+                           mode="list"
+                           readonly="1"
+                           limit="20"
+                           options="{'no_create': True, 'no_delete': True}">
+                        <list create="false" edit="false" delete="false"
+                              decoration-success="source_type in ('streak_bonus','attendance_milestone','belt_promotion')"
+                              decoration-info="source_type == 'instructor_award'">
+                            <field name="date"/>
+                            <field name="source_type" string="Type"/>
+                            <field name="amount" string="Pts"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

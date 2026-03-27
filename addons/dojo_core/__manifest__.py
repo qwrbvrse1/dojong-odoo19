@@ -43,6 +43,7 @@
         'dojo_assistant',
         'dojo_bridge',
         'dojo_sign',
+        'dojo_points',
     ],
     'data': [
         'views/dojo_core_menus.xml',

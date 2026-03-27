@@ -4,7 +4,7 @@
 
         <record id="menu_dojo_home" model="website.menu">
             <field name="name">Home</field>
-            <field name="url">/home</field>
+            <field name="url">/</field>
             <field name="sequence">5</field>
         </record>
 

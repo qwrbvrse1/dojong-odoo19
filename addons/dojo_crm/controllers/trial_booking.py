@@ -569,7 +569,7 @@ class DojoTrialBooking(http.Controller):
         Partner = request.env["res.partner"].sudo()
         partner = Partner.search([("email", "=ilike", email)], limit=1)
         if not partner:
-            partner_vals = {"name": name, "email": email, "company_type": "person"}
+            partner_vals = {"name": name, "email": email, "is_company": False}
             if phone:
                 partner_vals["phone"] = phone
             partner = Partner.create(partner_vals)

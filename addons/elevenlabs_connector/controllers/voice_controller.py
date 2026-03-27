@@ -24,7 +24,7 @@ class VoiceController(http.Controller):
             'conversations': conversations,
         })
 
-    @http.route('/elevenlabs/voice/process', type='json', auth='user', methods=['POST'], csrf=False)
+    @http.route('/elevenlabs/voice/process', type='jsonrpc', auth='user', methods=['POST'], csrf=False)
     def process_voice(self, audio_data=None, conversation_id=None, **kwargs):
         """
         Process voice input: STT → AI → Database → TTS
@@ -84,7 +84,7 @@ class VoiceController(http.Controller):
 
     # Use POST here because Odoo's JSON-RPC (used by the JS `rpc` service) always sends POST requests.
     # Using GET causes 405 errors in the frontend.
-    @http.route('/elevenlabs/voice/conversations', type='json', auth='user', methods=['POST'])
+    @http.route('/elevenlabs/voice/conversations', type='jsonrpc', auth='user', methods=['POST'])
     def get_conversations(self, limit=10, **kwargs):
         """Get recent conversations for the current user"""
         try:

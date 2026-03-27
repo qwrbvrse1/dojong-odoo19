@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ─── Wizard Form ──────────────────────────────────────────────────── -->
+    <record id="view_dojo_points_award_wizard_form" model="ir.ui.view">
+        <field name="name">dojo.points.award.wizard.form</field>
+        <field name="model">dojo.points.award.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Award Points">
+                <sheet>
+                    <group>
+                        <field name="member_id"/>
+                        <field name="amount"/>
+                        <field name="note" placeholder="e.g. Extra effort in sparring, helping new student…"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_award" type="object" string="Award Points" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- ─── Wizard Action ────────────────────────────────────────────────── -->
+    <record id="action_dojo_points_award_wizard" model="ir.actions.act_window">
+        <field name="name">Award Points</field>
+        <field name="res_model">dojo.points.award.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

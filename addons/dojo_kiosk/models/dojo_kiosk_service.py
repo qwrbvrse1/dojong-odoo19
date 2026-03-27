@@ -830,12 +830,28 @@ class DojoKioskService(models.AbstractModel):
         # returned profile reflects the newly created enrollment / attendance log.
         member.invalidate_recordset()
 
+        # ── Points earned on this check-in ────────────────────────────────
+        points_info = {}
+        try:
+            new_txns = self.env["dojo.points.transaction"].sudo().search([
+                ("attendance_log_id", "=", log.id),
+            ])
+            points_info = {
+                "points_earned": sum(new_txns.mapped("amount")),
+                "new_total_points": member.total_points,
+                "current_streak": member.current_streak,
+                "tier": member.points_tier,
+            }
+        except Exception:
+            pass  # points module not installed or fields missing — graceful fallback
+
         return {
             "success": True,
             "status": status,
             "log_id": log.id,
             "member": self._member_profile_dict(member, session_id=session_id),
             "session_name": session.name,
+            "points": points_info,
         }
 
     # -------------------------------------------------------------------------

@@ -9,13 +9,13 @@ This controller provides a reusable API that can be consumed by:
 
 Routes
 ------
-POST /dojo/ai/text          (type=json)  – text query → parse + auto-execute or confirmation
-POST /dojo/ai/voice         (type=http)  – multipart audio upload → STT → parse + confirm
-POST /dojo/ai/confirm       (type=json)  – confirm or reject pending action
-POST /dojo/ai/undo          (type=json)  – undo last undoable action
-POST /dojo/ai/send_message  (type=json)  – send confirmed parent message (legacy)
-GET  /dojo/ai/history       (type=json)  – get recent AI action history
-GET  /dojo/ai/intents       (type=json)  – get available intent schemas
+POST /dojo/ai/text          (type=jsonrpc)  – text query → parse + auto-execute or confirmation
+POST /dojo/ai/voice         (type=http)    – multipart audio upload → STT → parse + confirm
+POST /dojo/ai/confirm       (type=jsonrpc) – confirm or reject pending action
+POST /dojo/ai/undo          (type=jsonrpc) – undo last undoable action
+POST /dojo/ai/send_message  (type=jsonrpc) – send confirmed parent message (legacy)
+GET  /dojo/ai/history       (type=jsonrpc) – get recent AI action history
+GET  /dojo/ai/intents       (type=jsonrpc) – get available intent schemas
 """
 
 import json
@@ -34,7 +34,7 @@ class DojoAiAssistantController(http.Controller):
     # New Two-Phase Confirmation API
     # ═══════════════════════════════════════════════════════════════════════════
 
-    @http.route("/dojo/ai/text", type="json", auth="user", methods=["POST"])
+    @http.route("/dojo/ai/text", type="jsonrpc", auth="user", methods=["POST"])
     def text_query(self, text="", role=None, **kwargs):
         """
         Process a plain-text query through the dojo AI assistant.
@@ -77,7 +77,7 @@ class DojoAiAssistantController(http.Controller):
             _logger.error("Dojo AI /dojo/ai/text failed: %s", exc, exc_info=True)
             return {"success": False, "state": "error", "error": str(exc)}
 
-    @http.route("/dojo/ai/confirm", type="json", auth="user", methods=["POST"])
+    @http.route("/dojo/ai/confirm", type="jsonrpc", auth="user", methods=["POST"])
     def confirm_action(self, session_key="", confirmed=True, **kwargs):
         """
         Confirm or reject a pending action from parse_and_confirm.
@@ -107,7 +107,7 @@ class DojoAiAssistantController(http.Controller):
             _logger.error("Dojo AI /dojo/ai/confirm failed: %s", exc, exc_info=True)
             return {"success": False, "state": "error", "error": str(exc)}
 
-    @http.route("/dojo/ai/undo", type="json", auth="user", methods=["POST"])
+    @http.route("/dojo/ai/undo", type="jsonrpc", auth="user", methods=["POST"])
     def undo_action(self, **kwargs):
         """
         Initiate undo of the most recent undoable action.
@@ -230,7 +230,7 @@ class DojoAiAssistantController(http.Controller):
     # Admin / Monitoring Endpoints
     # ═══════════════════════════════════════════════════════════════════════════
 
-    @http.route("/dojo/ai/history", type="json", auth="user", methods=["GET", "POST"])
+    @http.route("/dojo/ai/history", type="jsonrpc", auth="user", methods=["GET", "POST"])
     def get_history(self, limit=20, offset=0, user_only=True, **kwargs):
         """
         Get recent AI action history.
@@ -287,7 +287,7 @@ class DojoAiAssistantController(http.Controller):
             _logger.error("Dojo AI /dojo/ai/history failed: %s", exc, exc_info=True)
             return {"success": False, "records": [], "total": 0, "error": str(exc)}
 
-    @http.route("/dojo/ai/intents", type="json", auth="user", methods=["GET", "POST"])
+    @http.route("/dojo/ai/intents", type="jsonrpc", auth="user", methods=["GET", "POST"])
     def get_intents(self, role=None, **kwargs):
         """
         Get available intent schemas for the current user's role.
@@ -332,7 +332,7 @@ class DojoAiAssistantController(http.Controller):
     # Legacy Endpoints (Backward Compatibility)
     # ═══════════════════════════════════════════════════════════════════════════
 
-    @http.route("/dojo/ai/send_message", type="json", auth="user", methods=["POST"])
+    @http.route("/dojo/ai/send_message", type="jsonrpc", auth="user", methods=["POST"])
     def send_message(
         self,
         member_id=None,

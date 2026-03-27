@@ -86,12 +86,12 @@ class DojoClassSession(models.Model):
     def _compute_seats_taken(self):
         if not self.ids:
             return
-        groups = self.env['dojo.class.enrollment'].read_group(
+        groups = self.env['dojo.class.enrollment']._read_group(
             [('session_id', 'in', self.ids), ('status', '=', 'registered')],
-            fields=['session_id'],
             groupby=['session_id'],
+            aggregates=['__count'],
         )
-        counts = {g['session_id'][0]: g['session_id_count'] for g in groups}
+        counts = {session.id: count for session, count in groups}
         for session in self:
             session.seats_taken = counts.get(session.id, 0)
 

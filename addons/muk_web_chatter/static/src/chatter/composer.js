@@ -2,6 +2,11 @@ import { _t } from '@web/core/l10n/translation';
 import { patch } from '@web/core/utils/patch';
 
 import { Composer } from '@mail/core/common/composer';
+import { RecipientsList } from '@muk_web_chatter/core/recipients_list/recipients_list';
+
+Object.assign(Composer.components, {
+    RecipientsList,
+});
 
 patch(Composer.prototype, {
     get SEND_TEXT() {

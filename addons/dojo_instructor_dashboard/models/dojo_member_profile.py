@@ -119,6 +119,35 @@ class DojoMemberProfile(models.Model):
             ))
         data["total_attendance_count"] = total_attendance
 
+        # ── Points & gamification ──────────────────────────────────────────
+        points_data = {
+            "total": 0,
+            "tier": "",
+            "current_streak": 0,
+            "longest_streak": 0,
+            "recent_transactions": [],
+        }
+        try:
+            if hasattr(member, "total_points"):
+                points_data["total"] = member.total_points or 0
+                points_data["tier"] = member.points_tier or ""
+                points_data["current_streak"] = member.current_streak or 0
+                points_data["longest_streak"] = member.longest_streak or 0
+            if hasattr(member, "points_transaction_ids"):
+                recent_txns = member.points_transaction_ids.sorted("date", reverse=True)[:10]
+                points_data["recent_transactions"] = [
+                    {
+                        "date": str(tx.date) if tx.date else "",
+                        "source_type": tx.source_type or "",
+                        "amount": tx.amount or 0,
+                        "note": tx.note or "",
+                    }
+                    for tx in recent_txns
+                ]
+        except Exception:
+            pass  # graceful fallback if dojo_points not installed
+        data["points"] = points_data
+
         # ── Recent attendance (last 10) ────────────────────────────────────
         recent_attendance = []
         if hasattr(member, "attendance_log_ids"):

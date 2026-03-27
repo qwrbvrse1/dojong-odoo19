@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Seed one config record so Settings page opens immediately (singleton) -->
+    <record id="dojo_points_config_default" model="dojo.points.config">
+        <field name="attendance_points">10</field>
+        <field name="late_attendance_points">5</field>
+        <field name="streak_bonus_3">15</field>
+        <field name="streak_bonus_7">50</field>
+        <field name="streak_bonus_30">200</field>
+        <field name="belt_promotion_points">100</field>
+        <field name="milestone_10_points">50</field>
+        <field name="milestone_25_points">100</field>
+        <field name="milestone_50_points">250</field>
+        <field name="milestone_100_points">500</field>
+        <field name="milestone_200_points">1000</field>
+        <field name="instructor_award_enabled" eval="True"/>
+        <field name="max_instructor_award_per_day">500</field>
+    </record>
+</odoo>

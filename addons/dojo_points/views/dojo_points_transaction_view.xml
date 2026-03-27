@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ─── Transaction List ─────────────────────────────────────────────── -->
+    <record id="view_dojo_points_transaction_list" model="ir.ui.view">
+        <field name="name">dojo.points.transaction.list</field>
+        <field name="model">dojo.points.transaction</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false"
+                  decoration-success="source_type in ('streak_bonus','attendance_milestone','belt_promotion')"
+                  decoration-info="source_type == 'instructor_award'">
+                <field name="date"/>
+                <field name="member_id"/>
+                <field name="source_type" string="Type"/>
+                <field name="amount" string="Pts" sum="Total Points"/>
+                <field name="note"/>
+                <field name="streak_length" optional="hide"/>
+                <field name="awarded_by" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ─── Transaction Form ─────────────────────────────────────────────── -->
+    <record id="view_dojo_points_transaction_form" model="ir.ui.view">
+        <field name="name">dojo.points.transaction.form</field>
+        <field name="model">dojo.points.transaction</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false" delete="false">
+                <sheet>
+                    <group>
+                        <group string="Event">
+                            <field name="member_id"/>
+                            <field name="date"/>
+                            <field name="source_type"/>
+                            <field name="amount"/>
+                            <field name="note"/>
+                        </group>
+                        <group string="Details">
+                            <field name="streak_length" invisible="source_type != 'streak_bonus'"/>
+                            <field name="awarded_by" invisible="source_type != 'instructor_award'"/>
+                            <field name="attendance_log_id"/>
+                            <field name="member_rank_id"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ─── Transaction Search ───────────────────────────────────────────── -->
+    <record id="view_dojo_points_transaction_search" model="ir.ui.view">
+        <field name="name">dojo.points.transaction.search</field>
+        <field name="model">dojo.points.transaction</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="member_id" string="Member"/>
+                <field name="note"/>
+                <separator/>
+                <filter name="attendance" string="Attendance"
+                        domain="[('source_type', 'in', ['attendance', 'late_attendance'])]"/>
+                <filter name="streaks" string="Streak Bonuses"
+                        domain="[('source_type', '=', 'streak_bonus')]"/>
+                <filter name="milestones" string="Milestones"
+                        domain="[('source_type', '=', 'attendance_milestone')]"/>
+                <filter name="belt" string="Belt Promotions"
+                        domain="[('source_type', '=', 'belt_promotion')]"/>
+                <filter name="instructor" string="Instructor Awards"
+                        domain="[('source_type', '=', 'instructor_award')]"/>
+                <separator/>
+                <filter name="today" string="Today"
+                        domain="[('date', '&gt;=', (context_today()).strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="group_member" string="Member"
+                            context="{'group_by': 'member_id'}"/>
+                    <filter name="group_type" string="Type"
+                            context="{'group_by': 'source_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ─── Transaction Action ───────────────────────────────────────────── -->
+    <record id="action_dojo_points_transaction" model="ir.actions.act_window">
+        <field name="name">Points Ledger</field>
+        <field name="res_model">dojo.points.transaction</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_dojo_points_transaction_search"/>
+        <field name="context">{}</field>
+    </record>
+
+</odoo>

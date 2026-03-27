@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ─── Config Form ─────────────────────────────────────────────────── -->
+    <record id="view_dojo_points_config_form" model="ir.ui.view">
+        <field name="name">dojo.points.config.form</field>
+        <field name="model">dojo.points.config</field>
+        <field name="arch" type="xml">
+            <form string="Points Configuration">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Points &amp; Gamification Settings</h1>
+                        <p class="text-muted">
+                            Adjust how many points members earn for each activity. Changes apply to all future transactions.
+                        </p>
+                    </div>
+
+                    <group string="Attendance Points" name="attendance_group">
+                        <group>
+                            <field name="attendance_points"/>
+                            <field name="late_attendance_points"/>
+                        </group>
+                    </group>
+
+                    <group string="Streak Bonuses" name="streak_group">
+                        <p colspan="2" class="text-muted small">
+                            Bonus points awarded when a member attends that exact class in a row (non-cumulative: only the highest newly reached threshold fires per check-in).
+                        </p>
+                        <group>
+                            <field name="streak_bonus_3"/>
+                            <field name="streak_bonus_7"/>
+                            <field name="streak_bonus_30"/>
+                        </group>
+                    </group>
+
+                    <group string="Attendance Milestones" name="milestone_group">
+                        <p colspan="2" class="text-muted small">
+                            One-time lifetime bonuses. Each milestone is only awarded once, regardless of belt promotions.
+                        </p>
+                        <group>
+                            <field name="milestone_10_points"/>
+                            <field name="milestone_25_points"/>
+                            <field name="milestone_50_points"/>
+                        </group>
+                        <group>
+                            <field name="milestone_100_points"/>
+                            <field name="milestone_200_points"/>
+                        </group>
+                    </group>
+
+                    <group string="Belt Promotions" name="belt_group">
+                        <group>
+                            <field name="belt_promotion_points"/>
+                        </group>
+                    </group>
+
+                    <group string="Instructor Awards" name="instructor_group">
+                        <group>
+                            <field name="instructor_award_enabled"/>
+                            <field name="max_instructor_award_per_day"
+                                   invisible="not instructor_award_enabled"
+                                   help="Set to 0 to remove the daily cap entirely."/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ─── Config Action ────────────────────────────────────────────────── -->
+    <record id="action_dojo_points_config" model="ir.actions.act_window">
+        <field name="name">Points Settings</field>
+        <field name="res_model">dojo.points.config</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context">{'create': False}</field>
+    </record>
+
+</odoo>

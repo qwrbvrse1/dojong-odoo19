@@ -676,6 +676,23 @@
     margin-top: .75rem;
 }
 
+/* Force legible colors for form inputs — override dark-theme inheritance */
+.dj-trial-form .form-control,
+.dj-trial-form .form-select {
+    color: #212529;
+    background-color: #fff;
+    border-color: #ced4da;
+}
+
+.dj-trial-form .form-select option {
+    color: #212529;
+    background-color: #fff;
+}
+
+.dj-trial-form .form-control::placeholder {
+    color: #6c757d;
+}
+
 /* ── CONTACT PAGE ── */
 .dj-contact-grid {
     display: grid;

@@ -55,16 +55,16 @@ class DojoMemberWeeklyCounter(models.Model):
         week_end = week_start + timedelta(days=6)
         week_start_str = "%s 00:00:00" % week_start
         week_end_str = "%s 23:59:59" % week_end
-        groups = self.env['dojo.class.enrollment'].read_group(
+        groups = self.env['dojo.class.enrollment']._read_group(
             [
                 ('member_id', 'in', self.ids),
                 ('status', '=', 'registered'),
                 ('session_id.start_datetime', '>=', week_start_str),
                 ('session_id.start_datetime', '<=', week_end_str),
             ],
-            fields=['member_id'],
             groupby=['member_id'],
+            aggregates=['__count'],
         )
-        counts = {g['member_id'][0]: g['member_id_count'] for g in groups}
+        counts = {member.id: count for member, count in groups}
         for member in self:
             member.sessions_used_this_week = counts.get(member.id, 0)
