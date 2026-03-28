@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+
 /* ═══════════════════════════════════════════════════════════════
    DOJO INSTRUCTOR + ADMIN DASHBOARD — Google Material style
 ═══════════════════════════════════════════════════════════════ */
@@ -10,6 +12,17 @@ html .o_web_client>.o_action_manager {
     background: #f8f9fa;
     min-height: 100%;
     font-family: inherit;
+
+    /* ── Admin Dashboard design tokens ── */
+    --ad-primary:        #b41e16;
+    --ad-primary-light:  rgba(180,30,22,0.08);
+    --ad-surface:        #fcf8f8;
+    --ad-surface-low:    #f6f3f2;
+    --ad-surface-high:   #ebe7e7;
+    --ad-on-surface:     #1c1b1b;
+    --ad-secondary:      #5f5e5e;
+    --ad-border:         rgba(227,190,184,0.35);
+    --ad-shadow:         0 8px 32px rgba(28,27,27,0.04);
 }
 
 /* ── Page Header ──────────────────────────────────────────────── */
@@ -38,16 +51,19 @@ html .o_web_client>.o_action_manager {
     align-items: center;
     justify-content: center;
     font-size: 1.4rem;
-    color: #fff;
     flex-shrink: 0;
+    background: var(--ad-primary-light);
+    color: var(--ad-primary);
 }
 
 .o_di_header_icon_blue {
     background: #1a73e8;
+    color: #fff;
 }
 
 .o_di_header_icon_indigo {
     background: #7c3aed;
+    color: #fff;
 }
 
 .o_di_header_title {
@@ -755,6 +771,304 @@ html .o_web_client>.o_action_manager {
 
 
 /* ═══════════════════════════════════════════════════════════════
+   ADMIN DASHBOARD — New Design Language (.o_ad_*)
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Admin Page Header ────────────────────────────────────────── */
+.o_ad_header_title {
+    font-size: 1.5rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: var(--ad-on-surface);
+    line-height: 1.2;
+}
+
+.o_ad_header_date {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ad-secondary);
+    margin-top: 3px;
+}
+
+.o_ad_hdr_btn {
+    font-size: 0.8rem;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid rgba(227,190,184,0.4);
+    background: var(--ad-surface-low);
+    color: var(--ad-on-surface);
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.12s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.o_ad_hdr_btn:hover {
+    background: var(--ad-surface-high);
+}
+
+.o_ad_hdr_btn_icon {
+    padding: 8px 10px;
+    border-radius: 6px;
+}
+
+.o_ad_hdr_btn_refresh .material-symbols-outlined {
+    transition: transform 0.5s ease;
+}
+
+.o_ad_hdr_btn_refresh:hover .material-symbols-outlined {
+    transform: rotate(180deg);
+}
+
+/* ── KPI Stat Grid ─────────────────────────────────────────────── */
+.o_ad_stat_row {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 12px;
+    padding: 20px 28px;
+}
+
+@media (max-width: 1400px) {
+    .o_ad_stat_row {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .o_ad_stat_row {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.o_ad_stat_chip {
+    background: #fff;
+    border: 1px solid rgba(227,190,184,0.3);
+    border-left-width: 3px;
+    border-radius: 8px;
+    padding: 16px 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(28,27,27,0.04);
+    cursor: default;
+    transition: background 0.12s ease;
+}
+
+.o_ad_stat_chip.is-clickable {
+    cursor: pointer;
+}
+
+.o_ad_stat_chip.is-clickable:hover {
+    background: var(--ad-surface-low);
+}
+
+.o_ad_stat_value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--ad-on-surface);
+    line-height: 1;
+}
+
+.o_ad_stat_label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ad-secondary);
+    margin-top: 4px;
+}
+
+.o_ad_stat_sub {
+    font-size: 9px;
+    color: #8f706b;
+    font-style: italic;
+    margin-top: 2px;
+}
+
+/* Left-border accent colors — all use dashboard primary */
+.o_ad_stat_indigo,
+.o_ad_stat_green,
+.o_ad_stat_blue,
+.o_ad_stat_orange,
+.o_ad_stat_purple,
+.o_ad_stat_red,
+.o_ad_stat_teal,
+.o_ad_stat_amber  { border-left-color: var(--ad-primary); }
+
+/* ── Command Center ───────────────────────────────────────────── */
+.o_ad_section_label {
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--ad-secondary);
+    padding: 0 28px;
+    margin-top: 4px;
+    margin-bottom: 16px;
+}
+
+.o_ad_quick_grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 16px;
+    padding: 0 28px 28px;
+}
+
+@media (max-width: 900px) {
+    .o_ad_quick_grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.o_ad_quick_item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.o_ad_quick_icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #f1edec;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ad-primary);
+    transition: background 0.3s ease, color 0.3s ease;
+    box-shadow: 0 4px 16px rgba(28,27,27,0.06);
+}
+
+.o_ad_quick_icon .material-symbols-outlined {
+    font-size: 26px;
+}
+
+.o_ad_quick_item:hover .o_ad_quick_icon {
+    background: var(--ad-primary);
+    color: #fff;
+}
+
+.o_ad_quick_label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ad-secondary);
+    text-align: center;
+    transition: color 0.2s ease;
+}
+
+.o_ad_quick_item:hover .o_ad_quick_label {
+    color: var(--ad-on-surface);
+}
+
+/* ── Content Cards ─────────────────────────────────────────────── */
+.o_ad_card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid rgba(227,190,184,0.3);
+    box-shadow: var(--ad-shadow);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.o_ad_card_footer {
+    background: var(--ad-surface-low);
+}
+
+.o_ad_card_header {
+    padding: 24px 24px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.o_ad_card_title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--ad-on-surface);
+}
+
+.o_ad_card_subtitle {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ad-secondary);
+    margin-top: 3px;
+}
+
+.o_ad_view_btn {
+    color: var(--ad-primary);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.o_ad_view_btn:hover {
+    text-decoration: underline;
+}
+
+.o_ad_watermark {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 60px;
+    font-weight: 900;
+    color: var(--ad-secondary);
+    opacity: 0.06;
+    pointer-events: none;
+    user-select: none;
+    text-transform: uppercase;
+    line-height: 1;
+    z-index: 0;
+}
+
+.o_ad_empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 0;
+    opacity: 0.4;
+}
+
+.o_ad_empty .material-symbols-outlined {
+    font-size: 48px;
+    color: var(--ad-secondary);
+    margin-bottom: 8px;
+}
+
+.o_ad_empty p {
+    color: var(--ad-secondary);
+    font-style: italic;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    DOJO MEMBER PROFILE
 ═══════════════════════════════════════════════════════════════ */
 
@@ -1374,7 +1688,7 @@ html .o_web_client>.o_action_manager {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: #1a73e8;
+    background: #b41e16;
     color: #fff;
     border: none;
     cursor: pointer;
@@ -1382,16 +1696,16 @@ html .o_web_client>.o_action_manager {
     align-items: center;
     justify-content: center;
     font-size: 1.35rem;
-    box-shadow: 0 4px 16px rgba(26, 115, 232, 0.45);
+    box-shadow: 0 4px 16px rgba(180, 30, 22, 0.45);
     z-index: 1100;
     transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
     user-select: none;
 }
 
 .dojo-va-fab:hover {
-    background: #1558b0;
+    background: #8a1510;
     transform: scale(1.07);
-    box-shadow: 0 6px 22px rgba(26, 115, 232, 0.55);
+    box-shadow: 0 6px 22px rgba(180, 30, 22, 0.55);
 }
 
 .dojo-va-fab--open {
@@ -1434,7 +1748,7 @@ html .o_web_client>.o_action_manager {
 
 /* ── Header ──────────────────────────────────────────────────── */
 .dojo-va-header {
-    background: #1a73e8;
+    background: #b41e16;
     color: #fff;
     padding: 14px 16px;
     display: flex;
@@ -1454,12 +1768,14 @@ html .o_web_client>.o_action_manager {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1rem;
     flex-shrink: 0;
+    overflow: hidden;
+    padding: 3px;
 }
 
 .dojo-va-title {
@@ -1525,13 +1841,22 @@ html .o_web_client>.o_action_manager {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: #e8f0fe;
-    color: #1a73e8;
+    background: rgba(180, 30, 22, 0.08);
+    color: #b41e16;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 0.75rem;
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+.dojo-va-avatar img,
+.dojo-va-msg-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 .dojo-va-msg-bubble {
@@ -1550,7 +1875,7 @@ html .o_web_client>.o_action_manager {
 }
 
 .dojo-va-msg--user .dojo-va-msg-bubble {
-    background: #1a73e8;
+    background: #b41e16;
     color: #fff;
     border-bottom-right-radius: 4px;
 }
@@ -1750,7 +2075,7 @@ html .o_web_client>.o_action_manager {
 }
 
 .dojo-va-chat-input:focus {
-    border-color: #1a73e8;
+    border-color: #b41e16;
 }
 
 .dojo-va-input-actions {
@@ -1808,7 +2133,7 @@ html .o_web_client>.o_action_manager {
     height: 38px;
     border-radius: 50%;
     border: none;
-    background: #1a73e8;
+    background: #b41e16;
     color: #fff;
     cursor: pointer;
     font-size: 0.9rem;
@@ -1820,11 +2145,11 @@ html .o_web_client>.o_action_manager {
 }
 
 .dojo-va-send-btn:hover {
-    background: #1558b0;
+    background: #8a1510;
 }
 
 .dojo-va-send-btn:disabled {
-    background: #b0c8f5;
+    background: rgba(180, 30, 22, 0.3);
     cursor: not-allowed;
 }
 
