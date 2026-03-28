@@ -997,14 +997,7 @@ class MemberProfileCard extends Component {
 class HomeContent extends Component {
     static template = xml`
         <div class="k-home">
-            <t t-if="!props.query and !props.loading">
-                <div class="k-home__prompt">
-                    <div class="k-home__prompt-icon">🥋</div>
-                    <div class="k-home__prompt-title">Welcome!</div>
-                    <div class="k-home__prompt-sub">Type your name in the search bar above to check in</div>
-                </div>
-            </t>
-            <t t-elif="props.loading">
+            <t t-if="props.loading">
                 <div class="k-home__searching">
                     <div class="k-spinner k-spinner--lg"/>
                 </div>
@@ -1025,7 +1018,6 @@ class HomeContent extends Component {
         </div>
     `;
     static props = ["query", "results", "loading", "onSelect"];
-    static components = {};
 }
 
 // ─── MemberCard (icon tile) ──────────────────────────────────────────────────
@@ -2028,12 +2020,17 @@ class KioskSettingsModal extends Component {
 class KioskVoiceAssistant extends Component {
     static template = xml`
         <div class="k-ai-widget">
-            <!-- Floating toggle button -->
-            <button t-attf-class="k-ai-btn #{state.open ? 'k-ai-btn--active' : ''}"
-                    t-on-click="toggle"
-                    title="AI Assistant">
-                🤖
-            </button>
+            <!-- Floating toggle button + kiosk name label -->
+            <div class="k-ai-btn-wrap">
+                <button t-attf-class="k-ai-btn #{state.open ? 'k-ai-btn--active' : ''}"
+                        t-on-click="toggle"
+                        title="AI Assistant">
+                    🤖
+                </button>
+                <t t-if="props.kioskName">
+                    <span class="k-ai-kiosk-label" t-esc="props.kioskName"/>
+                </t>
+            </div>
 
             <!-- Chat panel -->
             <t t-if="state.open">
@@ -2097,7 +2094,7 @@ class KioskVoiceAssistant extends Component {
         </div>
     `;
 
-    static props = ["instructorMode"];
+    static props = ["instructorMode", "kioskName"];
 
     setup() {
         this.state = useState({
@@ -2393,27 +2390,6 @@ class KioskApp extends Component {
 
             <!-- ── Header (single, conditional modifier class) ── -->
             <div t-attf-class="k-header #{state.instructorMode ? 'k-header--instructor' : ''}">
-                <t t-if="state.showTitle">
-                    <span class="k-header__logo">🥋 Dojang</span>
-                </t>
-
-                <!-- Student mode: search bar -->
-                <t t-if="!state.instructorMode">
-                    <div class="k-header__search-wrap">
-                        <span class="k-header__search-icon">🔍</span>
-                        <input class="k-header__search"
-                            type="text"
-                            placeholder="Type your name to check in…"
-                            t-model="state.searchQuery"
-                            t-on-input="onSearchInput"
-                            autocomplete="off"
-                            autocorrect="off"
-                            spellcheck="false"/>
-                        <t t-if="state.searchQuery">
-                            <button class="k-header__search-clear" t-on-click="clearSearch">✕</button>
-                        </t>
-                    </div>
-                </t>
 
                 <!-- Instructor mode: pill + session filter + date -->
                 <t t-if="state.instructorMode">
@@ -2443,10 +2419,10 @@ class KioskApp extends Component {
                     </t>
                     <!-- Reload -->
                     <button class="k-header__action-btn" t-on-click="reloadSessions" title="Reload">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                        <span class="material-symbols-outlined" style="font-size:20px;">sync</span>
                     </button>
                     <!-- Settings -->
-                    <button class="k-header__action-btn" t-on-click="openSettings" title="Settings">⚙</button>
+                    <button class="k-header__action-btn" t-on-click="openSettings" title="Settings"><span class="material-symbols-outlined" style="font-size:20px;">settings</span></button>
                     <!-- Exit instructor mode -->
                     <t t-if="state.instructorMode">
                         <button class="k-header__action-btn" t-on-click="onInstructorToggle" title="Exit Instructor Mode" style="font-size:14px;font-weight:700;">✕ Exit</button>
@@ -2459,11 +2435,33 @@ class KioskApp extends Component {
 
                 <!-- ════ STUDENT FLOW ════ -->
                 <t t-if="!state.instructorMode">
-                    <HomeContent
-                        query="state.searchQuery"
-                        results="state.searchResults"
-                        loading="state.searchLoading"
-                        onSelect="(member) => this.studentConfirm(member)"/>
+                    <div class="k-welcome-screen">
+                        <img class="k-welcome-logo" src="/dojo_kiosk/static/src/img/uft-logo-horizontal.png"/>
+                        <div class="k-welcome-title">WELCOME!</div>
+                        <div class="k-welcome-subtitle">Type your name to check in</div>
+                        <div class="k-search-container">
+                            <div class="k-welcome-search-wrap">
+                                <input class="k-welcome-search"
+                                    type="text"
+                                    placeholder="Student Name…"
+                                    t-model="state.searchQuery"
+                                    t-on-input="onSearchInput"
+                                    autocomplete="off"
+                                    autocorrect="off"
+                                    spellcheck="false"/>
+                                <button class="k-welcome-search-btn" t-on-click="onSearchSubmit">ENTER</button>
+                            </div>
+                            <t t-if="state.searchQuery or state.searchLoading or state.searchResults.length">
+                                <div class="k-search-results-panel">
+                                    <HomeContent
+                                        query="state.searchQuery"
+                                        results="state.searchResults"
+                                        loading="state.searchLoading"
+                                        onSelect="(member) => this.studentConfirm(member)"/>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
                 </t>
 
                 <!-- ════ INSTRUCTOR VIEW ════ -->
@@ -2600,7 +2598,14 @@ class KioskApp extends Component {
 
             <!-- ── AI Voice Assistant ── -->
             <t t-if="!state.idle">
-                <KioskVoiceAssistant instructorMode="state.instructorMode"/>
+                <KioskVoiceAssistant instructorMode="state.instructorMode" kioskName="state.kioskName"/>
+            </t>
+
+            <!-- ── Kiosk footer ── -->
+            <t t-if="!state.idle and !state.instructorMode">
+                <div class="k-kiosk-footer">
+                    <span>© Dojang</span>
+                </div>
             </t>
 
         </div>
@@ -2666,6 +2671,7 @@ class KioskApp extends Component {
             fontSize: "normal",
             theme: "dark",
             idleMinutes: 3,
+            kioskName: "",
         });
 
         this._searchTimer = null;
@@ -2723,6 +2729,7 @@ class KioskApp extends Component {
                 this.state.announcements = data.announcements || [];
                 this.state.marketing_cards = data.marketing_cards || [];
                 this.state.sessions = data.sessions || [];
+                this.state.kioskName = data.name || "";
                 this.state.showTitle = data.show_title !== false;
                 if (data.theme_mode && data.theme_mode !== this.state.theme) {
                     this.onTheme(data.theme_mode);
@@ -2815,7 +2822,7 @@ class KioskApp extends Component {
     onSearchInput() {
         clearTimeout(this._searchTimer);
         const q = this.state.searchQuery.trim();
-        if (q.length < 2) { this.state.searchResults = []; return; }
+        if (q.length < 2) { this.state.searchResults = []; this.state.searchLoading = false; return; }
         this.state.searchLoading = true;
         this._searchTimer = setTimeout(async () => {
             try {
@@ -2827,6 +2834,11 @@ class KioskApp extends Component {
                 this.state.searchLoading = false;
             }
         }, 300);
+    }
+
+    onSearchSubmit() {
+        if (this._searchTimer) clearTimeout(this._searchTimer);
+        this.onSearchInput();
     }
 
     clearSearch() {

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="dojo_kiosk.KioskAdminApp">
+        <div class="ka-app">
+
+            <!-- ── Top Nav ── -->
+            <nav class="ka-topnav">
+                <div class="ka-topnav__brand">
+                    <i class="fa fa-th-large ka-brand-icon"/>
+                    <span class="ka-brand-title">Dojo Kiosk Admin</span>
+                </div>
+                <div class="ka-topnav__actions">
+                    <button class="ka-btn ka-btn--primary" t-on-click="openNew">
+                        <i class="fa fa-plus"/> New Kiosk
+                    </button>
+                    <div class="ka-avatar" title="Admin">
+                        <i class="fa fa-user-circle"/>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- ── Body (sidebar + main) ── -->
+            <div class="ka-body">
+
+                <!-- Sidebar -->
+                <aside class="ka-sidebar">
+                    <div class="ka-sidebar__header">
+                        <div>
+                            <div class="ka-sidebar__role-title">Kiosk Admin</div>
+                        </div>
+                    </div>
+
+                    <nav class="ka-sidebar__nav">
+                        <div class="ka-nav-item">
+                            <i class="fa fa-th-large"/>
+                            <span>Kiosks</span>
+                        </div>
+                    </nav>
+
+                    <div class="ka-sidebar__footer">
+                        <button class="ka-btn ka-btn--launch-sidebar" t-on-click="openLaunchModal" t-att-disabled="state.loading">
+                            <i class="fa fa-tablet"/> Launch Kiosk
+                        </button>
+                        <button class="ka-nav-item" t-on-click="logout">
+                            <i class="fa fa-sign-out"/>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Main content -->
+                <main class="ka-main">
+
+                    <!-- Toolbar -->
+                    <div class="ka-toolbar">
+                        <div class="ka-toolbar__left">
+                            <button class="ka-btn ka-btn--dark" t-on-click="openNew">
+                                <i class="fa fa-plus"/> New
+                            </button>
+                            <span class="ka-toolbar__title">
+                                Kiosks <i class="fa fa-cog" style="font-size:10px;"/>
+                            </span>
+                        </div>
+                        <div class="ka-toolbar__center">
+                            <div class="ka-search-wrap">
+                                <i class="fa fa-search ka-search-icon"/>
+                                <input
+                                    class="ka-search-input"
+                                    type="text"
+                                    placeholder="Search..."
+                                    t-att-value="state.search"
+                                    t-on-input="onSearchInput"/>
+                            </div>
+                        </div>
+                        <div class="ka-toolbar__right">
+                            <button class="ka-icon-btn" t-on-click="loadKiosks" title="Refresh">
+                                <i class="fa fa-refresh"/>
+                            </button>
+                            <span class="ka-pagination-label" t-esc="paginationLabel"/>
+                            <button class="ka-icon-btn"
+                                t-on-click="prevPage"
+                                t-att-disabled="state.page === 0">
+                                <i class="fa fa-chevron-left"/>
+                            </button>
+                            <button class="ka-icon-btn"
+                                t-on-click="nextPage"
+                                t-att-disabled="state.page >= totalPages - 1">
+                                <i class="fa fa-chevron-right"/>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Kiosk Table -->
+                    <div class="ka-table-wrap">
+                        <table class="ka-table">
+                            <thead>
+                                <tr>
+                                    <th class="ka-th ka-th--check">
+                                        <input type="checkbox"/>
+                                    </th>
+                                    <th class="ka-th">Kiosk Name</th>
+                                    <th class="ka-th">Kiosk URL</th>
+                                    <th class="ka-th">Theme</th>
+                                    <th class="ka-th ka-th--center">Active</th>
+                                    <th class="ka-th"/>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-if="state.loading">
+                                    <tr>
+                                        <td colspan="6" class="ka-td-empty">
+                                            <i class="fa fa-spinner fa-spin"/> Loading…
+                                        </td>
+                                    </tr>
+                                </t>
+                                <t t-elif="pagedKiosks.length === 0">
+                                    <tr>
+                                        <td colspan="6" class="ka-td-empty">No kiosks found.</td>
+                                    </tr>
+                                </t>
+                                <t t-else="">
+                                    <t t-foreach="pagedKiosks" t-as="kiosk" t-key="kiosk.id">
+                                        <tr class="ka-row" t-on-click="() => this.openRecord(kiosk)">
+                                            <td class="ka-td ka-td--check" t-on-click.stop="">
+                                                <input type="checkbox"/>
+                                            </td>
+                                            <td class="ka-td ka-td--name" t-esc="kiosk.name"/>
+                                            <td class="ka-td">
+                                                <a t-if="kiosk.kiosk_url" class="ka-link"
+                                                    t-att-href="kiosk.kiosk_url"
+                                                    t-on-click.stop=""
+                                                    target="_blank"
+                                                    t-esc="kiosk.kiosk_url"/>
+                                                <span t-else="" class="ka-text-muted">—</span>
+                                            </td>
+                                            <td class="ka-td" t-esc="kiosk.theme_mode"/>
+                                            <td class="ka-td ka-td--center">
+                                                <t t-if="kiosk.active">
+                                                    <i class="fa fa-check-square-o ka-active-check"/>
+                                                </t>
+                                                <t t-else="">
+                                                    <i class="fa fa-square-o ka-inactive-check"/>
+                                                </t>
+                                            </td>
+                                            <td class="ka-td ka-td--actions" t-on-click.stop="">
+                                                <button class="ka-btn ka-btn--launch-row"
+                                                    t-on-click="() => this.launchKiosk(kiosk)">
+                                                    <i class="fa fa-external-link"/> Launch
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </main>
+            </div>
+
+            <!-- ── Footer ── -->
+            <footer class="ka-footer">
+                <div class="ka-footer__left">
+                    <span>© Dojang</span>
+                    <a href="#" class="ka-footer__link">Privacy</a>
+                    <a href="#" class="ka-footer__link">Terms</a>
+                </div>
+                <div class="ka-footer__right">
+                    <span class="ka-sync-dot"/>
+                    <span>Cloud Sync: Synchronized</span>
+                </div>
+            </footer>
+
+            <!-- ── Launch Kiosk Modal ── -->
+            <t t-if="state.showLaunchModal">
+                <div class="ka-modal-overlay" t-on-click.self="closeLaunchModal">
+                    <div class="ka-modal">
+                        <div class="ka-modal__header">
+                            <h2 class="ka-modal__title">
+                                <i class="fa fa-tablet"/> Launch Kiosk
+                            </h2>
+                            <button class="ka-modal__close" t-on-click="closeLaunchModal">
+                                <i class="fa fa-times"/>
+                            </button>
+                        </div>
+                        <div class="ka-modal__body">
+                            <t t-set="activeKiosks" t-value="state.kiosks.filter(k => k.active)"/>
+                            <t t-if="activeKiosks.length === 0">
+                                <p class="ka-modal__empty">No active kiosks configured.</p>
+                            </t>
+                            <t t-foreach="activeKiosks" t-as="kiosk" t-key="kiosk.id">
+                                <div class="ka-modal-kiosk-row">
+                                    <span class="ka-modal-kiosk-row__label" t-esc="kiosk.name"/>
+                                    <button class="ka-btn ka-btn--primary"
+                                        t-on-click="() => this.launchKiosk(kiosk)">
+                                        <i class="fa fa-external-link"/> Open
+                                    </button>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+            </t>
+
+        </div>
+    </t>
+
+</templates>

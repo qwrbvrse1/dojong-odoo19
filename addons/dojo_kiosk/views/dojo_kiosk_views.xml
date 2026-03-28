@@ -82,6 +82,11 @@
         <field name="view_mode">list,form</field>
     </record>
 
+    <record id="action_dojo_kiosk_admin_client" model="ir.actions.client">
+        <field name="name">Kiosk Admin</field>
+        <field name="tag">dojo_kiosk.KioskAdminApp</field>
+    </record>
+
     <!-- ================================================================
          Menu items — standalone Kiosk app
     ================================================================ -->
@@ -95,12 +100,12 @@
         web_icon="dojo_kiosk,static/description/icon.png"
     />
 
-    <!-- Kiosks list (launch URLs from here) -->
+    <!-- Kiosks list (custom OWL admin panel) -->
     <menuitem
         id="menu_dojo_kiosk_list"
         name="Kiosks"
         parent="menu_dojo_kiosk_root"
-        action="action_dojo_kiosk_config"
+        action="action_dojo_kiosk_admin_client"
         sequence="10"
         groups="dojo_base.group_dojo_admin"
     />
