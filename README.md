@@ -69,9 +69,21 @@ docker compose up -d
 
 The first build takes several minutes as it compiles all system and Python dependencies.
 
-### 6. Open Odoo
+### 6. Initialize the database (first time only)
 
-Go to [http://localhost:8069](http://localhost:8069) and create your first database.
+The database container starts empty — you must install the Odoo schema before the web UI works:
+
+```bash
+docker compose run --rm web --config=/etc/odoo/odoo.conf -d odoo19 -i base --stop-after-init
+```
+
+This takes 1–3 minutes. You'll see `Modules loaded.` when it's done.
+
+### 7. Open Odoo
+
+Go to [http://localhost:8069](http://localhost:8069) — you should see the login page.
+
+> **Database manager:** [http://localhost:8069/web/database/manager](http://localhost:8069/web/database/manager)
 
 ### Day-to-day commands
 
@@ -299,3 +311,87 @@ db_password = <cloud-sql-password>
 ```
 
 3. Remove the `db` service and `odoo-db-data-19-2` volume from `docker-compose.yml`.
+
+---
+
+## Troubleshooting
+
+These are the most common issues when setting up for the first time.
+
+### `Name or service not known` / can't connect to database
+
+`db_host` is missing from `config/odoo.conf`. Make sure these lines are present:
+
+```ini
+db_host = db
+db_port = 5432
+db_user = odoo
+db_password = odoo
+```
+
+The hostname `db` matches the service name in `docker-compose.yml`. Without it, Odoo tries to connect via a Unix socket which doesn't exist inside the container.
+
+### `relation "ir_module_module" does not exist`
+
+The database exists but has never been initialized. Run the one-time init command (Step 6 above):
+
+```bash
+docker compose run --rm web --config=/etc/odoo/odoo.conf -d odoo19 -i base --stop-after-init
+```
+
+### `localhost:8069` loads nothing / connection refused from host
+
+Odoo's default in saas-19.2 is to bind to `127.0.0.1` inside the container, which blocks Docker's port forwarding. Add this to `config/odoo.conf`:
+
+```ini
+http_interface = 0.0.0.0
+```
+
+Then restart: `docker compose restart web`
+
+### `PermissionError: /var/lib/odoo/sessions`
+
+The data volume was created with root ownership. Fix it:
+
+```bash
+docker exec -u root odoo-web-1 chown -R odoo:odoo /var/lib/odoo
+docker compose restart web
+```
+
+### `no such directory '/mnt/custom-addons'`
+
+The `addons_path` in `odoo.conf` doesn't match the volume mounts in `docker-compose.yml`. The correct paths for this setup are:
+
+```ini
+addons_path = /mnt/extra-addons,/mnt/enterprise-addons
+```
+
+### `configparser.ParsingError` / config not loading
+
+The `odoo.conf` file has corrupt line endings (embedded newlines from copy-paste). Rewrite it cleanly from the terminal — do not paste multi-line values in a text editor:
+
+```bash
+cat > config/odoo.conf << 'EOF'
+[options]
+addons_path = /mnt/extra-addons,/mnt/enterprise-addons
+data_dir = /var/lib/odoo
+admin_passwd = <your-hashed-password>
+db_host = db
+db_port = 5432
+db_user = odoo
+db_password = odoo
+db_name = odoo19
+dbfilter = ^odoo19$
+list_db = True
+http_interface = 0.0.0.0
+EOF
+```
+
+### `COPY ./odoo` fails during build
+
+The `Dockerfile` copies the Odoo source from `./odoo/` which is gitignored. Clone it first (Step 2 above):
+
+```bash
+git clone --depth=1 --branch saas-19.2 https://github.com/odoo/odoo ./odoo
+docker compose build --no-cache
+```

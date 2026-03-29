@@ -2,7 +2,11 @@
 addons_path = /mnt/extra-addons,/mnt/enterprise-addons,/opt/odoo/addons
 data_dir = /var/lib/odoo
 admin_passwd = admin_password
-db_name = odoo19
-dbfilter = ^odoo19$
-list_db = False
+db_name = PUT_DB_NAME  #Force a db to used
+db_host = PUT_DB_HOST # Change if needed
+db_port = 5432 # Change if needed
+db_user = PUT_PASSWORD # Change if needed
+db_password = PUT_PASSWORD # Change if needed
+dbfilter = ^odoo19$ # Change if needed
+list_db = False  # Change if needed
 
