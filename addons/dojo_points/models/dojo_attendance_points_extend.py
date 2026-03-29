@@ -48,8 +48,8 @@ class DojoAttendanceLogPointsExtend(models.Model):
 
         status = log.status
 
-        # ── Absent / Excused: reset streak, nothing else ──────────────────
-        if status in ("absent", "excused"):
+        # ── Absent / Excused / Sick / Injury / Vacation / Other: reset streak ──
+        if status in ("absent", "excused", "sick", "injury", "vacation", "other"):
             if member.current_streak != 0:
                 member.sudo().write({"current_streak": 0})
             return

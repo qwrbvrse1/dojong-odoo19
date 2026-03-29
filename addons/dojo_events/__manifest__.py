@@ -3,11 +3,11 @@
     "version": "saas~19.2.1.0.0",
     "summary": "Links dojo members to Odoo Events — seminars, tournaments, belt test ceremonies, workshops",
     "author": "Dojang",
-    "category": "Martial Arts",
+    "category": "Dojo",
     "license": "LGPL-3",
     "depends": [
+        "dojo_core",
         "event",
-        "dojo_members",
     ],
     "data": [
         "views/dojo_member_view_event_inherit.xml",

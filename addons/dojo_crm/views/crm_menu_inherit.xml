@@ -4,5 +4,5 @@
     <menuitem
         id="crm.crm_menu_root"
         name="CRM"
-        groups="sales_team.group_sale_salesman,sales_team.group_sale_manager,dojo_base.group_dojo_instructor"/>
+        groups="sales_team.group_sale_salesman,sales_team.group_sale_manager,dojo_core.group_dojo_instructor"/>
 </odoo>

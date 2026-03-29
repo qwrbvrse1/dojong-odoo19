@@ -14,8 +14,7 @@
     'installable': True,
     'auto_install': True,
     'depends': [
-        'dojo_members',
-        'dojo_classes',
+        'dojo_core',
         'dojo_subscriptions',
         'portal',
         'mail',

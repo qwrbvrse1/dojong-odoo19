@@ -3,8 +3,8 @@
     "version": "saas~19.2.1.0.0",
     "summary": "Class Calendar — sync Dojang sessions to calendar.event with roster & attendance controls",
     "author": "Dojang",
-    "category": "Dojang",
-    "depends": ["dojo_classes", "dojo_attendance", "calendar"],
+    "category": "Dojo",
+    "depends": ["dojo_core", "calendar"],
     "data": [
         "security/ir.model.access.csv",
         "views/calendar_event_view_inherit.xml",

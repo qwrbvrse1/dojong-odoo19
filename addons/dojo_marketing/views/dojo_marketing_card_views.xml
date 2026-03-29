@@ -117,7 +117,7 @@
         id="menu_dojo_marketing_root"
         name="Marketing Cards"
         sequence="5"
-        groups="dojo_base.group_dojo_admin,dojo_base.group_dojo_instructor"
+        groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"
         web_icon="dojo_marketing,static/description/icon.png"
     />
 
@@ -127,7 +127,7 @@
         parent="menu_dojo_marketing_root"
         action="action_dojo_marketing_card"
         sequence="10"
-        groups="dojo_base.group_dojo_admin"
+        groups="dojo_core.group_dojo_admin"
     />
 
 </odoo>

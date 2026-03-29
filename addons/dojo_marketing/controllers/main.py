@@ -130,8 +130,8 @@ def _print_html_wrapper(pdf_url: str, title: str = "Print Badge") -> str:
 
 def _require_instructor_or_admin(user) -> bool:
     return (
-        user.has_group("dojo_base.group_dojo_instructor")
-        or user.has_group("dojo_base.group_dojo_admin")
+        user.has_group("dojo_core.group_dojo_instructor")
+        or user.has_group("dojo_core.group_dojo_admin")
         or user.has_group("base.group_system")
     )
 

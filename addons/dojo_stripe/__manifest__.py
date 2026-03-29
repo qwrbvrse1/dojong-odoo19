@@ -18,7 +18,7 @@ Stripe keys are read from the Stripe payment provider configured in
 Invoicing → Configuration → Payment Providers → Stripe.
 """,
     "version": "saas~19.2.2.0.0",
-    "category": "Services",
+    "category": "Dojo",
     "license": "LGPL-3",
     "author": "Dojo Platform",
     "depends": [

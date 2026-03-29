@@ -70,27 +70,27 @@
     <menuitem id="menu_dojo_onboarding_root"
               name="Onboarding"
               sequence="5"
-              groups="dojo_base.group_dojo_admin,dojo_base.group_dojo_instructor"
+              groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"
               web_icon="dojo_onboarding,static/description/icon.png"/>
     <menuitem id="menu_dojo_onboarding_records"
               name="Onboarding Records"
               parent="menu_dojo_onboarding_root"
               action="action_dojo_onboarding_records"
               sequence="1"
-              groups="dojo_base.group_dojo_admin,dojo_base.group_dojo_instructor"/>
+              groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
 
     <menuitem id="menu_dojo_onboarding_new"
               name="New Member"
               parent="menu_dojo_onboarding_root"
               action="action_dojo_onboarding_wizard"
               sequence="2"
-              groups="dojo_base.group_dojo_admin,dojo_base.group_dojo_instructor"/>
+              groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
 
     <!-- ── Smart button injected into the Member form ───────────────────── -->
     <record id="view_dojo_member_form_onboarding_btn" model="ir.ui.view">
         <field name="name">dojo.member.form.onboarding.button</field>
         <field name="model">dojo.member</field>
-        <field name="inherit_id" ref="dojo_base.view_dojo_member_form"/>
+        <field name="inherit_id" ref="dojo_core.view_dojo_member_form"/>
         <field name="arch" type="xml">
             <xpath expr="//div[@name='button_box']" position="inside">
                 <!-- Show 'Start Onboarding' only when no record exists yet -->
@@ -100,14 +100,14 @@
                         icon="fa-magic"
                         string="Start Onboarding"
                         invisible="onboarding_count != 0 or membership_state != 'lead'"
-                        groups="dojo_base.group_dojo_admin,dojo_base.group_dojo_instructor"/>
+                        groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
                 <!-- Show onboarding record count when already onboarded -->
                 <button name="action_view_onboarding_records"
                         type="object"
                         class="oe_stat_button"
                         icon="fa-check-circle"
                         invisible="onboarding_count == 0"
-                        groups="dojo_base.group_dojo_admin,dojo_base.group_dojo_instructor">
+                        groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor">
                     <div class="o_stat_info">
                         <span class="o_stat_value"><field name="onboarding_count"/></span>
                         <span class="o_stat_text">Onboarding</span>

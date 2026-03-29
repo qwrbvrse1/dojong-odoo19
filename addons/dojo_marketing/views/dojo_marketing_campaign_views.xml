@@ -191,7 +191,7 @@
         parent="dojo_marketing.menu_dojo_marketing_root"
         action="action_dojo_marketing_campaign"
         sequence="20"
-        groups="dojo_base.group_dojo_admin,dojo_base.group_dojo_instructor"
+        groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"
     />
 
 </odoo>

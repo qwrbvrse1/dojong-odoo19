@@ -42,5 +42,5 @@
         parent="dojo_credits.menu_dojo_credits_root"
         action="action_dojo_credit_adjustment_wizard"
         sequence="20"
-        groups="dojo_base.group_dojo_admin"/>
+        groups="dojo_core.group_dojo_admin"/>
 </odoo>

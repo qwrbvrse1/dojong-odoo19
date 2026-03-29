@@ -5,7 +5,7 @@
     <record id="view_dojo_member_form_points_inherit" model="ir.ui.view">
         <field name="name">dojo.member.form.points.inherit</field>
         <field name="model">dojo.member</field>
-        <field name="inherit_id" ref="dojo_base.view_dojo_member_form"/>
+        <field name="inherit_id" ref="dojo_core.view_dojo_member_form"/>
         <field name="arch" type="xml">
 
             <!-- ── Smart button (button_box) ───────────────────────────── -->
@@ -39,7 +39,7 @@
                     </group>
 
                     <!-- Award button (admins + instructors) -->
-                    <div class="mb-2" groups="dojo_base.group_dojo_instructor">
+                    <div class="mb-2" groups="dojo_core.group_dojo_instructor">
                         <button name="action_open_award_points_wizard"
                                 type="object"
                                 string="🏅 Award Points"

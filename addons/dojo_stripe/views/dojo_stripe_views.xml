@@ -8,7 +8,7 @@
     <record id="view_dojo_household_form_stripe_billing_inherit" model="ir.ui.view">
         <field name="name">dojo.household.form.stripe.billing.inherit</field>
         <field name="model">res.partner</field>
-        <field name="inherit_id" ref="dojo_base.view_dojo_household_form"/>
+        <field name="inherit_id" ref="dojo_core.view_dojo_household_form"/>
         <field name="arch" type="xml">
             <!-- Payment token stat button -->
             <xpath expr="//sheet" position="before">
@@ -17,7 +17,7 @@
                             type="object"
                             class="oe_stat_button"
                             icon="fa-credit-card"
-                            groups="dojo_base.group_dojo_admin">
+                            groups="dojo_core.group_dojo_admin">
                         <field name="payment_token_count" widget="statinfo"
                                string="Payment Methods"/>
                     </button>
@@ -43,7 +43,7 @@
                         class="oe_stat_button"
                         icon="fa-credit-card"
                         invisible="stripe_card_id"
-                        groups="dojo_base.group_dojo_admin">
+                        groups="dojo_core.group_dojo_admin">
                     <div class="o_stat_info">
                         <span class="o_stat_text">Issue Stripe Card</span>
                     </div>
@@ -61,7 +61,7 @@
             <!-- Stripe Issuing section on employee form -->
             <xpath expr="//notebook" position="inside">
                 <page string="Stripe Issuing" name="stripe_issuing"
-                      groups="dojo_base.group_dojo_admin">
+                      groups="dojo_core.group_dojo_admin">
                     <group>
                         <group string="Card Details">
                             <field name="issuing_card_brand" placeholder="e.g. Mastercard"
@@ -85,13 +85,13 @@
                                     class="btn btn-primary"
                                     string="Reveal Full Card Details"
                                     icon="fa-eye"
-                                    groups="dojo_base.group_dojo_admin"/>
+                                    groups="dojo_core.group_dojo_admin"/>
                             <button name="action_add_to_wallet"
                                     type="object"
                                     class="btn btn-secondary"
                                     string="Add to Digital Wallet"
                                     icon="fa-mobile"
-                                    groups="dojo_base.group_dojo_admin"/>
+                                    groups="dojo_core.group_dojo_admin"/>
                         </div>
                     </group>
                 </page>

@@ -1,0 +1,1056 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="dojo_core.MemberProfile">
+<div class="o_mp_root o_mp_v2" t-ref="root">
+
+    <!-- ══════════════════════════════════════════════════════════════
+         LOADING
+    ══════════════════════════════════════════════════════════════ -->
+    <t t-if="state.loading">
+        <div class="d-flex justify-content-center align-items-center" style="min-height:320px">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading…</span>
+            </div>
+        </div>
+    </t>
+
+    <!-- Not found -->
+    <t t-elif="!state.member">
+        <div class="p-4">
+            <button class="o_mp_back_btn_plain mb-3" t-on-click="goBack">
+                <i class="fa fa-arrow-left me-1"/> Back
+            </button>
+            <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle me-2"/>
+                Member not found or you do not have permission to view this profile.
+            </div>
+        </div>
+    </t>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PROFILE
+    ══════════════════════════════════════════════════════════════ -->
+    <t t-else="">
+
+        <!-- ── Hero ──────────────────────────────────────────────── -->
+        <div class="o_mp_hero">
+            <div class="o_mp_hero_inner">
+
+                <button class="o_mp_back_btn" t-on-click="goBack">
+                    <i class="fa fa-arrow-left me-1"/> Back
+                </button>
+
+                <div class="o_mp_hero_body">
+                    <!-- Avatar -->
+                    <div class="o_mp_avatar_wrap">
+                        <img t-att-src="imageUrl"
+                             class="o_mp_avatar"
+                             alt="Profile picture"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+                        <div class="o_mp_avatar_fallback" style="display:none">
+                            <i class="fa fa-user"/>
+                        </div>
+                    </div>
+
+                    <!-- Identity -->
+                    <div class="o_mp_hero_info">
+                        <h1 class="o_mp_hero_name" t-out="state.member.name"/>
+                        <t t-if="state.member.member_number">
+                            <div class="o_mp_member_number">
+                                <i class="fa fa-hashtag me-1"/>
+                                <t t-out="state.member.member_number"/>
+                            </div>
+                        </t>
+                        <div class="o_mp_hero_badges">
+                            <span t-attf-class="o_mp_state_badge {{ stateClass(state.member.membership_state) }}">
+                                <t t-out="stateLabel(state.member.membership_state)"/>
+                            </span>
+                            <span class="o_mp_role_badge">
+                                <t t-out="roleLabel(state.member)"/>
+                            </span>
+                            <t t-if="state.member.current_rank">
+                                <span class="o_mp_belt_badge"
+                                      t-att-style="'background:' + rankBgColor(state.member.current_rank.color) + ';color:' + state.member.current_rank.color + ';border:1.5px solid ' + state.member.current_rank.color">
+                                    <i class="fa fa-circle me-1"
+                                       t-att-style="'color:' + state.member.current_rank.color"/>
+                                    <t t-out="state.member.current_rank.name"/>
+                                </span>
+                            </t>
+                            <t t-if="state.member.test_invite_pending">
+                                <span class="o_mp_test_badge">
+                                    <i class="fa fa-star me-1"/> Belt Test Invite
+                                </span>
+                            </t>
+                        </div>
+                    </div>
+
+                    <!-- Hero quick stats -->
+                    <div class="o_mp_hero_stats">
+                        <div class="o_mp_hero_stat">
+                            <span class="o_mp_hero_stat_value"
+                                  t-out="state.member.total_attendance_count || 0"/>
+                            <span class="o_mp_hero_stat_label">Classes Attended</span>
+                        </div>
+                        <div class="o_mp_hero_stat_divider"/>
+                        <div class="o_mp_hero_stat">
+                            <span class="o_mp_hero_stat_value"
+                                  t-out="state.member.days_as_member || 0"/>
+                            <span class="o_mp_hero_stat_label">Days a Member</span>
+                        </div>
+                        <div class="o_mp_hero_stat_divider"/>
+                        <div class="o_mp_hero_stat">
+                            <t t-if="state.member.subscription">
+                                <t t-if="state.member.subscription.credits_per_period === 0">
+                                    <span class="o_mp_hero_stat_value">∞</span>
+                                </t>
+                                <t t-else="">
+                                    <span class="o_mp_hero_stat_value"
+                                          t-out="state.member.subscription.credit_balance"/>
+                                </t>
+                            </t>
+                            <t t-else="">
+                                <span class="o_mp_hero_stat_value">—</span>
+                            </t>
+                            <span class="o_mp_hero_stat_label">Credits</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div><!-- /.o_mp_hero -->
+
+        <!-- ── KPI Chips ─────────────────────────────────────────── -->
+        <div class="o_di_stat_row o_mp_stat_row">
+            <div class="o_di_stat_chip o_di_stat_blue">
+                <div class="o_di_stat_value"
+                     t-out="state.member.total_attendance_count || 0"/>
+                <div class="o_di_stat_label">Total Attendances</div>
+                <div class="o_di_stat_sub">All time (present &amp; late)</div>
+            </div>
+            <div class="o_di_stat_chip o_di_stat_green">
+                <div class="o_di_stat_value"
+                     t-out="state.member.days_as_member || 0"/>
+                <div class="o_di_stat_label">Days a Member</div>
+                <div class="o_di_stat_sub">Since subscription start</div>
+            </div>
+            <div class="o_di_stat_chip o_di_stat_orange">
+                <t t-if="state.member.subscription">
+                    <t t-if="state.member.subscription.credits_per_period === 0">
+                        <div class="o_di_stat_value">∞</div>
+                        <div class="o_di_stat_label">Credits</div>
+                        <div class="o_di_stat_sub">Unlimited plan</div>
+                    </t>
+                    <t t-else="">
+                        <div class="o_di_stat_value"
+                             t-out="state.member.subscription.credit_balance"/>
+                        <div class="o_di_stat_label">Credits Remaining</div>
+                        <div class="o_di_stat_sub"
+                             t-out="state.member.subscription.credit_pending + ' pending hold'"/>
+                    </t>
+                </t>
+                <t t-else="">
+                    <div class="o_di_stat_value">—</div>
+                    <div class="o_di_stat_label">Credits</div>
+                    <div class="o_di_stat_sub">No active subscription</div>
+                </t>
+            </div>
+            <div class="o_di_stat_chip o_di_stat_purple">
+                <t t-if="state.member.current_rank">
+                    <div class="o_di_stat_value o_mp_rank_chip_value"
+                         t-att-style="'color:' + state.member.current_rank.color"
+                         t-out="state.member.current_rank.name"/>
+                    <div class="o_di_stat_label">Current Belt</div>
+                    <div class="o_di_stat_sub"
+                         t-out="state.member.attendance_since_last_rank + ' classes since promotion'"/>
+                </t>
+                <t t-else="">
+                    <div class="o_di_stat_value">—</div>
+                    <div class="o_di_stat_label">Current Belt</div>
+                    <div class="o_di_stat_sub">No rank awarded yet</div>
+                </t>
+            </div>
+        </div>
+
+        <!-- ── Quick Actions ─────────────────────────────────────── -->
+        <div class="o_mp_section_wrap">
+            <div class="o_mp_section_label">Quick Actions</div>
+            <div class="o_di_quick_grid o_mp_quick_grid">
+                <div class="o_di_quick_item" t-on-click="editMember">
+                    <div class="o_di_quick_icon o_di_quick_icon_blue">
+                        <i class="fa fa-edit"/>
+                    </div>
+                    <span class="o_di_quick_label">Edit Member</span>
+                </div>
+                <div class="o_di_quick_item" t-on-click="addCredits">
+                    <div class="o_di_quick_icon o_di_quick_icon_green">
+                        <i class="fa fa-plus-circle"/>
+                    </div>
+                    <span class="o_di_quick_label">Add Credits</span>
+                </div>
+                <div class="o_di_quick_item" t-on-click="viewSubscription">
+                    <div class="o_di_quick_icon o_di_quick_icon_teal">
+                        <i class="fa fa-credit-card"/>
+                    </div>
+                    <span class="o_di_quick_label">Subscription</span>
+                </div>
+                <div class="o_di_quick_item" t-on-click="logAttendance">
+                    <div class="o_di_quick_icon o_di_quick_icon_orange">
+                        <i class="fa fa-check-circle"/>
+                    </div>
+                    <span class="o_di_quick_label">Log Attendance</span>
+                </div>
+                <div class="o_di_quick_item" t-on-click="inviteBeltTest">
+                    <div class="o_di_quick_icon o_di_quick_icon_purple">
+                        <i class="fa fa-star"/>
+                    </div>
+                    <span class="o_di_quick_label">Belt Test</span>
+                </div>
+                <div class="o_di_quick_item" t-on-click="sendMessage">
+                    <div class="o_di_quick_icon o_di_quick_icon_indigo">
+                        <i class="fa fa-envelope"/>
+                    </div>
+                    <span class="o_di_quick_label">Contact Guardian</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Content Grid ──────────────────────────────────────── -->
+        <div class="o_di_content_grid o_mp_content_grid">
+
+            <!-- ── Contact & Info ─────────────────────── -->
+            <div class="o_di_card">
+                <div class="o_di_card_header">
+                    <div class="o_di_card_title">
+                        <span class="o_di_card_dot" style="background:#1a73e8"/>
+                        Contact &amp; Info
+                    </div>
+                </div>
+                <div class="o_di_card_body o_mp_info_body">
+                    <div class="o_mp_info_row">
+                        <span class="o_mp_info_label"><i class="fa fa-envelope-o"/> Email</span>
+                        <span class="o_mp_info_value">
+                            <t t-if="state.member.email">
+                                <a t-att-href="'mailto:' + state.member.email"
+                                   t-out="state.member.email"/>
+                            </t>
+                            <t t-else=""><span class="text-muted">—</span></t>
+                        </span>
+                    </div>
+                    <div class="o_mp_info_row">
+                        <span class="o_mp_info_label"><i class="fa fa-phone"/> Phone</span>
+                        <span class="o_mp_info_value" t-out="state.member.phone || '—'"/>
+                    </div>
+                    <div class="o_mp_info_row" t-if="state.member.date_of_birth">
+                        <span class="o_mp_info_label"><i class="fa fa-birthday-cake"/> DOB</span>
+                        <span class="o_mp_info_value"
+                              t-out="fmtDate(state.member.date_of_birth)"/>
+                    </div>
+                    <div class="o_mp_info_row" t-if="state.member.blood_type">
+                        <span class="o_mp_info_label"><i class="fa fa-tint"/> Blood Type</span>
+                        <span class="o_mp_info_value">
+                            <span class="o_di_badge o_di_badge_danger"
+                                  t-out="state.member.blood_type"/>
+                        </span>
+                    </div>
+                    <div class="o_mp_info_row" t-if="state.member.plan_name">
+                        <span class="o_mp_info_label"><i class="fa fa-id-badge"/> Plan</span>
+                        <span class="o_mp_info_value" t-out="state.member.plan_name"/>
+                    </div>
+                    <t t-if="state.member.allergies">
+                        <div class="o_mp_medical_box o_mp_allergy_box">
+                            <div class="o_mp_medical_title">
+                                <i class="fa fa-warning me-1"/> Allergies
+                            </div>
+                            <div class="o_mp_medical_text" t-out="state.member.allergies"/>
+                        </div>
+                    </t>
+                    <t t-if="state.member.medical_notes">
+                        <div class="o_mp_medical_box">
+                            <div class="o_mp_medical_title">
+                                <i class="fa fa-medkit me-1"/> Medical Notes
+                            </div>
+                            <div class="o_mp_medical_text" t-out="state.member.medical_notes"/>
+                        </div>
+                    </t>
+                    <t t-if="state.member.emergency_note">
+                        <div class="o_mp_emergency">
+                            <div class="o_mp_emergency_title">
+                                <i class="fa fa-exclamation-triangle me-1"/>
+                                Emergency / Medical Note
+                            </div>
+                            <div class="o_mp_emergency_text"
+                                 t-out="state.member.emergency_note"/>
+                        </div>
+                    </t>                    <div class="o_mp_info_contact_wrap">
+                        <button class="o_mp_info_contact_btn" t-on-click="sendMessage">
+                            <i class="fa fa-envelope-o"/> Contact Guardian
+                        </button>
+                    </div>                </div>
+            </div>
+
+            <!-- ── Household ─────────────────────────── -->
+            <div class="o_di_card">
+                <div class="o_di_card_header">
+                    <div class="o_di_card_title">
+                        <span class="o_di_card_dot" style="background:#1e8e3e"/>
+                        Household
+                    </div>
+                </div>
+                <div class="o_di_card_body">
+                    <t t-if="!state.member.household">
+                        <div class="o_di_empty">
+                            <i class="fa fa-home fa-2x mb-2"/>
+                            <div>Not part of a household</div>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <div class="o_mp_hh_header">
+                            <i class="fa fa-home me-2 text-muted"/>
+                            <strong t-out="state.member.household.name"/>
+                        </div>
+                        <t t-if="state.member.household.primary_guardian">
+                            <div class="o_mp_hh_guardian">
+                                <i class="fa fa-star me-1 text-warning"/>
+                                Primary Guardian:
+                                <strong t-out="state.member.household.primary_guardian"/>
+                            </div>
+                        </t>
+                        <table class="o_di_table" style="margin-top:10px">
+                            <thead>
+                                <tr><th>Name</th><th>Role</th><th></th></tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="state.member.household.members"
+                                   t-as="hm" t-key="hm.id">
+                                    <tr>
+                                        <td t-out="hm.name"/>
+                                        <td>
+                                            <span class="o_di_badge o_di_badge_secondary">
+                                                <t t-out="roleLabel(hm)"/>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button class="o_mp_hh_contact_btn"
+                                                    t-on-click="() => this.contactGuardian(hm.id)"
+                                                    title="Contact this member">
+                                                <i class="fa fa-envelope-o"/>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </t>
+                </div>
+            </div>
+
+            <!-- ── Subscription ──────────────────────── -->
+            <div class="o_di_card">
+                <div class="o_di_card_header">
+                    <div class="o_di_card_title">
+                        <span class="o_di_card_dot" style="background:#0288d1"/>
+                        Subscription
+                    </div>
+                    <t t-if="state.member.subscription">
+                        <span t-attf-class="o_di_badge {{ subStateClass(state.member.subscription.state) }}"
+                              t-out="subStateLabel(state.member.subscription.state)"/>
+                    </t>
+                </div>
+                <div class="o_di_card_body">
+                    <t t-if="!state.member.subscription">
+                        <div class="o_di_empty">
+                            <i class="fa fa-credit-card fa-2x mb-2"/>
+                            <div>No active subscription</div>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <t t-if="state.member.subscription.billing_failure_count > 0">
+                            <div class="o_mp_billing_warn">
+                                <i class="fa fa-exclamation-circle me-2"/>
+                                <strong t-out="state.member.subscription.billing_failure_count"/>
+                                billing failure(s).
+                                <t t-if="state.member.subscription.grace_period_end">
+                                    Grace period until
+                                    <strong t-out="fmtDate(state.member.subscription.grace_period_end)"/>.
+                                </t>
+                            </div>
+                        </t>
+                        <div class="o_mp_info_row">
+                            <span class="o_mp_info_label"><i class="fa fa-tag"/> Plan</span>
+                            <span class="o_mp_info_value fw-semibold"
+                                  t-out="state.member.subscription.plan_name || '—'"/>
+                        </div>
+                        <div class="o_mp_info_row">
+                            <span class="o_mp_info_label"><i class="fa fa-dollar"/> Price</span>
+                            <span class="o_mp_info_value">
+                                <t t-if="state.member.subscription.price">
+                                    $<t t-out="state.member.subscription.price.toFixed(2)"/>
+                                    <small class="text-muted ms-1"
+                                           t-out="'/ ' + (state.member.subscription.billing_period || '')"/>
+                                </t>
+                                <t t-else="">—</t>
+                            </span>
+                        </div>
+                        <div class="o_mp_info_row">
+                            <span class="o_mp_info_label"><i class="fa fa-calendar"/> Start Date</span>
+                            <span class="o_mp_info_value"
+                                  t-out="fmtDate(state.member.subscription.start_date) || '—'"/>
+                        </div>
+                        <div class="o_mp_info_row">
+                            <span class="o_mp_info_label"><i class="fa fa-refresh"/> Next Billing</span>
+                            <span class="o_mp_info_value"
+                                  t-out="fmtDate(state.member.subscription.next_billing_date) || '—'"/>
+                        </div>
+                        <div class="o_mp_credits_summary">
+                            <t t-if="state.member.subscription.credits_per_period === 0">
+                                <div class="o_mp_credit_pill o_mp_credit_balance">
+                                    <span class="o_mp_credit_num">∞</span>
+                                    <span class="o_mp_credit_lbl">Unlimited Credits</span>
+                                </div>
+                            </t>
+                            <t t-else="">
+                                <div class="o_mp_credit_pill o_mp_credit_balance">
+                                    <span class="o_mp_credit_num"
+                                          t-out="state.member.subscription.credit_balance"/>
+                                    <span class="o_mp_credit_lbl">Available Credits</span>
+                                </div>
+                                <div class="o_mp_credit_pill o_mp_credit_hold">
+                                    <span class="o_mp_credit_num"
+                                          t-out="state.member.subscription.credit_pending"/>
+                                    <span class="o_mp_credit_lbl">Pending Hold</span>
+                                </div>
+                            </t>
+                        </div>
+                    </t>
+                </div>
+            </div>
+
+            <!-- ── Belt Progression ──────────────────── -->
+            <div class="o_di_card">
+                <div class="o_di_card_header">
+                    <div class="o_di_card_title">
+                        <span class="o_di_card_dot" style="background:#7c3aed"/>
+                        Belt Progression
+                    </div>
+                    <t t-if="state.member.test_invite_pending">
+                        <span class="o_di_badge o_di_badge_primary">
+                            <i class="fa fa-star me-1"/> Test Invite Sent
+                        </span>
+                    </t>
+                </div>
+                <div class="o_di_card_body">
+                    <t t-if="!state.member.current_rank and state.member.rank_history.length === 0">
+                        <div class="o_di_empty">
+                            <i class="fa fa-circle-o fa-2x mb-2"/>
+                            <div>No rank awarded yet</div>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <t t-if="state.member.current_rank">
+                            <div class="o_mp_current_rank">
+                                <div class="o_mp_rank_dot"
+                                     t-att-style="'background:' + state.member.current_rank.color"/>
+                                <div class="o_mp_rank_info">
+                                    <div class="o_mp_rank_name"
+                                         t-att-style="'color:' + state.member.current_rank.color"
+                                         t-out="state.member.current_rank.name"/>
+                                    <div class="o_mp_rank_sub">Current Rank</div>
+                                </div>
+                            </div>
+                            <t t-if="state.member.rank_threshold > 0">
+                                <div class="o_mp_bar_label">
+                                    <span>Classes since last promotion</span>
+                                    <span>
+                                        <t t-out="state.member.attendance_since_last_rank"/>
+                                        / <t t-out="state.member.rank_threshold"/>
+                                    </span>
+                                </div>
+                                <div class="o_ad_bar_bg" style="margin:0 20px 12px">
+                                    <div class="o_ad_bar_fill"
+                                         t-att-class="rankProgressClass(state.member.attendance_since_last_rank, state.member.rank_threshold)"
+                                         t-att-style="'width:' + rankPct(state.member.attendance_since_last_rank, state.member.rank_threshold) + '%'"/>
+                                </div>
+                            </t>
+                            <t t-else="">
+                                <div class="o_mp_info_row">
+                                    <span class="o_mp_info_label"><i class="fa fa-check-square-o"/> Since Promo</span>
+                                    <span class="o_mp_info_value"
+                                          t-out="state.member.attendance_since_last_rank"/>
+                                </div>
+                            </t>
+                        </t>
+                        <t t-if="state.member.rank_history.length > 0">
+                            <div style="padding:10px 20px 4px;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:#9aa0a6;font-weight:600">
+                                Rank History
+                            </div>
+                            <table class="o_di_table">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Date Awarded</th>
+                                        <th>Awarded By</th>
+                                        <th>Program</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="state.member.rank_history"
+                                       t-as="rh" t-key="rh_index">
+                                        <tr>
+                                            <td class="fw-semibold" t-out="rh.rank_name"/>
+                                            <td t-out="fmtDate(rh.date_awarded)"/>
+                                            <td class="text-muted" t-out="rh.awarded_by"/>
+                                            <td class="text-muted" t-out="rh.program"/>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </t>
+                    </t>
+                </div>
+            </div>
+
+            <!-- ── Credits Ledger (full width) ────────────────────── -->
+            <div class="o_di_card o_di_card_full">
+                <div class="o_di_card_header">
+                    <div class="o_di_card_title">
+                        <span class="o_di_card_dot" style="background:#f57c00"/>
+                        Credits Ledger
+                        <small class="text-muted fw-normal ms-1">last 10 transactions</small>
+                    </div>
+                    <t t-if="state.member.subscription">
+                        <div class="o_mp_ledger_balance">
+                            <span class="o_mp_ledger_num"
+                                  t-out="state.member.subscription.credit_balance"/>
+                            <span class="o_mp_ledger_unit">credits available</span>
+                        </div>
+                    </t>
+                </div>
+                <div class="o_di_card_body">
+                    <t t-if="!state.member.subscription or state.member.credit_transactions.length === 0">
+                        <div class="o_di_empty">
+                            <i class="fa fa-list-alt fa-2x mb-2"/>
+                            <div>No credit transactions</div>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <table class="o_di_table">
+                            <thead>
+                                <tr>
+                                    <th>Reference</th>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Note</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="state.member.credit_transactions"
+                                   t-as="tx" t-key="tx.id">
+                                    <tr>
+                                        <td class="text-muted o_mp_txn_ref"
+                                            t-out="tx.reference"/>
+                                        <td t-out="fmtDt(tx.date)"/>
+                                        <td>
+                                            <span t-attf-class="o_di_badge {{ creditTypeClass(tx.transaction_type) }}"
+                                                  t-out="creditTypeLabel(tx.transaction_type)"/>
+                                        </td>
+                                        <td>
+                                            <span t-attf-class="o_mp_credit_amount {{ tx.amount >= 0 ? 'o_mp_credit_pos' : 'o_mp_credit_neg' }}">
+                                                <t t-if="tx.amount > 0">+</t>
+                                                <t t-out="tx.amount"/>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span t-attf-class="o_di_badge {{ creditStatusClass(tx.status) }}"
+                                                  t-out="creditStatusLabel(tx.status)"/>
+                                        </td>
+                                        <td class="text-muted" t-out="tx.note || '—'"/>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </t>
+                </div>
+            </div>
+
+            <!-- ── Course Roster (full width) ─────────────────────── -->
+            <div class="o_di_card o_di_card_full">
+                <div class="o_di_card_header">
+                    <div class="o_di_card_title">
+                        <span class="o_di_card_dot" style="background:#6f42c1"/>
+                        Course Roster
+                        <small class="text-muted fw-normal ms-1">standing enrollments</small>
+                    </div>
+                </div>
+                <div class="o_di_card_body">
+                    <t t-if="state.member.course_templates.length === 0">
+                        <div class="o_di_empty">
+                            <i class="fa fa-book fa-2x mb-2"/>
+                            <div>Not on any course rosters</div>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <table class="o_di_table">
+                            <thead>
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Level</th>
+                                    <th>Instructors</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="state.member.course_templates"
+                                   t-as="ct" t-key="ct.id">
+                                    <tr>
+                                        <td class="fw-semibold" t-out="ct.name"/>
+                                        <td>
+                                            <span class="o_di_badge o_di_badge_primary"
+                                                  t-out="ct.level"/>
+                                        </td>
+                                        <td class="text-muted" t-out="ct.instructors"/>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </t>
+                </div>
+            </div>
+
+            <!-- ── Upcoming Sessions (full width) ─────────────────── -->
+            <div class="o_di_card o_di_card_full">
+                <div class="o_di_card_header">
+                    <div class="o_di_card_title">
+                        <span class="o_di_card_dot" style="background:#fd7e14"/>
+                        Upcoming Sessions
+                        <small class="text-muted fw-normal ms-1">registered &amp; waitlisted</small>
+                    </div>
+                </div>
+                <div class="o_di_card_body">
+                    <t t-if="state.member.upcoming_enrollments.length === 0">
+                        <div class="o_di_empty">
+                            <i class="fa fa-calendar-o fa-2x mb-2"/>
+                            <div>No upcoming session enrollments</div>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <table class="o_di_table">
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Date &amp; Time</th>
+                                    <th>Instructor</th>
+                                    <th>Enrollment</th>
+                                    <th>Attendance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="state.member.upcoming_enrollments"
+                                   t-as="e" t-key="e.id">
+                                    <tr>
+                                        <td class="fw-semibold" t-out="e.template_name"/>
+                                        <td t-out="fmtDt(e.start_datetime)"/>
+                                        <td class="text-muted" t-out="e.instructor"/>
+                                        <td>
+                                            <span class="o_di_badge o_di_badge_secondary"
+                                                  t-out="enrollmentLabel(e.status)"/>
+                                        </td>
+                                        <td>
+                                            <span t-attf-class="o_di_badge {{ attendanceClass(e.attendance_state) }}"
+                                                  t-out="attendanceLabel(e.attendance_state)"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </t>
+                </div>
+            </div>
+
+            <!-- ── Attendance History (full width) ────────────────── -->
+            <div class="o_di_card o_di_card_full">
+                <div class="o_di_card_header">
+                    <div class="o_di_card_title">
+                        <span class="o_di_card_dot" style="background:#00897b"/>
+                        Attendance History
+                        <small class="text-muted fw-normal ms-1">last 10 sessions</small>
+                    </div>
+                    <div class="o_di_card_subtitle">
+                        <t t-out="state.member.total_attendance_count || 0"/> total classes attended
+                    </div>
+                </div>
+                <div class="o_di_card_body">
+                    <t t-if="state.member.recent_attendance.length === 0">
+                        <div class="o_di_empty">
+                            <i class="fa fa-history fa-2x mb-2"/>
+                            <div>No attendance history found</div>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <table class="o_di_table">
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Date &amp; Time</th>
+                                    <th>Instructor</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="state.member.recent_attendance"
+                                   t-as="log" t-key="log.id">
+                                    <tr>
+                                        <td class="fw-semibold" t-out="log.session_name"/>
+                                        <td t-out="fmtDt(log.date)"/>
+                                        <td class="text-muted" t-out="log.instructor"/>
+                                        <td>
+                                            <span t-attf-class="o_di_badge {{ attendanceClass(log.status) }}"
+                                                  t-out="attendanceLabel(log.status)"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </t>
+                </div>
+            </div>
+
+        </div><!-- /.o_mp_content_grid -->
+
+        <!-- ── Edit Member Overlay ────────────────────────────────── -->
+        <t t-if="state.editOverlay.open">
+            <div class="o_mp_overlay_backdrop" t-on-click="closeEditOverlay">
+                <div class="o_mp_overlay_card" t-on-click="stopProp">
+
+                    <div class="o_mp_overlay_header">
+                        <span class="o_mp_overlay_title">
+                            <i class="fa fa-edit me-2"/>Edit Member
+                        </span>
+                        <button class="o_mp_overlay_close" t-on-click="closeEditOverlay">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </div>
+
+                    <div class="o_mp_overlay_body">
+                        <t t-if="state.editOverlay.error">
+                            <div class="alert alert-danger py-2 mb-3">
+                                <i class="fa fa-exclamation-triangle me-2"/>
+                                <t t-out="state.editOverlay.error"/>
+                            </div>
+                        </t>
+
+                        <div class="o_mp_form_row_2">
+                            <div class="o_mp_form_group">
+                                <label class="o_mp_form_label">Full Name</label>
+                                <input type="text" class="o_mp_form_control"
+                                       data-field="name"
+                                       t-att-value="state.editOverlay.form.name"
+                                       t-on-input="onEditFieldChange"/>
+                            </div>
+                            <div class="o_mp_form_group">
+                                <label class="o_mp_form_label">Flags</label>
+                                <div class="d-flex gap-3 align-items-center" style="min-height:34px;">
+                                    <label class="d-flex align-items-center gap-1" style="cursor:pointer;">
+                                        <input type="checkbox" data-field="is_student"
+                                               t-att-checked="state.editOverlay.form.is_student"
+                                               t-on-change="onEditFieldChange"/>
+                                        Student
+                                    </label>
+                                    <label class="d-flex align-items-center gap-1" style="cursor:pointer;">
+                                        <input type="checkbox" data-field="is_guardian"
+                                               t-att-checked="state.editOverlay.form.is_guardian"
+                                               t-on-change="onEditFieldChange"/>
+                                        Guardian
+                                    </label>
+                                    <label class="d-flex align-items-center gap-1" style="cursor:pointer;">
+                                        <input type="checkbox" data-field="is_minor"
+                                               t-att-checked="state.editOverlay.form.is_minor"
+                                               t-on-change="onEditFieldChange"/>
+                                        Minor
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="o_mp_form_row_2">
+                            <div class="o_mp_form_group">
+                                <label class="o_mp_form_label">Email</label>
+                                <input type="email" class="o_mp_form_control"
+                                       data-field="email"
+                                       t-att-value="state.editOverlay.form.email"
+                                       t-on-input="onEditFieldChange"/>
+                            </div>
+                            <div class="o_mp_form_group">
+                                <label class="o_mp_form_label">Phone</label>
+                                <input type="tel" class="o_mp_form_control"
+                                       data-field="phone"
+                                       t-att-value="state.editOverlay.form.phone"
+                                       t-on-input="onEditFieldChange"/>
+                            </div>
+                        </div>
+
+                        <div class="o_mp_form_row_2">
+                            <div class="o_mp_form_group">
+                                <label class="o_mp_form_label">Date of Birth</label>
+                                <input type="date" class="o_mp_form_control"
+                                       data-field="date_of_birth"
+                                       t-att-value="state.editOverlay.form.date_of_birth"
+                                       t-on-change="onEditFieldChange"/>
+                            </div>
+                            <div class="o_mp_form_group">
+                                <label class="o_mp_form_label">Blood Type</label>
+                                <select class="o_mp_form_control"
+                                        data-field="blood_type"
+                                        t-on-change="onEditFieldChange">
+                                    <option value="" t-att-selected="!state.editOverlay.form.blood_type">— Not specified —</option>
+                                    <t t-foreach="['A+','A-','B+','B-','AB+','AB-','O+','O-']" t-as="bt" t-key="bt">
+                                        <option t-att-value="bt"
+                                                t-att-selected="state.editOverlay.form.blood_type === bt"
+                                                t-out="bt"/>
+                                    </t>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="o_mp_form_group">
+                            <label class="o_mp_form_label">Allergies</label>
+                            <textarea class="o_mp_form_control" rows="2"
+                                      data-field="allergies"
+                                      t-att-value="state.editOverlay.form.allergies"
+                                      t-on-input="onEditFieldChange"/>
+                        </div>
+
+                        <div class="o_mp_form_group">
+                            <label class="o_mp_form_label">Medical Notes</label>
+                            <textarea class="o_mp_form_control" rows="2"
+                                      data-field="medical_notes"
+                                      t-att-value="state.editOverlay.form.medical_notes"
+                                      t-on-input="onEditFieldChange"/>
+                        </div>
+
+                        <div class="o_mp_form_group">
+                            <label class="o_mp_form_label o_mp_form_label_danger">
+                                <i class="fa fa-exclamation-triangle me-1"/>Emergency / Medical Note
+                            </label>
+                            <textarea class="o_mp_form_control o_mp_form_emergency_input" rows="3"
+                                      data-field="emergency_note"
+                                      t-att-value="state.editOverlay.form.emergency_note"
+                                      t-on-input="onEditFieldChange"/>
+                        </div>
+                    </div>
+
+                    <div class="o_mp_overlay_footer">
+                        <button class="btn btn-primary"
+                                t-att-disabled="state.editOverlay.saving"
+                                t-on-click="saveEditOverlay">
+                            <t t-if="state.editOverlay.saving">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"/>
+                                Saving…
+                            </t>
+                            <t t-else="">
+                                <i class="fa fa-save me-1"/> Save Changes
+                            </t>
+                        </button>
+                        <button class="btn btn-secondary ms-2"
+                                t-att-disabled="state.editOverlay.saving"
+                                t-on-click="closeEditOverlay">
+                            Cancel
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </t>
+
+        <!-- ── Subscription Overlay ──────────────────────────────── -->
+        <t t-if="state.subOverlay.open">
+            <div class="o_mp_overlay_backdrop" t-on-click="closeSubOverlay">
+                <div class="o_mp_overlay_card" t-on-click="stopProp">
+
+                    <div class="o_mp_overlay_header">
+                        <span class="o_mp_overlay_title">
+                            <i class="fa fa-credit-card me-2"/>Subscription
+                        </span>
+                        <button class="o_mp_overlay_close" t-on-click="closeSubOverlay">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </div>
+
+                    <div class="o_mp_overlay_body">
+                        <t t-if="!state.member.subscription">
+                            <div class="o_di_empty" style="padding:40px 0">
+                                <i class="fa fa-credit-card fa-2x mb-2"/>
+                                <div>No active subscription found.</div>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <t t-if="state.member.subscription.billing_failure_count > 0">
+                                <div class="o_mp_billing_warn mb-3">
+                                    <i class="fa fa-exclamation-circle me-2"/>
+                                    <strong t-out="state.member.subscription.billing_failure_count"/>
+                                    billing failure(s).
+                                    <t t-if="state.member.subscription.grace_period_end">
+                                        Grace period until
+                                        <strong t-out="fmtDate(state.member.subscription.grace_period_end)"/>.
+                                    </t>
+                                </div>
+                            </t>
+                            <div class="o_mp_info_row">
+                                <span class="o_mp_info_label"><i class="fa fa-tag"/> Plan</span>
+                                <span class="o_mp_info_value fw-semibold"
+                                      t-out="state.member.subscription.plan_name || '—'"/>
+                            </div>
+                            <div class="o_mp_info_row">
+                                <span class="o_mp_info_label"><i class="fa fa-circle"/> State</span>
+                                <span class="o_mp_info_value">
+                                    <span t-attf-class="o_di_badge {{ subStateClass(state.member.subscription.state) }}"
+                                          t-out="subStateLabel(state.member.subscription.state)"/>
+                                </span>
+                            </div>
+                            <div class="o_mp_info_row">
+                                <span class="o_mp_info_label"><i class="fa fa-dollar"/> Price</span>
+                                <span class="o_mp_info_value">
+                                    <t t-if="state.member.subscription.price">
+                                        $<t t-out="state.member.subscription.price.toFixed(2)"/>
+                                        <small class="text-muted ms-1"
+                                               t-out="'/ ' + (state.member.subscription.billing_period || '')"/>
+                                    </t>
+                                    <t t-else="">—</t>
+                                </span>
+                            </div>
+                            <div class="o_mp_info_row">
+                                <span class="o_mp_info_label"><i class="fa fa-calendar"/> Start Date</span>
+                                <span class="o_mp_info_value"
+                                      t-out="fmtDate(state.member.subscription.start_date) || '—'"/>
+                            </div>
+                            <div class="o_mp_info_row">
+                                <span class="o_mp_info_label"><i class="fa fa-refresh"/> Next Billing</span>
+                                <span class="o_mp_info_value"
+                                      t-out="fmtDate(state.member.subscription.next_billing_date) || '—'"/>
+                            </div>
+                            <div class="o_mp_credits_summary" style="margin-top:14px">
+                                <div class="o_mp_credit_pill o_mp_credit_balance">
+                                    <span class="o_mp_credit_num"
+                                          t-out="state.member.subscription.credit_balance"/>
+                                    <span class="o_mp_credit_lbl">Available Credits</span>
+                                </div>
+                                <div class="o_mp_credit_pill o_mp_credit_hold">
+                                    <span class="o_mp_credit_num"
+                                          t-out="state.member.subscription.credit_pending"/>
+                                    <span class="o_mp_credit_lbl">Pending Hold</span>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+
+                    <div class="o_mp_overlay_footer">
+                        <button class="btn btn-primary" t-on-click="openSubFull">
+                            <i class="fa fa-external-link me-1"/> Open Full Record
+                        </button>
+                        <button class="btn btn-secondary ms-2" t-on-click="closeSubOverlay">
+                            Close
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </t>
+
+        <!-- ── Belt Test Overlay ──────────────────────────────────── -->
+        <t t-if="state.beltOverlay.open">
+            <div class="o_mp_overlay_backdrop" t-on-click="closeBeltOverlay">
+                <div class="o_mp_overlay_card" t-on-click="stopProp">
+
+                    <div class="o_mp_overlay_header">
+                        <span class="o_mp_overlay_title">
+                            <i class="fa fa-star me-2"/>Belt Test
+                        </span>
+                        <button class="o_mp_overlay_close" t-on-click="closeBeltOverlay">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </div>
+
+                    <div class="o_mp_overlay_body">
+                        <!-- Current rank -->
+                        <t t-if="state.member.current_rank">
+                            <div class="o_mp_current_rank" style="margin-bottom:16px">
+                                <div class="o_mp_rank_dot"
+                                     t-att-style="'background:' + state.member.current_rank.color"/>
+                                <div class="o_mp_rank_info">
+                                    <div class="o_mp_rank_name"
+                                         t-att-style="'color:' + state.member.current_rank.color"
+                                         t-out="state.member.current_rank.name"/>
+                                    <div class="o_mp_rank_sub">Current Rank</div>
+                                </div>
+                            </div>
+                            <t t-if="state.member.rank_threshold > 0">
+                                <div class="o_mp_bar_label">
+                                    <span>Classes since last promotion</span>
+                                    <span>
+                                        <t t-out="state.member.attendance_since_last_rank"/>
+                                        / <t t-out="state.member.rank_threshold"/>
+                                    </span>
+                                </div>
+                                <div class="o_ad_bar_bg" style="margin:0 0 16px">
+                                    <div class="o_ad_bar_fill"
+                                         t-att-class="rankProgressClass(state.member.attendance_since_last_rank, state.member.rank_threshold)"
+                                         t-att-style="'width:' + rankPct(state.member.attendance_since_last_rank, state.member.rank_threshold) + '%'"/>
+                                </div>
+                            </t>
+                        </t>
+                        <t t-else="">
+                            <div class="o_di_empty" style="padding:20px 0">
+                                <i class="fa fa-circle-o fa-2x mb-2"/>
+                                <div>No rank awarded yet</div>
+                            </div>
+                        </t>
+
+                        <!-- Invite status -->
+                        <div class="o_mp_info_row">
+                            <span class="o_mp_info_label"><i class="fa fa-star"/> Test Invite</span>
+                            <span class="o_mp_info_value">
+                                <t t-if="state.member.test_invite_pending">
+                                    <span class="o_di_badge o_di_badge_primary">
+                                        <i class="fa fa-check me-1"/> Invite Sent
+                                    </span>
+                                </t>
+                                <t t-else="">
+                                    <span class="o_di_badge o_di_badge_secondary">Not Invited</span>
+                                </t>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="o_mp_overlay_footer">
+                        <button class="btn btn-primary"
+                                t-att-disabled="state.beltOverlay.saving"
+                                t-on-click="toggleBeltTestInvite">
+                            <t t-if="state.beltOverlay.saving">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"/>
+                                Saving…
+                            </t>
+                            <t t-elif="state.member.test_invite_pending">
+                                <i class="fa fa-times me-1"/> Remove Invite
+                            </t>
+                            <t t-else="">
+                                <i class="fa fa-star me-1"/> Send Belt Test Invite
+                            </t>
+                        </button>
+                        <button class="btn btn-secondary ms-2"
+                                t-att-disabled="state.beltOverlay.saving"
+                                t-on-click="closeBeltOverlay">
+                            Close
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </t>
+
+    </t>
+
+</div>
+</t>
+
+</templates>

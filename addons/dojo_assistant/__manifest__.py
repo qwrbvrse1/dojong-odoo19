@@ -27,15 +27,15 @@
         - Any other Dojang frontend
     """,
     'author': 'Dojang',
-    'category': 'Dojang',
+    'category': 'Dojo',
     'license': 'LGPL-3',
     'application': False,
     'installable': True,
     'auto_install': False,
     'depends': [
+        'dojo_core',
         'base',
         'mail',
-        'dojo_base',
         'elevenlabs_connector',
     ],
     'data': [

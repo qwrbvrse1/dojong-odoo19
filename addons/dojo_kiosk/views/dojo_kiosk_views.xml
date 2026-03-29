@@ -96,7 +96,7 @@
         id="menu_dojo_kiosk_root"
         name="Kiosk"
         sequence="10"
-        groups="dojo_base.group_dojo_admin"
+        groups="dojo_core.group_dojo_admin"
         web_icon="dojo_kiosk,static/description/icon.png"
     />
 
@@ -107,6 +107,6 @@
         parent="menu_dojo_kiosk_root"
         action="action_dojo_kiosk_admin_client"
         sequence="10"
-        groups="dojo_base.group_dojo_admin"
+        groups="dojo_core.group_dojo_admin"
     />
 </odoo>

@@ -1,7 +1,7 @@
 {
     'name': 'Dojo Website',
     'version': 'saas~19.2.1.0.0',
-    'category': 'Website',
+    'category': 'Dojo',
     'summary': 'Custom dojang website with trial lesson forms integrated into Odoo CRM',
     'depends': ['website', 'website_crm'],
     'data': [

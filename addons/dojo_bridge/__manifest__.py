@@ -13,12 +13,8 @@ The JWT issued by NestJS (after Firebase verification) is the sole gate.
     "author": "Dojang Platform",
     "category": "Hidden",
     "depends": [
-        "dojo_base",
-        "dojo_members",
-        "dojo_classes",
+        "dojo_core",
         "dojo_subscriptions",
-        "dojo_attendance",
-        "dojo_belt_progression",
     ],
     "data": [
         "security/ir.model.access.csv",

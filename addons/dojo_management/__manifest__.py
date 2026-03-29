@@ -20,7 +20,7 @@ Key Features:
 * Advanced Search and Filtering
 * Comprehensive Reporting
 """,
-    'category': 'Education',
+    'category': 'Dojo',
     'author': 'Samy_Sensei',
     'website': 'https://morisamy.github.io/Samy_Sensei/',
     'license': 'LGPL-3',

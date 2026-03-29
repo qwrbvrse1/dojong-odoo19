@@ -88,7 +88,7 @@
     <record id="view_dojo_member_form_program_enrollment_inherit" model="ir.ui.view">
         <field name="name">dojo.member.form.program.enrollment.inherit</field>
         <field name="model">dojo.member</field>
-        <field name="inherit_id" ref="dojo_base.view_dojo_member_form"/>
+        <field name="inherit_id" ref="dojo_core.view_dojo_member_form"/>
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
                 <page string="Programs" name="program_enrollments">

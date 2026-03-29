@@ -2,12 +2,12 @@
     "name": "Dojang Credits",
     "summary": "Class credit ledger — replaces hard-coded weekly session cap with a per-subscription credit pool",
     "version": "saas~19.2.1.0.0",
-    "category": "Services",
+    "category": "Dojo",
     "license": "LGPL-3",
     "author": "Dojang",
     "depends": [
-        "dojo_subscriptions",   # dojo.member.subscription, dojo.subscription.plan
-        "dojo_attendance",       # dojo.attendance.log
+        "dojo_core",
+        "dojo_subscriptions",
     ],
     "data": [
         "security/ir.model.access.csv",

@@ -2,14 +2,11 @@
     "name": "Dojang Points & Gamification",
     "summary": "Pokémon GO-style points system: auto-award on attendance, streaks, belt promotions, milestones. Instructors can award points manually. Tier titles unlock as members level up.",
     "version": "saas~19.2.1.0.0",
-    "category": "Services",
+    "category": "Dojo",
     "license": "LGPL-3",
     "author": "Dojang",
     "depends": [
-        "dojo_base",
-        "dojo_attendance",
-        "dojo_belt_progression",
-        "dojo_classes",
+        "dojo_core",
     ],
     "data": [
         "security/ir.model.access.csv",
@@ -20,7 +17,7 @@
         "views/dojo_member_points_view_inherit.xml",
         "views/dojo_points_menu.xml",
     ],
-    "application": True,
+    "application": False,
     "auto_install": False,
     "installable": True,
 }

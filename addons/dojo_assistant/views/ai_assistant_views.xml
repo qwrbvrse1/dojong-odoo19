@@ -321,7 +321,7 @@
         name="AI Assistant"
         parent="base.menu_administration"
         sequence="99"
-        groups="dojo_base.group_dojo_admin"/>
+        groups="dojo_core.group_dojo_admin"/>
 
     <menuitem id="menu_ai_action_log"
         name="Action Log"

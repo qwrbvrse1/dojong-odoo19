@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Actions -->
+    <record id="action_dojo_class_templates" model="ir.actions.act_window">
+        <field name="name">Courses</field>
+        <field name="res_model">dojo.class.template</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_dojo_class_sessions" model="ir.actions.act_window">
+        <field name="name">Class Sessions</field>
+        <field name="res_model">dojo.class.session</field>
+        <field name="view_mode">list,form,calendar</field>
+    </record>
+
+    <record id="action_dojo_programs" model="ir.actions.act_window">
+        <field name="name">Programs</field>
+        <field name="res_model">dojo.program</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_dojo_class_enrollments" model="ir.actions.act_window">
+        <field name="name">Enrollments</field>
+        <field name="res_model">dojo.class.enrollment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ========== Programs ========== -->
+    <record id="view_dojo_program_list" model="ir.ui.view">
+        <field name="name">dojo.program.list</field>
+        <field name="model">dojo.program</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="template_count" string="Courses"/>
+                <field name="is_trial" string="Is Trial"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dojo_program_form" model="ir.ui.view">
+        <field name="name">dojo.program.form</field>
+        <field name="model">dojo.program</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div name="button_box" class="oe_button_box">
+                        <button name="action_view_templates"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-list">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value"><field name="template_count"/></span>
+                                <span class="o_stat_text">Courses</span>
+                            </div>
+                        </button>
+                    </div>
+                    <group>
+                        <group string="General">
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="sequence"/>
+                            <field name="color"/>
+                            <field name="style_id"/>
+                            <field name="manager_instructor_id"/>
+                            <field name="is_trial" string="Is Trial"/>
+                            <field name="active"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Description">
+                            <field name="description" nolabel="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Courses" name="templates">
+                            <field name="template_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="code"/>
+                                    <field name="level"/>
+                                    <field name="duration_minutes"/>
+                                    <field name="active"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Belt Path" name="belt_path">
+                            <field name="belt_rank_ids">
+                                <list>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="color"/>
+                                    <field name="active"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ========== Class Templates ========== -->
+    <record id="view_dojo_class_template_list" model="ir.ui.view">
+        <field name="name">dojo.class.template.list</field>
+        <field name="model">dojo.class.template</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="program_id"/>
+                <field name="level"/>
+                <field name="duration_minutes"/>
+                <field name="max_capacity"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dojo_class_template_form" model="ir.ui.view">
+        <field name="name">dojo.class.template.form</field>
+        <field name="model">dojo.class.template</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_generate_sessions" string="Generate Sessions (60 days)"
+                        type="object" class="btn-primary"
+                        invisible="not recurrence_active"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="General">
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="program_id"/>
+                            <field name="level"/>
+                            <field name="duration_minutes"/>
+                            <field name="max_capacity"/>
+                            <field name="instructor_profile_ids" widget="many2many_tags"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Description">
+                            <field name="description" nolabel="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Recurrence">
+                            <group>
+                                <group string="Schedule">
+                                    <field name="recurrence_active"/>
+                                    <field name="recurrence_start_date"
+                                        invisible="not recurrence_active"/>
+                                    <field name="recurrence_end_date"
+                                        invisible="not recurrence_active"/>
+                                    <field name="recurrence_time"
+                                        invisible="not recurrence_active"
+                                        widget="float_time_12h"/>
+                                    <field name="recurrence_instructor_id"
+                                        invisible="not recurrence_active"/>
+                                </group>
+                                <group string="Weekdays" invisible="not recurrence_active">
+                                    <field name="rec_mon"/>
+                                    <field name="rec_tue"/>
+                                    <field name="rec_wed"/>
+                                    <field name="rec_thu"/>
+                                    <field name="rec_fri"/>
+                                    <field name="rec_sat"/>
+                                    <field name="rec_sun"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Course Members">
+                            <field name="course_member_ids" widget="many2many">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="membership_state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Auto-Enroll Preferences">
+                            <field name="auto_enroll_pref_ids" context="{'default_template_id': id}">
+                                <list editable="bottom">
+                                    <field name="member_id"
+                                        options="{'no_quick_create': True, 'no_create_edit': True}"/>
+                                    <field name="active" widget="boolean_toggle" string="Active"/>
+                                    <field name="mode"/>
+                                    <field name="date_from"
+                                        string="From"
+                                        column_invisible="True"/>
+                                    <field name="date_to"
+                                        string="To"
+                                        column_invisible="True"/>
+                                    <field name="pref_mon"/>
+                                    <field name="pref_tue"/>
+                                    <field name="pref_wed"/>
+                                    <field name="pref_thu"/>
+                                    <field name="pref_fri"/>
+                                    <field name="pref_sat"/>
+                                    <field name="pref_sun"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ========== Class Sessions ========== -->
+    <record id="view_dojo_class_session_list" model="ir.ui.view">
+        <field name="name">dojo.class.session.list</field>
+        <field name="model">dojo.class.session</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="template_id"/>
+                <field name="instructor_profile_id"/>
+                <field name="start_datetime"/>
+                <field name="end_datetime"/>
+                <field name="capacity"/>
+                <field name="seats_taken"/>
+                <field name="present_count" optional="show" string="Present"/>
+                <field name="absent_count" optional="show" string="Absent"/>
+                <field name="attendance_rate" optional="hide" string="Att. Rate %"/>
+                <field name="state" widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-success="state == 'done'"
+                    decoration-warning="state == 'open'"
+                    decoration-danger="state == 'cancelled'"/>
+                <field name="attendance_complete" widget="boolean_toggle" optional="show"/>
+                <field name="generated_from_recurrence" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dojo_class_session_form" model="ir.ui.view">
+        <field name="name">dojo.class.session.form</field>
+        <field name="model">dojo.class.session</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm"
+                            type="object"
+                            string="Confirm"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_complete"
+                            type="object"
+                            string="Complete"
+                            class="btn-primary"
+                            invisible="state != 'open'"/>
+                    <button name="action_open_attendance_wizard"
+                            type="object"
+                            string="Mark Attendance"
+                            class="btn-secondary"
+                            invisible="state not in ('open', 'done') or attendance_complete == True"/>
+                    <button name="action_cancel"
+                            type="object"
+                            string="Cancel"
+                            class="btn-secondary"
+                            invisible="state in ('done', 'cancelled')"/>
+                    <button name="action_reset_draft"
+                            type="object"
+                            string="Reset to Draft"
+                            class="btn-secondary"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar"
+                        statusbar_visible="draft,open,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" icon="fa-users"
+                                help="Enrolled / Capacity — see Enrollments tab below">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="seats_taken"/>/<field name="capacity"/>
+                                </span>
+                                <span class="o_stat_text">Roster</span>
+                            </div>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-clock-o"
+                                invisible="attendance_complete == True or state != 'done'"
+                                help="Attendance not yet fully recorded">
+                            <field name="attendance_complete" widget="boolean_toggle" nolabel="1"/>
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Attendance</span>
+                                <span class="o_stat_text">Pending</span>
+                            </div>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-check-circle"
+                                invisible="attendance_complete == False"
+                                help="All attendance recorded">
+                            <field name="attendance_complete" widget="boolean_toggle" nolabel="1"/>
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Attendance</span>
+                                <span class="o_stat_text">Complete</span>
+                            </div>
+                        </button>
+                    </div>
+                    <group>
+                        <field name="template_id"/>
+                        <field name="instructor_profile_id"/>
+                        <field name="start_datetime"/>
+                        <field name="end_datetime"/>
+                        <field name="capacity"/>
+                    </group>
+                    <notebook>
+                        <page string="Enrollments">
+                            <field name="enrollment_ids">
+                                <list editable="bottom">
+                                    <field name="member_id"
+                                        options="{'no_quick_create': True, 'no_create_edit': True}"/>
+                                    <field name="status"/>
+                                    <field name="attendance_state"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_dojo_class_session_calendar" model="ir.ui.view">
+        <field name="name">dojo.class.session.calendar</field>
+        <field name="model">dojo.class.session</field>
+        <field name="arch" type="xml">
+            <calendar date_start="start_datetime" date_stop="end_datetime"
+                      color="instructor_profile_id" string="Class Sessions"
+                      quick_create="false">
+                <field name="instructor_profile_id" filters="1" string="Instructor"/>
+                <field name="name"/>
+                <field name="seats_taken" string="Enrolled"/>
+                <field name="capacity" string="Capacity"/>
+                <field name="state" string="Status"/>
+                <field name="attendance_complete" string="Attendance Complete"/>
+            </calendar>
+        </field>
+    </record>
+
+    <!-- ========== Class Enrollments ========== -->
+    <record id="view_dojo_class_enrollment_list" model="ir.ui.view">
+        <field name="name">dojo.class.enrollment.list</field>
+        <field name="model">dojo.class.enrollment</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="session_id"/>
+                <field name="member_id"/>
+                <field name="status"/>
+                <field name="attendance_state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dojo_class_enrollment_form" model="ir.ui.view">
+        <field name="name">dojo.class.enrollment.form</field>
+        <field name="model">dojo.class.enrollment</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="session_id"/>
+                        <field name="member_id"/>
+                        <field name="status"/>
+                        <field name="attendance_state"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

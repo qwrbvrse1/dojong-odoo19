@@ -2,16 +2,14 @@
     "name": "Firebase Integration",
     "summary": "Email relay via Gmail/Firebase Cloud Functions + FCM web push notifications for the member portal.",
     "version": "saas~19.2.1.0.0",
-    "category": "Services",
+    "category": "Dojo",
     "license": "LGPL-3",
     "author": "Dojang",
     "depends": [
+        "dojo_core",
         "mail",
-        "dojo_base",
         "dojo_members_portal",
-        "dojo_classes",
         "dojo_subscriptions",
-        "dojo_belt_progression",
     ],
     "data": [
         "security/ir.model.access.csv",

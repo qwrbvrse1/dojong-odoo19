@@ -66,22 +66,22 @@
     <!-- ── Menus ─────────────────────────────────────────────────────── -->
     <menuitem id="menu_dojo_checkout_root"
         name="Checkout Pages"
-        parent="dojo_classes.menu_dojo_classes_root"
+        parent="dojo_core.menu_dojo_classes_root"
         sequence="90"
-        groups="dojo_base.group_dojo_admin"/>
+        groups="dojo_core.group_dojo_admin"/>
 
     <menuitem id="menu_dojo_checkout_configs"
         name="Page Configs"
         parent="menu_dojo_checkout_root"
         action="action_dojo_checkout_config"
         sequence="10"
-        groups="dojo_base.group_dojo_admin"/>
+        groups="dojo_core.group_dojo_admin"/>
 
     <menuitem id="menu_dojo_checkout_upsells"
         name="Upsell Items"
         parent="menu_dojo_checkout_root"
         action="action_dojo_checkout_upsell"
         sequence="20"
-        groups="dojo_base.group_dojo_admin"/>
+        groups="dojo_core.group_dojo_admin"/>
 
 </odoo>

@@ -6,7 +6,7 @@
          ================================================================ -->
     <record id="mail_template_checkin_email" model="mail.template">
         <field name="name">Dojang: Student Check-In Notification (Email)</field>
-        <field name="model_id" ref="dojo_attendance.model_dojo_attendance_log"/>
+        <field name="model_id" ref="dojo_core.model_dojo_attendance_log"/>
         <field name="subject">✅ {{ object.member_id.name }} just checked in</field>
         <field name="body_html"><![CDATA[
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -42,7 +42,7 @@
          ================================================================ -->
     <record id="mail_template_checkin_sms" model="mail.template">
         <field name="name">Dojang: Student Check-In Notification (SMS)</field>
-        <field name="model_id" ref="dojo_attendance.model_dojo_attendance_log"/>
+        <field name="model_id" ref="dojo_core.model_dojo_attendance_log"/>
         <field name="subject">Check-In SMS</field>
         <field name="body_html"><![CDATA[{{ object.member_id.name }} checked in to {{ object.session_id.name }} at {{ object.checkin_datetime | time }}. - {{ object.company_id.name }}]]></field>
         <field name="auto_delete" eval="True"/>

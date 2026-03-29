@@ -85,8 +85,9 @@
     <menuitem
         id="menu_dojo_credits_root"
         name="Credits"
-        sequence="90"
-        groups="dojo_base.group_dojo_admin,dojo_base.group_dojo_instructor"/>
+        parent="dojo_core.menu_dojo_core_root"
+        sequence="65"
+        groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
 
     <menuitem
         id="menu_dojo_credit_transaction"
@@ -94,5 +95,5 @@
         parent="menu_dojo_credits_root"
         action="action_dojo_credit_transaction"
         sequence="10"
-        groups="dojo_base.group_dojo_admin,dojo_base.group_dojo_instructor"/>
+        groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
 </odoo>

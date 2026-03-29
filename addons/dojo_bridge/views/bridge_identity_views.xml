@@ -110,7 +110,7 @@
         id="menu_bridge_root"
         name="Bridge"
         sequence="90"
-        groups="dojo_base.group_dojo_admin"
+        groups="dojo_core.group_dojo_admin"
     />
     <menuitem
         id="menu_bridge_identities"
@@ -118,7 +118,7 @@
         parent="menu_bridge_root"
         action="action_bridge_identities"
         sequence="10"
-        groups="dojo_base.group_dojo_admin"
+        groups="dojo_core.group_dojo_admin"
     />
 
 </odoo>

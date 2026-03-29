@@ -2,16 +2,12 @@
     "name": "Dojang Migration",
     "summary": "SparkMembership → Odoo CSV migration tool (admin only)",
     "version": "saas~19.2.1.0.0",
-    "category": "Services",
+    "category": "Dojo",
     "license": "LGPL-3",
     "author": "Dojang",
     "depends": [
-        "dojo_base",
-        "dojo_members",
-        "dojo_classes",
+        "dojo_core",
         "dojo_subscriptions",
-        "dojo_belt_progression",
-        "dojo_attendance",
     ],
     "data": [
         "security/security_groups.xml",

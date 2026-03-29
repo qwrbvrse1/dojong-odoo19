@@ -42,7 +42,7 @@
                             <button string="Manual Adjustment" type="object"
                                     name="action_open_adjustment_wizard"
                                     class="btn btn-secondary"
-                                    groups="dojo_base.group_dojo_admin"/>
+                                    groups="dojo_core.group_dojo_admin"/>
                         </div>
                     </page>
                 </notebook>

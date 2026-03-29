@@ -16,13 +16,10 @@
     'installable': True,
     'auto_install': True,
     'depends': [
+        'dojo_core',
         'portal',
         'account',
-        'dojo_members',
-        'dojo_classes',
-        'dojo_attendance',
         'dojo_subscriptions',
-        'dojo_belt_progression',
     ],
     'data': [
         'security/dojo_portal_security.xml',

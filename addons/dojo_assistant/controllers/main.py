@@ -374,11 +374,11 @@ class DojoAiAssistantController(http.Controller):
         user = request.env.user
 
         # Check for admin role
-        if user.has_group("dojo_base.group_dojo_admin"):
+        if user.has_group("dojo_core.group_dojo_admin"):
             return "admin"
 
         # Check for instructor role
-        if user.has_group("dojo_base.group_dojo_instructor"):
+        if user.has_group("dojo_core.group_dojo_instructor"):
             return "instructor"
 
         # Default to kiosk (limited permissions)

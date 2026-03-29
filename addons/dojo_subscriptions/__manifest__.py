@@ -2,10 +2,10 @@
     "name": "Dojang Subscriptions",
     "summary": "Membership plans and subscriptions",
     "version": "saas~19.2.4.3.0",
-    "category": "Services",
+    "category": "Dojo",
     "license": "LGPL-3",
     "author": "Dojang",
-    "depends": ["dojo_members", "account", "dojo_classes"],
+    "depends": ["dojo_core", "account"],
     "data": [
         "security/ir.model.access.csv",
         "security/dojo_subscriptions_security.xml",

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_dojo_attendance_logs" model="ir.actions.act_window">
+        <field name="name">Attendance Logs</field>
+        <field name="res_model">dojo.attendance.log</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_dojo_attendance_log_list" model="ir.ui.view">
+        <field name="name">dojo.attendance.log.list</field>
+        <field name="model">dojo.attendance.log</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="session_id"/>
+                <field name="member_id"/>
+                <field name="status" decoration-danger="status in ('absent',)"
+                       decoration-warning="status in ('late',)"
+                       decoration-success="status in ('present',)"/>
+                <field name="is_late" optional="show"/>
+                <field name="checkin_datetime"/>
+                <field name="checkout_datetime" optional="show"/>
+                <field name="duration_hours" widget="float_time" optional="show"/>
+                <field name="performance_rating" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dojo_attendance_log_form" model="ir.ui.view">
+        <field name="name">dojo.attendance.log.form</field>
+        <field name="model">dojo.attendance.log</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="session_id"/>
+                            <field name="member_id"/>
+                            <field name="enrollment_id"/>
+                            <field name="status"/>
+                            <field name="is_late" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="checkin_datetime"/>
+                            <field name="checkout_datetime"/>
+                            <field name="duration_hours" widget="float_time" readonly="1"/>
+                            <field name="performance_rating"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

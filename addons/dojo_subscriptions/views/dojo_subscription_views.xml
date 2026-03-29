@@ -238,7 +238,7 @@
     <record id="view_dojo_program_list_subscription_inherit" model="ir.ui.view">
         <field name="name">dojo.program.list.subscription.inherit</field>
         <field name="model">dojo.program</field>
-        <field name="inherit_id" ref="dojo_classes.view_dojo_program_list"/>
+        <field name="inherit_id" ref="dojo_core.view_dojo_program_list"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='active']" position="before">
                 <field name="plan_count" string="Plans"/>
@@ -250,7 +250,7 @@
     <record id="view_dojo_program_form_subscription_inherit" model="ir.ui.view">
         <field name="name">dojo.program.form.subscription.inherit</field>
         <field name="model">dojo.program</field>
-        <field name="inherit_id" ref="dojo_classes.view_dojo_program_form"/>
+        <field name="inherit_id" ref="dojo_core.view_dojo_program_form"/>
         <field name="arch" type="xml">
             <!-- Plans stat button -->
             <xpath expr="//div[@name='button_box']" position="inside">
@@ -285,7 +285,7 @@
     <record id="view_dojo_member_form_subscription_inherit" model="ir.ui.view">
         <field name="name">dojo.member.form.subscription.inherit</field>
         <field name="model">dojo.member</field>
-        <field name="inherit_id" ref="dojo_base.view_dojo_member_form"/>
+        <field name="inherit_id" ref="dojo_core.view_dojo_member_form"/>
         <field name="arch" type="xml">
             <!-- Smart button -->
             <xpath expr="//div[@name='button_box']" position="inside">

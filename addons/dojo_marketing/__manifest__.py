@@ -2,14 +2,13 @@
     "name": "Marketing Cards",
     "summary": "Marketing cards with QR codes — published to kiosk carousel and member portal",
     "version": "saas~19.2.1.0.0",
-    "category": "Services",
+    "category": "Dojo",
     "license": "LGPL-3",
     "author": "Dojang",
     "depends": [
+        "dojo_core",
         "dojo_kiosk",
-        "dojo_members",
         "dojo_members_portal",
-
         "mail",
         "sms",
     ],

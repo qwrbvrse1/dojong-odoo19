@@ -90,7 +90,7 @@ class IssuingController(http.Controller):
             raise request.not_found()
 
         # Allow dojo admins unconditionally
-        if request.env.user.has_group('dojo_base.group_dojo_admin'):
+        if request.env.user.has_group('dojo_core.group_dojo_admin'):
             return employee
 
         # Allow employees viewing their own record

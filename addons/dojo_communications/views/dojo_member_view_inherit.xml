@@ -4,7 +4,7 @@
     <record id="view_dojo_member_form_comm_inherit" model="ir.ui.view">
         <field name="name">dojo.member.form.comm.inherit</field>
         <field name="model">dojo.member</field>
-        <field name="inherit_id" ref="dojo_base.view_dojo_member_form"/>
+        <field name="inherit_id" ref="dojo_core.view_dojo_member_form"/>
         <field name="arch" type="xml">
             <!-- Insert "Contact Guardian" button into the existing header -->
             <xpath expr="//header/field[@name='membership_state']" position="before">

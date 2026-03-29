@@ -1,54 +1,61 @@
 {
-    'name': 'Dojo Management',
-    'version': 'saas~19.2.1.0.0',
-    'category': 'Martial Arts',
-    'summary': 'Complete martial arts facility management suite',
-    'description': """
-        Single install point for the full Dojo Management system.
-        Installing this app installs all dojo_* modules and exposes
-        a unified menu covering members, classes, attendance,
-        subscriptions, belt progression, CRM, communications,
-        kiosk, social media, and configuration.
-    """,
+    'name': 'Dojang Core',
+    'version': 'saas~19.2.4.0.0',
+    'category': 'Dojo',
+    'summary': 'Core martial arts school management: members, classes, attendance, belt progression, instructor dashboard',
     'author': 'Dojo Team',
+    'license': 'LGPL-3',
     'application': True,
     'installable': True,
     'auto_install': False,
     'depends': [
-        # Foundation
-        'dojo_base',
-        'dojo_members',
-        # Scheduling & Attendance
-        'dojo_classes',
-        'dojo_attendance',
-        'dojo_calendar',
-        # Billing
-        'dojo_subscriptions',
-        'dojo_stripe',
-        'dojo_onboarding_stripe',
-        'dojo_credits',
-        # Member Lifecycle
-        'dojo_onboarding',
-        'dojo_crm',
-        'dojo_belt_progression',
-        # Communications & Marketing
-        'dojo_communications',
-        'dojo_marketing',
-        'dojo_social',
-        # Interfaces
-        'dojo_kiosk',
-        'dojo_members_portal',
-        'dojo_checkout',
-        # Intelligence & Integrations
-        'dojo_assistant',
-        'dojo_bridge',
-        'dojo_sign',
-        'dojo_points',
-        'dojo_events',
+        'base',
+        'mail',
+        'portal',
+        'hr',
+        'account',
+        'project',
     ],
+    'post_init_hook': 'post_init_hook',
     'data': [
+        # Security (load first)
+        'security/dojo_security.xml',
+        'security/ir.model.access.csv',
+        # Data
+        'data/sequences.xml',
+        'data/dojo_class_recurrence_cron.xml',
+        'data/ir_cron.xml',
+        'data/instructor_todos_data.xml',
+        # Views
+        'views/member_views.xml',
+        'views/household_views.xml',
+        'views/instructor_profile_views.xml',
+        'views/martial_art_style_views.xml',
+        'views/emergency_contact_views.xml',
+        'views/class_views.xml',
+        'views/auto_enroll_views.xml',
+        'views/attendance_views.xml',
+        'views/belt_views.xml',
+        'views/belt_promotion_wizard_views.xml',
+        'views/dojo_attendance_quick_views.xml',
+        'views/dojo_instructor_dashboard_views.xml',
+        'views/dojo_member_profile_button.xml',
         'views/dojo_core_menus.xml',
         'views/dojo_core_settings.xml',
     ],
-    'license': 'LGPL-3',
+    'assets': {
+        'web.assets_backend': [
+            'dojo_core/static/src/js/float_time_12h.js',
+            'dojo_core/static/src/xml/float_time_12h.xml',
+            'dojo_core/static/src/css/instructor_dashboard.css',
+            'dojo_core/static/src/xml/instructor_dashboard.xml',
+            'dojo_core/static/src/js/instructor_dashboard.js',
+            'dojo_core/static/src/xml/admin_dashboard.xml',
+            'dojo_core/static/src/js/admin_dashboard.js',
+            'dojo_core/static/src/xml/member_profile.xml',
+            'dojo_core/static/src/js/member_profile.js',
+            'dojo_core/static/src/xml/voice_assistant.xml',
+            'dojo_core/static/src/js/voice_assistant.js',
+        ],
+    },
 }

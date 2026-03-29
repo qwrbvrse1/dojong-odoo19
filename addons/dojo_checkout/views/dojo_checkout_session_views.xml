@@ -96,7 +96,7 @@
         parent="dojo_checkout.menu_dojo_checkout_root"
         action="action_dojo_checkout_session"
         sequence="30"
-        groups="dojo_base.group_dojo_admin"/>
+        groups="dojo_core.group_dojo_admin"/>
 
     <!-- ── Cron ─────────────────────────────────────────────────────── -->
     <record id="ir_cron_gc_checkout_sessions" model="ir.cron">
