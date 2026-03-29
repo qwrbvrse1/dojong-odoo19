@@ -17,7 +17,7 @@
                 </header>
             </xpath>
             <!-- Add reminder_sent indicator to the main sheet group -->
-            <xpath expr="//sheet/group/field[@name='state']" position="after">
+            <xpath expr="//sheet/group/field[@name='capacity']" position="after">
                 <field name="reminder_sent" readonly="1"/>
             </xpath>
         </field>

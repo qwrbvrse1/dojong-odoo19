@@ -10,6 +10,8 @@
         "sms_twilio",
         "sms",
         "mail",
+        "mass_mailing",
+        "mass_mailing_sms",
     ],
     "data": [
         "security/ir.model.access.csv",
