@@ -143,8 +143,17 @@
                     </span>
                 </div>
 
+                <field name="_guardian_as_student_pending" invisible="1"/>
+
                 <!-- ── Step 4: Student Contact ──────────────────────────── -->
                 <group string="Student Contact Information" invisible="step != 'student_contact'">
+                    <div class="alert alert-warning py-2 px-3" colspan="2" role="alert"
+                         invisible="not _guardian_as_student_pending">
+                        <i class="fa fa-user me-2" title="Guardian as Student"/>
+                        Registering the guardian <b><field name="guardian_name" readonly="1" nolabel="1"/></b>
+                        as a student. Their existing contact will be reused (no duplicate created).
+                        You can adjust details below.
+                    </div>
                     <group>
                         <field name="student_name" string="Full Name *" placeholder="Full name"/>
                         <field name="student_email" string="Email" placeholder="email@example.com"/>

@@ -189,6 +189,12 @@ class DojoOnboardingWizard(models.TransientModel):
         default=False,
     )
 
+    # ── Guardian-as-student tracking ───────────────────────────────────────
+    _guardian_as_student_pending = fields.Boolean(
+        default=False, readonly=True,
+        help='True when the current student iteration is the guardian themselves.',
+    )
+
     # ── Result (set after each student creation, used by bridge modules) ─────
     created_member_id = fields.Many2one('dojo.member', string='Last Created Member', readonly=True)
 
@@ -270,6 +276,7 @@ class DojoOnboardingWizard(models.TransientModel):
         # (Stripe override intercepts this to route to the payment step)
         if self.step == 'guardian_contact' and self.use_existing_household:
             self._use_existing_household()
+            self._prefill_guardian_as_student_if_needed()
             self.wizard_phase = 'student'
             self.step = 'student_contact'
             return self._reopen_wizard()
@@ -278,6 +285,7 @@ class DojoOnboardingWizard(models.TransientModel):
         # (Stripe override intercepts this to route to the payment step)
         if self.step == 'guardian_portal':
             self._create_guardian_and_household()
+            self._prefill_guardian_as_student_if_needed()
             self.wizard_phase = 'student'
             self.step = 'student_contact'
             return self._reopen_wizard()
@@ -333,13 +341,17 @@ class DojoOnboardingWizard(models.TransientModel):
         """Close the wizard and open the household or last student."""
         self.ensure_one()
 
-        # If guardian is also a student and hasn't been registered yet, register them
+        # If guardian is also a student and hasn't been registered yet, warn
         if self.guardian_is_also_student and self.created_guardian_partner_id:
             guardian_already_member = self.env['dojo.member'].sudo().search(
                 [('partner_id', '=', self.created_guardian_partner_id.id)], limit=1)
             if not guardian_already_member:
-                # The admin needs to go through the student flow for the guardian too
-                pass
+                raise UserError(_(
+                    'The guardian "%s" is marked as a student but was not '
+                    'registered. Please use "Register Another Student" to '
+                    'complete their registration before finishing.',
+                    self.created_guardian_partner_id.name,
+                ))
 
         # Build portal credentials notification
         portal_credentials = []
@@ -462,30 +474,56 @@ class DojoOnboardingWizard(models.TransientModel):
         if guardian:
             self.created_guardian_partner_id = guardian.id
 
+    def _prefill_guardian_as_student_if_needed(self):
+        """If guardian_is_also_student is checked, pre-fill the student
+        contact fields from the guardian so the admin doesn't have to re-type
+        them.  The guardian partner will be reused (not duplicated)."""
+        if not self.guardian_is_also_student:
+            return
+        guardian = self.created_guardian_partner_id
+        if not guardian:
+            return
+        # Check if the guardian is already registered as a member
+        already_member = self.env['dojo.member'].sudo().search(
+            [('partner_id', '=', guardian.id)], limit=1)
+        if already_member:
+            return
+        self._guardian_as_student_pending = True
+        self.student_name = guardian.name or self.guardian_name
+        self.student_email = guardian.email or self.guardian_email
+        self.student_phone = guardian.phone or self.guardian_phone
+        self.student_date_of_birth = False
+        self.student_is_minor = False
+
     # ── Student member creation ──────────────────────────────────────────────
     def _create_student_member(self):
         """Create a student res.partner + dojo.member + subscription + enrollments + portal."""
         self.ensure_one()
         household = self.created_household_id
 
-        # Create student partner
-        partner_vals = {
-            'name': self.student_name,
-            'email': self.student_email or False,
-            'phone': self.student_phone or False,
-            'is_student': True,
-            'is_minor': self.student_is_minor,
-            'company_id': self.env.company.id,
-        }
-        if household:
-            partner_vals['parent_id'] = household.id
-
         # Ensure member number sequence is past existing numbers to avoid unique constraint violations
         self._sync_member_sequence()
 
-        # Create dojo.member (auto-creates res.partner if partner_id not given,
-        # but we want to set is_minor etc. so we create partner explicitly)
-        partner = self.env['res.partner'].create(partner_vals)
+        # When the guardian IS the student, reuse their existing partner
+        if self._guardian_as_student_pending and self.created_guardian_partner_id:
+            partner = self.created_guardian_partner_id
+            partner.write({
+                'is_student': True,
+                'is_minor': False,
+            })
+            self._guardian_as_student_pending = False
+        else:
+            partner_vals = {
+                'name': self.student_name,
+                'email': self.student_email or False,
+                'phone': self.student_phone or False,
+                'is_student': True,
+                'is_minor': self.student_is_minor,
+                'company_id': self.env.company.id,
+            }
+            if household:
+                partner_vals['parent_id'] = household.id
+            partner = self.env['res.partner'].create(partner_vals)
         member = self.env['dojo.member'].create({
             'partner_id': partner.id,
             'date_of_birth': self.student_date_of_birth or False,
@@ -639,6 +677,7 @@ class DojoOnboardingWizard(models.TransientModel):
             'send_welcome_email': True,
             'send_welcome_sms': False,
             'created_member_id': False,
+            '_guardian_as_student_pending': False,
         })
 
     def _send_welcome_sms_to_partner(self, partner):

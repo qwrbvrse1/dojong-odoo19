@@ -159,6 +159,16 @@ class SaleSubscription(models.Model):
             'dojo_subscriptions.product_membership_subscription',
             raise_if_not_found=False,
         )
+        # Resolve income account from product → category → fallback search
+        account = False
+        if product:
+            accounts = product.product_tmpl_id.get_product_accounts()
+            account = accounts.get('income')
+        if not account:
+            account = self.env['account.account'].search([
+                ('account_type', '=', 'income'),
+                ('company_ids', 'in', (self.company_id or self.env.company).id),
+            ], limit=1)
         line_vals = []
         # Enrollment fee on the very first invoice for this subscription
         is_first_invoice = (
@@ -172,6 +182,8 @@ class SaleSubscription(models.Model):
             }
             if product:
                 fee_vals['product_id'] = product.id
+            if account:
+                fee_vals['account_id'] = account.id
             line_vals.append((0, 0, fee_vals))
         recurring_vals = {
             'name': '{} – {} Membership ({})'.format(
@@ -182,6 +194,8 @@ class SaleSubscription(models.Model):
         }
         if product:
             recurring_vals['product_id'] = product.id
+        if account:
+            recurring_vals['account_id'] = account.id
         line_vals.append((0, 0, recurring_vals))
         # Advance the billing date so multi-sub grouped loops see unique dates
         self.recurring_next_date = self._next_date_from(period_start)

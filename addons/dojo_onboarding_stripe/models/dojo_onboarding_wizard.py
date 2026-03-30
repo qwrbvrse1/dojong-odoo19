@@ -81,6 +81,7 @@ class DojoOnboardingWizard(models.TransientModel):
         if self.step == 'guardian_contact' and self.use_existing_household:
             self._use_existing_household()
             if self._should_skip_step('payment'):
+                self._prefill_guardian_as_student_if_needed()
                 self.wizard_phase = 'student'
                 self.step = 'student_contact'
             else:
@@ -97,6 +98,7 @@ class DojoOnboardingWizard(models.TransientModel):
         if self.step == 'payment':
             if self.payment_captured:
                 self._attach_stripe_payment_method()
+            self._prefill_guardian_as_student_if_needed()
             self.wizard_phase = 'student'
             self.step = 'student_contact'
             return self._reopen_wizard()
