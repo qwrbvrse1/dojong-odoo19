@@ -498,14 +498,17 @@ class DojoOnboardingWizard(models.TransientModel):
         if self.plan_id:
             sub_start = self.subscription_start_date or fields.Date.today()
             sub_state = 'pending' if self.defer_payment else 'active'
-            sub = self.env['dojo.member.subscription'].create({
+            sub = self.env['sale.subscription'].create({
                 'member_id': member.id,
                 'plan_id': self.plan_id.id,
-                'start_date': sub_start,
-                'next_billing_date': sub_start,
-                'state': sub_state,
+                'date_start': sub_start,
+                'recurring_next_date': sub_start,
                 'company_id': self.env.company.id,
             })
+            if self.defer_payment:
+                sub.action_set_pending()
+            else:
+                sub.action_set_active()
         if not self.defer_payment:
             member.action_set_active()
 

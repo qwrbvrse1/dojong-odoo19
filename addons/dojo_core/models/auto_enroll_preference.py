@@ -188,7 +188,7 @@ class DojoAutoEnrollPreference(models.Model):
 
         # Determine the billing period end for this member+template so we only
         # enroll sessions within the current paid period.
-        _Sub = self.env["dojo.member.subscription"]
+        _Sub = self.env["sale.subscription"]
         _tmpl_program = tmpl.program_id
         _active_subs = _Sub.search([
             ("member_id", "=", self.member_id.id),
@@ -208,7 +208,7 @@ class DojoAutoEnrollPreference(models.Model):
         if _matched_sub:
             _cpp = getattr(_matched_sub.plan_id, "credits_per_period", 0)
             if _cpp:
-                _nbd = _matched_sub.next_billing_date
+                _nbd = _matched_sub.recurring_next_date
                 _period_end = (_nbd - timedelta(days=1)) if _nbd else None
 
         Enrollment = self.env["dojo.class.enrollment"]

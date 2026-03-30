@@ -66,7 +66,7 @@
     <!-- ── Menu entry under Classes > Configuration ─────────────────────── -->
     <menuitem id="menu_dojo_waiver_config"
               name="Waiver Text"
-              parent="dojo_core.menu_dojo_classes_configuration"
+              parent="dojo_core.menu_dojo_core_config"
               action="action_dojo_waiver_config"
               sequence="40"
               groups="dojo_core.group_dojo_admin"/>

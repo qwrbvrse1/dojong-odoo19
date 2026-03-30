@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from odoo import _, api, models
 from odoo.exceptions import ValidationError
 
@@ -19,10 +17,9 @@ class DojoClassEnrollment(models.Model):
 
             member = rec.member_id
             template = rec.session_id.template_id
-            session_dt = rec.session_id.start_datetime
 
             # ── Rule 1: an active subscription is required ─────────────────
-            active_subs = self.env['dojo.member.subscription'].search([
+            active_subs = self.env['sale.subscription'].search([
                 ('member_id', '=', member.id),
                 ('state', '=', 'active'),
             ])
@@ -55,60 +52,5 @@ class DojoClassEnrollment(models.Model):
                     template.name, plan_names,
                 ))
 
-            # ── Rules 3 & 4: cap checks — enrollment is OK if ANY permitting
-            #    plan does not exceed its caps. ──────────────────────────────
-            cap_errors = []
 
-            # When the Credits module is active, the credit balance is the
-            # sole enrollment gate — hard session caps are no longer enforced.
-            if self.env['ir.module.module'].search_count(
-                [('name', '=', 'dojo_credits'), ('state', '=', 'installed')]
-            ):
-                return
-
-            for sub in permitting_subs:
-                plan = sub.plan_id
-                plan_ok = True  # assume this plan is fine until a cap fires
-
-                # ── Weekly cap ────────────────────────────────────────────
-                if plan.max_sessions_per_week > 0 and session_dt:
-                    session_date = session_dt.date()
-                    week_start = session_date - timedelta(days=session_date.weekday())
-                    week_end = week_start + timedelta(days=6)
-
-                    domain = [
-                        ('member_id', '=', member.id),
-                        ('status', '=', 'registered'),
-                        ('session_id.start_datetime', '>=',
-                         '%s 00:00:00' % week_start),
-                        ('session_id.start_datetime', '<=',
-                         '%s 23:59:59' % week_end),
-                        ('id', '!=', rec.id),
-                    ]
-                    # Scope the count to this plan's accessible templates
-                    if plan.plan_type == 'program' and sub.program_id:
-                        domain.append(
-                            ('session_id.template_id.program_id', '=', sub.program_id.id)
-                        )
-                    elif plan.plan_type == 'course' and plan.allowed_template_ids:
-                        domain.append(
-                            ('session_id.template_id', 'in', plan.allowed_template_ids.ids)
-                        )
-                    weekly_count = self.env['dojo.class.enrollment'].search_count(domain)
-                    if weekly_count >= plan.max_sessions_per_week:
-                        cap_errors.append(_(
-                            'Weekly limit reached: the "%s" plan allows %d session(s) per week '
-                            'and %s already has %d enrolled this week.',
-                            plan.name, plan.max_sessions_per_week,
-                            member.name, weekly_count,
-                        ))
-                        plan_ok = False
-
-                # If this plan passes all caps, enrollment is allowed — done.
-                if plan_ok:
-                    return
-
-            # Every permitting plan hit at least one cap — raise with the first error.
-            if cap_errors:
-                raise ValidationError(cap_errors[0])
 

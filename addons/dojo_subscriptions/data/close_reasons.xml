@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="close_reason_expired" model="sale.subscription.close.reason">
+        <field name="name">Subscription Expired</field>
+    </record>
+
+    <record id="close_reason_cancelled" model="sale.subscription.close.reason">
+        <field name="name">Subscription Cancelled</field>
+    </record>
+</odoo>

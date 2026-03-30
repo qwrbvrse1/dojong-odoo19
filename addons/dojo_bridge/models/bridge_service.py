@@ -74,7 +74,7 @@ class BridgeService(models.AbstractModel):
         """Return all subscriptions for the member within the company."""
         self._get_member(member_id, company_id)  # existence + tenant check
 
-        subs = self.env["dojo.member.subscription"].search(
+        subs = self.env["sale.subscription"].search(
             [
                 ("member_id", "=", member_id),
                 ("company_id", "=", company_id),
@@ -98,13 +98,13 @@ class BridgeService(models.AbstractModel):
                         else None,
                     },
                     "next_billing_date": (
-                        sub.next_billing_date.isoformat()
-                        if hasattr(sub, "next_billing_date") and sub.next_billing_date
+                        sub.recurring_next_date.isoformat()
+                        if sub.recurring_next_date
                         else None
                     ),
                     "start_date": (
-                        sub.start_date.isoformat()
-                        if hasattr(sub, "start_date") and sub.start_date
+                        sub.date_start.isoformat()
+                        if sub.date_start
                         else None
                     ),
                 }

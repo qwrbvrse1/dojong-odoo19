@@ -15,7 +15,7 @@ def populate_program_enrollments(env):
     """
     _logger.info("dojo_subscriptions: backfilling program enrollment records …")
 
-    active_subs = env["dojo.member.subscription"].sudo().search([
+    active_subs = env["sale.subscription"].sudo().search([
         ("state", "=", "active"),
         ("program_id", "!=", False),
     ])
@@ -33,7 +33,7 @@ def populate_program_enrollments(env):
                 "program_id": sub.program_id.id,
                 "subscription_id": sub.id,
                 "is_active": True,
-                "enrolled_date": sub.start_date or fields.Date.today(),
+                "enrolled_date": sub.date_start or fields.Date.today(),
                 "company_id": sub.company_id.id,
             })
             created += 1

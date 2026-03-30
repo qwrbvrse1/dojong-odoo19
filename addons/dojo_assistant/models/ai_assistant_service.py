@@ -111,9 +111,9 @@ _INTENT_HANDLER_CONFIG = {
     # belt_lookup is handled by _handle_belt_lookup (custom handler) because
     # the response model changes: member-specific → dojo.member; all ranks → dojo.belt.rank
     "subscription_lookup": {
-        "model": "dojo.member.subscription",
+        "model": "sale.subscription",
         "domain_builder": "_domain_subscription_lookup",
-        "fields": ["id", "member_id", "plan_id", "state", "start_date", "end_date"],
+        "fields": ["id", "member_id", "plan_id", "state", "date_start", "date"],
         "limit": 1,
     },
     "attendance_history": {
@@ -186,20 +186,19 @@ _CRUD_HANDLER_CONFIG = {
         "allow_undo": True,
     },
     "subscription_create": {
-        "model": "dojo.member.subscription",
+        "model": "sale.subscription",
         "operation": "create",
         "fields": {
             "member_id": {"required": True, "type": "many2one", "resolver": "_resolve_member"},
             "plan_id": {"required": True, "type": "many2one", "resolver": "_resolve_subscription_plan"},
-            "start_date": {"required": False, "type": "date", "default_builder": "_default_today"},
-            "end_date": {"required": False, "type": "date"},
+            "date_start": {"required": False, "type": "date", "default_builder": "_default_today"},
+            "date": {"required": False, "type": "date"},
             "note": {"required": False, "type": "text"},
-            "state": {"required": False, "type": "selection", "default": "draft"},
         },
         "allow_undo": True,
     },
     "subscription_cancel": {
-        "model": "dojo.member.subscription",
+        "model": "sale.subscription",
         "operation": "delete",
         "target_domain_builder": "_domain_crud_subscription",
         "allow_undo": True,
@@ -2799,15 +2798,15 @@ class AiAssistantService(models.AbstractModel):
         if not member_id:
             return {"success": False, "error": "Could not identify the member."}
 
-        sub = self.env["dojo.member.subscription"].search(
+        sub = self.env["sale.subscription"].search(
             [("member_id", "=", member_id), ("state", "=", "active")], limit=1
         )
         if not sub:
             return {"success": False, "error": "No active subscription found for this member."}
 
         Snapshot = self.env["dojo.ai.undo.snapshot"]
-        Snapshot.create_snapshot(action_log.id, "dojo.member.subscription", sub.id, "write", snapshot_data={"state": sub.state})
-        sub.write({"state": "paused"})
+        Snapshot.create_snapshot(action_log.id, "sale.subscription", sub.id, "write", snapshot_data={"state": sub.state})
+        sub.action_set_paused()
         member = self.env["dojo.member"].browse(member_id)
         return {
             "success": True,
@@ -2822,15 +2821,15 @@ class AiAssistantService(models.AbstractModel):
         if not member_id:
             return {"success": False, "error": "Could not identify the member."}
 
-        sub = self.env["dojo.member.subscription"].search(
+        sub = self.env["sale.subscription"].search(
             [("member_id", "=", member_id), ("state", "=", "paused")], limit=1
         )
         if not sub:
             return {"success": False, "error": "No paused subscription found for this member."}
 
         Snapshot = self.env["dojo.ai.undo.snapshot"]
-        Snapshot.create_snapshot(action_log.id, "dojo.member.subscription", sub.id, "write", snapshot_data={"state": sub.state})
-        sub.write({"state": "active"})
+        Snapshot.create_snapshot(action_log.id, "sale.subscription", sub.id, "write", snapshot_data={"state": sub.state})
+        sub.action_set_active()
         member = self.env["dojo.member"].browse(member_id)
         return {
             "success": True,

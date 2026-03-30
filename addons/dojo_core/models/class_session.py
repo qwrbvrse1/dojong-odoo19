@@ -99,14 +99,15 @@ class DojoClassSession(models.Model):
 
     @api.depends("enrollment_ids.status")
     def _compute_seats_taken(self):
-        if not self.ids:
-            return
-        groups = self.env['dojo.class.enrollment']._read_group(
-            [('session_id', 'in', self.ids), ('status', '=', 'registered')],
-            groupby=['session_id'],
-            aggregates=['__count'],
-        )
-        counts = {session.id: count for session, count in groups}
+        stored = self.filtered('id')
+        counts = {}
+        if stored:
+            groups = self.env['dojo.class.enrollment']._read_group(
+                [('session_id', 'in', stored.ids), ('status', '=', 'registered')],
+                groupby=['session_id'],
+                aggregates=['__count'],
+            )
+            counts = {session.id: count for session, count in groups}
         for session in self:
             session.seats_taken = counts.get(session.id, 0)
 

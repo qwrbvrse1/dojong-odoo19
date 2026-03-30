@@ -117,7 +117,7 @@ Score is displayed as a badge on the kanban card and as a percentage bar on the 
 1. Creates or updates `res.partner` record
 2. If _Create New Household_: creates household company partner + guardian partner
 3. Creates `dojo.member` (state: active)
-4. If _Create Subscription_: creates `dojo.member.subscription` record
+4. If _Create Subscription_: creates `sale.subscription` record
 5. Links `dojo_member_id` on the lead, sets `trial_attended = True`
 6. Moves lead to **Converted** stage and archives it
 7. Returns form view of the new `dojo.member` record

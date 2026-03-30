@@ -174,19 +174,6 @@ class DojoKioskService(models.AbstractModel):
                     })
                     continue
 
-                # Weekly session limit
-                allowed = member.sessions_allowed_per_week
-                used = member.sessions_used_this_week
-                if allowed > 0 and used >= allowed:
-                    skipped.append({
-                        "member_id": member_id,
-                        "reason": (
-                            f"{member.name} has reached their weekly session limit "
-                            f"({used}/{allowed} sessions used)."
-                        ),
-                    })
-                    continue
-
             # Add to course_member_ids when overriding so the ORM constraint and
             # future cron enrollments both succeed.
             if override_settings and template and template.course_member_ids:
@@ -546,9 +533,6 @@ class DojoKioskService(models.AbstractModel):
             ("status", "in", ["present", "late"]),
         ])
 
-        allowed = member.sessions_allowed_per_week  # 0 = unlimited
-        used = member.sessions_used_this_week
-
         # Upcoming enrolled sessions (appointments)
         now = fields.Datetime.now()
         upcoming_enrs = self.env["dojo.class.enrollment"].search([
@@ -690,8 +674,6 @@ class DojoKioskService(models.AbstractModel):
             "belt_rank": member.current_rank_id.name if member.current_rank_id else "",
             "belt_color": member.current_rank_id.color if member.current_rank_id else "",
             "total_attendance": total_attendance,
-            "sessions_used_this_week": used,
-            "sessions_allowed_per_week": allowed,
             "credit_balance": credit_balance,
             "credits_per_period": credits_per_period,
             "issues": issues,
@@ -720,12 +702,10 @@ class DojoKioskService(models.AbstractModel):
         elif sub.state in ("expired", "cancelled"):
             flags.append({"code": "membership_expired", "label": "Membership Expired"})
 
-        # Only flag credits exhausted when the plan has a credit limit (credits_per_period > 0).
-        # credits_per_period == 0 means unlimited — never show this flag for those members.
+        # Flag credits exhausted when the plan has a credit limit and balance is zero.
         cpp = getattr(sub.plan_id, "credits_per_period", 0) if sub else 0
-        allowed = member.sessions_allowed_per_week
-        used = member.sessions_used_this_week
-        if cpp > 0 and allowed > 0 and used >= allowed:
+        credit_balance = getattr(sub, "credit_balance", 0) if sub else 0
+        if cpp > 0 and credit_balance <= 0:
             flags.append({"code": "credits_exhausted", "label": "Ran Out of Credits"})
 
         return flags
@@ -765,14 +745,6 @@ class DojoKioskService(models.AbstractModel):
 
         if session.state != "open":
             return {"success": False, "error": "This session is not currently open."}
-
-        allowed = member.sessions_allowed_per_week
-        used = member.sessions_used_this_week
-        if allowed > 0 and used >= allowed:
-            return {
-                "success": False,
-                "error": "Weekly session limit reached. Please see the front desk.",
-            }
 
         # --- Course roster check ---
         template = session.template_id
@@ -826,8 +798,8 @@ class DojoKioskService(models.AbstractModel):
         # Sync enrollment
         enrollment.attendance_state = "present"
 
-        # Invalidate cached computed fields (sessions_used_this_week, etc.) so the
-        # returned profile reflects the newly created enrollment / attendance log.
+        # Invalidate cached computed fields so the returned profile reflects
+        # the newly created enrollment / attendance log.
         member.invalidate_recordset()
 
         # ── Points earned on this check-in ────────────────────────────────
@@ -932,19 +904,6 @@ class DojoKioskService(models.AbstractModel):
                     "success": False,
                     "error": (
                         f"{member.name} is not enrolled in {course_name}. "
-                        "Use the override option to add them anyway."
-                    ),
-                }
-
-            # Weekly session limit
-            allowed = member.sessions_allowed_per_week
-            used = member.sessions_used_this_week
-            if allowed > 0 and used >= allowed:
-                return {
-                    "success": False,
-                    "error": (
-                        f"{member.name} has reached their weekly session limit "
-                        f"({used}/{allowed} sessions used). "
                         "Use the override option to add them anyway."
                     ),
                 }

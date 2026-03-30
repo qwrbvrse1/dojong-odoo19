@@ -327,15 +327,15 @@ class DojoCheckout(http.Controller):
                 "yearly": relativedelta(years=1),
             }.get(plan.billing_period, relativedelta(months=1))
 
-            subscription = request.env["dojo.member.subscription"].sudo().with_context(
+            subscription = request.env["sale.subscription"].sudo().with_context(
                 skip_subscription_check=True
             ).create({
                 "member_id": member.id,
                 "plan_id": plan.id,
-                "start_date": today,
-                "next_billing_date": today + billing_delta,
-                "state": "active",
+                "date_start": today,
+                "recurring_next_date": today + billing_delta,
             })
+            subscription.action_set_active()
             member.sudo().action_set_active()
 
             # Generate and email the first invoice

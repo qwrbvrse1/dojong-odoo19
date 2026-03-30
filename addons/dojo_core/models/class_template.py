@@ -137,7 +137,7 @@ class DojoClassTemplate(models.Model):
         # period renews (new grant issued) the daily cron will pick up the
         # remaining sessions automatically.
         # None = no cap (unlimited plan, drop-in, or no active subscription).
-        _Sub = self.env["dojo.member.subscription"]
+        _Sub = self.env["sale.subscription"]
         _tmpl_program = self.program_id
         period_end_by_member = {}
         for _m in self.course_member_ids:
@@ -162,9 +162,9 @@ class DojoClassTemplate(models.Model):
             if not _cpp:
                 period_end_by_member[_m.id] = None  # unlimited plan — no cap
                 continue
-            _nbd = _matched.next_billing_date
-            # next_billing_date is the first day of the *next* period, so the
-            # last valid day of the current period is next_billing_date - 1.
+            _nbd = _matched.recurring_next_date
+            # recurring_next_date is the first day of the *next* period, so the
+            # last valid day of the current period is recurring_next_date - 1.
             period_end_by_member[_m.id] = (_nbd - timedelta(days=1)) if _nbd else None
 
         while current <= end:

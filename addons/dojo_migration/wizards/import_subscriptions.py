@@ -127,7 +127,7 @@ class DojoMigrationImportSubscriptions(models.TransientModel):
         Member = self.env["dojo.member"]
         Plan = self.env["dojo.subscription.plan"]
         Program = self.env["dojo.program"]
-        Subscription = self.env["dojo.member.subscription"]
+        Subscription = self.env["sale.subscription"]
         Enrollment = self.env["dojo.program.enrollment"]
         company = self.env.company
 
@@ -192,7 +192,7 @@ class DojoMigrationImportSubscriptions(models.TransientModel):
                 existing = Subscription.search([
                     ("member_id", "=", member.id),
                     ("plan_id", "=", plan.id),
-                    ("start_date", "=", start_date),
+                    ("date_start", "=", start_date),
                 ], limit=1)
                 if existing:
                     log_lines.append((0, 0, {
@@ -213,23 +213,34 @@ class DojoMigrationImportSubscriptions(models.TransientModel):
                 sub_vals = {
                     "member_id": member.id,
                     "plan_id": plan.id,
-                    "start_date": start_date,
-                    "state": sub_state,
+                    "date_start": start_date,
                     "company_id": company.id,
                 }
                 end_date = _parse_date(row.get("end_date"))
                 if end_date:
-                    sub_vals["end_date"] = end_date
+                    sub_vals["date"] = end_date
 
                 nbd = _parse_date(row.get("next_billing_date"))
                 if nbd:
-                    sub_vals["next_billing_date"] = nbd
+                    sub_vals["recurring_next_date"] = nbd
 
                 billing_ref = (row.get("billing_reference") or "").strip()
                 if billing_ref:
                     sub_vals["billing_reference"] = billing_ref
 
                 subscription = Subscription.create(sub_vals)
+
+                # Set the desired state via action methods
+                state_action_map = {
+                    "active": "action_set_active",
+                    "pending": "action_set_pending",
+                    "paused": "action_set_paused",
+                    "cancelled": "action_set_cancelled",
+                    "expired": "action_set_expired",
+                }
+                action = state_action_map.get(sub_state)
+                if action and sub_state != "draft":
+                    getattr(subscription, action)()
 
                 # Create program enrollment for active subscriptions
                 if sub_state == "active" and plan.program_id:

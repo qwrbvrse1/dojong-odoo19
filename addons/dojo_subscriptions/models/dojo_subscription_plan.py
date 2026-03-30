@@ -44,6 +44,14 @@ class DojoSubscriptionPlan(models.Model):
              'each time an invoice is generated (cron or manually).',
     )
 
+    # ── Link to subscription_oca template ─────────────────────────────────
+    template_id = fields.Many2one(
+        "sale.subscription.template",
+        string="Subscription Template",
+        ondelete="set null",
+        help="Auto-created OCA subscription template. Synced from plan billing settings.",
+    )
+
     # ── Plan type ─────────────────────────────────────────────────────────
     plan_type = fields.Selection(
         [
@@ -79,13 +87,8 @@ class DojoSubscriptionPlan(models.Model):
         string='Allowed Courses',
         help=(
             'Course-Based plans only. Which courses members may enrol in. '
-            'Leave empty to allow any class (session-cap rules still apply).'
+            'Leave empty to allow any class.'
         ),
-    )
-    max_sessions_per_week = fields.Integer(
-        string='Max Sessions / Week',
-        default=0,
-        help='Maximum number of sessions a member can attend per calendar week under this plan. 0 = unlimited.',
     )
 
     # ── Onchange helpers ──────────────────────────────────────────────────
@@ -104,3 +107,61 @@ class DojoSubscriptionPlan(models.Model):
                 raise ValidationError(
                     "A Program must be selected for Program-Based plans."
                 )
+
+    # ── Template auto-sync ────────────────────────────────────────────────
+    _BILLING_PERIOD_MAP = {
+        "weekly": ("weeks", 1),
+        "monthly": ("months", 1),
+        "yearly": ("years", 1),
+    }
+
+    def _prepare_template_vals(self):
+        """Return vals dict for creating/updating the linked OCA template."""
+        self.ensure_one()
+        rule_type, interval = self._BILLING_PERIOD_MAP.get(
+            self.billing_period, ("months", 1),
+        )
+        invoicing_mode = "invoice_send" if self.auto_send_invoice else "draft"
+        if self.duration and self.duration > 0:
+            boundary = "limited"
+            rule_count = self.duration
+        else:
+            boundary = "unlimited"
+            rule_count = 1
+        return {
+            "name": self.name,
+            "code": self.code or "",
+            "recurring_rule_type": rule_type,
+            "recurring_interval": interval,
+            "recurring_rule_boundary": boundary,
+            "recurring_rule_count": rule_count,
+            "invoicing_mode": invoicing_mode,
+            "description": self.description or "",
+        }
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        Template = self.env["sale.subscription.template"]
+        for rec in records:
+            if not rec.template_id:
+                tmpl = Template.create(rec._prepare_template_vals())
+                rec.template_id = tmpl
+        return records
+
+    def write(self, vals):
+        result = super().write(vals)
+        sync_fields = {
+            'name', 'code', 'billing_period', 'duration',
+            'auto_send_invoice', 'description',
+        }
+        if sync_fields & set(vals.keys()):
+            for rec in self:
+                if rec.template_id:
+                    rec.template_id.write(rec._prepare_template_vals())
+                else:
+                    tmpl = self.env["sale.subscription.template"].create(
+                        rec._prepare_template_vals(),
+                    )
+                    rec.template_id = tmpl
+        return result

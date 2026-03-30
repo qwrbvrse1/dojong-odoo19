@@ -138,7 +138,7 @@
         <field name="res_model">dojo.migration.import.odoo.csv</field>
         <field name="view_mode">form</field>
         <field name="target">main</field>
-        <field name="context">{'default_model_name': 'dojo.member.subscription'}</field>
+        <field name="context">{'default_model_name': 'sale.subscription'}</field>
     </record>
 
     <record id="action_import_odoo_csv_class_template_members" model="ir.actions.act_window">

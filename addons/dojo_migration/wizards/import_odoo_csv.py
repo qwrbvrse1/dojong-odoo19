@@ -25,7 +25,7 @@ Covered CSV files (import in order):
   09_dojo_subscription_plan.csv   → model: dojo.subscription.plan
                                      (remap: template_ids → allowed_template_ids,
                                       value: plan_type recurring → program)
-  10_dojo_member_subscription.csv → model: dojo.member.subscription
+  10_dojo_member_subscription.csv → model: sale.subscription
                                      (skip: program_id, household_id — readonly related fields)
   11_dojo_class_template_members.csv → model: dojo.class.template+members
                                      (appends members to course_member_ids Many2many)
@@ -57,7 +57,7 @@ MODEL_CHOICES = [
     ("dojo.program",            "07. Programs (dojo.program)"),
     ("dojo.class.template",     "08. Class Templates (dojo.class.template)"),
     ("dojo.subscription.plan",  "09. Subscription Plans (dojo.subscription.plan)"),
-    ("dojo.member.subscription","10. Member Subscriptions (dojo.member.subscription)"),
+    ("sale.subscription","10. Member Subscriptions (sale.subscription)"),
     ("dojo.class.template+members", "11. Class Template Members (dojo.class.template, course_member_ids)"),
 ]
 
@@ -72,7 +72,7 @@ MODEL_IMPORT_TYPE = {
     "dojo.program":             "programs",
     "dojo.class.template":      "class_templates",
     "dojo.subscription.plan":   "subscription_plans",
-    "dojo.member.subscription": "member_subscriptions",
+    "sale.subscription": "member_subscriptions",
     "dojo.class.template+members": "class_templates",
 }
 
@@ -102,12 +102,18 @@ MODEL_FIELD_REMAP = {
     "dojo.subscription.plan": {
         "template_ids": "allowed_template_ids",
     },
+    # 10_dojo_member_subscription.csv uses old field names
+    "sale.subscription": {
+        "start_date": "date_start",
+        "end_date": "date",
+        "next_billing_date": "recurring_next_date",
+    },
 }
 
 # CSV columns to drop before import (readonly/computed fields)
 MODEL_SKIP_COLUMNS = {
-    # 'program_id' and 'household_id' on dojo.member.subscription are readonly related fields
-    "dojo.member.subscription": {"program_id", "household_id"},
+    # 'program_id' and 'household_id' on sale.subscription are readonly related fields
+    "sale.subscription": {"program_id", "household_id"},
     # 'current_rank_id' and 'current_stripe_count' on dojo.member are stored
     # computed fields that recompute automatically after belt rank history is
     # imported in step 06

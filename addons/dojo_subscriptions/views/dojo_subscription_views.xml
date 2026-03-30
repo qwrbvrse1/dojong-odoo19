@@ -11,8 +11,10 @@
 
     <record id="action_dojo_member_subscriptions" model="ir.actions.act_window">
         <field name="name">Member Subscriptions</field>
-        <field name="res_model">dojo.member.subscription</field>
+        <field name="res_model">sale.subscription</field>
         <field name="view_mode">list,form</field>
+        <field name="domain">[('member_id', '!=', False)]</field>
+        <field name="context">{'default_member_id': False}</field>
     </record>
 
     <menuitem
@@ -37,6 +39,10 @@
     />
 
 
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Subscription Plan views (standalone — model unchanged)
+         ═══════════════════════════════════════════════════════════════ -->
 
     <record id="view_dojo_subscription_plan_list" model="ir.ui.view">
         <field name="name">dojo.subscription.plan.list</field>
@@ -104,117 +110,131 @@
         </field>
     </record>
 
-    <record id="view_dojo_member_subscription_list" model="ir.ui.view">
-        <field name="name">dojo.member.subscription.list</field>
-        <field name="model">dojo.member.subscription</field>
+    <!-- ═══════════════════════════════════════════════════════════════
+         sale.subscription inherited views — Dojo fields
+         ═══════════════════════════════════════════════════════════════ -->
+
+    <!-- ── List: add dojo columns ──────────────────────────────────── -->
+    <record id="view_sale_subscription_list_dojo" model="ir.ui.view">
+        <field name="name">sale.subscription.list.dojo</field>
+        <field name="model">sale.subscription</field>
+        <field name="inherit_id" ref="subscription_oca.sale_subscription_tree"/>
         <field name="arch" type="xml">
-            <list>
-                <field name="member_id"/>
-                <field name="plan_id"/>
-                <field name="plan_type"/>
-                <field name="program_id"/>
-                <field name="start_date"/>
-                <field name="end_date"/>
-                <field name="next_billing_date"/>
-                <field name="state"/>
-                <field name="billing_failure_count" string="Failures" optional="show"
-                       decoration-danger="billing_failure_count >= 3"
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="member_id" optional="show"/>
+                <field name="plan_id" optional="show"/>
+                <field name="plan_type" optional="hide"/>
+                <field name="program_id" optional="hide"/>
+                <field name="state" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='stage_id']" position="after">
+                <field name="billing_failure_count" string="Failures" optional="hide"
+                       decoration-danger="billing_failure_count &gt;= 3"
                        decoration-warning="billing_failure_count == 2"/>
-            </list>
+            </xpath>
         </field>
     </record>
 
-    <record id="view_dojo_member_subscription_form" model="ir.ui.view">
-        <field name="name">dojo.member.subscription.form</field>
-        <field name="model">dojo.member.subscription</field>
+    <!-- ── Form: add dojo fields + header buttons ─────────────────── -->
+    <record id="view_sale_subscription_form_dojo" model="ir.ui.view">
+        <field name="name">sale.subscription.form.dojo</field>
+        <field name="model">sale.subscription</field>
+        <field name="inherit_id" ref="subscription_oca.sale_subscription_form"/>
         <field name="arch" type="xml">
-            <form>
-                <header>
-                    <button name="action_set_active"
-                            type="object"
-                            string="Set Active"
-                            class="btn-success"
-                            invisible="state == 'active'"
-                            confirm="Activate this subscription? Credits will be issued immediately."/>
-                    <button name="action_set_pending"
-                            type="object"
-                            string="Set Pending"
-                            invisible="state in ('pending', 'cancelled', 'expired')"/>
-                    <button name="action_set_paused"
-                            type="object"
-                            string="Pause"
-                            invisible="state != 'active'"/>
-                    <button name="action_set_cancelled"
-                            type="object"
-                            string="Cancel"
-                            invisible="state in ('cancelled', 'expired')"
-                            confirm="Cancel this subscription? This cannot be easily undone."/>
-                    <button name="action_set_draft"
-                            type="object"
-                            string="Reset to Draft"
-                            invisible="state not in ('pending', 'cancelled')"/>
-                    <button name="action_generate_invoice"
-                            type="object"
-                            string="Generate Invoice"
-                            class="btn-primary"
-                            invisible="state not in ('active', 'pending')"
-                            groups="account.group_account_invoice"
-                            confirm="This will create and post an invoice for the current billing cycle and advance the next billing date. Continue?"/>
-                    <field name="state" widget="statusbar"
-                           statusbar_visible="draft,pending,active,paused,cancelled"/>
-                </header>
-                <sheet>
-                    <div name="button_box" class="oe_button_box">
-                        <button name="action_view_invoices"
-                                type="object"
-                                class="oe_stat_button"
-                                icon="fa-file-text-o"
-                                groups="account.group_account_invoice">
-                            <div class="o_stat_info">
-                                <span class="o_stat_value"><field name="invoice_count"/></span>
-                                <span class="o_stat_text">Invoices</span>
-                            </div>
-                        </button>
+            <!-- Header buttons -->
+            <xpath expr="//header" position="inside">
+                <button name="action_set_active"
+                        type="object"
+                        string="Set Active"
+                        class="btn-success"
+                        invisible="state == 'active'"
+                        confirm="Activate this subscription? Credits will be issued immediately."/>
+                <button name="action_set_pending"
+                        type="object"
+                        string="Set Pending"
+                        invisible="state in ('pending', 'cancelled', 'expired')"/>
+                <button name="action_set_paused"
+                        type="object"
+                        string="Pause"
+                        invisible="state != 'active'"/>
+                <button name="action_set_cancelled"
+                        type="object"
+                        string="Cancel"
+                        invisible="state in ('cancelled', 'expired')"
+                        confirm="Cancel this subscription? This cannot be easily undone."/>
+                <button name="action_set_draft"
+                        type="object"
+                        string="Reset to Draft"
+                        invisible="state not in ('pending', 'cancelled')"/>
+                <button name="action_generate_invoice"
+                        type="object"
+                        string="Generate Invoice"
+                        class="btn-primary"
+                        invisible="state not in ('active', 'pending')"
+                        groups="account.group_account_invoice"
+                        confirm="This will create and post an invoice for the current billing cycle and advance the next billing date. Continue?"/>
+            </xpath>
+
+            <!-- Stat button for dojo invoices -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_invoices"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-file-text-o"
+                        groups="account.group_account_invoice">
+                    <div class="o_stat_info">
+                        <span class="o_stat_value"><field name="dojo_invoice_count"/></span>
+                        <span class="o_stat_text">Dojo Invoices</span>
                     </div>
-                    <group>
-                        <field name="member_id"/>
-                        <field name="plan_id"/>
-                        <field name="plan_type" readonly="1"/>
-                        <field name="program_id" readonly="1"/>
-                        <field name="start_date"/>
-                        <field name="end_date"/>
-                        <field name="next_billing_date"/>
-                        <field name="last_invoice_id" groups="account.group_account_invoice"/>
-                        <field name="billing_reference"/>
-                    </group>
+                </button>
+            </xpath>
+
+            <!-- Dojo fields in the left group -->
+            <xpath expr="//group[@name='left_group']" position="inside">
+                <field name="member_id"/>
+                <field name="plan_id"/>
+                <field name="plan_type" readonly="1"/>
+                <field name="program_id" readonly="1"/>
+                <field name="state" readonly="1"/>
+                <field name="paused"/>
+                <field name="last_invoice_id" groups="account.group_account_invoice"/>
+                <field name="billing_reference"/>
+            </xpath>
+
+            <!-- Note page in notebook -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Dojo Notes" name="dojo_notes">
                     <group>
                         <field name="note"/>
                     </group>
-                    <!-- Dunning / billing failures – hidden when all is well -->
-                    <group string="Billing Issues"
-                           name="billing_issues_group"
-                           invisible="billing_failure_count == 0">
-                        <group>
-                            <field name="billing_failure_count" readonly="1"
-                                   widget="integer"
-                                   string="Consecutive Failures"/>
-                            <field name="last_billing_failure_date" readonly="1"/>
-                            <field name="grace_period_end" readonly="1"
-                                   invisible="billing_failure_count &lt; 3"/>
-                        </group>
+                </page>
+                <!-- Dunning / billing failures -->
+                <page string="Billing Issues" name="billing_issues"
+                      invisible="billing_failure_count == 0">
+                    <group>
+                        <field name="billing_failure_count" readonly="1"
+                               widget="integer"
+                               string="Consecutive Failures"/>
+                        <field name="last_billing_failure_date" readonly="1"/>
+                        <field name="grace_period_end" readonly="1"
+                               invisible="billing_failure_count &lt; 3"/>
                     </group>
-                </sheet>
-            </form>
+                </page>
+            </xpath>
         </field>
     </record>
 
-    <record id="view_dojo_member_subscription_search" model="ir.ui.view">
-        <field name="name">dojo.member.subscription.search</field>
-        <field name="model">dojo.member.subscription</field>
+    <!-- ── Search: add dojo filters ───────────────────────────────── -->
+    <record id="view_sale_subscription_search_dojo" model="ir.ui.view">
+        <field name="name">sale.subscription.search.dojo</field>
+        <field name="model">sale.subscription</field>
+        <field name="inherit_id" ref="subscription_oca.view_sale_order_pending_filter"/>
         <field name="arch" type="xml">
-            <search>
+            <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="member_id" string="Member"/>
                 <field name="plan_id" string="Plan"/>
+            </xpath>
+            <xpath expr="//filter[@name='pendingsubs']" position="after">
                 <separator/>
                 <filter name="active_subs" string="Active"
                         domain="[('state', '=', 'active')]"/>
@@ -224,13 +244,13 @@
                         domain="[('billing_failure_count', '&gt;=', 3), ('state', '!=', 'expired')]"/>
                 <filter name="has_failures" string="Has Billing Failures"
                         domain="[('billing_failure_count', '&gt;', 0)]"/>
-                <group>
-                    <filter name="group_state" string="State"
-                            context="{'group_by': 'state'}"/>
-                    <filter name="group_plan" string="Plan"
-                            context="{'group_by': 'plan_id'}"/>
-                </group>
-            </search>
+            </xpath>
+            <xpath expr="//filter[@name='groupby_stage_id']" position="after">
+                <filter name="group_state" string="Dojo State"
+                        context="{'group_by': 'state'}"/>
+                <filter name="group_plan" string="Plan"
+                        context="{'group_by': 'plan_id'}"/>
+            </xpath>
         </field>
     </record>
 
@@ -309,8 +329,8 @@
                     <field name="subscription_ids" readonly="1">
                         <list>
                             <field name="plan_id"/>
-                            <field name="start_date"/>
-                            <field name="next_billing_date"/>
+                            <field name="date_start"/>
+                            <field name="recurring_next_date"/>
                             <field name="state"/>
                         </list>
                     </field>

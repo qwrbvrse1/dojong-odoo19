@@ -5,13 +5,13 @@ class DojoMember(models.Model):
     _inherit = "dojo.member"
 
     subscription_ids = fields.One2many(
-        "dojo.member.subscription", "member_id", string="Subscriptions"
+        "sale.subscription", "member_id", string="Subscriptions"
     )
     subscription_count = fields.Integer(
         compute="_compute_subscription_count", store=True
     )
     active_subscription_id = fields.Many2one(
-        "dojo.member.subscription",
+        "sale.subscription",
         compute="_compute_active_subscription",
         string="Active Plan",
         store=True,
@@ -35,7 +35,7 @@ class DojoMember(models.Model):
         return {
             "type": "ir.actions.act_window",
             "name": "Subscriptions",
-            "res_model": "dojo.member.subscription",
+            "res_model": "sale.subscription",
             "view_mode": "list,form",
             "domain": [("member_id", "=", self.id)],
             "context": {"default_member_id": self.id},

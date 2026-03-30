@@ -1,5 +1,5 @@
 """
-Extensions to dojo.member.subscription:
+Extensions to sale.subscription:
   - O2m to credit transactions
   - Computed balance fields (no stored denorm)
   - _issue_period_credits() — expire old balance, grant new
@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 
 
 class DojoMemberSubscriptionCreditExtend(models.Model):
-    _inherit = "dojo.member.subscription"
+    _inherit = "sale.subscription"
 
     # ── Ledger link ──────────────────────────────────────────────────────
     transaction_ids = fields.One2many(
@@ -64,7 +64,7 @@ class DojoMemberSubscriptionCreditExtend(models.Model):
         self.ensure_one()
         try:
             self.env.cr.execute(
-                "SELECT id FROM dojo_member_subscription "
+                "SELECT id FROM sale_subscription "
                 "WHERE id = %s FOR UPDATE NOWAIT",
                 [self.id],
             )
@@ -84,7 +84,7 @@ class DojoMemberSubscriptionCreditExtend(models.Model):
           2. Subscription whose plan's allowed templates include the session's
              template (course-style subscriptions).
 
-        Returns a single `dojo.member.subscription` record or empty recordset.
+        Returns a single `sale.subscription` record or empty recordset.
         """
         active_subs = self.search([
             ("member_id", "=", member.id),

@@ -83,7 +83,7 @@ class DojoCreditTransaction(models.Model):
 
     # ── Links ─────────────────────────────────────────────────────────────
     subscription_id = fields.Many2one(
-        "dojo.member.subscription",
+        "sale.subscription",
         string="Subscription",
         required=True,
         index=True,

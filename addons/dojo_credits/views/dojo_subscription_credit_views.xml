@@ -2,9 +2,9 @@
 <odoo>
     <!-- Add credit balance summary + ledger tab to the subscription form -->
     <record id="view_dojo_member_subscription_credit_form" model="ir.ui.view">
-        <field name="name">dojo.member.subscription.credit.form</field>
-        <field name="model">dojo.member.subscription</field>
-        <field name="inherit_id" ref="dojo_subscriptions.view_dojo_member_subscription_form"/>
+        <field name="name">sale.subscription.credit.form</field>
+        <field name="model">sale.subscription</field>
+        <field name="inherit_id" ref="subscription_oca.sale_subscription_form"/>
         <field name="arch" type="xml">
             <!-- Balance stat buttons at top -->
             <xpath expr="//div[@name='button_box']" position="inside">

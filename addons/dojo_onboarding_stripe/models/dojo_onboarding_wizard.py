@@ -117,7 +117,7 @@ class DojoOnboardingWizard(models.TransientModel):
         if not member:
             return result
 
-        subscription = self.env['dojo.member.subscription'].sudo().search(
+        subscription = self.env['sale.subscription'].sudo().search(
             [('member_id', '=', member.id), ('state', 'in', ('active', 'pending'))],
             limit=1,
             order='create_date desc',

@@ -241,15 +241,15 @@ class DojoConvertLeadWizard(models.TransientModel):
             # defer_payment=True → subscription is active but billing is paused
             # (next_billing_date=None) so the cron skips it until admin sets a date.
             # defer_payment=False → billing starts normally from start_date.
-            self.env["dojo.member.subscription"].create(
+            sub = self.env["sale.subscription"].create(
                 {
                     "member_id": member.id,
                     "plan_id": plan.id,
-                    "start_date": start,
-                    "next_billing_date": False if self.defer_payment else start,
-                    "state": "active",
+                    "date_start": start,
+                    "recurring_next_date": False if self.defer_payment else start,
                 }
             )
+            sub.action_set_active()
 
         # ---- Link back to lead ----
         lead.dojo_member_id = member.id if member else False

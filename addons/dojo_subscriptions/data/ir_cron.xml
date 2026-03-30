@@ -2,7 +2,7 @@
 <odoo>
     <record id="ir_cron_dojo_billing_invoices" model="ir.cron">
         <field name="name">Dojo: Generate Subscription Invoices</field>
-        <field name="model_id" ref="model_dojo_member_subscription"/>
+        <field name="model_id" ref="subscription_oca.model_sale_subscription"/>
         <field name="state">code</field>
         <field name="code">model._cron_generate_invoices()</field>
         <field name="interval_number">1</field>
@@ -12,7 +12,7 @@
 
     <record id="ir_cron_dojo_watch_unpaid_invoices" model="ir.cron">
         <field name="name">Dojo: Watch Unpaid Invoices (Dunning)</field>
-        <field name="model_id" ref="model_dojo_member_subscription"/>
+        <field name="model_id" ref="subscription_oca.model_sale_subscription"/>
         <field name="state">code</field>
         <field name="code">model._cron_watch_unpaid_invoices()</field>
         <field name="interval_number">1</field>
@@ -22,7 +22,7 @@
 
     <record id="ir_cron_dojo_expire_ended_subscriptions" model="ir.cron">
         <field name="name">Dojo: Expire Ended Subscriptions</field>
-        <field name="model_id" ref="model_dojo_member_subscription"/>
+        <field name="model_id" ref="subscription_oca.model_sale_subscription"/>
         <field name="state">code</field>
         <field name="code">model._cron_expire_ended_subscriptions()</field>
         <field name="interval_number">1</field>
@@ -32,7 +32,7 @@
 
     <record id="ir_cron_dojo_send_expiry_reminders" model="ir.cron">
         <field name="name">Dojo: Send Membership Expiry Reminders</field>
-        <field name="model_id" ref="model_dojo_member_subscription"/>
+        <field name="model_id" ref="subscription_oca.model_sale_subscription"/>
         <field name="state">code</field>
         <field name="code">model._cron_send_expiry_reminders()</field>
         <field name="interval_number">1</field>

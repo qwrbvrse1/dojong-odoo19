@@ -34,7 +34,7 @@ class DojoProgramEnrollment(models.Model):
         string="Program",
     )
     subscription_id = fields.Many2one(
-        "dojo.member.subscription",
+        "sale.subscription",
         index=True,
         ondelete="set null",
         string="Source Subscription",

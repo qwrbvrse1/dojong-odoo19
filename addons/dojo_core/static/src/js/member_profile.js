@@ -177,7 +177,7 @@ class MemberProfile extends Component {
         if (subId) {
             this.action.doAction({
                 type: "ir.actions.act_window",
-                res_model: "dojo.member.subscription",
+                res_model: "sale.subscription",
                 res_id: subId,
                 views: [[false, "form"]],
                 target: "new",
@@ -185,7 +185,7 @@ class MemberProfile extends Component {
         } else {
             this.action.doAction({
                 type: "ir.actions.act_window",
-                res_model: "dojo.member.subscription",
+                res_model: "sale.subscription",
                 views: [[false, "list"], [false, "form"]],
                 domain: [["member_id", "=", this.memberId]],
                 target: "new",

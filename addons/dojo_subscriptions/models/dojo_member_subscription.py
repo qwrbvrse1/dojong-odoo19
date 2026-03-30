@@ -1,5 +1,8 @@
 import logging
+from collections import defaultdict
+
 from dateutil.relativedelta import relativedelta
+
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from odoo.tools import html2plaintext
@@ -7,38 +10,60 @@ from odoo.tools import html2plaintext
 _logger = logging.getLogger(__name__)
 
 
-class DojoMemberSubscription(models.Model):
-    _name = "dojo.member.subscription"
-    _description = "Dojang Member Subscription"
-    _rec_name = "name"
+class SaleSubscription(models.Model):
+    """Extend sale.subscription with dojo-specific membership fields and logic."""
 
-    name = fields.Char(
-        compute="_compute_name",
-        store=True,
-        string="Name",
+    _inherit = "sale.subscription"
+
+    # ── Dojo-specific fields ──────────────────────────────────────────────
+    member_id = fields.Many2one(
+        "dojo.member", index=True, ondelete="cascade", string="Member",
     )
-
-    member_id = fields.Many2one("dojo.member", required=True, index=True, ondelete="cascade")
     household_id = fields.Many2one(
-        "res.partner", related="member_id.partner_id.parent_id", store=True, readonly=True
+        "res.partner", related="member_id.partner_id.parent_id",
+        store=True, readonly=True,
     )
-    plan_id = fields.Many2one("dojo.subscription.plan", required=True, index=True)
+    plan_id = fields.Many2one("dojo.subscription.plan", index=True, string="Plan")
     plan_type = fields.Selection(
-        related="plan_id.plan_type", store=True, readonly=True, string="Plan Type"
+        related="plan_id.plan_type", store=True, readonly=True, string="Plan Type",
     )
     program_id = fields.Many2one(
-        "dojo.program",
-        related="plan_id.program_id",
-        store=True,
-        readonly=True,
-        string="Program",
+        "dojo.program", related="plan_id.program_id",
+        store=True, readonly=True, string="Program",
     )
-    company_id = fields.Many2one(
-        "res.company", default=lambda self: self.env.company, index=True
+    paused = fields.Boolean(default=False, string="Paused")
+    last_invoice_id = fields.Many2one("account.move", string="Last Invoice")
+    household_invoice_ids = fields.Many2many(
+        "account.move",
+        "dojo_invoice_sub_rel",
+        "subscription_id",
+        "invoice_id",
+        string="Household Invoices",
+        help="Consolidated invoices that cover this subscription along with sibling subscriptions.",
     )
-    start_date = fields.Date(required=True, default=fields.Date.context_today)
-    end_date = fields.Date()
-    next_billing_date = fields.Date()
+    dojo_invoice_count = fields.Integer(
+        compute="_compute_dojo_invoice_count", store=False,
+    )
+    billing_reference = fields.Char(help="External billing system reference.")
+    note = fields.Text()
+
+    # ── Dunning fields ────────────────────────────────────────────────────
+    billing_failure_count = fields.Integer(
+        default=0, string='Billing Failures',
+        help='Consecutive billing failures. Resets to 0 on next successful payment.',
+    )
+    last_billing_failure_date = fields.Date(
+        string='Last Billing Failure',
+        help='Date of the most recent billing failure.',
+    )
+    grace_period_end = fields.Date(
+        compute='_compute_grace_period_end', store=True,
+        string='Grace Period End',
+        help='After 3 billing failures, the date by which payment must be '
+             'received before the subscription is permanently expired.',
+    )
+
+    # ── Computed state for backward compatibility ────────────────────────
     state = fields.Selection(
         [
             ("draft", "Draft"),
@@ -48,85 +73,64 @@ class DojoMemberSubscription(models.Model):
             ("cancelled", "Cancelled"),
             ("expired", "Expired"),
         ],
-        default="draft",
-        required=True,
-    )
-    last_invoice_id = fields.Many2one("account.move", string="Last Invoice")
-    invoice_ids = fields.One2many("account.move", "subscription_id", string="Invoices")
-    household_invoice_ids = fields.Many2many(
-        "account.move",
-        "dojo_invoice_sub_rel",
-        "subscription_id",
-        "invoice_id",
-        string="Household Invoices",
-        help="Consolidated invoices that cover this subscription along with sibling subscriptions.",
-    )
-    invoice_count = fields.Integer(compute="_compute_invoice_count", store=False)
-    billing_reference = fields.Char(help="External billing system reference.")
-    note = fields.Text()
-
-    # ── Dunning fields ────────────────────────────────────────────────────
-    billing_failure_count = fields.Integer(
-        default=0,
-        string='Billing Failures',
-        help='Consecutive billing failures. Resets to 0 on next successful payment.',
-    )
-    last_billing_failure_date = fields.Date(
-        string='Last Billing Failure',
-        help='Date of the most recent billing failure.',
-    )
-    grace_period_end = fields.Date(
-        compute='_compute_grace_period_end',
+        compute="_compute_state",
         store=True,
-        string='Grace Period End',
-        help='After 3 billing failures, the date by which payment must be '
-             'received before the subscription is permanently expired.',
+        string="Dojo State",
     )
+
+    @api.depends("stage_id", "stage_id.type", "paused", "close_reason_id")
+    def _compute_state(self):
+        expired_reason = self.env.ref(
+            "dojo_subscriptions.close_reason_expired", raise_if_not_found=False,
+        )
+        for rec in self:
+            stage_type = rec.stage_id.type if rec.stage_id else "draft"
+            if stage_type == "draft":
+                rec.state = "draft"
+            elif stage_type == "pre":
+                rec.state = "pending"
+            elif stage_type == "in_progress":
+                rec.state = "paused" if rec.paused else "active"
+            elif stage_type == "post":
+                if expired_reason and rec.close_reason_id == expired_reason:
+                    rec.state = "expired"
+                else:
+                    rec.state = "cancelled"
+            else:
+                rec.state = "draft"
 
     # ── Computed ──────────────────────────────────────────────────────────
-    @api.depends("member_id", "plan_id")
-    def _compute_name(self):
-        for rec in self:
-            parts = []
-            if rec.member_id:
-                parts.append(rec.member_id.name)
-            if rec.plan_id:
-                parts.append(rec.plan_id.name)
-            rec.name = " \u2014 ".join(parts) if parts else _("New Subscription")
-
     @api.depends("invoice_ids", "household_invoice_ids")
-    def _compute_invoice_count(self):
+    def _compute_dojo_invoice_count(self):
         for rec in self.sudo():
-            rec.invoice_count = len(rec.invoice_ids | rec.household_invoice_ids)
+            rec.dojo_invoice_count = len(rec.invoice_ids | rec.household_invoice_ids)
 
     @api.depends('billing_failure_count', 'last_billing_failure_date')
     def _compute_grace_period_end(self):
         for rec in self:
             if rec.billing_failure_count >= 3 and rec.last_billing_failure_date:
-                rec.grace_period_end = rec.last_billing_failure_date + relativedelta(days=30)
+                rec.grace_period_end = (
+                    rec.last_billing_failure_date + relativedelta(days=30)
+                )
             else:
                 rec.grace_period_end = False
-
-    @api.onchange('plan_id', 'start_date')
-    def _onchange_plan_end_date(self):
-        if self.plan_id and self.plan_id.duration and self.start_date:
-            self.end_date = self.start_date + relativedelta(months=self.plan_id.duration)
 
     # ── Helpers ───────────────────────────────────────────────────────────
     def _billing_partner(self):
         """Return the res.partner to invoice for this subscription."""
         self.ensure_one()
+        if not self.member_id:
+            return self.partner_id
         household = self.member_id.partner_id.parent_id
         if household and household.is_household and household.primary_guardian_id:
             return household.primary_guardian_id
-        member = self.member_id
-        if member.partner_id:
-            return member.partner_id
+        if self.member_id.partner_id:
+            return self.member_id.partner_id
         return self.env["res.partner"].browse()
 
     def _next_date_from(self, from_date):
         """Return the billing date one period after from_date."""
-        period = self.plan_id.billing_period
+        period = self.plan_id.billing_period if self.plan_id else "monthly"
         if period == "weekly":
             return from_date + relativedelta(weeks=1)
         elif period == "yearly":
@@ -135,20 +139,17 @@ class DojoMemberSubscription(models.Model):
 
     # ── Invoice generation ────────────────────────────────────────────────
     def _build_invoice_lines(self, today=None):
-        """Build invoice line command vals for one billing period and advance next_billing_date.
-
-        Returns (invoice_line_ids_vals, period_start) where invoice_line_ids_vals is
-        a list of (0, 0, {...}) tuples ready for account.move creation.
-        Side-effect: advances self.next_billing_date by one billing period.
-        """
+        """Build invoice line command vals for one billing period and advance recurring_next_date."""
         self.ensure_one()
         if today is None:
             today = fields.Date.today()
         plan = self.plan_id
-        period_label = {"weekly": "Weekly", "monthly": "Monthly", "yearly": "Annual"}.get(
-            plan.billing_period, plan.billing_period.capitalize()
-        )
-        period_start = self.next_billing_date or today
+        if not plan:
+            return [], today
+        period_label = {
+            "weekly": "Weekly", "monthly": "Monthly", "yearly": "Annual",
+        }.get(plan.billing_period, plan.billing_period.capitalize())
+        period_start = self.recurring_next_date or today
         period_end = self._next_date_from(period_start) - relativedelta(days=1)
         date_range = "{} – {}".format(
             period_start.strftime("%-d %b %Y"),
@@ -160,7 +161,9 @@ class DojoMemberSubscription(models.Model):
         )
         line_vals = []
         # Enrollment fee on the very first invoice for this subscription
-        is_first_invoice = not bool(self.invoice_ids) and not bool(self.household_invoice_ids)
+        is_first_invoice = (
+            not bool(self.invoice_ids) and not bool(self.household_invoice_ids)
+        )
         if is_first_invoice and plan.initial_fee and plan.initial_fee > 0:
             fee_vals = {
                 'name': '{} – Enrollment Fee'.format(plan.name),
@@ -171,29 +174,27 @@ class DojoMemberSubscription(models.Model):
                 fee_vals['product_id'] = product.id
             line_vals.append((0, 0, fee_vals))
         recurring_vals = {
-            'name': '{} – {} Membership ({})'.format(plan.name, period_label, date_range),
+            'name': '{} – {} Membership ({})'.format(
+                plan.name, period_label, date_range,
+            ),
             'quantity': 1.0,
             'price_unit': plan.price,
         }
         if product:
             recurring_vals['product_id'] = product.id
         line_vals.append((0, 0, recurring_vals))
-        # Advance the billing date now so multi-sub grouped loops see unique dates
-        self.next_billing_date = self._next_date_from(period_start)
+        # Advance the billing date so multi-sub grouped loops see unique dates
+        self.recurring_next_date = self._next_date_from(period_start)
         return line_vals, period_start
 
     def action_generate_invoice(self):
-        """Create and post an Odoo invoice for this subscription billing cycle.
-
-        Used for manual/admin invoice generation and for single-occupant
-        households in the daily cron.  Multi-sub household cron uses
-        _generate_household_invoice() instead.
-        """
+        """Create and post an Odoo invoice for this subscription billing cycle."""
         self.ensure_one()
         billing_partner = self._billing_partner()
         if not billing_partner:
             raise UserError(
-                _("No billing partner found for subscription of %s.", self.member_id.name)
+                _("No billing partner found for subscription of %s.",
+                  self.member_id.name if self.member_id else self.partner_id.name)
             )
         today = fields.Date.today()
         invoice_line_ids, period_start = self._build_invoice_lines(today)
@@ -209,7 +210,7 @@ class DojoMemberSubscription(models.Model):
         invoice.action_post()
         self.last_invoice_id = invoice
         plan = self.plan_id
-        if plan.auto_send_invoice and billing_partner.email:
+        if plan and plan.auto_send_invoice and billing_partner.email:
             try:
                 template = self.env.ref(
                     'account.email_template_edi_invoice',
@@ -229,14 +230,7 @@ class DojoMemberSubscription(models.Model):
         return invoice
 
     def _generate_household_invoice(self, subs, today):
-        """Create ONE consolidated invoice for all subscriptions in a household billing group.
-
-        Called by _cron_generate_invoices() when 2+ subs share the same billing
-        partner and company.  Lines from every sub are combined on a single
-        account.move and linked to each sub via dojo_invoice_sub_rel (Many2many).
-
-        Returns the posted account.move record.
-        """
+        """Create ONE consolidated invoice for all subscriptions in a household billing group."""
         if not subs:
             return None
         first_sub = subs[0]
@@ -244,7 +238,7 @@ class DojoMemberSubscription(models.Model):
         if not billing_partner:
             raise UserError(_(
                 "No billing partner found for household billing group (first sub: %s).",
-                first_sub.member_id.name,
+                first_sub.member_id.name if first_sub.member_id else first_sub.partner_id.name,
             ))
         company = first_sub.company_id or self.env.company
         all_line_vals = []
@@ -265,7 +259,7 @@ class DojoMemberSubscription(models.Model):
         invoice.action_post()
         for sub in subs:
             sub.last_invoice_id = invoice
-        auto_send = any(s.plan_id.auto_send_invoice for s in subs)
+        auto_send = any(s.plan_id.auto_send_invoice for s in subs if s.plan_id)
         if auto_send and billing_partner.email:
             try:
                 template = self.env.ref(
@@ -305,52 +299,71 @@ class DojoMemberSubscription(models.Model):
         }
 
     # ── State transition actions ──────────────────────────────────────────
+    def _get_stage_by_type(self, stage_type):
+        return self.env["sale.subscription.stage"].search(
+            [("type", "=", stage_type)], limit=1,
+        )
+
     def action_set_active(self):
-        """Manually activate the subscription."""
+        stage = self._get_stage_by_type("in_progress")
         for rec in self:
-            rec.write({'state': 'active'})
-            rec.member_id.sudo().write({'membership_state': 'active'})
+            rec.write({'stage_id': stage.id, 'paused': False})
+            if rec.member_id:
+                rec.member_id.sudo().write({'membership_state': 'active'})
 
     def action_set_pending(self):
-        """Set the subscription to pending payment."""
+        stage = self._get_stage_by_type("pre")
         for rec in self:
-            rec.write({'state': 'pending'})
+            rec.write({'stage_id': stage.id, 'paused': False})
 
     def action_set_paused(self):
-        """Pause the subscription."""
         for rec in self:
-            rec.write({'state': 'paused'})
-            rec.member_id.sudo().write({'membership_state': 'paused'})
+            rec.write({'paused': True})
+            if rec.member_id:
+                rec.member_id.sudo().write({'membership_state': 'paused'})
 
     def action_set_cancelled(self):
-        """Cancel the subscription."""
+        cancelled_reason = self.env.ref(
+            "dojo_subscriptions.close_reason_cancelled", raise_if_not_found=False,
+        )
         for rec in self:
-            rec.write({'state': 'cancelled'})
-            rec.member_id.sudo().write({'membership_state': 'cancelled'})
+            rec.close_subscription(
+                close_reason_id=cancelled_reason.id if cancelled_reason else False,
+            )
+            if rec.member_id:
+                rec.member_id.sudo().write({'membership_state': 'cancelled'})
+
+    def action_set_expired(self):
+        expired_reason = self.env.ref(
+            "dojo_subscriptions.close_reason_expired", raise_if_not_found=False,
+        )
+        for rec in self:
+            rec.close_subscription(
+                close_reason_id=expired_reason.id if expired_reason else False,
+            )
+            if rec.member_id:
+                rec.member_id.sudo().write({'membership_state': 'cancelled'})
 
     def action_set_draft(self):
-        """Reset the subscription to draft."""
+        stage = self._get_stage_by_type("draft")
         for rec in self:
-            rec.write({'state': 'draft'})
+            rec.write({
+                'stage_id': stage.id,
+                'paused': False,
+                'close_reason_id': False,
+            })
 
     # ── Daily cron ────────────────────────────────────────────────────────
     @api.model
     def _cron_generate_invoices(self):
-        """Generate consolidated household invoices for all active subscriptions due today.
-
-        Subscriptions sharing a billing partner+company are grouped and billed
-        on a single invoice.  Single-sub households fall through to
-        action_generate_invoice() for backward compatibility.
-        """
-        from collections import defaultdict
+        """Generate consolidated household invoices for all active subscriptions due today."""
         today = fields.Date.today()
         due = self.search([
             ("state", "=", "active"),
-            ("next_billing_date", "!=", False),
-            ("next_billing_date", "<=", today),
+            ("recurring_next_date", "!=", False),
+            ("recurring_next_date", "<=", today),
         ])
-        # Idempotency: drop subs already invoiced today (handles cron restart).
-        filtered = self.env['dojo.member.subscription']
+        filtered = self.env['sale.subscription']
         for sub in due:
             already_m2o = self.env['account.move'].search_count([
                 ('subscription_id', '=', sub.id),
@@ -366,20 +379,19 @@ class DojoMemberSubscription(models.Model):
             ])
             if not already_m2o and not already_m2m:
                 filtered |= sub
-        # Group by (billing_partner_id, company_id) to consolidate households.
-        groups = defaultdict(lambda: self.env['dojo.member.subscription'])
+        groups = defaultdict(lambda: self.env['sale.subscription'])
         for sub in filtered:
             partner = sub._billing_partner()
             if not partner:
                 _logger.warning(
-                    'Dojo billing: no billing partner for subscription %s — skipped.', sub.id
+                    'Dojo billing: no billing partner for subscription %s — skipped.',
+                    sub.id,
                 )
                 continue
             key = (partner.id, (sub.company_id or self.env.company).id)
             groups[key] |= sub
         for _key, group_subs in groups.items():
             if len(group_subs) == 1:
-                # Single sub — use per-subscription invoice (M2o path).
                 sub = group_subs
                 try:
                     sub.action_generate_invoice()
@@ -388,7 +400,6 @@ class DojoMemberSubscription(models.Model):
                 except Exception as exc:
                     sub._handle_billing_failure(exc)
             else:
-                # Multiple subs share a billing partner — consolidated invoice.
                 try:
                     self._generate_household_invoice(group_subs, today)
                     for sub in group_subs:
@@ -404,13 +415,7 @@ class DojoMemberSubscription(models.Model):
 
     # ── Dunning ───────────────────────────────────────────────────────────
     def _handle_billing_failure(self, exc):
-        """Escalate dunning state after a billing failure.
-
-        Thresholds (soft dunning):
-          count == 1  →  send dunning email to billing partner
-          count == 2  →  pause member  (membership_state = 'paused')
-          count >= 3  →  expire subscription, cancel membership
-        """
+        """Escalate dunning state after a billing failure."""
         self.ensure_one()
         self.billing_failure_count = (self.billing_failure_count or 0) + 1
         self.last_billing_failure_date = fields.Date.today()
@@ -443,14 +448,13 @@ class DojoMemberSubscription(models.Model):
                             self.id, exc_info=True,
                         )
         elif count == 2:
-            self.member_id.sudo().write({'membership_state': 'paused'})
+            self.action_set_paused()
             _logger.warning(
                 'Dojo dunning: subscription %s — member paused after 2 billing failures.',
                 self.id,
             )
         elif count >= 3:
-            self.state = 'expired'
-            self.member_id.sudo().write({'membership_state': 'cancelled'})
+            self.action_set_expired()
             _logger.warning(
                 'Dojo dunning: subscription %s expired after %d billing failures.',
                 self.id, count,
@@ -461,9 +465,9 @@ class DojoMemberSubscription(models.Model):
         self.ensure_one()
         reactivated = []
         if self.state == 'expired':
-            self.state = 'active'
+            self.action_set_active()
             reactivated.append('subscription')
-        if self.member_id.membership_state in ('paused', 'cancelled'):
+        if self.member_id and self.member_id.membership_state in ('paused', 'cancelled'):
             self.member_id.sudo().write({'membership_state': 'active'})
             reactivated.append('member')
         self.billing_failure_count = 0
@@ -476,16 +480,7 @@ class DojoMemberSubscription(models.Model):
 
     @api.model
     def _cron_watch_unpaid_invoices(self):
-        """Daily cron — two passes.
-
-        Pass 1 (recovery): subscriptions with billing_failure_count > 0 whose
-        last_invoice_id is now paid → reset dunning and reactivate.
-
-        Pass 2 (escalation): active/paused subscriptions with a posted, overdue,
-        unpaid last_invoice_id → apply _handle_billing_failure() once per day.
-        This catches the invoice-mode path where the invoice was created
-        successfully but the member never paid.
-        """
+        """Daily cron — two passes: recovery and escalation."""
         today = fields.Date.today()
 
         # Pass 1 — recovery
@@ -506,7 +501,6 @@ class DojoMemberSubscription(models.Model):
             ('last_invoice_id.state', '=', 'posted'),
         ])
         for sub in overdue_subs:
-            # Escalate at most once per day
             if sub.last_billing_failure_date == today:
                 continue
             sub._handle_billing_failure(
@@ -519,25 +513,56 @@ class DojoMemberSubscription(models.Model):
     def create(self, vals_list):
         today = fields.Date.today()
         for vals in vals_list:
-            if vals.get('end_date'):
-                continue
+            # Auto-set partner_id from member_id if not provided
+            if vals.get('member_id') and not vals.get('partner_id'):
+                member = self.env['dojo.member'].browse(vals['member_id'])
+                billing_partner = member.partner_id.parent_id
+                if (billing_partner and getattr(billing_partner, 'is_household', False)
+                        and billing_partner.primary_guardian_id):
+                    vals['partner_id'] = billing_partner.primary_guardian_id.id
+                elif member.partner_id:
+                    vals['partner_id'] = member.partner_id.id
+
+            # Auto-set template_id from plan_id if not provided
             plan_id = vals.get('plan_id')
-            if not plan_id:
-                continue
-            plan = self.env['dojo.subscription.plan'].browse(plan_id)
-            if plan.duration and plan.duration > 0:
-                start = fields.Date.to_date(vals.get('start_date') or today)
-                vals['end_date'] = start + relativedelta(months=plan.duration)
+            if plan_id and not vals.get('template_id'):
+                plan = self.env['dojo.subscription.plan'].browse(plan_id)
+                if plan.template_id:
+                    vals['template_id'] = plan.template_id.id
+
+            # Auto-set pricelist_id if not provided
+            if not vals.get('pricelist_id'):
+                partner_id = vals.get('partner_id')
+                if partner_id:
+                    partner = self.env['res.partner'].browse(partner_id)
+                    vals['pricelist_id'] = (
+                        partner.property_product_pricelist.id
+                        if partner.property_product_pricelist
+                        else self.env['product.pricelist'].search([], limit=1).id
+                    )
+                else:
+                    vals['pricelist_id'] = self.env['product.pricelist'].search(
+                        [], limit=1,
+                    ).id
+
+            # Auto-set stage_id to draft if not provided
+            if not vals.get('stage_id'):
+                draft_stage = self.env['sale.subscription.stage'].search(
+                    [('type', '=', 'draft')], limit=1,
+                )
+                if draft_stage:
+                    vals['stage_id'] = draft_stage.id
+
         records = super().create(vals_list)
+
+        # Create program enrollment for active dojo subscriptions
         Enrollment = self.env['dojo.program.enrollment'].sudo()
         today = fields.Date.today()
         for rec in records:
-            if not rec.program_id or rec.state not in ('active', 'draft'):
+            if not rec.member_id or not rec.program_id:
                 continue
-            # Only create for active (most subscriptions are created as active)
             if rec.state != 'active':
                 continue
-            # Avoid duplicate active enrollments for the same sub
             existing = Enrollment.search([
                 ('member_id', '=', rec.member_id.id),
                 ('program_id', '=', rec.program_id.id),
@@ -549,30 +574,29 @@ class DojoMemberSubscription(models.Model):
                     'program_id': rec.program_id.id,
                     'subscription_id': rec.id,
                     'is_active': True,
-                    'enrolled_date': rec.start_date or today,
+                    'enrolled_date': rec.date_start or today,
                     'company_id': rec.company_id.id,
                 })
         return records
 
     def write(self, vals):
-        # Snapshot state before the write so we can detect transitions
         old_states = {rec.id: rec.state for rec in self}
         result = super().write(vals)
 
-        if 'state' not in vals:
-            return result
-
-        new_state = vals['state']
+        # Enrollment sync only needed when state changes
+        new_states = {rec.id: rec.state for rec in self}
         today = fields.Date.today()
         Enrollment = self.env['dojo.program.enrollment'].sudo()
 
         for rec in self:
+            if not rec.member_id or not rec.program_id:
+                continue
             old_state = old_states.get(rec.id)
-            if old_state == new_state or not rec.program_id:
+            new_state = new_states.get(rec.id)
+            if old_state == new_state:
                 continue
 
             if new_state in ('cancelled', 'expired'):
-                # Deactivate all active enrollment records for this subscription
                 enrollments = Enrollment.search([
                     ('subscription_id', '=', rec.id),
                     ('is_active', '=', True),
@@ -583,8 +607,9 @@ class DojoMemberSubscription(models.Model):
                         'deactivated_date': today,
                     })
 
-            elif new_state == 'active' and old_state in ('expired', 'paused', 'cancelled', 'draft', 'pending'):
-                # Reactivate the enrollment(s) belonging to this subscription
+            elif new_state == 'active' and old_state in (
+                'expired', 'paused', 'cancelled', 'draft', 'pending',
+            ):
                 enrollments = Enrollment.search([
                     ('subscription_id', '=', rec.id),
                     ('is_active', '=', False),
@@ -595,8 +620,6 @@ class DojoMemberSubscription(models.Model):
                         'deactivated_date': False,
                     })
                 else:
-                    # No existing enrollment record — create a fresh one
-                    # (handles manual reactivation or subscriptions created as draft)
                     existing = Enrollment.search([
                         ('member_id', '=', rec.member_id.id),
                         ('program_id', '=', rec.program_id.id),
@@ -608,7 +631,7 @@ class DojoMemberSubscription(models.Model):
                             'program_id': rec.program_id.id,
                             'subscription_id': rec.id,
                             'is_active': True,
-                            'enrolled_date': rec.start_date or today,
+                            'enrolled_date': rec.date_start or today,
                             'company_id': rec.company_id.id,
                         })
 
@@ -617,24 +640,23 @@ class DojoMemberSubscription(models.Model):
     # ── Expiry management ─────────────────────────────────────────────────
     @api.model
     def _cron_expire_ended_subscriptions(self):
-        """Daily cron — expire active/paused subscriptions whose end_date has passed."""
+        """Daily cron — expire active/paused subscriptions whose end date has passed."""
         today = fields.Date.today()
         ended = self.search([
             ('state', 'in', ('active', 'paused')),
-            ('end_date', '!=', False),
-            ('end_date', '<', today),
+            ('date', '!=', False),
+            ('date', '<', today),
         ])
         for sub in ended:
-            sub.state = 'expired'
-            sub.member_id.sudo().write({'membership_state': 'cancelled'})
+            sub.action_set_expired()
             _logger.info(
-                'Dojo subscriptions: subscription %s expired (end_date=%s).',
-                sub.id, sub.end_date,
+                'Dojo subscriptions: subscription %s expired (date=%s).',
+                sub.id, sub.date,
             )
 
     @api.model
     def _cron_send_expiry_reminders(self):
-        """Daily cron — send email + SMS reminders at 30 and 7 days before end_date."""
+        """Daily cron — send email + SMS reminders at 30 and 7 days before end date."""
         today = fields.Date.today()
         thresholds = [
             today + relativedelta(days=30),
@@ -651,7 +673,7 @@ class DojoMemberSubscription(models.Model):
         for threshold in thresholds:
             due = self.search([
                 ('state', '=', 'active'),
-                ('end_date', '=', threshold),
+                ('date', '=', threshold),
             ])
             for sub in due:
                 billing_partner = sub._billing_partner()
@@ -668,17 +690,19 @@ class DojoMemberSubscription(models.Model):
                                 'partner_ids': [(4, billing_partner.id)],
                             },
                         )
-                    mobile = getattr(billing_partner, 'mobile', None) or billing_partner.phone
+                    mobile = (
+                        getattr(billing_partner, 'mobile', None) or billing_partner.phone
+                    )
                     if sms_template and mobile:
                         body = sms_template._render_field(
-                            'body_html', [sub.id], compute_lang=True
+                            'body_html', [sub.id], compute_lang=True,
                         )[sub.id]
                         body_plain = (
                             html2plaintext(body)
                             if body
                             else (
                                 f"Reminder: your {sub.plan_id.name} membership expires on "
-                                f"{sub.end_date}. Contact us to renew."
+                                f"{sub.date}. Contact us to renew."
                             )
                         )
                         self.env['sms.sms'].create({

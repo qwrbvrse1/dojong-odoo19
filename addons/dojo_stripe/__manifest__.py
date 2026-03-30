@@ -10,7 +10,7 @@ Provides two distinct Stripe object types:
   hr.employee     →  stripe.issuing.Cardholder (individual)
                   →  stripe.issuing.Card (virtual)
 
-The dojo.member.subscription action_generate_invoice() override charges the
+The sale.subscription action_generate_invoice() override charges the
 household's saved payment method immediately after posting the Odoo invoice.
 Falls back to invoice-by-email if no Stripe customer / PM is configured.
 

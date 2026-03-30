@@ -110,7 +110,7 @@ class DojoMemberPortal(CustomerPortal):
         member_ids = self._get_household_member_ids()
         if not member_ids:
             return []
-        subscriptions = request.env['dojo.member.subscription'].sudo().search([
+        subscriptions = request.env['sale.subscription'].sudo().search([
             ('member_id', 'in', member_ids),
         ])
         # Collect individual (M2o) invoices AND consolidated household (M2m) invoices.
@@ -707,7 +707,7 @@ class DojoMemberPortal(CustomerPortal):
         # for this session's program/template, otherwise block with a friendly error.
         if session.template_id.course_member_ids:
             if enroll_target.id not in session.template_id.course_member_ids.ids:
-                sub = env['dojo.member.subscription']._find_subscription_for_session(
+                sub = env['sale.subscription']._find_subscription_for_session(
                     enroll_target, session
                 )
                 if sub:
@@ -1151,15 +1151,15 @@ class DojoMemberPortal(CustomerPortal):
         env = request.env
 
         # All non-cancelled subscriptions for the household
-        subs = env['dojo.member.subscription'].sudo().search([
+        subs = env['sale.subscription'].sudo().search([
             ('member_id', 'in', member_ids),
             ('state', '!=', 'cancelled'),
-        ], order='start_date desc')
+        ], order='date_start desc')
         # If none, also look for recently cancelled ones
         if not subs:
-            subs = env['dojo.member.subscription'].sudo().search([
+            subs = env['sale.subscription'].sudo().search([
                 ('member_id', 'in', member_ids),
-            ], order='start_date desc')
+            ], order='date_start desc')
 
         subs_data = []
         all_invoices = env['account.move'].browse()
@@ -1175,8 +1175,8 @@ class DojoMemberPortal(CustomerPortal):
                 'currency': plan.currency_id.name if plan.currency_id else 'USD',
                 'period': plan.billing_period or 'monthly',
                 'state': sub.state,
-                'start_date': fields.Date.to_string(sub.start_date) if sub.start_date else None,
-                'next_billing_date': fields.Date.to_string(sub.next_billing_date) if sub.next_billing_date else None,
+                'start_date': fields.Date.to_string(sub.date_start) if sub.date_start else None,
+                'next_billing_date': fields.Date.to_string(sub.recurring_next_date) if sub.recurring_next_date else None,
                 'billing_failure_count': sub.billing_failure_count or 0,
                 'grace_period_end': fields.Date.to_string(sub.grace_period_end) if sub.grace_period_end else None,
                 'credits_per_period': getattr(plan, 'credits_per_period', 0),
@@ -1262,14 +1262,14 @@ class DojoMemberPortal(CustomerPortal):
                 sub_id = int(sub_id)
             except (TypeError, ValueError):
                 return None
-            sub = request.env['dojo.member.subscription'].sudo().browse(sub_id)
+            sub = request.env['sale.subscription'].sudo().browse(sub_id)
             if sub.exists() and sub.member_id.id in member_ids:
                 return sub
             return None
-        sub = request.env['dojo.member.subscription'].sudo().search([
+        sub = request.env['sale.subscription'].sudo().search([
             ('member_id', 'in', member_ids),
             ('state', 'in', ('active', 'paused')),
-        ], order='start_date desc', limit=1)
+        ], order='date_start desc', limit=1)
         return sub or None
 
     @http.route('/my/dojo/billing/change-plan', type='http', auth='user', methods=['POST'])
@@ -1303,7 +1303,7 @@ class DojoMemberPortal(CustomerPortal):
                 json.dumps({'ok': False, 'error': 'No active subscription to pause.'}),
                 headers=[('Content-Type', 'application/json')],
             )
-        sub.sudo().write({'state': 'paused'})
+        sub.sudo().action_set_paused()
         return request.make_response(
             json.dumps({'ok': True}),
             headers=[('Content-Type', 'application/json')],
@@ -1317,7 +1317,7 @@ class DojoMemberPortal(CustomerPortal):
                 json.dumps({'ok': False, 'error': 'Subscription is not paused.'}),
                 headers=[('Content-Type', 'application/json')],
             )
-        sub.sudo().write({'state': 'active'})
+        sub.sudo().action_set_active()
         return request.make_response(
             json.dumps({'ok': True}),
             headers=[('Content-Type', 'application/json')],
@@ -1331,7 +1331,7 @@ class DojoMemberPortal(CustomerPortal):
                 json.dumps({'ok': False, 'error': 'No active subscription found.'}),
                 headers=[('Content-Type', 'application/json')],
             )
-        sub.sudo().write({'state': 'cancelled', 'end_date': fields.Date.today()})
+        sub.sudo().action_set_cancelled()
         return request.make_response(
             json.dumps({'ok': True}),
             headers=[('Content-Type', 'application/json')],

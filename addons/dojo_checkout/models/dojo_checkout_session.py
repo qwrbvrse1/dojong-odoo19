@@ -93,7 +93,7 @@ class DojoCheckoutSession(models.Model):
     # ── Results ───────────────────────────────────────────────────────────
     resulting_member_id = fields.Many2one("dojo.member", readonly=True, string="Parent / Primary Member")
     resulting_child_member_id = fields.Many2one("dojo.member", readonly=True, string="Child Member")
-    resulting_subscription_id = fields.Many2one("dojo.member.subscription", readonly=True)
+    resulting_subscription_id = fields.Many2one("sale.subscription", readonly=True)
 
     # ── Computed ──────────────────────────────────────────────────────────
     @api.depends("plan_id", "selected_upsell_ids")
@@ -166,15 +166,16 @@ class DojoCheckoutSession(models.Model):
             })
 
         def _create_subscription(member_id):
-            return env["dojo.member.subscription"].sudo().with_context(
+            sub = env["sale.subscription"].sudo().with_context(
                 skip_subscription_check=True
             ).create({
                 "member_id": member_id,
                 "plan_id": plan.id,
-                "start_date": today,
-                "next_billing_date": next_billing,
-                "state": "active",
+                "date_start": today,
+                "recurring_next_date": next_billing,
             })
+            sub.action_set_active()
+            return sub
 
         def _auto_enroll(member):
             if not self.preferred_days or not plan.program_id:

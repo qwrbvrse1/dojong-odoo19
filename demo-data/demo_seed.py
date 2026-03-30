@@ -38,7 +38,7 @@ existing_partners = existing_users.mapped("partner_id")
 env["dojo.class.enrollment"].search([]).unlink()
 env["dojo.class.session"].search([]).unlink()
 # Clean up subscription invoices before deleting subscriptions
-_all_subs = env["dojo.member.subscription"].search([])
+_all_subs = env["sale.subscription"].search([])
 if _all_subs:
     _sub_invs = env["account.move"].sudo().search([
         "|",
@@ -60,7 +60,7 @@ if existing_partners:
             _pmt_moves.mapped("line_ids").remove_move_reconcile()
             _pmt_moves.filtered(lambda m: m.state == "posted").button_cancel()
             _pmt_moves.unlink()  # cascades to account.payment
-env["dojo.member.subscription"].search([]).unlink()
+env["sale.subscription"].search([]).unlink()
 env["dojo.subscription.plan"].search([]).unlink()
 env["dojo.class.template"].search([]).unlink()
 env["dojo.program"].search([]).unlink()
@@ -325,13 +325,12 @@ sub_start = date(2026, 1, 12)   # subscriptions started Jan 12
 sub_next  = date(2026, 1, 12)   # will be advanced by invoice generation
 
 def make_sub(member, plan, note):
-    sub = env["dojo.member.subscription"].create({
+    sub = env["sale.subscription"].create({
         "member_id": member.id, "plan_id": plan.id,
-        "start_date": sub_start, "next_billing_date": sub_next,
-        "state": "draft", "company_id": env.company.id, "note": note,
+        "date_start": sub_start, "recurring_next_date": sub_next,
+        "company_id": env.company.id, "note": note,
     })
-    # write() to 'active' triggers _issue_period_credits() for credit-based plans
-    sub.write({"state": "active"})
+    sub.action_set_active()
     print(f"  {member.name} \u2192 {plan.name}")
     return sub
 

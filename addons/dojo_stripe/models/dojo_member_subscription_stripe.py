@@ -1,7 +1,7 @@
 """
 dojo_member_subscription_stripe.py
 ────────────────────────────────────
-Extends dojo.member.subscription to charge via Stripe immediately after
+Extends sale.subscription to charge via Stripe immediately after
 posting the Odoo invoice, when the household has a saved native payment.token.
 
 Architecture (native payment_stripe):
@@ -26,7 +26,7 @@ _logger = logging.getLogger(__name__)
 
 
 class DojoMemberSubscriptionStripe(models.Model):
-    _inherit = "dojo.member.subscription"
+    _inherit = "sale.subscription"
 
     def action_generate_invoice(self):
         """Generate invoice then immediately charge via saved payment.token.

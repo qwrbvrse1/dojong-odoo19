@@ -9,8 +9,8 @@ Unknown event types are logged and gracefully ignored (returns a 200 so
 NestJS doesn't retry indefinitely on genuinely unhandled events).
 
 Supported events:
-  subscription.created       → create/activate dojo.member.subscription
-  subscription.cancelled     → cancel dojo.member.subscription
+  subscription.created       → create/activate sale.subscription
+  subscription.cancelled     → cancel sale.subscription
   member.firebase_uid_linked → link firebase_uid to existing dojo.member
   payment.succeeded          → log payment reference on member subscription
 """
@@ -84,12 +84,12 @@ class BridgeWebhookHandler(models.AbstractModel):
             "member_id": member.id,
             "plan_id": plan.id,
             "company_id": company_id,
-            "state": "active",
         }
         if start_date:
-            vals["start_date"] = start_date
+            vals["date_start"] = start_date
 
-        sub = self.env["dojo.member.subscription"].create(vals)
+        sub = self.env["sale.subscription"].create(vals)
+        sub.action_set_active()
         _logger.info(
             "Bridge webhook: created subscription_id=%s for member_id=%s",
             sub.id,
@@ -103,17 +103,17 @@ class BridgeWebhookHandler(models.AbstractModel):
     ) -> dict:
         """
         Expected payload keys:
-          subscription_id  – dojo.member.subscription id   (preferred)
+          subscription_id  – sale.subscription id   (preferred)
           firebase_uid     – fallback if subscription_id not given
         """
         sub_id = payload.get("subscription_id")
         if sub_id:
-            sub = self.env["dojo.member.subscription"].search(
+            sub = self.env["sale.subscription"].search(
                 [("id", "=", sub_id), ("company_id", "=", company_id)], limit=1
             )
         else:
             member = self._resolve_member_from_payload(payload, company_id)
-            sub = self.env["dojo.member.subscription"].search(
+            sub = self.env["sale.subscription"].search(
                 [
                     ("member_id", "=", member.id),
                     ("company_id", "=", company_id),
@@ -126,7 +126,7 @@ class BridgeWebhookHandler(models.AbstractModel):
         if not sub:
             raise UserError("No matching active subscription found to cancel.")
 
-        sub.write({"state": "cancelled"})
+        sub.action_set_cancelled()
         _logger.info("Bridge webhook: cancelled subscription_id=%s", sub.id)
         return {"subscription_id": sub.id, "state": "cancelled"}
 
@@ -205,7 +205,7 @@ class BridgeWebhookHandler(models.AbstractModel):
         Log a successful payment against a member subscription.
 
         Expected payload keys:
-          subscription_id      – dojo.member.subscription id
+          subscription_id      – sale.subscription id
           amount               – float (the amount charged)
           currency             – 3-letter code, e.g. "USD"
           external_payment_id  – Control Plane / Stripe payment reference
@@ -215,7 +215,7 @@ class BridgeWebhookHandler(models.AbstractModel):
         if not sub_id:
             raise UserError("payment.succeeded requires 'subscription_id'")
 
-        sub = self.env["dojo.member.subscription"].search(
+        sub = self.env["sale.subscription"].search(
             [("id", "=", sub_id), ("company_id", "=", company_id)], limit=1
         )
         if not sub:

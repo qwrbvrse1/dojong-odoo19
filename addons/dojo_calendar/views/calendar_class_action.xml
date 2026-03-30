@@ -126,7 +126,7 @@
     <menuitem
         id="menu_dojo_class_calendar"
         name="Class Calendar"
-        parent="dojo_core.menu_dojo_classes_root"
+        parent="dojo_core.menu_dojo_core_classes"
         action="action_dojo_class_calendar"
         sequence="5"
     />

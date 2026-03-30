@@ -1,15 +1,16 @@
 {
     "name": "Dojang Subscriptions",
     "summary": "Membership plans and subscriptions",
-    "version": "saas~19.2.4.3.0",
+    "version": "saas~19.2.5.0.0",
     "category": "Dojo",
     "license": "LGPL-3",
     "author": "Dojang",
-    "depends": ["dojo_core", "account"],
+    "depends": ["dojo_core", "account", "subscription_oca"],
     "data": [
         "security/ir.model.access.csv",
         "security/dojo_subscriptions_security.xml",
         "data/membership_product.xml",
+        "data/close_reasons.xml",
         "data/mail_template_dunning.xml",
         "data/mail_template_expiry_reminder.xml",
         "data/mail_template_expiry_reminder_sms.xml",

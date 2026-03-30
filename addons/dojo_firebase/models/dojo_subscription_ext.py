@@ -8,7 +8,7 @@ _logger = logging.getLogger(__name__)
 
 class DojoMemberSubscription(models.Model):
     """Send FCM push notification after billing Failure #1 (dunning escalation)."""
-    _inherit = 'dojo.member.subscription'
+    _inherit = 'sale.subscription'
 
     def _handle_billing_failure(self, exc):
         super()._handle_billing_failure(exc)

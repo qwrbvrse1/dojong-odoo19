@@ -11,7 +11,7 @@ class DojoCreditAdjustmentWizard(models.TransientModel):
     _description = "Manual Credit Adjustment"
 
     subscription_id = fields.Many2one(
-        "dojo.member.subscription",
+        "sale.subscription",
         string="Subscription",
         required=True,
     )

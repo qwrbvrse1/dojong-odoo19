@@ -59,7 +59,7 @@ class DojoClassEnrollmentCreditExtend(models.Model):
         if not member or not session:
             return
 
-        Sub = self.env["dojo.member.subscription"]
+        Sub = self.env["sale.subscription"]
         sub = Sub._find_subscription_for_session(member, session)
         if not sub:
             # No matching subscription found — possibly a drop-in or admin booking
