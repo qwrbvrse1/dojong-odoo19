@@ -181,6 +181,21 @@ def migrate(cr, version):
     row = cr.fetchone()
     default_pricelist_id = row[0] if row else None
 
+    if not default_pricelist_id:
+        # Create a default pricelist so sale_subscription NOT NULL constraint is satisfied
+        cr.execute("""
+            SELECT id FROM res_currency WHERE name = 'USD' LIMIT 1
+        """)
+        cur_row = cr.fetchone()
+        currency_id = cur_row[0] if cur_row else 1
+        cr.execute("""
+            INSERT INTO product_pricelist (name, currency_id, active, create_uid, write_uid, create_date, write_date)
+            VALUES ('{"en_US": "Default Pricelist"}'::jsonb, %s, true, 1, 1, NOW(), NOW())
+            RETURNING id
+        """, [currency_id])
+        default_pricelist_id = cr.fetchone()[0]
+        _logger.info("Created default product_pricelist id=%d for migration.", default_pricelist_id)
+
     # ──────────────────────────────────────────────────────────────────────
     # 5.  Copy rows: dojo_member_subscription → sale_subscription
     # ──────────────────────────────────────────────────────────────────────
@@ -334,6 +349,19 @@ def migrate(cr, version):
         """, [table, column])
         if not cr.fetchone()[0]:
             continue
+        # Drop existing FK constraints on this column first
+        cr.execute("""
+            SELECT con.conname
+            FROM pg_constraint con
+            JOIN pg_attribute att ON att.attnum = ANY(con.conkey)
+                                 AND att.attrelid = con.conrelid
+            WHERE con.conrelid = %s::regclass
+              AND con.contype = 'f'
+              AND att.attname = %s
+        """, [table, column])
+        for (cname,) in cr.fetchall():
+            cr.execute("ALTER TABLE %s DROP CONSTRAINT %s" % (table, cname))
+            _logger.info("Dropped FK constraint %s on %s.%s", cname, table, column)
         cr.execute("""
             UPDATE {table} t
                SET {column} = m.new_id
@@ -448,12 +476,14 @@ def migrate(cr, version):
         if not cr.fetchone()[0]:
             continue
         cr.execute("""
-            SELECT constraint_name
+            SELECT tc.constraint_name
             FROM information_schema.table_constraints tc
             JOIN information_schema.key_column_usage kcu
               ON tc.constraint_name = kcu.constraint_name
+              AND tc.table_schema = kcu.table_schema
             JOIN information_schema.constraint_column_usage ccu
               ON ccu.constraint_name = tc.constraint_name
+              AND ccu.table_schema = tc.table_schema
             WHERE tc.table_name = %s
               AND kcu.column_name = %s
               AND tc.constraint_type = 'FOREIGN KEY'

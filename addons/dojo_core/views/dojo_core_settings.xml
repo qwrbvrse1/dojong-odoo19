@@ -130,14 +130,12 @@
                                         <li>AI voice assistant (bottom-right) processes a command</li>
                                     </ul>
 
-                                    <span class="o_setting_name mt16 d-block">Marketing Cards &amp; Campaigns</span>
+                                    <span class="o_setting_name mt16 d-block">Promotion Cards</span>
                                     <ul class="text-muted mt4">
                                         <li>Book Trial card QR → /dojo/book-trial resolves</li>
                                         <li>Donate / Merch / Tournament cards → custom URL QR works</li>
                                         <li>Member Badge QR → kiosk check-in works</li>
                                         <li>Cards show on kiosk and/or portal as configured</li>
-                                        <li>Campaign created → sends email/SMS to correct audience filter</li>
-                                        <li>Recurring campaign advances next send date after dispatch</li>
                                     </ul>
 
                                 </div>

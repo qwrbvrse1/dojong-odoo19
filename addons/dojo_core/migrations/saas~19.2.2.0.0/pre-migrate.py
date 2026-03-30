@@ -38,19 +38,33 @@ def migrate(cr, version):
     #   program, class session …) that have been flattened into
     #   dojo_core's own view definitions.  Keeping them would
     #   cause xpath-mismatch errors during upgrade.
-    cr.execute("""
-        SELECT d.id   AS imd_id,
-               d.name AS xml_id,
-               d.module,
-               d.res_id,
-               v.name AS view_name
-          FROM ir_model_data d
-          JOIN ir_ui_view    v ON v.id = d.res_id
-         WHERE d.module IN %s
-           AND d.model  = 'ir.ui.view'
-           AND v.inherit_id IS NOT NULL
-           AND d.name NOT IN %s
-    """, [OLD_MODULES, KEEP_IN_BELT])
+    if KEEP_IN_BELT:
+        cr.execute("""
+            SELECT d.id   AS imd_id,
+                   d.name AS xml_id,
+                   d.module,
+                   d.res_id,
+                   v.name AS view_name
+              FROM ir_model_data d
+              JOIN ir_ui_view    v ON v.id = d.res_id
+             WHERE d.module IN %s
+               AND d.model  = 'ir.ui.view'
+               AND v.inherit_id IS NOT NULL
+               AND d.name NOT IN %s
+        """, [OLD_MODULES, KEEP_IN_BELT])
+    else:
+        cr.execute("""
+            SELECT d.id   AS imd_id,
+                   d.name AS xml_id,
+                   d.module,
+                   d.res_id,
+                   v.name AS view_name
+              FROM ir_model_data d
+              JOIN ir_ui_view    v ON v.id = d.res_id
+             WHERE d.module IN %s
+               AND d.model  = 'ir.ui.view'
+               AND v.inherit_id IS NOT NULL
+        """, [OLD_MODULES])
 
     inherited = cr.fetchall()
     if inherited:
@@ -79,13 +93,21 @@ def migrate(cr, version):
 
         # 2b.  Move everything else (models, fields, groups, rules,
         #      base views, actions, sequences, crons, ACL rows …).
-        cr.execute("""
-            UPDATE ir_model_data
-               SET module = 'dojo_core'
-             WHERE module = %s
-               AND name NOT LIKE 'module\_%%'
-               AND name NOT IN %s
-        """, [mod, KEEP_IN_BELT])
+        if KEEP_IN_BELT:
+            cr.execute("""
+                UPDATE ir_model_data
+                   SET module = 'dojo_core'
+                 WHERE module = %s
+                   AND name NOT LIKE 'module\_%%'
+                   AND name NOT IN %s
+            """, [mod, KEEP_IN_BELT])
+        else:
+            cr.execute("""
+                UPDATE ir_model_data
+                   SET module = 'dojo_core'
+                 WHERE module = %s
+                   AND name NOT LIKE 'module\_%%'
+            """, [mod])
         moved = cr.rowcount
 
         _logger.info(

@@ -20,8 +20,8 @@
     <menuitem
         id="menu_dojo_subscriptions_root"
         name="Subscriptions"
-        sequence="40"
-        web_icon="dojo_subscriptions,static/description/icon.png"
+        parent="dojo_core.menu_dojo_core_root"
+        sequence="55"
     />
     <menuitem
         id="menu_dojo_member_subscriptions"

@@ -1,5 +1,5 @@
 {
-    "name": "Dojang Subscriptions",
+    "name": "Dojo Subscription",
     "summary": "Membership plans and subscriptions",
     "version": "saas~19.2.5.0.0",
     "category": "Dojo",
@@ -19,7 +19,7 @@
         "views/dojo_program_enrollment_views.xml",
     ],
     "post_init_hook": "populate_program_enrollments",
-    "application": True,
+    "application": False,
     "auto_install": True,
     "installable": True,
 }
