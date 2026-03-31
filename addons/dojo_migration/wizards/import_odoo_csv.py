@@ -112,8 +112,8 @@ MODEL_FIELD_REMAP = {
 
 # CSV columns to drop before import (readonly/computed fields)
 MODEL_SKIP_COLUMNS = {
-    # 'program_id' and 'household_id' on sale.subscription are readonly related fields
-    "sale.subscription": {"program_id", "household_id"},
+    # 'program_ids' and 'household_id' on sale.subscription are readonly related fields
+    "sale.subscription": {"program_ids", "household_id"},
     # 'current_rank_id' and 'current_stripe_count' on dojo.member are stored
     # computed fields that recompute automatically after belt rank history is
     # imported in step 06

@@ -17,26 +17,28 @@ def populate_program_enrollments(env):
 
     active_subs = env["sale.subscription"].sudo().search([
         ("state", "=", "active"),
-        ("program_id", "!=", False),
+        ("plan_id", "!=", False),
     ])
 
     created = 0
     for sub in active_subs:
-        existing = env["dojo.program.enrollment"].sudo().search([
-            ("member_id", "=", sub.member_id.id),
-            ("program_id", "=", sub.program_id.id),
-            ("subscription_id", "=", sub.id),
-        ], limit=1)
-        if not existing:
-            env["dojo.program.enrollment"].sudo().create({
-                "member_id": sub.member_id.id,
-                "program_id": sub.program_id.id,
-                "subscription_id": sub.id,
-                "is_active": True,
-                "enrolled_date": sub.date_start or fields.Date.today(),
-                "company_id": sub.company_id.id,
-            })
-            created += 1
+        programs = sub.plan_id.program_ids if sub.plan_id else env["dojo.program"].browse()
+        for prog in programs:
+            existing = env["dojo.program.enrollment"].sudo().search([
+                ("member_id", "=", sub.member_id.id),
+                ("program_id", "=", prog.id),
+                ("subscription_id", "=", sub.id),
+            ], limit=1)
+            if not existing:
+                env["dojo.program.enrollment"].sudo().create({
+                    "member_id": sub.member_id.id,
+                    "program_id": prog.id,
+                    "subscription_id": sub.id,
+                    "is_active": True,
+                    "enrolled_date": sub.date_start or fields.Date.today(),
+                    "company_id": sub.company_id.id,
+                })
+                created += 1
 
     _logger.info(
         "dojo_subscriptions: created %d program enrollment record(s).", created

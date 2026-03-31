@@ -358,7 +358,7 @@ _CRUD_HANDLER_CONFIG = {
         "fields": {
             "name": {"required": True, "type": "char"},
             "plan_type": {"required": True, "type": "selection"},
-            "program_id": {"required": False, "type": "many2one", "resolver": "_resolve_program"},
+            "program_ids": {"required": False, "type": "many2many", "resolver": "_resolve_program"},
             "price": {"required": True, "type": "float"},
             "billing_period": {"required": True, "type": "selection"},
             "description": {"required": False, "type": "text"},
@@ -2069,6 +2069,15 @@ class AiAssistantService(models.AbstractModel):
                         values[field_name] = resolved_id
                     else:
                         values[field_name] = value
+                elif field_cfg.get("type") == "many2many" and field_cfg.get("resolver"):
+                    # Resolve a single name/ID to an ORM link command [(4, id)]
+                    resolver = getattr(self, field_cfg["resolver"], None)
+                    if resolver:
+                        resolved_id = resolver(value, Model)
+                        if resolved_id:
+                            values[field_name] = [(4, resolved_id)]
+                    else:
+                        values[field_name] = value
                 else:
                     values[field_name] = value
             elif "default" in field_cfg:
@@ -2121,6 +2130,15 @@ class AiAssistantService(models.AbstractModel):
                     if resolver:
                         resolved_id = resolver(value, Model)
                         values[field_name] = resolved_id
+                    else:
+                        values[field_name] = value
+                elif field_cfg.get("type") == "many2many" and field_cfg.get("resolver"):
+                    # Resolve a single name/ID to an ORM link command [(4, id)]
+                    resolver = getattr(self, field_cfg["resolver"], None)
+                    if resolver:
+                        resolved_id = resolver(value, Model)
+                        if resolved_id:
+                            values[field_name] = [(4, resolved_id)]
                     else:
                         values[field_name] = value
                 else:

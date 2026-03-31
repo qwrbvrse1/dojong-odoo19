@@ -130,6 +130,12 @@
                                 <span class="dojo-stat-chip__val" t-out="upcoming_count"/>
                                 <span class="dojo-stat-chip__lbl">Upcoming</span>
                             </span>
+                            <t t-if="member_points is not None">
+                                <span class="dojo-stat-chip" t-att-title="member_points_tier">
+                                    <span class="dojo-stat-chip__val">🏆 <t t-out="member_points"/></span>
+                                    <span class="dojo-stat-chip__lbl">Points</span>
+                                </span>
+                            </t>
                             <t t-if="is_credit_plan">
                                 <span class="dojo-stat-chip">
                                     <span class="dojo-stat-chip__val" t-out="credit_balance"/>

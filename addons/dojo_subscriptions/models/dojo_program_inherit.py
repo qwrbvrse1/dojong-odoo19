@@ -7,8 +7,12 @@ class DojoProgramSubscriptionExt(models.Model):
 
     _inherit = "dojo.program"
 
-    plan_ids = fields.One2many(
-        "dojo.subscription.plan", "program_id", string="Subscription Plans"
+    plan_ids = fields.Many2many(
+        "dojo.subscription.plan",
+        "dojo_sub_plan_program_rel",
+        "program_id",
+        "plan_id",
+        string="Subscription Plans",
     )
     plan_count = fields.Integer(compute="_compute_plan_count", store=True)
 
@@ -24,9 +28,9 @@ class DojoProgramSubscriptionExt(models.Model):
             "name": "Subscription Plans",
             "res_model": "dojo.subscription.plan",
             "view_mode": "list,form",
-            "domain": [("program_id", "=", self.id)],
+            "domain": [("program_ids", "in", [self.id])],
             "context": {
-                "default_program_id": self.id,
+                "default_program_ids": [(4, self.id)],
                 "default_plan_type": "program",
             },
         }

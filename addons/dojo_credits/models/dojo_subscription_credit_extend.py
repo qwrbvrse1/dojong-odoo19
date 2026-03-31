@@ -96,7 +96,7 @@ class DojoMemberSubscriptionCreditExtend(models.Model):
         for sub in active_subs:
             plan = sub.plan_id
             # Program-based match
-            if program and plan.plan_type == "program" and plan.program_id == program:
+            if program and plan.plan_type == "program" and program in plan.program_ids:
                 return sub
             # Template-based match
             if template and plan.plan_type == "course" and template in plan.allowed_template_ids:

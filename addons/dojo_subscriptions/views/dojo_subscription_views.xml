@@ -52,7 +52,7 @@
                 <field name="name"/>
                 <field name="code"/>
                 <field name="plan_type"/>
-                <field name="program_id"/>
+                <field name="program_ids" widget="many2many_tags"/>
                 <field name="price"/>
                 <field name="initial_fee"/>
                 <field name="billing_period"/>
@@ -72,9 +72,10 @@
                         <field name="name"/>
                         <field name="code"/>
                         <field name="plan_type" widget="radio"/>
-                        <field name="program_id"
+                        <field name="program_ids"
+                               widget="many2many_tags"
                                invisible="plan_type != 'program'"
-                               required="plan_type == 'program'"/>
+                               required="plan_type == 'program' and not program_ids"/>
                         <field name="price"/>
                         <field name="initial_fee"/>
                         <field name="currency_id"/>
@@ -124,7 +125,7 @@
                 <field name="member_id" optional="show"/>
                 <field name="plan_id" optional="show"/>
                 <field name="plan_type" optional="hide"/>
-                <field name="program_id" optional="hide"/>
+                <field name="program_ids" widget="many2many_tags" optional="hide"/>
                 <field name="state" optional="show"/>
             </xpath>
             <xpath expr="//field[@name='stage_id']" position="after">
@@ -194,7 +195,7 @@
                 <field name="member_id"/>
                 <field name="plan_id"/>
                 <field name="plan_type" readonly="1"/>
-                <field name="program_id" readonly="1"/>
+                <field name="program_ids" widget="many2many_tags" readonly="1"/>
                 <field name="state" readonly="1"/>
                 <field name="paused"/>
                 <field name="last_invoice_id" groups="account.group_account_invoice"/>

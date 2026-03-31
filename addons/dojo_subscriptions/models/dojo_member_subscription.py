@@ -27,9 +27,11 @@ class SaleSubscription(models.Model):
     plan_type = fields.Selection(
         related="plan_id.plan_type", store=True, readonly=True, string="Plan Type",
     )
-    program_id = fields.Many2one(
-        "dojo.program", related="plan_id.program_id",
-        store=True, readonly=True, string="Program",
+    program_ids = fields.Many2many(
+        "dojo.program",
+        related="plan_id.program_ids",
+        readonly=True,
+        string="Programs",
     )
     paused = fields.Boolean(default=False, string="Paused")
     last_invoice_id = fields.Many2one("account.move", string="Last Invoice")
@@ -573,24 +575,25 @@ class SaleSubscription(models.Model):
         Enrollment = self.env['dojo.program.enrollment'].sudo()
         today = fields.Date.today()
         for rec in records:
-            if not rec.member_id or not rec.program_id:
+            if not rec.member_id or not rec.plan_id.program_ids:
                 continue
             if rec.state != 'active':
                 continue
-            existing = Enrollment.search([
-                ('member_id', '=', rec.member_id.id),
-                ('program_id', '=', rec.program_id.id),
-                ('subscription_id', '=', rec.id),
-            ], limit=1)
-            if not existing:
-                Enrollment.create({
-                    'member_id': rec.member_id.id,
-                    'program_id': rec.program_id.id,
-                    'subscription_id': rec.id,
-                    'is_active': True,
-                    'enrolled_date': rec.date_start or today,
-                    'company_id': rec.company_id.id,
-                })
+            for prog in rec.plan_id.program_ids:
+                existing = Enrollment.search([
+                    ('member_id', '=', rec.member_id.id),
+                    ('program_id', '=', prog.id),
+                    ('subscription_id', '=', rec.id),
+                ], limit=1)
+                if not existing:
+                    Enrollment.create({
+                        'member_id': rec.member_id.id,
+                        'program_id': prog.id,
+                        'subscription_id': rec.id,
+                        'is_active': True,
+                        'enrolled_date': rec.date_start or today,
+                        'company_id': rec.company_id.id,
+                    })
         return records
 
     def write(self, vals):
@@ -603,7 +606,7 @@ class SaleSubscription(models.Model):
         Enrollment = self.env['dojo.program.enrollment'].sudo()
 
         for rec in self:
-            if not rec.member_id or not rec.program_id:
+            if not rec.member_id:
                 continue
             old_state = old_states.get(rec.id)
             new_state = new_states.get(rec.id)
@@ -634,20 +637,21 @@ class SaleSubscription(models.Model):
                         'deactivated_date': False,
                     })
                 else:
-                    existing = Enrollment.search([
-                        ('member_id', '=', rec.member_id.id),
-                        ('program_id', '=', rec.program_id.id),
-                        ('subscription_id', '=', rec.id),
-                    ], limit=1)
-                    if not existing:
-                        Enrollment.create({
-                            'member_id': rec.member_id.id,
-                            'program_id': rec.program_id.id,
-                            'subscription_id': rec.id,
-                            'is_active': True,
-                            'enrolled_date': rec.date_start or today,
-                            'company_id': rec.company_id.id,
-                        })
+                    for prog in rec.plan_id.program_ids:
+                        existing = Enrollment.search([
+                            ('member_id', '=', rec.member_id.id),
+                            ('program_id', '=', prog.id),
+                            ('subscription_id', '=', rec.id),
+                        ], limit=1)
+                        if not existing:
+                            Enrollment.create({
+                                'member_id': rec.member_id.id,
+                                'program_id': prog.id,
+                                'subscription_id': rec.id,
+                                'is_active': True,
+                                'enrolled_date': rec.date_start or today,
+                                'company_id': rec.company_id.id,
+                            })
 
         return result
 

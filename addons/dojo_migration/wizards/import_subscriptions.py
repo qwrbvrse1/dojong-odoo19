@@ -185,7 +185,7 @@ class DojoMigrationImportSubscriptions(models.TransientModel):
                         "duration": duration,
                     }
                     if program:
-                        plan_vals["program_id"] = program.id
+                        plan_vals["program_ids"] = [(4, program.id)]
                     plan = Plan.create(plan_vals)
 
                 # Dedup check
@@ -243,21 +243,22 @@ class DojoMigrationImportSubscriptions(models.TransientModel):
                     getattr(subscription, action)()
 
                 # Create program enrollment for active subscriptions
-                if sub_state == "active" and plan.program_id:
-                    existing_enroll = Enrollment.search([
-                        ("member_id", "=", member.id),
-                        ("program_id", "=", plan.program_id.id),
-                        ("is_active", "=", True),
-                    ], limit=1)
-                    if not existing_enroll:
-                        Enrollment.create({
-                            "member_id": member.id,
-                            "program_id": plan.program_id.id,
-                            "subscription_id": subscription.id,
-                            "is_active": True,
-                            "enrolled_date": start_date,
-                            "company_id": company.id,
-                        })
+                if sub_state == "active" and plan.program_ids:
+                    for prog in plan.program_ids:
+                        existing_enroll = Enrollment.search([
+                            ("member_id", "=", member.id),
+                            ("program_id", "=", prog.id),
+                            ("is_active", "=", True),
+                        ], limit=1)
+                        if not existing_enroll:
+                            Enrollment.create({
+                                "member_id": member.id,
+                                "program_id": prog.id,
+                                "subscription_id": subscription.id,
+                                "is_active": True,
+                                "enrolled_date": start_date,
+                                "company_id": company.id,
+                            })
 
                 log_lines.append((0, 0, {
                     "row_number": idx, "status": "success",

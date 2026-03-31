@@ -37,7 +37,7 @@ class DojoClassEnrollment(models.Model):
             for sub in active_subs:
                 plan = sub.plan_id
                 if plan.plan_type == 'program':
-                    if sub.program_id and template.program_id == sub.program_id:
+                    if plan.program_ids and template.program_id in plan.program_ids:
                         permitting_subs.append(sub)
                 else:  # course-based
                     if not plan.allowed_template_ids or template in plan.allowed_template_ids:

@@ -110,7 +110,7 @@
                                  class="img-fluid rounded mb-3" alt=""/>
                         </t>
                         <h5 class="fw-bold mb-1" t-out="plan.name"/>
-                        <p class="text-muted small mb-3" t-out="plan.program_id.name or ''"/>
+                        <p class="text-muted small mb-3" t-out="', '.join(plan.program_ids.mapped('name')) or ''"/>
                         <div class="dojo-price-summary">
                             <div class="d-flex justify-content-between">
                                 <span>Recurring</span>
@@ -587,7 +587,7 @@
                             <input type="hidden" name="plan_id" t-att-value="plan.id"/>
                             <div class="dojo-plan-card card h-100 shadow-sm border-0 p-4 d-flex flex-column">
                                 <h5 class="fw-bold mb-1" t-out="plan.name"/>
-                                <p class="text-muted small mb-3" t-out="plan.program_id.name or ''"/>
+                                <p class="text-muted small mb-3" t-out="', '.join(plan.program_ids.mapped('name')) or ''"/>
                                 <div class="dojo-price mb-3 mt-auto">
                                     <span class="fs-3 fw-bold" t-out="'$%.0f' % plan.price"/>
                                     <span class="text-muted small">/<t t-out="plan.billing_period"/></span>

@@ -178,7 +178,7 @@ class DojoCheckoutSession(models.Model):
             return sub
 
         def _auto_enroll(member):
-            if not self.preferred_days or not plan.program_id:
+            if not self.preferred_days or not plan.program_ids:
                 return
             days = [d.strip() for d in self.preferred_days.split(",") if d.strip()]
             pref_vals = {v: False for v in DAY_FIELD_MAP.values()}
@@ -186,7 +186,7 @@ class DojoCheckoutSession(models.Model):
                 if d in DAY_FIELD_MAP:
                     pref_vals[DAY_FIELD_MAP[d]] = True
             templates = env["dojo.class.template"].sudo().search([
-                ("program_id", "=", plan.program_id.id),
+                ("program_id", "in", plan.program_ids.ids),
                 ("active", "=", True),
             ])
             for tmpl in templates:

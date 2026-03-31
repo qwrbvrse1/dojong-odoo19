@@ -29,7 +29,7 @@
     var STATUS_CLR = { registered: "#188038", waitlist: "#e37400", cancelled: "#5f6368" };
     var LOG_CLR = { present: "#188038", late: "#e37400", absent: "#d93025", excused: "#5f6368" };
 
-    var TAB_TITLES = { programs: "Program/Courses", classes: "Classes", attendance: "Attendance History", household: "My Household", billing: "Billing" };
+    var TAB_TITLES = { programs: "Program/Courses", classes: "Classes", attendance: "Attendance History", household: "My Household", billing: "Billing", points: "Points" };
 
     function b(map, key) { return map[key] || { label: key || '—', cls: 'dojo-chip dojo-chip--neutral' }; }
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
@@ -1360,6 +1360,77 @@
         }
         return html;
     }
+    /* ── Points tab ──────────────────────────────────────────────────────── */
+    function pointsTabHtml(pointsData, isParent, selectedStudentId) {
+        var SOURCE_LABELS = {
+            attendance: 'Attendance', late_attendance: 'Late Attendance',
+            streak_bonus: 'Streak Bonus', belt_promotion: 'Belt Promotion',
+            attendance_milestone: 'Milestone', instructor_award: 'Instructor Award',
+            adjustment: 'Adjustment',
+        };
+        var SOURCE_CLR = {
+            attendance: '#188038', late_attendance: '#e37400',
+            streak_bonus: '#f9ab00', belt_promotion: '#1a73e8',
+            attendance_milestone: '#9c27b0', instructor_award: '#0288d1',
+            adjustment: '#5f6368',
+        };
+        if (!pointsData || !pointsData.length) {
+            return '<div class="alert alert-info"><i class="fa fa-info-circle me-2"></i>No points data available yet.</div>';
+        }
+        var membersToShow = selectedStudentId
+            ? pointsData.filter(function (m) { return m.id === selectedStudentId; })
+            : pointsData;
+        if (!membersToShow.length) membersToShow = pointsData;
+
+        function memberCard(m) {
+            var html = '';
+            html += '<div class="dojo-program-card mb-4" style="border-left:4px solid #f9ab00">';
+            if (membersToShow.length > 1) {
+                html += '<div class="d-flex align-items-center gap-3 px-4 py-3" style="border-bottom:1px solid #e0e0e0;background:#fffbf0">';
+                html += '<div style="width:36px;height:36px;border-radius:50%;background:#f9ab00;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem">' + esc((m.name || '?')[0].toUpperCase()) + '</div>';
+                html += '<h5 class="fw-bold mb-0" style="color:#202124">' + esc(m.name) + '</h5>';
+                html += '</div>';
+            }
+            html += '<div class="d-flex flex-wrap gap-4 align-items-center px-4 py-4">';
+            html += '<div class="text-center"><div style="font-size:2.2rem;font-weight:700;color:#f9ab00;line-height:1">🏆 ' + esc(m.total_points) + '</div><div style="font-size:.75rem;color:#5f6368;margin-top:2px">Total Points</div></div>';
+            if (m.tier) {
+                html += '<div class="text-center"><div style="font-size:1.1rem;font-weight:600;color:#202124;line-height:1.3">' + esc(m.tier) + '</div><div style="font-size:.75rem;color:#5f6368;margin-top:2px">Tier</div></div>';
+            }
+            if (m.current_streak) {
+                html += '<div class="text-center"><div style="font-size:1.4rem;font-weight:700;color:#e37400;line-height:1">🔥 ' + esc(m.current_streak) + '</div><div style="font-size:.75rem;color:#5f6368;margin-top:2px">Current Streak</div></div>';
+            }
+            if (m.longest_streak) {
+                html += '<div class="text-center"><div style="font-size:1.1rem;font-weight:600;color:#5f6368;line-height:1">' + esc(m.longest_streak) + '</div><div style="font-size:.75rem;color:#5f6368;margin-top:2px">Longest Streak</div></div>';
+            }
+            html += '</div>';
+            if (m.recent_transactions && m.recent_transactions.length) {
+                html += '<div style="border-top:1px solid #f0f0f0">';
+                html += '<div class="px-4 py-2" style="background:#f8f9fa;border-bottom:1px solid #e0e0e0"><span style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#5f6368">Recent Transactions</span></div>';
+                html += '<table class="table table-sm table-hover mb-0" style="font-size:.87rem">';
+                html += '<thead style="color:#5f6368;background:#fafafa"><tr><th class="ps-4">Date</th><th>Type</th><th>Points</th><th class="pe-4">Note</th></tr></thead><tbody>';
+                m.recent_transactions.forEach(function (t) {
+                    var clr = SOURCE_CLR[t.source_type] || '#5f6368';
+                    var lbl = SOURCE_LABELS[t.source_type] || t.source_type;
+                    html += '<tr>';
+                    html += '<td class="ps-4 text-nowrap" style="color:#5f6368">' + esc(fmtDate(t.date)) + '</td>';
+                    html += '<td><span style="display:inline-block;padding:1px 8px;border-radius:12px;background:' + esc(clr) + '22;color:' + esc(clr) + ';font-size:.78rem;font-weight:600">' + esc(lbl) + '</span></td>';
+                    html += '<td><strong style="color:' + esc(clr) + '">+' + esc(t.amount) + '</strong></td>';
+                    html += '<td class="pe-4" style="color:#5f6368">' + esc(t.note || '') + '</td>';
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+            } else {
+                html += '<div class="px-4 pb-3 pt-2"><p class="text-muted small mb-0 fst-italic">No transactions yet.</p></div>';
+            }
+            html += '</div>';
+            return html;
+        }
+
+        var html = '';
+        membersToShow.forEach(function (m) { html += memberCard(m); });
+        return html;
+    }
+
     /* ── Render ──────────────────────────────────────────────────────────── */
     function render(root, state, isParent, members, students, isStudentOnly) {
         students = students || [];
@@ -1370,6 +1441,7 @@
             { key: "auto_enroll", svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-.15em" class="me-1"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>', label: "Auto-Enroll" },
             { key: "attendance", icon: "fa-check-circle", label: "Attendance" },
             { key: "household", icon: "fa-home", label: "My Household" },
+            { key: "points", icon: "fa-trophy", label: "Points" },
         ];
         if (isParent) TABS.push({ key: "billing", icon: "fa-credit-card", label: "Billing" });
         var navHtml = TABS.map(function (t) {
@@ -1420,6 +1492,8 @@
                 : '<div class="alert alert-info">No attendance records yet.</div>';
         } else if (state.activeTab === "billing") {
             body = billingTabHtml(state.billing, isParent);
+        } else if (state.activeTab === "points") {
+            body = pointsTabHtml(state.pointsData || [], isParent, state.selectedStudentId);
         } else {
             body = householdTabHtml(state.household, isParent);
         }
@@ -1448,6 +1522,7 @@
                 studentId ? fetchJson('/my/dojo/json/belt?member_id=' + studentId) : Promise.resolve(null),
                 studentId ? fetchJson('/my/dojo/json/belt-history?member_id=' + studentId) : Promise.resolve(null),
                 fetchJson('/my/dojo/json/auto-enroll' + qs),
+                fetchJson('/my/dojo/json/points' + qs),
             ]).then(function (r) {
                 state.sessions = r[0].sessions || [];
                 state.enrollments = r[1].enrollments || [];
@@ -1457,6 +1532,7 @@
                 state.selectedStudentBelt = r[4];
                 state.beltHistory = r[5] ? (r[5].history || []) : [];
                 state.autoEnrollPrefs = r[6] ? (r[6].preferences || []) : [];
+                state.pointsData = r[7] ? (r[7].members || []) : [];
                 state.loading = false;
                 render(root, state, isParent, members, students, isStudentOnly);
             });
@@ -1779,6 +1855,7 @@
             household: null,
             billing: null,
             autoEnrollPrefs: [],
+            pointsData: [],
             selectedStudentId: autoSelectedStudent,
             selectedStudentBelt: null,
             loading: true,
@@ -1797,6 +1874,7 @@
             fetchJson("/my/dojo/json/belt-history"),
             isParent ? fetchJson("/my/dojo/json/billing") : Promise.resolve(null),
             fetchJson("/my/dojo/json/auto-enroll"),
+            fetchJson("/my/dojo/json/points"),
         ]).then(function (results) {
             state.sessions = results[0].sessions || [];
             state.enrollments = results[1].enrollments || [];
@@ -1811,6 +1889,7 @@
             state.beltHistory = results[5].history || [];
             state.billing = results[6];
             state.autoEnrollPrefs = results[7] ? (results[7].preferences || []) : [];
+            state.pointsData = results[8] ? (results[8].members || []) : [];
             state.loading = false;
             render(root, state, isParent, members, students, isStudentOnly);
         });

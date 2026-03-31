@@ -43,13 +43,13 @@ class DojoCheckout(http.Controller):
         }
         programs = {}
         for plan in plans:
-            prog = plan.program_id
-            if prog.id not in programs:
-                programs[prog.id] = {"program": prog, "plans": []}
-            programs[prog.id]["plans"].append({
-                "plan": plan,
-                "config": configs.get(plan.id),
-            })
+            for prog in plan.program_ids:
+                if prog.id not in programs:
+                    programs[prog.id] = {"program": prog, "plans": []}
+                programs[prog.id]["plans"].append({
+                    "plan": plan,
+                    "config": configs.get(plan.id),
+                })
         return list(programs.values())
 
     # ══════════════════════════════════════════════════════════════════════
@@ -147,9 +147,9 @@ class DojoCheckout(http.Controller):
 
         # GET — build schedule context
         templates = request.env["dojo.class.template"].sudo().browse()
-        if session.plan_id.program_id:
+        if session.plan_id.program_ids:
             templates = request.env["dojo.class.template"].sudo().search([
-                ("program_id", "=", session.plan_id.program_id.id),
+                ("program_id", "in", session.plan_id.program_ids.ids),
                 ("active", "=", True),
             ])
 

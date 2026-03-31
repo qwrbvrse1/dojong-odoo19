@@ -138,7 +138,7 @@ class DojoOnboardingWizard(models.TransientModel):
     plan_id = fields.Many2one(
         'dojo.subscription.plan',
         string='Subscription Plan',
-        domain="['|', '&', ('plan_type', '=', 'program'), ('program_id', '=', program_id), ('plan_type', '=', 'course')]",
+        domain="['|', '&', ('plan_type', '=', 'program'), ('program_ids', 'in', [program_id]), ('plan_type', '=', 'course')]",
     )
     subscription_start_date = fields.Date(
         'Subscription Start Date',

@@ -70,12 +70,13 @@ class DojoSubscriptionPlan(models.Model):
     )
 
     # ── Program-based fields ──────────────────────────────────────────────
-    program_id = fields.Many2one(
+    program_ids = fields.Many2many(
         "dojo.program",
-        string="Program",
-        ondelete="restrict",
-        index=True,
-        help="Required for Program-Based plans. Members with this plan may attend any class in this program.",
+        "dojo_sub_plan_program_rel",
+        "plan_id",
+        "program_id",
+        string="Programs",
+        help="Required for Program-Based plans. Members with this plan may attend any class in these programs.",
     )
 
     # ── Course-based / session constraints ────────────────────────────────
@@ -97,13 +98,13 @@ class DojoSubscriptionPlan(models.Model):
         if self.plan_type == "program":
             self.allowed_template_ids = [(5, 0, 0)]
         elif self.plan_type == "course":
-            self.program_id = False
+            self.program_ids = [(5, 0, 0)]
 
     # ── Constraints ───────────────────────────────────────────────────────
-    @api.constrains("plan_type", "program_id")
+    @api.constrains("plan_type", "program_ids")
     def _check_program_required(self):
         for rec in self:
-            if rec.plan_type == "program" and not rec.program_id:
+            if rec.plan_type == "program" and not rec.program_ids:
                 raise ValidationError(
                     "A Program must be selected for Program-Based plans."
                 )

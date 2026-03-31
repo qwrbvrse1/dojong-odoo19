@@ -185,6 +185,10 @@ class DojoMemberPortal(CustomerPortal):
         is_credit_plan = bool(getattr(getattr(active_sub, 'plan_id', None), 'credits_per_period', 0))
         credit_balance = getattr(active_sub, 'credit_balance', 0) if active_sub else 0
 
+        # Points chip (graceful: None if dojo_points not installed or guardian-only)
+        member_points = getattr(member.sudo(), 'total_points', None) if member else None
+        member_points_tier = getattr(member.sudo(), 'points_tier', '') if member else ''
+
         return request.render('dojo_members_portal.portal_dojo_home', {
             'member': member,
             'portal_partner': portal_partner,  # fallback for guardian-only (member=False)
@@ -201,6 +205,8 @@ class DojoMemberPortal(CustomerPortal):
             'students_json': students_json,
             'is_credit_plan': is_credit_plan,
             'credit_balance': credit_balance,
+            'member_points': member_points,
+            'member_points_tier': member_points_tier,
             # Belt context: hide rank card for parents who have no rank of their own
             'show_belt_card': is_student_only or bool(belt.get('current_rank')),
             **belt,
@@ -291,9 +297,9 @@ class DojoMemberPortal(CustomerPortal):
                 continue
             plan = sub.plan_id
             plan_type = getattr(plan, 'plan_type', 'program')
-            if plan_type == 'program' and getattr(plan, 'program_id', False):
-                prog_id = plan.program_id.id
-                program_member_map.setdefault(prog_id, []).append(m.id)
+            if plan_type == 'program' and getattr(plan, 'program_ids', False):
+                for prog in plan.program_ids:
+                    program_member_map.setdefault(prog.id, []).append(m.id)
             elif plan_type == 'course':
                 allowed = getattr(plan, 'allowed_template_ids', request.env['dojo.class.template'].sudo().browse())
                 if allowed:
@@ -648,6 +654,51 @@ class DojoMemberPortal(CustomerPortal):
             })
         return request.make_response(
             json.dumps({'logs': data}),
+            headers=[('Content-Type', 'application/json')],
+        )
+
+    @http.route('/my/dojo/json/points', type='http', auth='user')
+    def portal_json_points(self, **kwargs):
+        """Return points data for all visible household members."""
+        member = self._get_current_member()
+        portal_partner = request.env.user.partner_id
+        if not member and not portal_partner.is_guardian:
+            return request.make_response(
+                json.dumps({'members': []}),
+                headers=[('Content-Type', 'application/json')],
+            )
+        household_member_ids = self._get_household_member_ids()
+        members = request.env['dojo.member'].sudo().browse(household_member_ids)
+
+        def build_points(m):
+            total = getattr(m, 'total_points', 0) or 0
+            tier = getattr(m, 'points_tier', '') or ''
+            streak = getattr(m, 'current_streak', 0) or 0
+            longest = getattr(m, 'longest_streak', 0) or 0
+            txns = getattr(m, 'points_transaction_ids', False)
+            recent = []
+            if txns:
+                for t in txns.sorted('date', reverse=True)[:10]:
+                    recent.append({
+                        'date': fields.Datetime.to_string(t.date) if t.date else '',
+                        'source_type': t.source_type or '',
+                        'amount': t.amount or 0,
+                        'note': t.note or '',
+                    })
+            return {
+                'id': m.id,
+                'name': m.name or '',
+                'is_student': m.partner_id.is_student,
+                'total_points': total,
+                'tier': tier,
+                'current_streak': streak,
+                'longest_streak': longest,
+                'recent_transactions': recent,
+            }
+
+        data = [build_points(m) for m in members]
+        return request.make_response(
+            json.dumps({'members': data}),
             headers=[('Content-Type', 'application/json')],
         )
 
