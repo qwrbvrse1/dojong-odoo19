@@ -30,6 +30,7 @@
     var LOG_CLR = { present: "#188038", late: "#e37400", absent: "#d93025", excused: "#5f6368" };
 
     var TAB_TITLES = { programs: "Program/Courses", classes: "Classes", attendance: "Attendance History", household: "My Household", billing: "Billing", points: "Points" };
+    var CLASSES_PAGE_SIZE = 9;
 
     function b(map, key) { return map[key] || { label: key || '—', cls: 'dojo-chip dojo-chip--neutral' }; }
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
@@ -1288,18 +1289,40 @@
         return html;
     }
 
-    function classesTabHtml(enrollments, sessions, isParent, members, autoEnrollPrefs, selectedStudentId, hhData) {
+    function pageNavHtml(section, page, total) {
+        if (total <= CLASSES_PAGE_SIZE) return '';
+        var pages = Math.ceil(total / CLASSES_PAGE_SIZE);
+        var from = page * CLASSES_PAGE_SIZE + 1;
+        var to = Math.min(from + CLASSES_PAGE_SIZE - 1, total);
+        var attrs = ' data-classes-section="' + section + '" data-classes-total="' + total + '"';
+        var html = '<div class="dojo-page-nav mt-3">';
+        html += '<button class="dojo-page-btn" data-classes-page="prev"' + attrs + (page === 0 ? ' disabled' : '') + '><i class="fa fa-chevron-left"></i></button>';
+        html += '<span class="dojo-page-info">Page&nbsp;' + (page + 1) + '&nbsp;of&nbsp;' + pages + '</span>';
+        html += '<button class="dojo-page-btn" data-classes-page="next"' + attrs + (page >= pages - 1 ? ' disabled' : '') + '><i class="fa fa-chevron-right"></i></button>';
+        html += '<span class="dojo-page-count">' + from + '\u2013' + to + ' of ' + total + '</span>';
+        html += '</div>';
+        return html;
+    }
+
+    function classesTabHtml(enrollments, sessions, isParent, members, autoEnrollPrefs, selectedStudentId, hhData, pagesState) {
+        var ps = pagesState || { upcoming: 0, available: 0, past: 0 };
         var now = new Date();
         function dt(iso) { return iso ? new Date(iso.indexOf('T') !== -1 ? iso + 'Z' : iso) : null; }
         var active = (enrollments || []).filter(function (e) { return e.status !== 'cancelled'; });
         var upcoming = active.filter(function (e) { var d = dt(e.start_datetime); return d && d > now; });
+        upcoming.sort(function (a, b) { var da = dt(a.start_datetime), db = dt(b.start_datetime); return (da ? da.getTime() : 0) - (db ? db.getTime() : 0); });
         var past = active.filter(function (e) { var d = dt(e.start_datetime); return d && d <= now; });
         var html = '';
+
+        // ── Upcoming Enrolled Sessions ─────────────────────────────────────
+        var upcomingPages = Math.max(1, Math.ceil(upcoming.length / CLASSES_PAGE_SIZE));
+        var upcomingPage = Math.max(0, Math.min(ps.upcoming || 0, upcomingPages - 1));
+        var upcomingSlice = upcoming.slice(upcomingPage * CLASSES_PAGE_SIZE, (upcomingPage + 1) * CLASSES_PAGE_SIZE);
         html += '<div class="dojo-classes-section mb-4">';
         html += '<h6 class="dojo-classes-section-header fw-semibold mb-3"><i class="fa fa-calendar-check-o me-2 text-success"></i>Upcoming Enrolled Sessions</h6>';
         if (upcoming.length) {
             html += '<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">';
-            upcoming.forEach(function (e) {
+            upcomingSlice.forEach(function (e) {
                 var clr = STATUS_CLR[e.status] || '#6c757d';
                 var lvl = b(LEVEL, e.level);
                 html += '<div class="col"><div class="dojo-md3-card dojo-md3-card--clickable h-100" style="border-left:3px solid ' + esc(clr) + '" data-type="enrollment" data-id="' + e.id + '">';
@@ -1319,29 +1342,42 @@
                 html += '</div></div></div>';
             });
             html += '</div>';
+            html += pageNavHtml('upcoming', upcomingPage, upcoming.length);
         } else {
             html += '<div class="alert alert-light border py-2 small">No upcoming enrolled sessions.</div>';
         }
         html += '</div>';
+
+        // ── Available Sessions ─────────────────────────────────────────────
         if (isParent && sessions && sessions.length) {
             var enrolledSids = {};
             active.forEach(function (e) { if (e.session_id) enrolledSids[e.session_id] = true; });
             var available = sessions.filter(function (s) { return !enrolledSids[s.id]; });
             if (available.length) {
+                var availablePages = Math.max(1, Math.ceil(available.length / CLASSES_PAGE_SIZE));
+                var availablePage = Math.max(0, Math.min(ps.available || 0, availablePages - 1));
+                var availableSlice = available.slice(availablePage * CLASSES_PAGE_SIZE, (availablePage + 1) * CLASSES_PAGE_SIZE);
                 html += '<div class="dojo-classes-section mb-4">';
                 html += '<h6 class="dojo-classes-section-header fw-semibold mb-3"><i class="fa fa-calendar-plus-o me-2 text-primary"></i>Available Sessions</h6>';
                 var enrollableMembers = members.filter(function (m) { return m.is_student; });
                 html += memberCreditStripHtml(enrollableMembers, hhData);
                 html += '<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">';
-                available.forEach(function (s) { html += sessionCard(s); });
-                html += '</div></div>';
+                availableSlice.forEach(function (s) { html += sessionCard(s); });
+                html += '</div>';
+                html += pageNavHtml('available', availablePage, available.length);
+                html += '</div>';
             }
         }
+
+        // ── Past Sessions ──────────────────────────────────────────────────
         if (past.length) {
+            var pastPages = Math.max(1, Math.ceil(past.length / CLASSES_PAGE_SIZE));
+            var pastPage = Math.max(0, Math.min(ps.past || 0, pastPages - 1));
+            var pastSlice = past.slice(pastPage * CLASSES_PAGE_SIZE, (pastPage + 1) * CLASSES_PAGE_SIZE);
             html += '<div class="dojo-classes-section">';
             html += '<h6 class="dojo-classes-section-header fw-semibold mb-3"><i class="fa fa-history me-2" style="color:#5f6368"></i>Past Sessions <span class="dojo-chip dojo-chip--neutral ms-1">' + past.length + '</span></h6>';
             html += '<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">';
-            past.forEach(function (e) {
+            pastSlice.forEach(function (e) {
                 var at = b(ATT_STATE, e.attendance_state);
                 var clr = LOG_CLR[e.attendance_state] || '#5f6368';
                 html += '<div class="col"><div class="dojo-md3-card h-100" style="border-left:3px solid ' + esc(clr) + ';opacity:.8" data-type="enrollment" data-id="' + e.id + '">';
@@ -1356,7 +1392,9 @@
                 if (e.instructor) html += '<div><i class="fa fa-user me-1"></i>' + esc(e.instructor) + '</div>';
                 html += '</div></div></div></div>';
             });
-            html += '</div></div>';
+            html += '</div>';
+            html += pageNavHtml('past', pastPage, past.length);
+            html += '</div>';
         }
         return html;
     }
@@ -1478,7 +1516,7 @@
                 body = programsTabHtml(_progs, _hist, _memberId, isParent, _courses);
             }
         } else if (state.activeTab === "classes") {
-            body = classesTabHtml(state.enrollments, state.sessions, isParent, members, state.autoEnrollPrefs, state.selectedStudentId, state.household);
+            body = classesTabHtml(state.enrollments, state.sessions, isParent, members, state.autoEnrollPrefs, state.selectedStudentId, state.household, state.classesPagesState);
         } else if (state.activeTab === "auto_enroll") {
             if (isParent && !state.selectedStudentId && students.length > 0) {
                 body = '<div class="alert alert-info mt-2"><i class="fa fa-info-circle me-2"></i>'
@@ -1733,6 +1771,24 @@
                 return;
             }
 
+            /* ── Delegated: classes tab pagination ── */
+            var pgBtn = ev.target.closest('[data-classes-page]');
+            if (pgBtn && root.contains(pgBtn)) {
+                if (pgBtn.disabled) return;
+                ev.stopPropagation();
+                var section = pgBtn.dataset.classesSection;
+                var pageVal = pgBtn.dataset.classesPage;
+                var total = parseInt(pgBtn.dataset.classesTotal, 10) || 0;
+                var pages = Math.max(1, Math.ceil(total / CLASSES_PAGE_SIZE));
+                var current = (state.classesPagesState && state.classesPagesState[section]) || 0;
+                if (pageVal === 'prev') current = Math.max(0, current - 1);
+                else if (pageVal === 'next') current = Math.min(pages - 1, current + 1);
+                else current = parseInt(pageVal, 10);
+                if (state.classesPagesState) state.classesPagesState[section] = current;
+                render(root, state, isParent, members, students, isStudentOnly);
+                return;
+            }
+
             /* ── Delegated: clickable cards (survive re-renders) ── */
             var card = ev.target.closest(".dojo-md3-card--clickable");
             if (card && root.contains(card)) {
@@ -1858,6 +1914,7 @@
             pointsData: [],
             selectedStudentId: autoSelectedStudent,
             selectedStudentBelt: null,
+            classesPagesState: { upcoming: 0, available: 0, past: 0 },
             loading: true,
         };
         render(root, state, isParent, members, students, isStudentOnly);

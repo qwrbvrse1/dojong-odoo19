@@ -4,21 +4,21 @@
 
 /* ── Design tokens ─────────────────────────────────────────────────── */
 :root {
-    --p-accent:       #1a73e8;
+    --p-accent: #1a73e8;
     --p-accent-light: #e8f0fe;
-    --p-surface:      #ffffff;
-    --p-surface-2:    #f8f9fa;
-    --p-border:       #e0e0e0;
-    --p-text:         #202124;
-    --p-text-2:       #5f6368;
-    --p-success:      #188038;
-    --p-success-dim:  #e6f4ea;
-    --p-warning:      #e37400;
-    --p-warning-dim:  #fef7e0;
-    --p-danger:       #d93025;
-    --p-danger-dim:   #fce8e6;
-    --p-radius:       8px;
-    --p-radius-sm:    4px;
+    --p-surface: #ffffff;
+    --p-surface-2: #f8f9fa;
+    --p-border: #e0e0e0;
+    --p-text: #202124;
+    --p-text-2: #5f6368;
+    --p-success: #188038;
+    --p-success-dim: #e6f4ea;
+    --p-warning: #e37400;
+    --p-warning-dim: #fef7e0;
+    --p-danger: #d93025;
+    --p-danger-dim: #fce8e6;
+    --p-radius: 8px;
+    --p-radius-sm: 4px;
 }
 
 /* ── Portal banner ─────────────────────────────────────────────────── */
@@ -38,6 +38,7 @@
     border-radius: var(--p-radius);
     box-shadow: none !important;
 }
+
 .dojo-hero-avatar-md3 {
     width: 64px;
     height: 64px;
@@ -68,15 +69,18 @@
     color: var(--p-text) !important;
     transition: border-color .15s;
 }
+
 .dojo-stat-chip:hover {
     border-color: var(--p-accent);
 }
+
 .dojo-stat-chip__val {
     font-size: 0.95rem;
     font-weight: 700;
     line-height: 1.2;
     color: var(--p-accent);
 }
+
 .dojo-stat-chip__lbl {
     font-size: 0.62rem;
     color: var(--p-text-2);
@@ -99,13 +103,42 @@
     line-height: 1.7;
     border: none;
 }
-.dojo-chip--accent   { background: var(--p-accent);    color: #fff; }
-.dojo-chip--success  { background: var(--p-success);   color: #fff; }
-.dojo-chip--warning  { background: var(--p-warning);   color: #fff; }
-.dojo-chip--danger   { background: var(--p-danger);    color: #fff; }
-.dojo-chip--neutral  { background: var(--p-text-2);    color: #fff; }
-.dojo-chip--info     { background: #0288d1;            color: #fff; }
-.dojo-chip--ghost    { background: var(--p-surface-2); color: var(--p-text-2); border: 1px solid var(--p-border); }
+
+.dojo-chip--accent {
+    background: var(--p-accent);
+    color: #fff;
+}
+
+.dojo-chip--success {
+    background: var(--p-success);
+    color: #fff;
+}
+
+.dojo-chip--warning {
+    background: var(--p-warning);
+    color: #fff;
+}
+
+.dojo-chip--danger {
+    background: var(--p-danger);
+    color: #fff;
+}
+
+.dojo-chip--neutral {
+    background: var(--p-text-2);
+    color: #fff;
+}
+
+.dojo-chip--info {
+    background: #0288d1;
+    color: #fff;
+}
+
+.dojo-chip--ghost {
+    background: var(--p-surface-2);
+    color: var(--p-text-2);
+    border: 1px solid var(--p-border);
+}
 
 /* ── MD3 Underline Tab navigation ──────────────────────────────────── */
 .dojo-tab-nav {
@@ -115,6 +148,7 @@
     gap: 0;
     border-bottom: 1px solid var(--p-border);
 }
+
 .dojo-tab-btn {
     display: inline-flex;
     align-items: center;
@@ -133,7 +167,11 @@
     border-radius: 0;
     flex: 1 1 auto;
 }
-.dojo-tab-btn:hover { color: var(--p-accent); }
+
+.dojo-tab-btn:hover {
+    color: var(--p-accent);
+}
+
 .dojo-tab-btn.active {
     color: var(--p-accent);
     border-bottom-color: var(--p-accent);
@@ -148,8 +186,14 @@
     overflow: hidden;
     transition: border-color .15s ease;
 }
-.dojo-md3-card--clickable { cursor: pointer; }
-.dojo-md3-card--clickable:hover { border-color: var(--p-accent); }
+
+.dojo-md3-card--clickable {
+    cursor: pointer;
+}
+
+.dojo-md3-card--clickable:hover {
+    border-color: var(--p-accent);
+}
 
 /* ── Section headers ───────────────────────────────────────────────── */
 .dojo-section-hd,
@@ -171,6 +215,7 @@
     border-radius: 2px;
     overflow: hidden;
 }
+
 .dojo-progress-bar {
     height: 100%;
     border-radius: 2px;
@@ -186,9 +231,19 @@
     scrollbar-color: var(--p-border) transparent;
     gap: 0;
 }
-.dojo-belt-node { transition: transform .15s ease; cursor: default; }
-.dojo-belt-node:hover { transform: scale(1.1); }
-.dojo-belt-label { text-align: center; }
+
+.dojo-belt-node {
+    transition: transform .15s ease;
+    cursor: default;
+}
+
+.dojo-belt-node:hover {
+    transform: scale(1.1);
+}
+
+.dojo-belt-label {
+    text-align: center;
+}
 
 /* ── Rank history rows ─────────────────────────────────────────────── */
 .dojo-rank-row {
@@ -198,7 +253,10 @@
     padding: .5rem .75rem;
     border-bottom: 1px solid var(--p-border);
 }
-.dojo-rank-row:last-child { border-bottom: none; }
+
+.dojo-rank-row:last-child {
+    border-bottom: none;
+}
 
 /* ── Student switcher ──────────────────────────────────────────────── */
 .dojo-student-switcher {
@@ -206,11 +264,13 @@
     border: 1px solid var(--p-border) !important;
     border-radius: var(--p-radius) !important;
 }
+
 .dojo-student-select {
     border-radius: 24px;
     font-size: 0.85rem;
     border-color: var(--p-border);
 }
+
 .dojo-student-context-banner {
     background: var(--p-surface);
     border: 1px solid var(--p-border) !important;
@@ -237,7 +297,10 @@
     overflow: hidden;
     transition: border-color .15s;
 }
-.dojo-program-card:hover { border-color: var(--p-accent) !important; }
+
+.dojo-program-card:hover {
+    border-color: var(--p-accent) !important;
+}
 
 /* ── Billing card ──────────────────────────────────────────────────── */
 .dojo-billing-card {
@@ -246,6 +309,7 @@
     border-radius: var(--p-radius);
     overflow: hidden;
 }
+
 .dojo-billing-card-hd {
     padding: .75rem 1rem;
     background: var(--p-accent);
@@ -255,6 +319,7 @@
     text-transform: uppercase;
     letter-spacing: .06em;
 }
+
 .dojo-billing-field-row {
     display: flex;
     justify-content: space-between;
@@ -263,8 +328,15 @@
     border-bottom: 1px solid var(--p-border);
     font-size: 0.875rem;
 }
-.dojo-billing-field-row:last-child { border-bottom: none; }
-.dojo-billing-field-lbl { color: var(--p-text-2); font-size: 0.78rem; }
+
+.dojo-billing-field-row:last-child {
+    border-bottom: none;
+}
+
+.dojo-billing-field-lbl {
+    color: var(--p-text-2);
+    font-size: 0.78rem;
+}
 
 /* ── Household member cards ────────────────────────────────────────── */
 .dojo-member-card {
@@ -273,6 +345,7 @@
     border-radius: var(--p-radius);
     overflow: hidden;
 }
+
 .dojo-member-card-hd {
     display: flex;
     align-items: center;
@@ -280,6 +353,7 @@
     padding: .75rem 1rem;
     border-bottom: 1px solid var(--p-border);
 }
+
 .dojo-member-avatar {
     width: 36px;
     height: 36px;
@@ -293,6 +367,7 @@
     font-size: 0.9rem;
     flex-shrink: 0;
 }
+
 .dojo-field-row {
     display: flex;
     justify-content: space-between;
@@ -302,7 +377,11 @@
     font-size: 0.875rem;
     gap: .5rem;
 }
-.dojo-field-row:last-child { border-bottom: none; }
+
+.dojo-field-row:last-child {
+    border-bottom: none;
+}
+
 .dojo-field-lbl {
     font-size: 0.72rem;
     color: var(--p-text-2);
@@ -331,6 +410,7 @@
     align-items: center;
     animation: dojo-backdrop-in 0.15s ease;
 }
+
 .dojo-overlay-panel {
     background: var(--p-surface);
     width: 520px;
@@ -344,15 +424,102 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
     animation: dojo-panel-in 0.15s ease;
 }
-@keyframes dojo-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes dojo-panel-in {
-    from { transform: scale(0.97); opacity: 0; }
-    to   { transform: scale(1);    opacity: 1; }
+
+@keyframes dojo-backdrop-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
-body.dojo-overlay-open { overflow: hidden; }
+
+@keyframes dojo-panel-in {
+    from {
+        transform: scale(0.97);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+body.dojo-overlay-open {
+    overflow: hidden;
+}
+
+/* ── Classes tab pagination ─────────────────────────────────────────── */
+.dojo-page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.dojo-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 .875rem;
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    background: var(--p-surface);
+    color: var(--p-text);
+    font-size: .9rem;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.dojo-page-btn:hover:not(:disabled) {
+    background: var(--p-surface-2);
+    border-color: var(--p-accent);
+    color: var(--p-accent);
+}
+
+.dojo-page-btn:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
+.dojo-page-info {
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--p-text);
+    white-space: nowrap;
+}
+
+.dojo-page-count {
+    font-size: .78rem;
+    color: var(--p-text-2);
+    white-space: nowrap;
+}
 
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 575px) {
-    .dojo-tab-btn { padding: 8px 10px; font-size: 0.78rem; }
-    .dojo-stat-chip { min-width: 58px; padding: 0.4rem 0.7rem; }
+    .dojo-tab-btn {
+        padding: 8px 10px;
+        font-size: 0.78rem;
+    }
+
+    .dojo-stat-chip {
+        min-width: 58px;
+        padding: 0.4rem 0.7rem;
+    }
+
+    .dojo-page-count {
+        display: none;
+    }
+
+    .dojo-page-btn {
+        min-width: 48px;
+        min-height: 48px;
+    }
 }
