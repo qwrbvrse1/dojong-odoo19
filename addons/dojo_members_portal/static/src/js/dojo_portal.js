@@ -29,7 +29,7 @@
     var STATUS_CLR = { registered: "#188038", waitlist: "#e37400", cancelled: "#5f6368" };
     var LOG_CLR = { present: "#188038", late: "#e37400", absent: "#d93025", excused: "#5f6368" };
 
-    var TAB_TITLES = { programs: "Programs", classes: "Classes", attendance: "Attendance History", household: "My Household", billing: "Billing" };
+    var TAB_TITLES = { programs: "Program/Courses", classes: "Classes", attendance: "Attendance History", household: "My Household", billing: "Billing" };
 
     function b(map, key) { return map[key] || { label: key || '—', cls: 'dojo-chip dojo-chip--neutral' }; }
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
@@ -949,19 +949,27 @@
             return '<div class="alert alert-info"><i class="fa fa-info-circle me-2"></i>No student programs found. Make sure your students are enrolled in classes.</div>';
         }
         var html = '';
-        studentPrograms.forEach(function (student) {
-            html += '<div class="mb-5">';
-            html += '<div class="d-flex align-items-center gap-2 mb-3">';
-            html += '<div class="rounded-circle flex-shrink-0" style="width:34px;height:34px;border-radius:50%;background:#1a73e8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem">' + esc((student.name || '?')[0].toUpperCase()) + '</div>';
+        studentPrograms.forEach(function (student, idx) {
+            var hasCourses = student.courses && student.courses.length;
+            var hasPrograms = student.programs && student.programs.length;
+            html += '<div class="mb-5' + (idx > 0 ? ' pt-4' : '') + '">';
+            // ── Student section header ──────────────────────────────
+            html += '<div class="d-flex align-items-center gap-3 mb-4 pb-3" style="border-bottom:2px solid #e8f0fe">';
+            html += '<div class="flex-shrink-0" style="width:38px;height:38px;border-radius:50%;background:#1a73e8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem">' + esc((student.name || '?')[0].toUpperCase()) + '</div>';
+            html += '<div>';
             html += '<h5 class="fw-bold mb-0" style="color:#202124">' + esc(student.name) + '</h5>';
-            if (student.programs && student.programs.length) {
-                html += '<span class="dojo-chip dojo-chip--neutral ms-1">' + student.programs.length + ' program' + (student.programs.length !== 1 ? 's' : '') + '</span>';
+            if (hasPrograms) {
+                html += '<span style="font-size:.78rem;color:#5f6368">' + student.programs.length + ' belt program' + (student.programs.length !== 1 ? 's' : '') + (hasCourses ? ' &middot; ' + student.courses.length + ' course' + (student.courses.length !== 1 ? 's' : '') : '') + '</span>';
+            } else if (hasCourses) {
+                html += '<span style="font-size:.78rem;color:#5f6368">' + student.courses.length + ' enrolled course' + (student.courses.length !== 1 ? 's' : '') + '</span>';
             }
             html += '</div>';
-            if (!student.programs || !student.programs.length) {
-                html += '<div class="alert alert-light border py-2 small"><i class="fa fa-info-circle me-1"></i>No programs found for this student.</div>';
+            html += '</div>';
+            // ── Content ─────────────────────────────────────────────
+            if (!hasPrograms && !hasCourses) {
+                html += '<div class="alert alert-light border py-2 small"><i class="fa fa-info-circle me-1"></i>No programs or courses found for this student.</div>';
             } else {
-                html += programsTabHtml(student.programs, student.belt_history || [], student.id, true);
+                html += programsTabHtml(student.programs || [], student.belt_history || [], student.id, true, student.courses || []);
             }
             html += '</div>';
         });
@@ -969,9 +977,51 @@
     }
 
     /* ── Programs tab ─────────────────────────────────────────────────── */
-    function programsTabHtml(programs, beltHistory, selectedMemberId, isParent) {
-        if (!programs || !programs.length) {
-            return '<div class="alert alert-info"><i class="fa fa-info-circle me-2"></i>No programs found. Contact your instructor or subscribe to a program to get started.</div>';
+    function courseCardHtml(course) {
+        var isActive = course.is_active;
+        var stateChipCls = isActive ? 'dojo-chip--success' : 'dojo-chip--neutral';
+        var stateLabel = isActive ? 'Active' : (course.state || 'Inactive');
+        var accentColor = isActive ? '#1a73e8' : '#9aa0a6';
+        var html = '';
+        html += '<div class="dojo-program-card mb-3" style="border-left:4px solid ' + accentColor + (isActive ? '' : ';opacity:.75') + '">';
+        // ── Card header ───────────────────────────────────────────────────
+        html += '<div class="d-flex align-items-center justify-content-between gap-2 px-4 py-3" style="border-bottom:1px solid #e0e0e0;background:#f8f9fa">';
+        html += '<div class="d-flex align-items-center gap-2">';
+        html += '<i class="fa fa-calendar" style="color:' + accentColor + ';font-size:.95rem"></i>';
+        html += '<span style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#5f6368">Enrolled Course' + (course.templates && course.templates.length !== 1 ? 's' : '') + '</span>';
+        html += '</div>';
+        html += '<div class="d-flex align-items-center gap-2">';
+        html += '<span class="dojo-chip ' + stateChipCls + '">' + esc(stateLabel) + '</span>';
+        if (course.start_date) {
+            html += '<span style="font-size:.78rem;color:#5f6368"><i class="fa fa-clock-o me-1"></i>Since ' + esc(fmtDate(course.start_date)) + '</span>';
+        }
+        html += '</div></div>';
+        // ── Course rows ───────────────────────────────────────────────────
+        if (course.templates && course.templates.length) {
+            course.templates.forEach(function (t, i) {
+                html += '<div class="d-flex align-items-center justify-content-between gap-3 px-4 py-3"' + (i < course.templates.length - 1 ? ' style="border-bottom:1px solid #f0f0f0"' : '') + '>';
+                html += '<div class="d-flex align-items-center gap-2">';
+                html += '<i class="fa fa-circle" style="color:' + accentColor + ';font-size:.45rem;flex-shrink:0;margin-top:2px"></i>';
+                html += '<span style="font-size:.9rem;font-weight:500;color:#202124">' + esc(t.name) + '</span>';
+                html += '</div>';
+                if (t.session_count > 0) {
+                    html += '<span style="font-size:.8rem;color:#188038;flex-shrink:0;white-space:nowrap"><i class="fa fa-check-circle me-1"></i>' + t.session_count + ' session' + (t.session_count !== 1 ? 's' : '') + ' attended</span>';
+                } else {
+                    html += '<span style="font-size:.78rem;color:#9aa0a6;flex-shrink:0">0 sessions yet</span>';
+                }
+                html += '</div>';
+            });
+        } else {
+            html += '<div class="px-4 py-3"><p class="text-muted small fst-italic mb-0">No courses assigned yet.</p></div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function programsTabHtml(programs, beltHistory, selectedMemberId, isParent, courses) {
+        courses = courses || [];
+        if ((!programs || !programs.length) && !courses.length) {
+            return '<div class="alert alert-info"><i class="fa fa-info-circle me-2"></i>No programs or courses found. Contact your instructor to get started.</div>';
         }
 
         var activePrograms = programs.filter(function (p) { return p.is_active !== false; });
@@ -1066,8 +1116,8 @@
 
         if (activePrograms.length) {
             activePrograms.forEach(function (prog) { html += programCardHtml(prog, false); });
-        } else {
-            html += '<div class="alert alert-info mb-3"><i class="fa fa-info-circle me-2"></i>No active programs. See previous programs below.</div>';
+        } else if (!courses.length) {
+            html += '<div class="alert alert-light border mb-3 small"><i class="fa fa-info-circle me-1 text-muted"></i>Not currently enrolled in a belt program.</div>';
         }
 
         if (previousPrograms.length) {
@@ -1077,6 +1127,27 @@
                 + '</summary>';
             previousPrograms.forEach(function (prog) { html += programCardHtml(prog, true); });
             html += '</details>';
+        }
+
+        // ── Course plans (course-based subscriptions) ──────────────────────
+        if (courses.length) {
+            var activeCourses = courses.filter(function (c) { return c.is_active; });
+            var inactiveCourses = courses.filter(function (c) { return !c.is_active; });
+            if (programs.length || previousPrograms.length) {
+                html += '<hr class="my-4">';
+            }
+            if (activeCourses.length) {
+                html += '<p class="dojo-field-lbl mb-3"><i class="fa fa-calendar me-1"></i>Enrolled Courses</p>';
+                activeCourses.forEach(function (c) { html += courseCardHtml(c); });
+            }
+            if (inactiveCourses.length) {
+                html += '<details class="mt-3">';
+                html += '<summary class="dojo-field-lbl mb-3" style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:.4rem">'
+                    + '<i class="fa fa-history me-1"></i>Previous Courses (' + inactiveCourses.length + ')'
+                    + '</summary>';
+                inactiveCourses.forEach(function (c) { html += courseCardHtml(c); });
+                html += '</details>';
+            }
         }
 
         return html;
@@ -1294,7 +1365,7 @@
         students = students || [];
         isStudentOnly = !!isStudentOnly;
         var TABS = [
-            { key: "programs", icon: "fa-graduation-cap", label: "Programs" },
+            { key: "programs", icon: "fa-graduation-cap", label: "Program/Courses" },
             { key: "classes", icon: "fa-calendar", label: "Classes" },
             { key: "auto_enroll", svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-.15em" class="me-1"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>', label: "Auto-Enroll" },
             { key: "attendance", icon: "fa-check-circle", label: "Attendance" },
@@ -1304,7 +1375,7 @@
         var navHtml = TABS.map(function (t) {
             var active = state.activeTab === t.key ? " active" : "";
             var aeEnrolled = t.key === "auto_enroll" ? (state.autoEnrollPrefs || []).filter(function (p) { return p.active; }).length : 0;
-            var cnt = t.key === "programs" ? state.programs.length : t.key === "classes" ? (state.enrollments || []).filter(function (e) { return e.status !== 'cancelled'; }).length : t.key === "attendance" ? state.logs.length : t.key === "billing" ? (state.billing ? (state.billing.invoices || []).length : 0) : aeEnrolled;
+            var cnt = t.key === "programs" ? (state.programs.length + (state.courses || []).length) : t.key === "classes" ? (state.enrollments || []).filter(function (e) { return e.status !== 'cancelled'; }).length : t.key === "attendance" ? state.logs.length : t.key === "billing" ? (state.billing ? (state.billing.invoices || []).length : 0) : aeEnrolled;
             var badge = cnt ? '<span class="dojo-chip dojo-chip--neutral ms-1">' + cnt + '</span>' : "";
             var iconHtml = t.svg ? t.svg : '<i class="fa ' + t.icon + ' me-1"></i>';
             return '<button type="button" role="tab" class="dojo-tab-btn' + active +
@@ -1324,11 +1395,15 @@
                 // state.programs is empty but a student is pre-selected.
                 var _progs = state.programs;
                 var _hist = state.beltHistory;
-                if (!_progs.length && state.selectedStudentId && state.studentPrograms.length) {
+                var _courses = state.courses || [];
+                if ((!_progs.length || !_courses.length) && state.selectedStudentId && state.studentPrograms.length) {
                     var _stuData = state.studentPrograms.find(function (s) { return s.id === state.selectedStudentId; });
-                    if (_stuData) { _progs = _stuData.programs || []; _hist = _stuData.belt_history || []; }
+                    if (_stuData) {
+                        if (!_progs.length) { _progs = _stuData.programs || []; _hist = _stuData.belt_history || []; }
+                        if (!_courses.length) { _courses = _stuData.courses || []; }
+                    }
                 }
-                body = programsTabHtml(_progs, _hist, _memberId, isParent);
+                body = programsTabHtml(_progs, _hist, _memberId, isParent, _courses);
             }
         } else if (state.activeTab === "classes") {
             body = classesTabHtml(state.enrollments, state.sessions, isParent, members, state.autoEnrollPrefs, state.selectedStudentId, state.household);
@@ -1378,6 +1453,7 @@
                 state.enrollments = r[1].enrollments || [];
                 state.logs = r[2].logs || [];
                 state.programs = r[3].programs || [];
+                state.courses = r[3].courses || [];
                 state.selectedStudentBelt = r[4];
                 state.beltHistory = r[5] ? (r[5].history || []) : [];
                 state.autoEnrollPrefs = r[6] ? (r[6].preferences || []) : [];
@@ -1698,7 +1774,7 @@
         var state = {
             activeTab: root.dataset.tab || "programs",
             sessions: [], enrollments: [], logs: [],
-            programs: [], beltHistory: [],
+            programs: [], beltHistory: [], courses: [],
             studentPrograms: [],
             household: null,
             billing: null,
@@ -1727,7 +1803,11 @@
             state.logs = results[2].logs || [];
             state.household = results[3];
             state.programs = results[4].programs || [];
-            state.studentPrograms = results[4].students || [];
+            state.courses = results[4].courses || [];
+            state.studentPrograms = (results[4].students || []).map(function (s) {
+                s.courses = s.courses || [];
+                return s;
+            });
             state.beltHistory = results[5].history || [];
             state.billing = results[6];
             state.autoEnrollPrefs = results[7] ? (results[7].preferences || []) : [];

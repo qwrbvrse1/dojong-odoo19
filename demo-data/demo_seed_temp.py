@@ -51,7 +51,8 @@ if demo_hh_existing:
 print("  cleanup done.")
 
 # ── Group references ─────────────────────────────────────────────────────
-group_parent_student = env.ref("dojo_base.group_dojo_parent_student")
+# Use base portal group (dojo_base.group_dojo_parent_student not in this prod instance)
+group_parent_student = env.ref("base.group_portal")
 
 
 def make_user(name, login, groups):

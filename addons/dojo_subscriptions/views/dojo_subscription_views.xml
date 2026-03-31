@@ -334,6 +334,14 @@
                             <field name="state"/>
                         </list>
                     </field>
+                    <!-- Course roster — shown when the member has course-based plan(s) -->
+                    <separator string="Course Roster"
+                               invisible="enrolled_template_ids == False"/>
+                    <field name="enrolled_template_ids"
+                           widget="many2many_tags"
+                           string="Enrolled Course Templates"
+                           readonly="1" nolabel="1"
+                           invisible="enrolled_template_ids == False"/>
                 </page>
             </xpath>
         </field>

@@ -280,54 +280,94 @@ class DojoMemberPortal(CustomerPortal):
         household_member_ids = self._resolve_view_member_ids(member_id)
         household_members = request.env['dojo.member'].sudo().browse(household_member_ids)
 
-        # Scope sessions to programs covered by each member's active subscription.
-        # Build: program_id -> [member_ids subscribed to it]
-        program_member_map = {}  # {program_id: [member_id, ...]}
+        # Build eligibility maps keyed by subscription plan type:
+        #   program_member_map  : {program_id:  [member_id, ...]}  — program-based plans
+        #   course_member_map   : {template_id: [member_id, ...]}  — course-based plans
+        program_member_map = {}
+        course_member_map = {}
         for m in household_members.filtered(lambda x: x.partner_id.is_student):
             sub = m.active_subscription_id
             if not sub:
                 continue
             plan = sub.plan_id
-            if getattr(plan, 'plan_type', '') == 'program' and plan.program_id:
+            plan_type = getattr(plan, 'plan_type', 'program')
+            if plan_type == 'program' and getattr(plan, 'program_id', False):
                 prog_id = plan.program_id.id
                 program_member_map.setdefault(prog_id, []).append(m.id)
+            elif plan_type == 'course':
+                allowed = getattr(plan, 'allowed_template_ids', request.env['dojo.class.template'].sudo().browse())
+                if allowed:
+                    for tmpl in allowed:
+                        course_member_map.setdefault(tmpl.id, []).append(m.id)
+                else:
+                    # No restrictions — member may attend any session
+                    course_member_map.setdefault('__any__', []).append(m.id)
 
-        if not program_member_map:
+        if not program_member_map and not course_member_map:
             return request.make_response(
                 json.dumps({'sessions': [], 'can_enroll': is_parent}),
                 headers=[('Content-Type', 'application/json')],
             )
 
-        domain = [
+        # Build a combined session query domain (OR across both plan types)
+        env = request.env
+        base_filters = [
             ('state', '=', 'open'),
             ('start_datetime', '>=', fields.Datetime.now()),
-            ('template_id.program_id', 'in', list(program_member_map.keys())),
         ]
-        sessions = request.env['dojo.class.session'].sudo().search(
-            domain, order='start_datetime asc', limit=100
-        )
+        sessions = env['dojo.class.session'].sudo().browse()
+
+        if program_member_map:
+            prog_sessions = env['dojo.class.session'].sudo().search(
+                base_filters + [('template_id.program_id', 'in', list(program_member_map.keys()))],
+                order='start_datetime asc', limit=100,
+            )
+            sessions |= prog_sessions
+
+        if course_member_map:
+            if '__any__' in course_member_map:
+                # No template restriction — show all open sessions
+                course_sessions = env['dojo.class.session'].sudo().search(
+                    base_filters, order='start_datetime asc', limit=100,
+                )
+            else:
+                course_sessions = env['dojo.class.session'].sudo().search(
+                    base_filters + [('template_id', 'in', list(k for k in course_member_map if k != '__any__'))],
+                    order='start_datetime asc', limit=100,
+                )
+            sessions |= course_sessions
+
+        # Deduplicate and sort
+        sessions = sessions.sorted(key=lambda s: s.start_datetime or fields.Datetime.now())[:100]
+
         data = []
         for s in sessions:
-            prog = s.template_id.program_id if s.template_id else False
+            tmpl = s.template_id
+            prog = tmpl.program_id if tmpl else False
             prog_id = prog.id if prog else None
-            # Eligible = members subscribed to this session's program
-            eligible_member_ids = program_member_map.get(prog_id, [])
-            # Credit cost per class from the program model (default 1)
+            tmpl_id = tmpl.id if tmpl else None
+
+            # Merge eligible member IDs from both maps
+            eligible = set(program_member_map.get(prog_id, []))
+            eligible |= set(course_member_map.get(tmpl_id, []))
+            eligible |= set(course_member_map.get('__any__', []))
+            eligible_member_ids = list(eligible)
+
             credits_per_class = getattr(prog, 'credits_per_class', 1) if prog else 1
             data.append({
                 'id': s.id,
-                'name': s.template_id.name or '',
-                'template_id': s.template_id.id,
+                'name': tmpl.name or '',
+                'template_id': tmpl_id,
                 'program_name': prog.name if prog else '',
                 'start_datetime': fields.Datetime.to_string(s.start_datetime) if s.start_datetime else None,
                 'end_datetime': fields.Datetime.to_string(s.end_datetime) if s.end_datetime else None,
                 'instructor': s.instructor_profile_id.name if s.instructor_profile_id else None,
-                'level': s.template_id.level or 'all',
-                'duration_minutes': s.template_id.duration_minutes or 0,
+                'level': tmpl.level or 'all',
+                'duration_minutes': tmpl.duration_minutes or 0,
                 'seats_taken': s.seats_taken or 0,
                 'capacity': s.capacity or 0,
                 'state': s.state,
-                'description': s.template_id.description or '',
+                'description': tmpl.description or '',
                 'eligible_member_ids': eligible_member_ids,
                 'credits_per_class': credits_per_class,
             })
@@ -932,6 +972,58 @@ class DojoMemberPortal(CustomerPortal):
             })
         return data
 
+    def _build_courses_for_member(self, target):
+        """Build course-subscription list for members on course-based plans.
+
+        Unlike program enrollments (which require a ``dojo.program.enrollment``
+        record), course access is inferred directly from active subscriptions
+        whose plan has ``plan_type == 'course'``.  Each entry describes one
+        subscription and the course templates that plan grants access to,
+        together with a per-template attended-session count.
+        """
+        env = request.env
+
+        subs = env['sale.subscription'].sudo().search([
+            ('member_id', '=', target.id),
+        ], order='date_start desc')
+
+        # Count sessions the member actually attended per template
+        attended = env['dojo.class.enrollment'].sudo().search([
+            ('member_id', '=', target.id),
+            ('status', '!=', 'cancelled'),
+            ('attendance_state', '=', 'present'),
+        ])
+        count_by_tmpl = {}
+        for enr in attended:
+            tmpl = enr.session_id.template_id if enr.session_id else None
+            if tmpl:
+                count_by_tmpl[tmpl.id] = count_by_tmpl.get(tmpl.id, 0) + 1
+
+        courses_data = []
+        for sub in subs:
+            plan = sub.plan_id
+            if not plan or plan.plan_type != 'course':
+                continue
+            is_active = sub.state in ('active', 'pending')
+            courses_data.append({
+                'subscription_id': sub.id,
+                'plan_id': plan.id,
+                'plan_name': plan.name or '',
+                'state': sub.state or 'active',
+                'start_date': fields.Date.to_string(sub.date_start) if sub.date_start else None,
+                'is_active': is_active,
+                'templates': [
+                    {
+                        'id': t.id,
+                        'name': t.name or '',
+                        'level': t.level or 'all',
+                        'session_count': count_by_tmpl.get(t.id, 0),
+                    }
+                    for t in plan.allowed_template_ids
+                ],
+            })
+        return courses_data
+
     # ── /my/dojo/json/programs ──────────────────────────────────────────────
     @http.route('/my/dojo/json/programs', type='http', auth='user')
     def portal_json_programs(self, member_id=None, **kwargs):
@@ -966,9 +1058,10 @@ class DojoMemberPortal(CustomerPortal):
                     'id': m.id,
                     'name': m.name or '',
                     'programs': self._build_programs_for_member(m),
+                    'courses': self._build_courses_for_member(m),
                     'belt_history': self._build_belt_history_for_member(m),
                 })
-            return _json({'programs': [], 'students': students_data})
+            return _json({'programs': [], 'courses': [], 'students': students_data})
         # Specific member or student self-view
         target = current
         if member_id and is_guardian:
@@ -980,8 +1073,12 @@ class DojoMemberPortal(CustomerPortal):
             except (TypeError, ValueError):
                 pass
         if not target:
-            return _json({'programs': [], 'students': []})
-        return _json({'programs': self._build_programs_for_member(target), 'students': []})
+            return _json({'programs': [], 'courses': [], 'students': []})
+        return _json({
+            'programs': self._build_programs_for_member(target),
+            'courses': self._build_courses_for_member(target),
+            'students': [],
+        })
 
     # ── /my/dojo/json/belt-history ──────────────────────────────────────────
     @http.route('/my/dojo/json/belt-history', type='http', auth='user')
@@ -1162,7 +1259,7 @@ class DojoMemberPortal(CustomerPortal):
             ], order='date_start desc')
 
         subs_data = []
-        all_invoices = env['account.move'].browse()
+        all_invoices = env['account.move'].sudo().browse()
         for sub in subs:
             plan = sub.plan_id
             subs_data.append({

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!--
+        Extend the standard Contacts (res.partner) form with a "Dojo" tab so
+        administrators can set is_guardian / is_minor / is_student / is_household
+        directly from the contact record — without needing to open the Member form.
+    -->
+    <record id="view_partner_form_dojo_roles" model="ir.ui.view">
+        <field name="name">res.partner.form.dojo.roles</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <!-- Insert "Dojo" tab before the "Notes" tab -->
+            <xpath expr="//page[@name='internal_notes']" position="before">
+                <page string="Dojo" name="dojo_roles">
+                    <group col="2">
+                        <group string="Role Flags">
+                            <field name="is_student" widget="boolean_toggle"/>
+                            <field name="is_guardian" widget="boolean_toggle"/>
+                            <field name="is_minor" widget="boolean_toggle"/>
+                            <field name="is_household" widget="boolean_toggle"/>
+                        </group>
+                        <group string="Household"
+                              invisible="not is_household">
+                            <field name="primary_guardian_id"
+                                   domain="[('is_guardian', '=', True)]"
+                                   options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -13,4 +13,27 @@
         needed here because portal users never query account.move directly.
     -->
 
+    <!--
+        account.payment: Portal users need READ access so Odoo can resolve the
+        computed field account.move.matched_payment_ids on the /my/invoices page
+        without throwing an AccessError.
+        The record rule below restricts visibility to payments where the partner
+        is the portal user themselves, OR is another member of the same household
+        (so a guardian can see all their household's payment records).
+    -->
+    <record id="rule_account_payment_portal" model="ir.rule">
+        <field name="name">Portal: account.payment - household scope</field>
+        <field name="model_id" ref="account.model_account_payment"/>
+        <field name="domain_force">[
+            '|',
+            ('partner_id', '=', user.partner_id.id),
+            ('partner_id.parent_id', '=', user.partner_id.parent_id.id)
+        ]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
 </odoo>

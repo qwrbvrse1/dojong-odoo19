@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!--
+        Adds a "Course Plans" page to the dojo.member form.
+
+        Shows the member's course-based subscription plans and the
+        course-template roster they belong to, giving instructors a
+        quick at-a-glance view of which specific courses a member is
+        allowed / enrolled in — equivalent to the "Subscriptions" tab
+        for program-based plans.
+    -->
+    <record id="view_dojo_member_form_course_inherit" model="ir.ui.view">
+        <field name="name">dojo.member.form.course.inherit</field>
+        <field name="model">dojo.member</field>
+        <field name="inherit_id" ref="dojo_core.view_dojo_member_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Course Plans" name="course_plans"
+                      attrs="{'invisible': [('subscription_ids', '=', [])]}">
+                    <!-- Course-based subscriptions with their allowed templates -->
+                    <field name="subscription_ids"
+                           readonly="1"
+                           domain="[('plan_id.plan_type', '=', 'course')]"
+                           string="Course Subscriptions"
+                           nolabel="1">
+                        <list>
+                            <field name="plan_id" string="Plan"/>
+                            <field name="state" string="Status"/>
+                            <field name="date_start" string="Start Date"/>
+                            <field name="recurring_next_date" string="Next Billing"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
