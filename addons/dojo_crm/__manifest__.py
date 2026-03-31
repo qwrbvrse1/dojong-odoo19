@@ -12,6 +12,7 @@
         "dojo_communications",
         "dojo_subscriptions",
         "dojo_sign",
+        "dojo_stripe",
         "sms",
         "mail",
         "base_automation",
@@ -35,4 +36,10 @@
     ],
     "installable": True,
     "auto_install": False,
+    "assets": {
+        "web.assets_backend": [
+            "dojo_crm/static/src/xml/crm_convert_stripe_payment.xml",
+            "dojo_crm/static/src/js/crm_convert_stripe_payment.js",
+        ],
+    },
 }

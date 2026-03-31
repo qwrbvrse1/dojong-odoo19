@@ -51,8 +51,29 @@
                                required="create_subscription == True"/>
                         <field name="subscription_start_date"
                                invisible="create_subscription == False"/>
-                        <field name="defer_payment"
-                               invisible="create_subscription == False"/>
+                    </group>
+                    <group string="Payment Method">
+                        <field name="payment_captured" invisible="1"/>
+                        <field name="skip_payment" invisible="1"/>
+                        <field name="stripe_card_display" invisible="1"/>
+                        <div class="alert alert-info py-3 px-3 mb-0"
+                             colspan="2" role="alert">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="fa fa-credit-card fa-lg mt-1 flex-shrink-0" title="Payment"/>
+                                <div>
+                                    <div class="fw-semibold mb-1">
+                                        Save a payment method for this household
+                                    </div>
+                                    <div class="text-muted">
+                                        Subscription invoices will be automatically charged to the saved card.
+                                        You can skip this step — the guardian can add a card via the portal later.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div colspan="2" class="pt-3">
+                            <widget name="crm_convert_stripe_payment"/>
+                        </div>
                     </group>
                     <group string="Portal Access">
                         <field name="create_portal_login"/>

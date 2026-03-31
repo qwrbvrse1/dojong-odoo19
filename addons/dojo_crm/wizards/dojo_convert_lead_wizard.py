@@ -86,11 +86,20 @@ class DojoConvertLeadWizard(models.TransientModel):
         string="Start Date",
         default=fields.Date.today,
     )
-    defer_payment = fields.Boolean(
-        string="Pay Later",
+
+    # ------------------------------------------------------------------
+    # Stripe payment capture
+    # ------------------------------------------------------------------
+
+    stripe_client_secret = fields.Char(readonly=True)
+    stripe_setup_intent_id = fields.Char(readonly=True)
+    stripe_payment_method_id = fields.Char(readonly=True)
+    stripe_card_display = fields.Char(readonly=True)
+    stripe_customer_id = fields.Char(readonly=True)
+    payment_captured = fields.Boolean(default=False)
+    skip_payment = fields.Boolean(
+        string="Skip — proceed without saving a card",
         default=False,
-        help="Create the subscription in Pending state. Billing will begin on the start date "
-             "once payment is collected separately.",
     )
 
     # ------------------------------------------------------------------
@@ -238,15 +247,12 @@ class DojoConvertLeadWizard(models.TransientModel):
         if self.create_subscription and self.plan_id and member:
             plan = self.plan_id
             start = self.subscription_start_date or fields.Date.today()
-            # defer_payment=True → subscription is active but billing is paused
-            # (next_billing_date=None) so the cron skips it until admin sets a date.
-            # defer_payment=False → billing starts normally from start_date.
             sub = self.env["sale.subscription"].create(
                 {
                     "member_id": member.id,
                     "plan_id": plan.id,
                     "date_start": start,
-                    "recurring_next_date": False if self.defer_payment else start,
+                    "recurring_next_date": start,
                 }
             )
             sub.action_set_active()
@@ -263,6 +269,10 @@ class DojoConvertLeadWizard(models.TransientModel):
             lead.stage_id = converted_stage.id
 
         lead.active = False  # archive
+
+        # ---- Attach Stripe payment method to household ----
+        if self.payment_captured and self.stripe_payment_method_id and household:
+            self._attach_stripe_payment_method(household)
 
         # ---- Copy trial waiver from lead to the new member ---------------
         if lead.lead_has_signed_waiver and member:
@@ -318,3 +328,72 @@ class DojoConvertLeadWizard(models.TransientModel):
             "res_id": member.id,
             "view_mode": "form",
         }
+
+    # ------------------------------------------------------------------
+    # Stripe helpers
+    # ------------------------------------------------------------------
+
+    def _get_stripe_provider(self):
+        return self.env["payment.provider"].sudo().search(
+            [("code", "=", "stripe"), ("state", "in", ("enabled", "test"))],
+            limit=1,
+        )
+
+    def _attach_stripe_payment_method(self, household):
+        """Create an Odoo payment.token for the guardian from the captured Stripe PM."""
+        self.ensure_one()
+
+        provider = self._get_stripe_provider()
+        if not provider:
+            _logger.warning("dojo_crm: No active Stripe provider — skipping token creation.")
+            return
+
+        guardian = household.primary_guardian_id if household.is_household else None
+        if not guardian:
+            _logger.warning("dojo_crm: No guardian on household — skipping token creation.")
+            return
+
+        pm_id = self.stripe_payment_method_id
+        cus_id = self.stripe_customer_id
+        if not cus_id or not pm_id:
+            _logger.warning("dojo_crm: Missing stripe IDs — skipping token creation.")
+            return
+
+        try:
+            provider._send_api_request(
+                "POST", f"customers/{cus_id}",
+                data={
+                    "metadata[odoo_partner_id]": str(guardian.id),
+                    "invoice_settings[default_payment_method]": pm_id,
+                },
+            )
+        except Exception as exc:
+            _logger.warning(
+                "dojo_crm: could not update Stripe customer metadata (cus=%s): %s",
+                cus_id, exc,
+            )
+
+        try:
+            payment_method = self.env["payment.method"].sudo().search(
+                [("code", "=", "card"), ("provider_ids", "in", [provider.id])],
+                limit=1,
+            )
+            token_vals = {
+                "provider_id": provider.id,
+                "partner_id": guardian.id,
+                "provider_ref": cus_id,
+                "stripe_payment_method": pm_id,
+                "active": True,
+            }
+            if payment_method:
+                token_vals["payment_method_id"] = payment_method.id
+            if self.stripe_card_display:
+                token_vals["payment_details"] = self.stripe_card_display
+
+            token = self.env["payment.token"].sudo().create(token_vals)
+            _logger.info(
+                "dojo_crm: created payment.token %s for guardian %s (cus=%s pm=%s)",
+                token.id, guardian.name, cus_id, pm_id,
+            )
+        except Exception as exc:
+            _logger.error("dojo_crm: failed to create payment.token: %s", exc)
