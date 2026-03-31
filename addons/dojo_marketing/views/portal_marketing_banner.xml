@@ -42,4 +42,38 @@
         </xpath>
 
     </template>
+
+    <!--
+        Inject the member's personal marketing card (from card.campaign) into
+        the dojo portal home hero section, below the stat chips row.
+        Only shown when the member has an active card.card record.
+    -->
+    <template id="portal_dojo_member_card"
+              inherit_id="dojo_members_portal.portal_dojo_home"
+              name="Dojo Member Card Display"
+              priority="21">
+
+        <xpath expr="//div[hasclass('dojo-hero')]" position="inside">
+            <t t-if="member_card">
+                <div class="dojo-member-card mt-3 pt-3 border-top">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span style="font-size:.85rem;font-weight:600;color:#5f6368;">My Membership Card</span>
+                    </div>
+                    <img t-attf-src="/cards/#{member_card.id}/card.jpg"
+                         class="img-fluid rounded shadow-sm"
+                         style="max-width:360px;"
+                         alt="Membership Card"/>
+                    <div class="mt-2">
+                        <a t-attf-href="/cards/#{member_card.id}/redirect"
+                           class="btn btn-sm btn-outline-secondary"
+                           target="_blank">
+                            Share My Card
+                        </a>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+
+    </template>
+
 </odoo>

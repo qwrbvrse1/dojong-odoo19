@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!--
+        Default Marketing Card campaigns — one per membership state.
+        noupdate="1": admins can customize these without upgrades reverting changes.
+        dojo.member is unlocked as a target model via card_campaign_extension.py.
+    -->
+    <data noupdate="1">
+
+        <!-- ── Trial ──────────────────────────────────────────────────────── -->
+        <!--
+            preview_record_ref uses base.main_partner as a placeholder so the
+            record installs cleanly. The post_init_hook in __init__.py swaps this
+            to the first available dojo.member, which also flips res_model from
+            'res.partner' → 'dojo.member' (res_model is computed from preview_record_ref).
+        -->
+
+        <record id="campaign_member_trial" model="card.campaign">
+            <field name="name">Trial Member Card</field>
+            <field name="card_template_id" ref="marketing_card.card_template_light"/>
+            <field name="preview_record_ref" eval="'res.partner,%d' % ref('base.main_partner')"/>
+            <!-- Header: member display name (dynamic) -->
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">partner_id.name</field>
+            <!-- Section: static label -->
+            <field name="content_section">Trial Member</field>
+            <field name="content_section_dyn" eval="False"/>
+            <field name="post_suggestion">Welcome! Share your trial experience with friends and family.</field>
+        </record>
+
+        <!-- ── Active ─────────────────────────────────────────────────────── -->
+        <record id="campaign_member_active" model="card.campaign">
+            <field name="name">Member Card</field>
+            <field name="card_template_id" ref="marketing_card.card_template_dark"/>
+            <field name="preview_record_ref" eval="'res.partner,%d' % ref('base.main_partner')"/>
+            <!-- Header: member display name (dynamic) -->
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">partner_id.name</field>
+            <!-- Sub-header: belt rank (dynamic) -->
+            <field name="content_sub_header_dyn" eval="True"/>
+            <field name="content_sub_header_path">current_rank_id.name</field>
+            <field name="post_suggestion">Show off your Dojang membership! Share your card.</field>
+        </record>
+
+        <!-- ── Paused ─────────────────────────────────────────────────────── -->
+        <record id="campaign_member_paused" model="card.campaign">
+            <field name="name">Paused Member Card</field>
+            <field name="card_template_id" ref="marketing_card.card_template_lila"/>
+            <field name="preview_record_ref" eval="'res.partner,%d' % ref('base.main_partner')"/>
+            <!-- Header: member display name (dynamic) -->
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">partner_id.name</field>
+            <!-- Section: static label -->
+            <field name="content_section">Membership Paused</field>
+            <field name="content_section_dyn" eval="False"/>
+            <field name="post_suggestion">Your spot is being held. We look forward to seeing you back on the mat!</field>
+        </record>
+
+        <!-- ── Cancelled ──────────────────────────────────────────────────── -->
+        <record id="campaign_member_cancelled" model="card.campaign">
+            <field name="name">Come Back Card</field>
+            <field name="card_template_id" ref="marketing_card.card_template_waves"/>
+            <field name="preview_record_ref" eval="'res.partner,%d' % ref('base.main_partner')"/>
+            <!-- Header: member display name (dynamic) -->
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">partner_id.name</field>
+            <!-- Section: static label -->
+            <field name="content_section">We Miss You</field>
+            <field name="content_section_dyn" eval="False"/>
+            <field name="post_suggestion">Your Dojang family misses you. Come back and train with us again!</field>
+        </record>
+
+    </data>
+</odoo>

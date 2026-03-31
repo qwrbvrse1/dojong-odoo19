@@ -307,4 +307,17 @@ class DojoMemberPortalMarketing(DojoMemberPortal):
             })
 
         response.qcontext["marketing_cards"] = marketing_cards
+
+        # Inject the member's active marketing card (from card.campaign)
+        member = response.qcontext.get("member")
+        if member:
+            member_card = request.env["card.card"].sudo().search([
+                ("res_model", "=", "dojo.member"),
+                ("res_id", "=", member.id),
+                ("active", "=", True),
+            ], limit=1)
+            response.qcontext["member_card"] = member_card or False
+        else:
+            response.qcontext["member_card"] = False
+
         return response

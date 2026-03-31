@@ -1,7 +1,7 @@
 {
     "name": "Dojo Promotions",
     "summary": "Promotional cards with QR codes — published to kiosk carousel and member portal",
-    "version": "saas~19.2.2.0.0",
+    "version": "saas~19.2.3.0.0",
     "category": "Dojo",
     "license": "LGPL-3",
     "author": "Dojang",
@@ -9,12 +9,16 @@
         "dojo_core",
         "dojo_kiosk",
         "dojo_members_portal",
+        "marketing_card",
+        "automation_oca",
     ],
     "data": [
         "security/ir.model.access.csv",
         "views/dojo_marketing_card_views.xml",
         "views/dojo_member_badge_button.xml",
         "views/portal_marketing_banner.xml",
+        "data/marketing_card_campaigns.xml",
+        "data/automation_oca_membership.xml",
     ],
     "assets": {
         "web.assets_frontend": [
@@ -23,4 +27,5 @@
     },
     "application": True,
     "installable": True,
+    "post_init_hook": "post_init_hook",
 }

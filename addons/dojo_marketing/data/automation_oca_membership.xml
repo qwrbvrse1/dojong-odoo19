@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!--
+        automation_oca membership workflow — one configuration per membership state.
+        Each configuration watches dojo.member records matching a specific state,
+        generates their marketing card, and notifies them via email.
+
+        The cron (from automation_oca) picks up new matching records automatically.
+        field_id = membership_state ensures deduplication per record per campaign.
+    -->
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SERVER ACTIONS — generate card + notify member
+         One action per state, each calls campaign._update_cards() and
+         sends a portal message with the card link.
+    ══════════════════════════════════════════════════════════════════════════ -->
+
+    <record id="action_generate_card_trial" model="ir.actions.server">
+        <field name="name">Generate Trial Member Card</field>
+        <field name="type">ir.actions.server</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="code">
+campaign = env.ref('dojo_marketing.campaign_member_trial', raise_if_not_found=False)
+if not campaign:
+    log('dojo_marketing: campaign_member_trial not found, skipping card generation')
+else:
+    campaign._update_cards([('id', 'in', records.ids)])
+    base_url = env['ir.config_parameter'].sudo().get_str('web.base.url', default='')
+    for record in records:
+        card = env['card.card'].search([
+            ('campaign_id', '=', campaign.id),
+            ('res_id', '=', record.id),
+        ], limit=1)
+        if card and record.partner_id.email:
+            card_url = '%s%s' % (base_url, card._get_card_url())
+            record.message_post(
+                body='&lt;p&gt;Welcome to Dojang! Your trial membership card is ready.&lt;/p&gt;&lt;p&gt;&lt;a href="%s"&gt;View your card&lt;/a&gt;&lt;/p&gt;' % card_url,
+                subject='Your Dojang Trial Membership Card',
+                message_type='email',
+                subtype_xmlid='mail.mt_comment',
+                partner_ids=[record.partner_id.id],
+            )
+        </field>
+    </record>
+
+    <record id="action_generate_card_active" model="ir.actions.server">
+        <field name="name">Generate Active Member Card</field>
+        <field name="type">ir.actions.server</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="code">
+campaign = env.ref('dojo_marketing.campaign_member_active', raise_if_not_found=False)
+if not campaign:
+    log('dojo_marketing: campaign_member_active not found, skipping card generation')
+else:
+    campaign._update_cards([('id', 'in', records.ids)])
+    base_url = env['ir.config_parameter'].sudo().get_str('web.base.url', default='')
+    for record in records:
+        card = env['card.card'].search([
+            ('campaign_id', '=', campaign.id),
+            ('res_id', '=', record.id),
+        ], limit=1)
+        if card and record.partner_id.email:
+            card_url = '%s%s' % (base_url, card._get_card_url())
+            record.message_post(
+                body='&lt;p&gt;Congratulations! Your Dojang membership card is ready.&lt;/p&gt;&lt;p&gt;&lt;a href="%s"&gt;View your card&lt;/a&gt;&lt;/p&gt;' % card_url,
+                subject='Your Dojang Membership Card',
+                message_type='email',
+                subtype_xmlid='mail.mt_comment',
+                partner_ids=[record.partner_id.id],
+            )
+        </field>
+    </record>
+
+    <record id="action_generate_card_paused" model="ir.actions.server">
+        <field name="name">Generate Paused Member Card</field>
+        <field name="type">ir.actions.server</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="code">
+campaign = env.ref('dojo_marketing.campaign_member_paused', raise_if_not_found=False)
+if not campaign:
+    log('dojo_marketing: campaign_member_paused not found, skipping card generation')
+else:
+    campaign._update_cards([('id', 'in', records.ids)])
+    base_url = env['ir.config_parameter'].sudo().get_str('web.base.url', default='')
+    for record in records:
+        card = env['card.card'].search([
+            ('campaign_id', '=', campaign.id),
+            ('res_id', '=', record.id),
+        ], limit=1)
+        if card and record.partner_id.email:
+            card_url = '%s%s' % (base_url, card._get_card_url())
+            record.message_post(
+                body='&lt;p&gt;Your Dojang membership is currently paused. Your spot is being held!&lt;/p&gt;&lt;p&gt;&lt;a href="%s"&gt;View your card&lt;/a&gt;&lt;/p&gt;' % card_url,
+                subject='Your Dojang Membership is Paused',
+                message_type='email',
+                subtype_xmlid='mail.mt_comment',
+                partner_ids=[record.partner_id.id],
+            )
+        </field>
+    </record>
+
+    <record id="action_generate_card_cancelled" model="ir.actions.server">
+        <field name="name">Generate Cancelled Member Card</field>
+        <field name="type">ir.actions.server</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="code">
+campaign = env.ref('dojo_marketing.campaign_member_cancelled', raise_if_not_found=False)
+if not campaign:
+    log('dojo_marketing: campaign_member_cancelled not found, skipping card generation')
+else:
+    campaign._update_cards([('id', 'in', records.ids)])
+    base_url = env['ir.config_parameter'].sudo().get_str('web.base.url', default='')
+    for record in records:
+        card = env['card.card'].search([
+            ('campaign_id', '=', campaign.id),
+            ('res_id', '=', record.id),
+        ], limit=1)
+        if card and record.partner_id.email:
+            card_url = '%s%s' % (base_url, card._get_card_url())
+            record.message_post(
+                body='&lt;p&gt;We miss you at Dojang! Come back and train with us again.&lt;/p&gt;&lt;p&gt;&lt;a href="%s"&gt;View your card&lt;/a&gt;&lt;/p&gt;' % card_url,
+                subject='We Miss You at Dojang',
+                message_type='email',
+                subtype_xmlid='mail.mt_comment',
+                partner_ids=[record.partner_id.id],
+            )
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         AUTOMATION CONFIGURATIONS — one per membership state
+    ══════════════════════════════════════════════════════════════════════════ -->
+
+    <record id="automation_membership_trial" model="automation.configuration">
+        <field name="name">Membership Card — Trial</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="field_id" ref="dojo_core.field_dojo_member__membership_state"/>
+        <field name="editable_domain">[("membership_state", "=", "trial")]</field>
+    </record>
+    <record id="automation_membership_trial_step" model="automation.configuration.step">
+        <field name="name">Generate trial card</field>
+        <field name="configuration_id" ref="automation_membership_trial"/>
+        <field name="step_type">action</field>
+        <field name="trigger_interval">0</field>
+        <field name="server_action_id" ref="action_generate_card_trial"/>
+    </record>
+
+    <record id="automation_membership_active" model="automation.configuration">
+        <field name="name">Membership Card — Active</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="field_id" ref="dojo_core.field_dojo_member__membership_state"/>
+        <field name="editable_domain">[("membership_state", "=", "active")]</field>
+    </record>
+    <record id="automation_membership_active_step" model="automation.configuration.step">
+        <field name="name">Generate active member card</field>
+        <field name="configuration_id" ref="automation_membership_active"/>
+        <field name="step_type">action</field>
+        <field name="trigger_interval">0</field>
+        <field name="server_action_id" ref="action_generate_card_active"/>
+    </record>
+
+    <record id="automation_membership_paused" model="automation.configuration">
+        <field name="name">Membership Card — Paused</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="field_id" ref="dojo_core.field_dojo_member__membership_state"/>
+        <field name="editable_domain">[("membership_state", "=", "paused")]</field>
+    </record>
+    <record id="automation_membership_paused_step" model="automation.configuration.step">
+        <field name="name">Generate paused member card</field>
+        <field name="configuration_id" ref="automation_membership_paused"/>
+        <field name="step_type">action</field>
+        <field name="trigger_interval">0</field>
+        <field name="server_action_id" ref="action_generate_card_paused"/>
+    </record>
+
+    <record id="automation_membership_cancelled" model="automation.configuration">
+        <field name="name">Membership Card — Cancelled</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="field_id" ref="dojo_core.field_dojo_member__membership_state"/>
+        <field name="editable_domain">[("membership_state", "=", "cancelled")]</field>
+    </record>
+    <record id="automation_membership_cancelled_step" model="automation.configuration.step">
+        <field name="name">Generate cancelled member card</field>
+        <field name="configuration_id" ref="automation_membership_cancelled"/>
+        <field name="step_type">action</field>
+        <field name="trigger_interval">0</field>
+        <field name="server_action_id" ref="action_generate_card_cancelled"/>
+    </record>
+
+</odoo>
