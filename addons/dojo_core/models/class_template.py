@@ -45,6 +45,16 @@ class DojoClassTemplate(models.Model):
         "member_id",
         string="Course Members",
     )
+    # Auto-enrollment setting
+    auto_enroll_members = fields.Boolean(
+        string="Auto-Enroll Course Members",
+        default=True,
+        help="When enabled, all Course Members are automatically enrolled in sessions "
+             "as they are generated (respecting per-member day/date preferences). "
+             "Uncheck this to create sessions without any automatic enrollment — "
+             "students must enroll individually.",
+    )
+
     # Recurrence settings
     recurrence_active = fields.Boolean(string="Enable Recurrence", default=False)
     rec_mon = fields.Boolean(string="Mon")
@@ -191,11 +201,11 @@ class DojoClassTemplate(models.Model):
                         "recurrence_template_id": self.id,
                     }
                 )
-                # Auto-enroll course members, respecting each member's preference.
+                # Auto-enroll course members only when the template flag is set.
                 # No preference record  → enroll on all days (backward-compatible default).
                 # active=False          → skip (explicit opt-out).
                 # active=True           → defer to should_enroll_on_date().
-                for member in self.course_member_ids:
+                for member in self.course_member_ids if self.auto_enroll_members else []:
                     pref = pref_by_member.get(member.id)
                     if pref is None:
                         # No preference: enroll (default)
@@ -283,11 +293,12 @@ class DojoClassTemplate(models.Model):
                         enrollments.write({'status': 'cancelled'})
 
                 # ── Enroll newly added members in existing future sessions ──
+                # Only when auto_enroll_members is enabled on this template.
                 # Skip members being handled by auto-enroll preference logic
                 # (they pass context key 'auto_enroll_skip_members' to avoid double-enrollment).
                 skip_ids = self.env.context.get('auto_enroll_skip_members', set())
                 added_ids = list((new_ids - old_ids) - skip_ids)
-                if added_ids:
+                if added_ids and tmpl.auto_enroll_members:
                     # Fetch auto-enroll preferences for these members on this template
                     pref_by_member = {
                         pref.member_id.id: pref

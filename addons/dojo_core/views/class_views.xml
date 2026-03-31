@@ -172,6 +172,11 @@
                             </group>
                         </page>
                         <page string="Course Members">
+                            <group>
+                                <field name="auto_enroll_members"
+                                    string="Auto-Enroll Course Members into Sessions"
+                                    help="When enabled, all Course Members below are automatically enrolled whenever sessions are generated (respecting per-member preferences). Disable to create sessions without automatic enrollment — students must enroll individually."/>
+                            </group>
                             <field name="course_member_ids" widget="many2many">
                                 <list>
                                     <field name="name"/>

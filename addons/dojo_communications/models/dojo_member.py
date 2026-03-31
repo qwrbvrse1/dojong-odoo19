@@ -35,5 +35,5 @@ class DojoMember(models.Model):
             "res_model": "dojo.send.message.wizard",
             "view_mode": "form",
             "target": "new",
-            "context": {"default_member_ids": [(6, 0, [self.id])]},
+            "context": {"default_member_ids": [self.id]},
         }
