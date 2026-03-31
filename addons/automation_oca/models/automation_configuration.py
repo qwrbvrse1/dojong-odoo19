@@ -67,7 +67,7 @@ class AutomationConfiguration(models.Model):
         string="Model ID",
     )
     filter_id = fields.Many2one("automation.filter")
-    filter_domain = fields.Binary(compute="_compute_filter_domain")
+    filter_domain = fields.Json(compute="_compute_filter_domain")
     model = fields.Char(string="Model", related="model_id.model")
     field_id = fields.Many2one(
         "ir.model.fields",
