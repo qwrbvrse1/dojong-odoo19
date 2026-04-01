@@ -1,12 +1,12 @@
 .o_web_client {
     display: grid !important;
     grid-template-areas:
-        "banner"
-        "navbar"
-        "content"
-        "components";
+        "banner banner"
+        "navbar navbar"
+        "sidebar content"
+        "sidebar components";
     grid-template-rows: auto auto 1fr auto;
-    grid-template-columns: 1fr;
+    grid-template-columns: auto 1fr;
 
     >div:has(#oe_neutralize_banner) {
         grid-area: banner;
@@ -17,7 +17,7 @@
     }
 
     >.mk_apps_sidebar_panel {
-        display: none !important;
+        grid-area: sidebar;
     }
 
     >.o_action_manager {

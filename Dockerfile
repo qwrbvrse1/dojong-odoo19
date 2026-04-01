@@ -43,6 +43,13 @@ COPY ./odoo /opt/odoo
 # Install Python dependencies from the repo's requirements.txt
 RUN pip install --no-cache-dir -r /opt/odoo/requirements.txt
 
+# Install extra Python dependencies for custom addons
+COPY ./requirements.txt /opt/extra-requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config libcairo2-dev \
+    && pip install --no-cache-dir -r /opt/extra-requirements.txt \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Create the odoo user and required directories
 RUN useradd -ms /bin/bash odoo \
     && mkdir -p /var/lib/odoo /mnt/enterprise-addons /mnt/extra-addons \

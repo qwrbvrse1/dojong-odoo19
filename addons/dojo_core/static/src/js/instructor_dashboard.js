@@ -3,6 +3,7 @@
 import { Component, useState, onWillStart, onMounted, useRef } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
+import { user } from "@web/core/user";
 import { DojoVoiceAssistant } from "./voice_assistant";
 
 class InstructorDashboard extends Component {
@@ -55,6 +56,10 @@ class InstructorDashboard extends Component {
         );
 
         if (!profile) {
+            if (user.isAdmin) {
+                this.action.doAction("dojo_core.action_admin_dashboard_client", { clearBreadcrumbs: true });
+                return;
+            }
             this.state.loading = false;
             return;
         }

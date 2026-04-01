@@ -1,6 +1,12 @@
 # Twilio SDK – SMS, Voice, VoIP integration
 twilio
 
+# OpenAI – Call transcription and summarization (connect module)
+openai
+
+# Phone number parsing and formatting (connect module)
+phonenumbers
+
 # Stripe – Issuing virtual cards + Google Wallet push provisioning
 stripe
 
