@@ -10,7 +10,7 @@
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="dojo_core.view_dojo_household_form"/>
         <field name="arch" type="xml">
-            <!-- Payment token stat button -->
+            <!-- Payment token stat button + Add/Update Card buttons -->
             <xpath expr="//sheet" position="before">
                 <div name="stripe_button_box" class="oe_button_box">
                     <button name="action_view_payment_tokens"
@@ -22,6 +22,23 @@
                                string="Payment Methods"/>
                     </button>
                 </div>
+            </xpath>
+            <!-- Add / Update Card buttons in the form header -->
+            <xpath expr="//form/header" position="inside">
+                <button name="action_add_update_card"
+                        type="object"
+                        string="Add Card"
+                        class="btn-secondary"
+                        icon="fa-plus-circle"
+                        invisible="payment_token_count != 0"
+                        groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
+                <button name="action_add_update_card"
+                        type="object"
+                        string="Update Card"
+                        class="btn-secondary"
+                        icon="fa-pencil"
+                        invisible="payment_token_count == 0"
+                        groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
             </xpath>
 
         </field>

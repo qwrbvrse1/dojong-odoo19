@@ -1,6 +1,6 @@
 import secrets
 
-from odoo import api, fields, models, _
+from odoo import Command, api, fields, models, _
 from odoo.exceptions import UserError
 
 
@@ -57,6 +57,24 @@ class ResPartner(models.Model):
             members = self.env["dojo.member"].sudo().search([])
             return [("id", "not in", members.mapped("partner_id").ids)]
         return [("id", "in", [])]
+
+    def action_household_portal_wizard(self):
+        """Open the Odoo portal-access wizard pre-populated with this household's contacts."""
+        self.ensure_one()
+        partner_ids = self.child_ids.filtered(
+            lambda p: not p.is_household and p.email
+        )
+        if not partner_ids:
+            raise UserError(
+                _(
+                    "No contacts with email addresses were found in this household. "
+                    "Please add an email to at least one contact before granting portal access."
+                )
+            )
+        wizard = self.env["portal.wizard"].create(
+            {"partner_ids": [Command.set(partner_ids.ids)]}
+        )
+        return wizard._action_open_modal()
 
     def _grant_portal_access_credentials(self):
         """Grant portal access and return credentials dict, or None if user existed."""

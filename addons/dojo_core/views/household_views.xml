@@ -19,6 +19,13 @@
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <form>
+                <header>
+                    <button name="action_household_portal_wizard"
+                            type="object"
+                            string="Grant Portal Access"
+                            class="btn-secondary"
+                            groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
+                </header>
                 <sheet>
                     <group>
                         <field name="name"/>

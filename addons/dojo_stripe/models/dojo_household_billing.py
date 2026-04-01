@@ -66,6 +66,27 @@ class DojoHouseholdBilling(models.Model):
             "context": {"default_partner_id": guardian.id},
         }
 
+    def action_add_update_card(self):
+        """Open the inline Stripe card-capture modal for this household."""
+        self.ensure_one()
+        if not self.primary_guardian_id:
+            raise UserError(
+                _("Please set a primary guardian before adding a payment method.")
+            )
+        label = _("Update Payment Method") if self.payment_token_count else _("Add Payment Method")
+        return {
+            "type": "ir.actions.client",
+            "tag": "dojo_stripe.HouseholdCardCapture",
+            "name": label,
+            "target": "new",
+            "context": {"dialog_size": "medium"},
+            "params": {
+                "household_id": self.id,
+                "guardian_name": self.primary_guardian_id.name or self.name,
+                "has_existing_card": self.payment_token_count > 0,
+            },
+        }
+
     def action_charge_invoice(self, invoice):
         """Charge an open invoice using the guardian's saved Stripe payment token.
 

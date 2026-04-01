@@ -33,6 +33,7 @@ Invoicing → Configuration → Payment Providers → Stripe.
     "assets": {
         "web.assets_backend": [
             "dojo_stripe/static/src/issuing.js",
+            "dojo_stripe/static/src/household_card_capture.js",
         ],
     },
     "installable": True,
