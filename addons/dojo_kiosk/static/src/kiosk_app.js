@@ -279,20 +279,43 @@ class MemberProfileCard extends Component {
 
                 <!-- ── Head ── -->
                 <div class="k-profile__head">
-                    <div class="k-profile__avatar-wrap">
+                    <div class="k-profile__avatar-wrap" style="position:relative;">
+                        <t t-if="state.photoUploading">
+                            <div class="k-profile__photo-uploading">
+                                <div class="k-spinner"/>
+                            </div>
+                        </t>
                         <t t-if="props.member.image_url">
                             <img class="k-profile__avatar"
-                                t-att-src="props.member.image_url"
+                                t-att-src="state.photoPreview || props.member.image_url"
                                 t-att-alt="props.member.name"
                                 t-on-error="onImgError"/>
                         </t>
                         <t t-else="">
-                            <div class="k-profile__avatar-placeholder">
-                                <t t-esc="initials(props.member.name)"/>
+                            <t t-if="state.photoPreview">
+                                <img class="k-profile__avatar" t-att-src="state.photoPreview" t-att-alt="props.member.name"/>
+                            </t>
+                            <t t-else="">
+                                <div class="k-profile__avatar-placeholder">
+                                    <t t-esc="initials(props.member.name)"/>
+                                </div>
+                            </t>
+                        </t>
+                        <t t-if="props.instructorMode">
+                            <button class="k-profile__photo-btn" t-on-click="togglePhotoSheet" title="Update photo">📷</button>
+                        </t>
+                        <t t-if="state.showPhotoSheet">
+                            <div class="k-profile__photo-sheet">
+                                <button class="k-profile__photo-sheet-btn" t-on-click="takePhoto">📸 Take Photo</button>
+                                <button class="k-profile__photo-sheet-btn" t-on-click="chooseFile">📁 Choose File</button>
+                                <button class="k-profile__photo-sheet-btn k-profile__photo-sheet-btn--cancel" t-on-click="() => this.state.showPhotoSheet = false">Cancel</button>
                             </div>
                         </t>
+                        <input type="file" accept="image/*" style="display:none;" t-ref="fileInput" t-on-change="onPhotoSelected"/>
                     </div>
                     <div class="k-profile__head-info">
+                        <t t-if="state.photoError"><div class="k-profile__photo-msg k-profile__photo-msg--error" t-esc="state.photoError"/></t>
+                        <t t-if="state.photoSuccess"><div class="k-profile__photo-msg k-profile__photo-msg--success" t-esc="state.photoSuccess"/></t>
                         <div class="k-profile__name" t-esc="props.member.name"/>
                         <div class="k-profile__belt" t-esc="props.member.belt_rank || 'No Rank'"/>
                         <t t-if="props.member.membership_state">
@@ -758,6 +781,36 @@ class MemberProfileCard extends Component {
 
             </div>
         </div>
+
+        <!-- ── Camera capture modal ── -->
+        <t t-if="state.showCamera">
+            <div class="k-modal-overlay k-camera-overlay" t-on-click.self="closeCamera">
+                <div class="k-camera-modal">
+                    <div class="k-camera-modal__header">
+                        <span class="k-camera-modal__title">Take Photo</span>
+                        <button class="k-modal__close" t-on-click="closeCamera">✕</button>
+                    </div>
+                    <div class="k-camera-modal__body">
+                        <t t-if="state.cameraError">
+                            <div class="k-camera-modal__error" t-esc="state.cameraError"/>
+                        </t>
+                        <video t-ref="cameraVideo" class="k-camera-modal__video" autoplay="true" playsinline="true"
+                            t-att-style="state.cameraCaptured ? 'display:none' : ''"/>
+                        <canvas t-ref="cameraCanvas" class="k-camera-modal__canvas"
+                            t-att-style="state.cameraCaptured ? '' : 'display:none'"/>
+                    </div>
+                    <div class="k-camera-modal__actions">
+                        <t t-if="!state.cameraCaptured">
+                            <button class="k-btn k-btn--primary k-camera-modal__snap" t-on-click="capturePhoto" t-att-disabled="!!state.cameraError">📸 Capture</button>
+                        </t>
+                        <t t-else="">
+                            <button class="k-btn k-btn--secondary" t-on-click="retakePhoto">↺ Retake</button>
+                            <button class="k-btn k-btn--primary" t-on-click="usePhoto">✓ Use Photo</button>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </t>
     `;
 
     static props = ["member", "sessionId", "instructorMode", "onClose", "onCheckin", "onMarkAttendance", "onRosterAdd", "onRosterRemove", "onCheckout", "onRosterRemoveBySession", "onRefreshProfile"];
@@ -766,6 +819,16 @@ class MemberProfileCard extends Component {
         this.state = useState({
             tab: "profile",
             rosterAddError: "",
+            // Photo update
+            showPhotoSheet: false,
+            photoUploading: false,
+            photoError: "",
+            photoSuccess: "",
+            photoPreview: null,
+            // Camera modal
+            showCamera: false,
+            cameraError: "",
+            cameraCaptured: false,
             // Manage tab — rank promotion
             nextRankLoading: false,
             nextRankError: "",
@@ -792,12 +855,160 @@ class MemberProfileCard extends Component {
             sessionsLoadError: "",
             sessionRemoveMsg: "",
         });
+        this.fileInputRef = useRef("fileInput");
+        this.cameraVideoRef = useRef("cameraVideo");
+        this.cameraCanvasRef = useRef("cameraCanvas");
+        this._cameraStream = null;
     }
 
     initials(name) { return initials(name); }
     formatDateTime(dt) { return formatDateTime(dt); }
     computeContrast(hex) { return contrastColor(hex); }
     onImgError(ev) { ev.target.style.display = "none"; }
+
+    // ── Photo update ────────────────────────────────────────────
+    togglePhotoSheet() {
+        this.state.showPhotoSheet = !this.state.showPhotoSheet;
+        this.state.photoError = "";
+        this.state.photoSuccess = "";
+    }
+    async takePhoto() {
+        this.state.showPhotoSheet = false;
+        this.state.showCamera = true;
+        this.state.cameraError = "";
+        this.state.cameraCaptured = false;
+        // Wait for DOM to render the video element
+        await new Promise(r => setTimeout(r, 50));
+        try {
+            this._cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 640 } },
+                audio: false,
+            });
+            if (this.cameraVideoRef.el) {
+                this.cameraVideoRef.el.srcObject = this._cameraStream;
+            }
+        } catch (e) {
+            this.state.cameraError = "Could not access camera. Please check permissions.";
+        }
+    }
+    _stopCamera() {
+        if (this._cameraStream) {
+            this._cameraStream.getTracks().forEach(t => t.stop());
+            this._cameraStream = null;
+        }
+    }
+    closeCamera() {
+        this._stopCamera();
+        this.state.showCamera = false;
+        this.state.cameraCaptured = false;
+        this.state.cameraError = "";
+    }
+    capturePhoto() {
+        const video = this.cameraVideoRef.el;
+        const canvas = this.cameraCanvasRef.el;
+        if (!video || !canvas) return;
+        // Use square crop from the center of the video
+        const size = Math.min(video.videoWidth, video.videoHeight);
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        const sx = (video.videoWidth - size) / 2;
+        const sy = (video.videoHeight - size) / 2;
+        ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
+        this._stopCamera();
+        this.state.cameraCaptured = true;
+    }
+    async retakePhoto() {
+        this.state.cameraCaptured = false;
+        this.state.cameraError = "";
+        await new Promise(r => setTimeout(r, 50));
+        try {
+            this._cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 640 } },
+                audio: false,
+            });
+            if (this.cameraVideoRef.el) {
+                this.cameraVideoRef.el.srcObject = this._cameraStream;
+            }
+        } catch (e) {
+            this.state.cameraError = "Could not access camera.";
+        }
+    }
+    async usePhoto() {
+        const canvas = this.cameraCanvasRef.el;
+        if (!canvas) return;
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        this.closeCamera();
+        this.state.photoPreview = dataUrl;
+        this.state.photoUploading = true;
+        this.state.photoError = "";
+        this.state.photoSuccess = "";
+        try {
+            const base64 = dataUrl.split(",")[1];
+            const result = await jsonPost("/kiosk/instructor/update_photo", {
+                member_id: this.props.member.member_id,
+                image_data: base64,
+            });
+            if (result && result.success) {
+                this.state.photoSuccess = "Photo updated!";
+                if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
+            } else {
+                this.state.photoError = (result && result.error) || "Upload failed.";
+                this.state.photoPreview = null;
+            }
+        } catch (e) {
+            this.state.photoError = "Network error uploading photo.";
+            this.state.photoPreview = null;
+        } finally {
+            this.state.photoUploading = false;
+        }
+    }
+    chooseFile() {
+        this.state.showPhotoSheet = false;
+        if (this.fileInputRef.el) { this.fileInputRef.el.value = ""; this.fileInputRef.el.click(); }
+    }
+    async onPhotoSelected(ev) {
+        const file = ev.target.files && ev.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            this.state.photoError = "Please select an image file.";
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            this.state.photoError = "Image must be under 10 MB.";
+            return;
+        }
+        this.state.photoError = "";
+        this.state.photoSuccess = "";
+        this.state.photoUploading = true;
+        try {
+            const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            this.state.photoPreview = dataUrl;
+            const base64 = dataUrl.split(",")[1];
+            const result = await jsonPost("/kiosk/instructor/update_photo", {
+                member_id: this.props.member.member_id,
+                image_data: base64,
+            });
+            if (result && result.success) {
+                this.state.photoSuccess = "Photo updated!";
+                if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
+            } else {
+                this.state.photoError = (result && result.error) || "Upload failed.";
+                this.state.photoPreview = null;
+            }
+        } catch (e) {
+            this.state.photoError = "Network error uploading photo.";
+            this.state.photoPreview = null;
+        } finally {
+            this.state.photoUploading = false;
+        }
+    }
+
     markAttendance(status) { this.props.onMarkAttendance(this.props.member, this.props.sessionId, status); }
     onCheckin() { this.props.onCheckin(this.props.member, this.props.sessionId); }
     onCheckout() { this.props.onCheckout(this.props.member, this.props.sessionId); }

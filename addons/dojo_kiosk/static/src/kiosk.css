@@ -1101,7 +1101,7 @@ select { background: var(--k-surface-2); }
     .k-modal--lg { max-width: 680px; }
     .k-modal--sm { max-width: 380px; }
 }
-.k-modal--profile { max-width: 540px; position: relative; }
+.k-modal--profile { max-width: 540px; height: 85vh; max-height: 700px; position: relative; }
 
 .k-modal__header {
     display: flex;
@@ -1149,15 +1149,16 @@ select { background: var(--k-surface-2); }
     flex-shrink: 0;
 }
 .k-profile__avatar-wrap {
+    position: relative;
     width: 72px;
     height: 72px;
     border-radius: 50%;
-    overflow: hidden;
+    overflow: visible;
     background: var(--k-surface-3);
     border: 2.5px solid var(--k-border-2);
     flex-shrink: 0;
 }
-.k-profile__avatar { width: 100%; height: 100%; object-fit: cover; }
+.k-profile__avatar { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .k-profile__avatar-placeholder {
     width: 100%;
     height: 100%;
@@ -1169,6 +1170,132 @@ select { background: var(--k-surface-2); }
     color: var(--k-text-2);
     background: var(--k-surface-3);
 }
+
+/* ── Profile photo update button & action sheet ── */
+.k-profile__photo-btn {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--k-surface);
+    background: var(--k-accent);
+    color: #fff;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    z-index: 2;
+    box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    transition: transform var(--k-transition);
+}
+.k-profile__photo-btn:active { transform: scale(0.9); }
+
+.k-profile__photo-sheet {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: var(--k-surface);
+    border: 1px solid var(--k-border);
+    border-radius: var(--k-radius);
+    box-shadow: 0 4px 16px rgba(0,0,0,.2);
+    z-index: 10;
+    min-width: 170px;
+    overflow: hidden;
+}
+.k-profile__photo-sheet-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    text-align: left;
+    border: none;
+    background: none;
+    color: var(--k-text);
+    font-size: 14px;
+    cursor: pointer;
+}
+.k-profile__photo-sheet-btn:hover,
+.k-profile__photo-sheet-btn:focus { background: var(--k-surface-2); }
+.k-profile__photo-sheet-btn--cancel {
+    color: var(--k-text-2);
+    border-top: 1px solid var(--k-border);
+    text-align: center;
+}
+
+.k-profile__photo-uploading {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0,0,0,.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+}
+
+.k-profile__photo-msg {
+    font-size: 0.78rem;
+    margin-bottom: 2px;
+}
+.k-profile__photo-msg--error { color: var(--k-danger); }
+.k-profile__photo-msg--success { color: var(--k-success); }
+
+/* ── Camera capture modal ── */
+.k-camera-overlay { z-index: 9999; }
+.k-camera-modal {
+    background: var(--k-surface);
+    border-radius: var(--k-radius);
+    width: 92vw;
+    max-width: 480px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
+}
+.k-camera-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--k-border);
+}
+.k-camera-modal__title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--k-text);
+}
+.k-camera-modal__body {
+    position: relative;
+    background: #000;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.k-camera-modal__video,
+.k-camera-modal__canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.k-camera-modal__error {
+    color: var(--k-danger);
+    padding: 24px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+.k-camera-modal__actions {
+    display: flex;
+    gap: 10px;
+    padding: 14px 18px;
+    justify-content: center;
+    border-top: 1px solid var(--k-border);
+}
+.k-camera-modal__snap { min-width: 140px; }
+
 .k-profile__head-info { min-width: 0; }
 .k-profile__name {
     font-size: 1.25rem;

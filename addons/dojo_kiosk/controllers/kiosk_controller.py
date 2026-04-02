@@ -419,6 +419,23 @@ class KioskController(http.Controller):
         )
 
     # ------------------------------------------------------------------
+    # Instructor -- member photo update
+    # ------------------------------------------------------------------
+
+    @http.route(
+        "/kiosk/instructor/update_photo",
+        type="jsonrpc", auth="public", methods=["POST"], csrf=False,
+    )
+    def kiosk_update_photo(self, member_id=None, image_data=None, token=None, **kw):
+        if not member_id or not image_data:
+            return {"success": False, "error": "member_id and image_data are required."}
+        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        if guard is not None:
+            return guard
+        svc = request.env["dojo.kiosk.service"].sudo()
+        return svc.update_member_photo(member_id, image_data)
+
+    # ------------------------------------------------------------------
     # Instructor -- belt rank management
     # ------------------------------------------------------------------
 

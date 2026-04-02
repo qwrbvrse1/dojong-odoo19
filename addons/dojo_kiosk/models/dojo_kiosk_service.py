@@ -827,6 +827,22 @@ class DojoKioskService(models.AbstractModel):
         }
 
     # -------------------------------------------------------------------------
+    # Instructor — member photo update
+    # -------------------------------------------------------------------------
+
+    @api.model
+    def update_member_photo(self, member_id, image_data):
+        """Write a new profile photo (base64) to the member's partner record."""
+        member = self.env["dojo.member"].browse(member_id)
+        if not member.exists():
+            return {"success": False, "error": "Member not found."}
+        member.image_1920 = image_data
+        return {
+            "success": True,
+            "image_url": "/web/image/dojo.member/%d/image_128?v=%s" % (member.id, int(datetime.now().timestamp())),
+        }
+
+    # -------------------------------------------------------------------------
     # Instructor — attendance
     # -------------------------------------------------------------------------
 
