@@ -47,6 +47,12 @@ IMPORTANT RULES:
 - If you cannot determine the intent, use intent_type "unknown" with confidence 0.0
 - Resolve entity names to IDs when possible using the database context
 - For member lookups, try to match names, member numbers, or partial names
+- AGGREGATE / STATS QUERY MAPPING — always use these mappings for count/summary questions:
+    "how many active students", "total members", "active student count" → member_lookup (parameters: {{"membership_state": "active"}})
+    "subscriptions ending", "contracts expiring", "how many contracts are ending", "expiring memberships", "who has a contract ending", "up for renewal" → subscription_expiring (parameters: {{}})
+    "members at risk", "who hasn't come in", "inactive members", "who hasn't attended" → at_risk_members (parameters: {{}})
+    "students enrolled today", "today's attendance", "who checked in today", "show today's classes" → schedule_today (parameters: {{}})
+    "show all members", "list all students" → member_lookup (parameters: {{}})
 - CRITICAL: For parameter VALUES, always use the ACTUAL values from the user's input, NEVER use template placeholders like {{member_name}}, {{target_belt}}, {{class_name}} etc.
   Example of CORRECT parameters: {{"member_name": "Mary Smith", "target_belt": "Blue Belt"}}
   Example of WRONG parameters: {{"member_name": "{{member_name}}", "target_belt": "{{target_belt}}"}}
@@ -135,12 +141,32 @@ Confidence guide:
   0.85  = clear but slightly ambiguous
   0.70  = probable but uncertain — still emit the intent block
 
-Only include the intent block for ACTIONS. Do NOT emit an intent block for purely informational questions
-(member_lookup, belt_lookup, schedule_today, class_list, attendance_history, subscription_lookup — these
-are informational and auto-execute without confirmation).
+INTENT BLOCK RULES:
+  • Emit an intent block when you can confidently match a specific intent (confidence ≥ 0.70).
+  • For lookups and read-only queries, always prefer emitting an intent block so the system can
+    fetch LIVE data — do not answer from your training data.
+  • If no intent matches confidently, answer the question directly from the database context
+    provided above. Do NOT emit an intent block for unknown or unrecognised queries.
 
-IMPORTANT: informational intents still need an intent block so the system can fetch real data. Always
-emit the intent block even for read-only queries.
+AGGREGATE / STATS QUERY MAPPING — use these intents for count/summary questions:
+  "how many active students", "total active members", "student count"
+      → {{"intent_type": "member_lookup", "parameters": {{"membership_state": "active"}}, "confidence": 0.90}}
+  "subscriptions ending", "contracts expiring", "how many contracts are ending",
+  "who has a contract ending", "expiring memberships", "up for renewal", "members renewing"
+      → {{"intent_type": "subscription_expiring", "parameters": {{}}, "confidence": 0.95}}
+  "members at risk", "who hasn't come in", "inactive members", "who hasn't attended"
+      → {{"intent_type": "at_risk_members", "parameters": {{}}, "confidence": 0.92}}
+  "students enrolled today", "who checked in", "today's attendance", "show today's class list"
+      → {{"intent_type": "schedule_today", "parameters": {{}}, "confidence": 0.92}}
+  "all members", "list all students", "show everyone"
+      → {{"intent_type": "member_lookup", "parameters": {{}}, "confidence": 0.88}}
+
+Example intent blocks for common queries:
+  "What belt is Maria?"         → {{"intent_type": "belt_lookup", "parameters": {{"member_name": "Maria"}}, "confidence": 0.95}}
+  "Register Maria for belt test" → {{"intent_type": "belt_test_register", "parameters": {{"member_name": "Maria"}}, "confidence": 0.95}}
+  "Add John to Thursday's class" → {{"intent_type": "member_enroll", "parameters": {{"member_name": "John", "date": "thursday"}}, "confidence": 0.90}}
+  "Add John to the kids roster"  → {{"intent_type": "course_enroll", "parameters": {{"member_name": "John"}}, "confidence": 0.90}}
+  "What's today's schedule?"    → {{"intent_type": "schedule_today", "parameters": {{}}, "confidence": 0.98}}
 """
 
 
@@ -621,7 +647,7 @@ class AIProcessorIntentExt(models.AbstractModel):
                         lines.extend(param_strs)
             if intent.get("examples"):
                 lines.append("   Examples:")
-                for ex in intent["examples"][:3]:  # Limit to 3 examples
+                for ex in intent["examples"][:6]:  # Up to 6 examples for better coverage
                     lines.append(f"      - \"{ex}\"")
 
         return "\n".join(lines)

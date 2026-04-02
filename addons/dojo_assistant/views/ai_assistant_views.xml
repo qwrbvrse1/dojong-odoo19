@@ -151,11 +151,19 @@
         <field name="name">dojo.ai.intent.schema.tree</field>
         <field name="model">dojo.ai.intent.schema</field>
         <field name="arch" type="xml">
-            <list string="AI Intent Schemas" editable="bottom" decoration-muted="not active">
+            <list string="AI Intent Schemas" editable="bottom"
+                  decoration-muted="not active"
+                  decoration-danger="error_log_count &gt; 0"
+                  decoration-warning="example_count &lt; 5">
                 <field name="active" column_invisible="True"/>
                 <field name="intent_type"/>
                 <field name="name"/>
                 <field name="category" optional="show"/>
+                <field name="example_count" string="Examples" readonly="1"
+                       decoration-danger="example_count &lt; 3"
+                       decoration-warning="example_count &lt; 6"/>
+                <field name="error_log_count" string="Errors" readonly="1"
+                       decoration-danger="error_log_count &gt; 0" optional="show"/>
                 <field name="allowed_roles"/>
                 <field name="requires_confirmation" widget="boolean_toggle"/>
                 <field name="is_undoable" widget="boolean_toggle"/>
@@ -170,6 +178,20 @@
         <field name="arch" type="xml">
             <form string="AI Intent Schema">
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_error_logs" type="object"
+                                class="oe_stat_button" icon="fa-exclamation-triangle"
+                                invisible="error_log_count == 0">
+                            <field name="error_log_count" widget="statinfo" string="Errors"/>
+                        </button>
+                        <field name="example_count" invisible="1"/>
+                        <button name="action_test_intent" type="object"
+                                class="oe_stat_button" icon="fa-flask">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Test Intent</span>
+                            </div>
+                        </button>
+                    </div>
                     <div class="oe_title">
                         <label for="name"/>
                         <h1>

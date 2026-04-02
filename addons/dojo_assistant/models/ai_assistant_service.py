@@ -56,6 +56,7 @@ _AUTO_EXECUTE_INTENTS = {
     "at_risk_members",
     "campaign_lookup",
     "marketing_card_lookup",
+    "subscription_expiring",
     "unknown",
 }
 
@@ -727,40 +728,65 @@ class AiAssistantService(models.AbstractModel):
         except Exception as e:
             _logger.warning("Compound detection failed, falling back to normal flow: %s", e)
 
-        # ── Normal single-intent flow (unchanged below) ─────────────────────────────
+        # ── Normal single-intent flow ─────────────────────────────────────────────
         try:
-            # Get conversational response with potential intent
             ai_proc = self.env["ai.processor"]
-            result = ai_proc.process_conversational_query(text, role, self._build_db_context(text))
+            db_ctx = self._build_db_context(text)
 
-            response_text = result.get("response", "")
-            intent_data = result.get("intent")
+            # For OpenAI, go straight to JSON mode — it's more reliable than the
+            # conversational pre-pass and avoids a second API round-trip.
+            # For Gemini (no native JSON mode), keep conversational-first with fallback.
+            try:
+                provider = ai_proc._get_provider()
+            except Exception:
+                provider = "openai"
 
-            # Determine the raw intent type from the conversational query
-            conv_intent_type = intent_data.get("intent_type", "unknown") if intent_data else "unknown"
+            response_text = ""
+            intent_data = None
 
-            # Fall back to structured intent parsing if:
-            #  - no intent was detected at all
-            #  - conversational intent is "unknown"
-            #  - conversational intent is not a recognised handler key
-            #    (the AI sometimes invents variants like "member_enrollment")
-            #  - conversational intent confidence is below threshold
-            #    (low-confidence first-pass → let the JSON-mode call resolve it)
-            conv_confidence = intent_data.get("confidence", 1.0) if intent_data else 0.0
-            if (
-                not intent_data
-                or conv_intent_type not in _KNOWN_INTENT_TYPES
-                or conv_intent_type == "unknown"
-                or conv_confidence < _MIN_CONFIDENCE
-            ):
-                db_ctx = self._build_db_context(text)
-                intent_result = ai_proc.process_intent_query(text, role, db_ctx)
-                if intent_result.get("confidence", 0) >= _MIN_CONFIDENCE:
-                    intent_data = intent_result
-                    _logger.info(
-                        "AI: using structured intent %s (conv was '%s')",
-                        intent_result.get("intent_type"), conv_intent_type,
-                    )
+            if provider in ("openai", "odoo_native"):
+                # JSON mode first — more reliable than conversational pre-pass for OpenAI.
+                intent_data = ai_proc.process_intent_query(text, role, db_ctx)
+                _logger.info(
+                    "AI (JSON mode): intent=%s conf=%.2f",
+                    intent_data.get("intent_type"), intent_data.get("confidence", 0),
+                )
+                # If JSON mode couldn't identify the intent, fall back to conversational
+                # so the user still gets a natural language answer instead of silence.
+                if not intent_data or intent_data.get("intent_type") == "unknown" or \
+                        intent_data.get("confidence", 0) < _MIN_CONFIDENCE:
+                    conv_result = ai_proc.process_conversational_query(text, role, db_ctx)
+                    response_text = conv_result.get("response", "")
+                    conv_intent = conv_result.get("intent")
+                    if conv_intent and conv_intent.get("intent_type") not in ("unknown", None) \
+                            and conv_intent.get("confidence", 0) >= _MIN_CONFIDENCE:
+                        intent_data = conv_intent
+                        _logger.info(
+                            "AI: conversational fallback used — intent=%s",
+                            conv_intent.get("intent_type"),
+                        )
+            else:
+                # Gemini: conversational first, escalate to JSON mode if needed
+                result = ai_proc.process_conversational_query(text, role, db_ctx)
+                response_text = result.get("response", "")
+                intent_data = result.get("intent")
+
+                conv_intent_type = intent_data.get("intent_type", "unknown") if intent_data else "unknown"
+                conv_confidence = intent_data.get("confidence", 1.0) if intent_data else 0.0
+
+                if (
+                    not intent_data
+                    or conv_intent_type not in _KNOWN_INTENT_TYPES
+                    or conv_intent_type == "unknown"
+                    or conv_confidence < _MIN_CONFIDENCE
+                ):
+                    intent_result = ai_proc.process_intent_query(text, role, db_ctx)
+                    if intent_result.get("confidence", 0) >= _MIN_CONFIDENCE:
+                        intent_data = intent_result
+                        _logger.info(
+                            "AI: escalated to JSON mode — intent=%s (conv was '%s')",
+                            intent_result.get("intent_type"), conv_intent_type,
+                        )
 
             # Determine intent type and check permissions
             intent_type = intent_data.get("intent_type", "unknown") if intent_data else "unknown"
@@ -769,21 +795,23 @@ class AiAssistantService(models.AbstractModel):
                 _logger.warning("AI returned unrecognised intent_type '%s', treating as unknown", intent_type)
                 intent_type = "unknown"
 
-            # Keyword-based override for common AI confusion patterns
+            # Keyword-based override for common AI confusion patterns.
+            # These run UNCONDITIONALLY — if the keyword pattern matches, we trust it
+            # over whatever the LLM classified, preventing cross-intent confusion.
             text_lower = text.lower()
-            if intent_type == "member_enroll" and any(
+            if any(
                 kw in text_lower for kw in ("roster", "course roster", "permanent roster", "add to the course", "add to course")
             ):
-                _logger.info("Keyword override: member_enroll → course_enroll (user said 'roster')")
+                _logger.info("Keyword override: %s → course_enroll (user said 'roster')", intent_type)
                 intent_type = "course_enroll"
                 if intent_data:
                     intent_data["intent_type"] = "course_enroll"
 
-            # belt_lookup → belt_test_register when the user is asking to register/schedule a test
-            if intent_type in ("belt_lookup", "unknown") and "belt test" in text_lower and any(
+            # belt_test_register when the user is asking to register/schedule a test
+            if "belt test" in text_lower and any(
                 kw in text_lower for kw in ("register", "sign up", "schedule", "add", "book", "testing for")
             ):
-                _logger.info("Keyword override: %s → belt_test_register (user said 'belt test' + action verb)", intent_type)
+                _logger.info("Keyword override: %s → belt_test_register (keyword: 'belt test' + action verb)", intent_type)
                 intent_type = "belt_test_register"
                 # Ensure intent_data has the right type and try to extract belt name
                 if intent_data is None:
@@ -869,6 +897,23 @@ class AiAssistantService(models.AbstractModel):
 
             # Resolve entities (member IDs, session IDs, etc.)
             resolved_data = self._resolve_entities(intent_data) if intent_data else {}
+
+            # Pre-execution validation: catch ambiguous entities and missing params
+            # before they silently execute on the wrong record.
+            validation = self._validate_before_execute(intent_type, intent_data, resolved_data)
+            if not validation.get("valid", True):
+                return {
+                    "success": True,
+                    "state": "needs_clarification",
+                    "session_key": None,
+                    "intent": intent_data,
+                    "confirmation_prompt": None,
+                    "resolved_data": resolved_data,
+                    "auto_executed": False,
+                    "result": None,
+                    "response": validation["clarification"],
+                    "error": None,
+                }
 
             # Check if this intent requires confirmation
             requires_confirmation = self._requires_confirmation(intent_type)
@@ -1437,10 +1482,106 @@ class AiAssistantService(models.AbstractModel):
         return f"Confirm {intent_type.replace('_', ' ')}?"
 
     @api.model
+    def _validate_before_execute(self, intent_type, intent_data, resolved_data):
+        """
+        Pre-execution validation: catch ambiguous entities and missing required params
+        before they silently execute on the wrong record.
+
+        Returns {"valid": True} or {"valid": False, "clarification": "<message>"}.
+        """
+        if not intent_data or intent_type == "unknown":
+            return {"valid": True}
+
+        params = intent_data.get("parameters", {}) or {}
+
+        # ── Check 1: Ambiguous member name ────────────────────────────────────
+        # _resolve_entities picks members[0] silently. If 2+ members share a name,
+        # ask the user to pick one instead of acting on the wrong record.
+        member_name = params.get("member_name")
+        if member_name and not params.get("member_id") and not resolved_data.get("member_id"):
+            candidates = self._search_members(member_name, limit=5)
+            if len(candidates) > 1:
+                names = ", ".join(
+                    f"{m.name} (#{m.id})" for m in candidates
+                )
+                return {
+                    "valid": False,
+                    "clarification": (
+                        f"I found {len(candidates)} members matching \"{member_name}\": {names}. "
+                        "Which one did you mean? Please use their full name or member number."
+                    ),
+                }
+
+        # ── Check 2: Missing required parameters ──────────────────────────────
+        _MEMBER_ACTION_INTENTS = {
+            "member_enroll", "member_unenroll", "belt_promote", "contact_parent",
+            "attendance_checkin", "attendance_checkout", "course_enroll",
+            "belt_test_register", "subscription_cancel", "subscription_pause",
+            "subscription_resume", "member_update",
+        }
+        if intent_type in _MEMBER_ACTION_INTENTS:
+            schema = self.env["dojo.ai.intent.schema"].get_by_type(intent_type)
+            if schema and schema.parameters_schema:
+                try:
+                    import json as _json
+                    param_schema = _json.loads(schema.parameters_schema)
+                    required_fields = param_schema.get("required", [])
+                    missing = [
+                        f for f in required_fields
+                        if not params.get(f) and not resolved_data.get(f)
+                    ]
+                    if missing:
+                        field_labels = {"member_name": "member name", "class_name": "class name",
+                                        "new_belt": "belt rank", "target_belt": "belt rank",
+                                        "session_id": "class session", "subject": "message subject"}
+                        label = field_labels.get(missing[0], missing[0].replace("_", " "))
+                        return {
+                            "valid": False,
+                            "clarification": (
+                                f"To complete \"{intent_type.replace('_', ' ')}\", "
+                                f"I need the {label}. Could you provide it?"
+                            ),
+                        }
+                except Exception:
+                    pass
+
+        # ── Check 3: Logical sanity for common action intents ─────────────────
+        member_id = resolved_data.get("member_id")
+
+        if intent_type == "member_enroll" and member_id and resolved_data.get("session_id"):
+            session_id = resolved_data["session_id"]
+            already = self.env["dojo.class.enrollment"].search([
+                ("member_id", "=", member_id),
+                ("session_id", "=", session_id),
+                ("state", "not in", ("cancelled", "no_show")),
+            ], limit=1)
+            if already:
+                return {
+                    "valid": False,
+                    "clarification": (
+                        f"{resolved_data.get('member_name', 'That member')} is already enrolled "
+                        "in that session."
+                    ),
+                }
+
+        if intent_type == "belt_promote" and member_id:
+            current_rank = resolved_data.get("member_rank")
+            new_belt = params.get("new_belt") or params.get("target_belt")
+            if current_rank and new_belt and current_rank.lower() == new_belt.lower():
+                return {
+                    "valid": False,
+                    "clarification": (
+                        f"{resolved_data.get('member_name', 'That member')} already holds "
+                        f"{current_rank}. Please specify a different belt rank."
+                    ),
+                }
+
+        return {"valid": True}
+
     def _resolve_entities(self, intent_data):
         """
         Resolve named entities to database IDs.
-        
+
         Takes parsed intent parameters like {member_name: "John Doe"} and
         resolves to {member_id: 123, member_name: "John Doe"}.
         """
@@ -1687,11 +1828,31 @@ class AiAssistantService(models.AbstractModel):
         if intent_type == "member_lookup":
             if not data:
                 return msg
-            # Generic read handler returns a list; take the first record
-            record = data[0] if isinstance(data, list) else data
-            if not record:
+            records = data if isinstance(data, list) else [data]
+            records = [r for r in records if r]
+            if not records:
                 return msg
-            # many2one fields come back as [id, "Name"] tuples from .read()
+
+            # If multiple records returned, show a count summary grouped by state
+            # instead of one record card (avoids returning the wrong member).
+            if len(records) > 1:
+                from collections import Counter
+                state_counts = Counter(
+                    r.get("membership_state", r.get("state", "unknown")) for r in records
+                )
+                total = len(records)
+                # If all records share the same state, it was a filtered query
+                if len(state_counts) == 1:
+                    only_state = next(iter(state_counts))
+                    label = only_state.replace("_", " ").title()
+                    return f"There are {total} {label} members."
+                breakdown = ", ".join(
+                    f"{count} {s.replace('_', ' ')}" for s, count in sorted(state_counts.items())
+                )
+                return f"Total members: {total} ({breakdown})"
+
+            # Single member card
+            record = records[0]
             rank_val = record.get("current_rank_id")
             rank_str = rank_val[1] if isinstance(rank_val, (list, tuple)) and len(rank_val) > 1 else None
             state_val = record.get("membership_state", record.get("state", "unknown"))
@@ -1796,6 +1957,7 @@ class AiAssistantService(models.AbstractModel):
             "subscription_pause": self._handle_subscription_pause,
             "subscription_resume": self._handle_subscription_resume,
             "at_risk_members": self._handle_at_risk_members,
+            "subscription_expiring": self._handle_subscription_expiring,
             "campaign_lookup": self._handle_campaign_lookup,
             "marketing_card_lookup": self._handle_marketing_card_lookup,
             "campaign_create": self._handle_campaign_create,
@@ -1921,17 +2083,22 @@ class AiAssistantService(models.AbstractModel):
     def _domain_member_lookup(self, intent_data, resolved_data):
         """
         Build domain for member lookup.
-        Supports lookup by member_id or member_name.
+        Supports lookup by member_id, member_name, or membership_state filter.
         """
         member_id = resolved_data.get("member_id")
         if member_id:
             return [("id", "=", member_id)]
-        
+
         params = intent_data.get("parameters", {}) if intent_data else {}
         name = params.get("member_name", "")
         if name:
             return [("name", "ilike", name)]
-        
+
+        # Aggregate / filtered queries ("how many active students", etc.)
+        state = params.get("membership_state") or params.get("state")
+        if state:
+            return [("membership_state", "=", state)]
+
         return []
     
     @api.model
@@ -2769,6 +2936,44 @@ class AiAssistantService(models.AbstractModel):
             "success": True,
             "message": f"{len(at_risk)} members haven't been in for {days}+ days:\n" + "\n".join(lines),
             "data": at_risk,
+        }
+
+    @api.model
+    def _handle_subscription_expiring(self, intent_data, resolved_data, action_log):
+        """Return active subscriptions expiring within N days (default 30)."""
+        from datetime import date, timedelta
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        days = int(params.get("days", 30))
+        today = date.today()
+        cutoff = today + timedelta(days=days)
+
+        subs = self.env["sale.subscription"].search([
+            ("state", "=", "active"),
+            ("end_date", "!=", False),
+            ("end_date", ">=", today.isoformat()),
+            ("end_date", "<=", cutoff.isoformat()),
+        ], order="end_date asc")
+
+        if not subs:
+            return {
+                "success": True,
+                "message": f"No active subscriptions expiring in the next {days} days.",
+                "data": [],
+            }
+
+        lines = []
+        data = []
+        for s in subs:
+            member_name = s.member_id.name if hasattr(s, "member_id") and s.member_id else "Unknown"
+            days_left = (s.end_date - today).days
+            label = f"today" if days_left == 0 else f"in {days_left} day{'s' if days_left != 1 else ''}"
+            lines.append(f"• {member_name} — expires {label} ({s.end_date})")
+            data.append({"name": member_name, "end_date": str(s.end_date), "days_left": days_left})
+
+        return {
+            "success": True,
+            "message": f"{len(subs)} subscription{'s' if len(subs) != 1 else ''} expiring in the next {days} days:\n" + "\n".join(lines),
+            "data": data,
         }
 
     @api.model

@@ -637,6 +637,33 @@ Who hasn't come in lately?</field>
         <field name="active">True</field>
     </record>
 
+    <record id="intent_subscription_expiring" model="dojo.ai.intent.schema">
+        <field name="intent_type">subscription_expiring</field>
+        <field name="name">Expiring Subscriptions</field>
+        <field name="description">List active subscriptions whose end_date falls within the next N days (default 30)</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "days": {"type": "integer", "description": "Number of days to look ahead (default 30)"}
+    },
+    "required": []
+}</field>
+        <field name="example_phrases">What subscriptions are ending?
+Which contracts are expiring soon?
+How many contracts are ending this month?
+Show me expiring memberships
+Who has a contract ending soon?
+List subscriptions expiring in the next 30 days
+Any contracts about to expire?
+Which members are up for renewal?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
     <record id="intent_campaign_lookup" model="dojo.ai.intent.schema">
         <field name="intent_type">campaign_lookup</field>
         <field name="name">Campaign Stats Lookup</field>

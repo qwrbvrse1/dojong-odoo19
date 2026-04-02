@@ -108,6 +108,52 @@ class DojoAiIntentSchema(models.Model):
         help="Method name in ai.assistant.service for undoing this intent",
     )
 
+    # ─── Quality Metrics (computed, not stored — no migration needed) ────────
+    example_count = fields.Integer(
+        string="Example Count",
+        compute="_compute_example_count",
+        store=False,
+        help="Number of example phrases defined for this intent",
+    )
+    error_log_count = fields.Integer(
+        string="Errors",
+        compute="_compute_error_log_count",
+        store=False,
+        help="Number of failed executions logged for this intent",
+    )
+
+    @api.depends("example_phrases")
+    def _compute_example_count(self):
+        for rec in self:
+            if rec.example_phrases:
+                rec.example_count = len(
+                    [l for l in rec.example_phrases.splitlines() if l.strip()]
+                )
+            else:
+                rec.example_count = 0
+
+    def _compute_error_log_count(self):
+        for rec in self:
+            rec.error_log_count = self.env["dojo.ai.action.log"].search_count([
+                ("intent_type", "=", rec.intent_type),
+                ("execution_status", "=", "error"),
+            ])
+
+    def action_view_error_logs(self):
+        """Open action log filtered to errors for this intent."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": f"Error Logs: {self.name}",
+            "res_model": "dojo.ai.action.log",
+            "view_mode": "list,form",
+            "domain": [
+                ("intent_type", "=", self.intent_type),
+                ("execution_status", "=", "error"),
+            ],
+            "context": {},
+        }
+
     # ─── Bulk Support ─────────────────────────────────────────────────────────
     supports_bulk = fields.Boolean(
         string="Supports Bulk",
