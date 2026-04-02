@@ -304,10 +304,9 @@
                     <small class="text-muted">Booking for:</small>
                     <strong class="ms-2" t-out="session.name"/>
                     <span class="ms-2 text-muted">—</span>
-                    <span class="ms-1">
-                        <t t-field="session.start_datetime"
-                           t-options='{"format": "EEE, MMM d, yyyy h:mm a"}'/>
-                    </span>
+                    <span class="ms-1"
+                          t-field="session.start_datetime"
+                          t-options='{"format": "EEE, MMM d, yyyy h:mm a"}'/>
                 </div>
             </div>
 

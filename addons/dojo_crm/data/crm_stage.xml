@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+<data noupdate="1">
     <!--
         Dojo CRM pipeline stages (6-stage pipeline).
+        noupdate=1: once created in DB, upgrades will not overwrite field values.
         sequence values are spaced to allow insertion without conflicts.
     -->
     <record id="crm_stage_new_lead" model="crm.stage">
@@ -39,4 +41,5 @@
         <field name="sequence">50</field>
         <field name="is_won" eval="True"/>
     </record>
+</data>
 </odoo>

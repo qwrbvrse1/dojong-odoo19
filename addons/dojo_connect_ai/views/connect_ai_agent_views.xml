@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         AI Agent — List View
+         ================================================================ -->
+    <record id="connect_ai_agent_list" model="ir.ui.view">
+        <field name="name">connect.ai.agent.list</field>
+        <field name="model">connect.ai.agent</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="elevenlabs_agent_id"/>
+                <field name="fallback_user_id"/>
+                <field name="auto_create_lead"/>
+                <field name="call_count" string="Calls"/>
+                <field name="lead_count" string="Leads"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         AI Agent — Form View
+         ================================================================ -->
+    <record id="connect_ai_agent_form" model="ir.ui.view">
+        <field name="name">connect.ai.agent.form</field>
+        <field name="model">connect.ai.agent</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" icon="fa-phone"
+                                name="action_view_calls" type="object">
+                            <field name="call_count" widget="statinfo" string="Calls"/>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-filter"
+                                name="action_view_leads" type="object">
+                            <field name="lead_count" widget="statinfo" string="Leads"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
+                            invisible="active == True"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Agent Name (e.g. Kai)"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="ElevenLabs Configuration">
+                            <field name="elevenlabs_agent_id"/>
+                            <field name="webhook_secret" password="True"
+                                   string="Tool API Key (X-Api-Key)"
+                                   groups="base.group_erp_manager"/>
+                            <field name="elevenlabs_webhook_secret" password="True"
+                                   string="Post-call Signing Secret (wsec_...)"
+                                   groups="base.group_erp_manager"/>
+                        </group>
+                        <group string="Call Handling">
+                            <field name="fallback_user_id"/>
+                            <field name="voicemail_enabled"/>
+                            <field name="auto_create_lead"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="prompt" string="System Prompt">
+                            <field name="system_prompt" placeholder="Paste the system prompt from ElevenLabs here for reference..."/>
+                        </page>
+                    </notebook>
+                    <field name="active" invisible="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Actions
+         ================================================================ -->
+    <record id="connect_ai_agent_action" model="ir.actions.act_window">
+        <field name="name">AI Agents</field>
+        <field name="res_model">connect.ai.agent</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menu under Connect → AI -->
+    <menuitem id="connect_ai_agent_menu"
+              name="AI Agents"
+              parent="connect.connect_ai_menu"
+              action="connect_ai_agent_action"
+              sequence="10"/>
+
+</odoo>

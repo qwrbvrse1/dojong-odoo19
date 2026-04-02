@@ -35,6 +35,7 @@
         "views/crm_dashboard.xml",
         "views/dojo_class_session_view_inherit.xml",
     ],
+
     "installable": True,
     "auto_install": False,
     "assets": {

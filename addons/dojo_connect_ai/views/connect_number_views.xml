@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Extend connect.number form — add AI Agent field
+         ================================================================ -->
+    <record id="connect_number_form_ai" model="ir.ui.view">
+        <field name="name">connect.number.form.ai</field>
+        <field name="model">connect.number</field>
+        <field name="inherit_id" ref="connect.connect_number_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='callflow']" position="after">
+                <field name="ai_agent_id"
+                       invisible="destination != 'ai_agent'"
+                       required="destination == 'ai_agent'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Extend list view to show AI Agent column -->
+    <record id="connect_number_list_ai" model="ir.ui.view">
+        <field name="name">connect.number.list.ai</field>
+        <field name="model">connect.number</field>
+        <field name="inherit_id" ref="connect.number_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='callflow']" position="after">
+                <field name="ai_agent_id" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

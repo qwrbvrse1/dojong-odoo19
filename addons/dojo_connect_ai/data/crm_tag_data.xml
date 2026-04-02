@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+    <record id="crm_tag_ai_receptionist" model="crm.tag">
+        <field name="name">AI Receptionist</field>
+        <field name="color">11</field>
+    </record>
+    <record id="crm_tag_missed_call" model="crm.tag">
+        <field name="name">Missed Call</field>
+        <field name="color">1</field>
+    </record>
+    <record id="crm_tag_voice_inquiry" model="crm.tag">
+        <field name="name">Voice Inquiry</field>
+        <field name="color">4</field>
+    </record>
+</data>
+</odoo>

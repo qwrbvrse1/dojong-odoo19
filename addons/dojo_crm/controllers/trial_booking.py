@@ -143,6 +143,7 @@ class DojoTrialBooking(http.Controller):
         type="http",
         auth="public",
         website=True,
+        methods=["GET"],
         sitemap=False,
     )
     def trial_waiver_page(self, token, **kw):
@@ -600,5 +601,13 @@ class DojoTrialBooking(http.Controller):
             body="Lead created via website trial sign-up form.",
             subtype_xmlid="mail.mt_note",
         )
+
+        # Advance to "Qualified" so the automation rule fires
+        # and sends the booking invitation email + SMS.
+        qualified_stage = (
+            request.env.ref("dojo_crm.crm_stage_qualified", raise_if_not_found=False)
+        )
+        if qualified_stage:
+            lead.write({"stage_id": qualified_stage.id})
 
         return request.redirect(success_url or "/")

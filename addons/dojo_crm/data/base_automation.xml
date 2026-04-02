@@ -18,13 +18,17 @@
                 <field name="state">code</field>
                 <field name="code"><![CDATA[
 template = env.ref('dojo_crm.mail_template_qualified', raise_if_not_found=False)
+# Resolve a real from-address that matches the outgoing mail server's from_filter
+mail_server = env['ir.mail_server'].search([('active', '=', True)], order='sequence', limit=1)
+from_addr = mail_server.smtp_user if mail_server else False
 for rec in records:
     # Generate trial booking tokens if missing
     if not rec.trial_booking_token:
         rec._generate_trial_tokens()
     # Send invitation email
     if template and rec.email_from:
-        template.send_mail(rec.id, force_send=True)
+        ev = {'email_from': rec.company_id.email or from_addr} if (rec.company_id.email or from_addr) else {}
+        template.send_mail(rec.id, force_send=True, email_values=ev)
     # SMS with booking link
     mobile = rec.phone or (rec.partner_id.phone if rec.partner_id else False)
     if mobile and rec.trial_booking_url:
@@ -57,14 +61,19 @@ for rec in records:
                 <field name="state">code</field>
                 <field name="code"><![CDATA[
 template = env.ref('dojo_crm.mail_template_trial_booked', raise_if_not_found=False)
+# Resolve a real from-address that matches the outgoing mail server's from_filter
+mail_server = env['ir.mail_server'].search([('active', '=', True)], order='sequence', limit=1)
+from_addr = mail_server.smtp_user if mail_server else False
 for rec in records:
     # Attach .ics and send email
     if template and rec.email_from:
         ics_attach = rec._get_ics_attachment()
         attachment_ids = [ics_attach.id] if ics_attach else []
-        template.send_mail(rec.id, force_send=True, email_values={
-            'attachment_ids': [(6, 0, attachment_ids)],
-        })
+        ev = {'attachment_ids': [(6, 0, attachment_ids)]}
+        effective_from = rec.company_id.email or from_addr
+        if effective_from:
+            ev['email_from'] = effective_from
+        template.send_mail(rec.id, force_send=True, email_values=ev)
     # SMS with manage link
     mobile = rec.phone or (rec.partner_id.phone if rec.partner_id else False)
     if mobile:

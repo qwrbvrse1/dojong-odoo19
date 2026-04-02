@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_connect_ai" model="ir.ui.view">
+        <field name="name">res.config.settings.view.connect.ai</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+
+                <div class="app_settings_block"
+                     data-string="AI Receptionist"
+                     string="AI Receptionist"
+                     data-key="dojo_connect_ai">
+
+                    <h2>AI Receptionist (Kai)</h2>
+                    <div class="text-muted mb16">
+                        Route incoming phone calls to an ElevenLabs Conversational AI agent.
+                        The AI can check session availability, look up members, book trials,
+                        and transfer calls to humans. All conversations are logged to CRM.
+                    </div>
+
+                    <div class="row mt16 o_settings_container">
+
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="connect_ai_enabled"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="connect_ai_enabled"/>
+                                <div class="text-muted">
+                                    Enable the AI voice receptionist for incoming calls.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="connect_ai_auto_lead"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="connect_ai_auto_lead"/>
+                                <div class="text-muted">
+                                    Automatically create a CRM lead after every AI conversation
+                                    with transcript posted to chatter.
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="row mt16 o_settings_container">
+
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="connect_ai_missed_call_lead"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="connect_ai_missed_call_lead"/>
+                                <div class="text-muted">
+                                    Create a CRM lead when an incoming call to an AI-routed
+                                    number is missed (no-answer, busy, or failed).
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <h3 class="mt32">Setup</h3>
+                    <div class="text-muted mb8">
+                        <ol>
+                            <li>Create an AI Agent in <strong>Connect → AI → AI Agents</strong>
+                                with your ElevenLabs Agent ID.</li>
+                            <li>Go to <strong>Connect → Voice → Numbers</strong> and set a
+                                phone number's destination to <strong>AI Agent</strong>.</li>
+                            <li>Configure the ElevenLabs agent's tools to point to your Odoo
+                                instance's tool endpoints.</li>
+                        </ol>
+                    </div>
+
+                </div>
+
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

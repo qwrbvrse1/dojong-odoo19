@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Extend connect.call form — add AI Conversation tab
+         ================================================================ -->
+    <record id="connect_call_form_ai" model="ir.ui.view">
+        <field name="name">connect.call.form.ai</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.connect_call_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='error']" position="before">
+                <page name="ai_conversation" string="AI Conversation"
+                      invisible="not ai_conversation_id">
+                    <group>
+                        <group>
+                            <field name="ai_agent_id"/>
+                            <field name="ai_conversation_id"/>
+                            <field name="ai_lead_id"/>
+                        </group>
+                    </group>
+                    <group string="Transcript">
+                        <field name="ai_transcript" nolabel="1"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

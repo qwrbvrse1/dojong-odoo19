@@ -11,16 +11,16 @@
         <field name="body_html"><![CDATA[
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <h2 style="color: #2c3e50;">You're Invited — Try a Class for Free!</h2>
-    <p>Hi {{ object.contact_name or object.partner_name or 'there' }},</p>
+    <p>Hi <t t-out="object.contact_name or object.partner_name or 'there'">there</t>,</p>
     <p>
-        Thank you for your interest in {{ object.company_id.name }}! We'd love to
-        have you try a class before you commit.
+        Thank you for your interest in <t t-out="object.company_id.name or 'our dojo'">our dojo</t>!
+        We'd love to have you try a class before you commit.
     </p>
     <p>
         Click below to pick a session that suits your schedule:
     </p>
     <div style="text-align: center; margin: 24px 0;">
-        <a href="{{ object.trial_booking_url }}"
+        <a t-att-href="object.trial_booking_url"
            style="background: #3498db; color: #fff; padding: 14px 28px;
                   text-decoration: none; border-radius: 6px; font-size: 16px;
                   display: inline-block;">
@@ -31,7 +31,7 @@
         This link is unique to you and expires in 7 days.
     </p>
     <p style="color: #7f8c8d; font-size: 12px;">
-        — {{ object.company_id.name }}
+        — <t t-out="object.company_id.name or ''">The Team</t>
     </p>
 </div>
         ]]></field>
@@ -49,40 +49,40 @@
         <field name="body_html"><![CDATA[
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <h2 style="color: #2c3e50;">Your Trial Class is Booked!</h2>
-    <p>Hi {{ object.contact_name or object.partner_name or 'there' }},</p>
+    <p>Hi <t t-out="object.contact_name or object.partner_name or 'there'">there</t>,</p>
     <p>
         We're excited to have you join us for a <strong>free trial class</strong>!
         Here are your booking details:
     </p>
-    {% if object.trial_session_id %}
+    <t t-if="object.trial_session_id">
     <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
         <tr>
             <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Class</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{{ object.trial_session_id.name }}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.trial_session_id.name or ''">-</t></td>
         </tr>
         <tr>
             <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Date &amp; Time</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{{ object.trial_session_id.start_datetime | datetime }}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="str(object.trial_session_id.start_datetime) if object.trial_session_id.start_datetime else ''">-</t></td>
         </tr>
-        {% if object.trial_session_id.instructor_profile_id %}
+        <t t-if="object.trial_session_id.instructor_profile_id">
         <tr>
             <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Instructor</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{{ object.trial_session_id.instructor_profile_id.name }}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.trial_session_id.instructor_profile_id.name or ''">-</t></td>
         </tr>
-        {% endif %}
+        </t>
     </table>
-    {% endif %}
+    </t>
     <p>Please arrive 10 minutes early. Wear comfortable workout clothes.</p>
     <p>A calendar invitation (.ics) is attached to this email.</p>
-    {% if object.trial_manage_url %}
+    <t t-if="object.trial_manage_url">
     <div style="margin: 16px 0; padding: 12px; background: #f9f9f9; border-radius: 4px;">
         Need to <strong>cancel or reschedule</strong>?
-        <a href="{{ object.trial_manage_url }}">Click here to manage your booking</a>.
+        <a t-att-href="object.trial_manage_url">Click here to manage your booking</a>.
     </div>
-    {% endif %}
+    </t>
     <p>We look forward to meeting you!</p>
     <p style="color: #7f8c8d; font-size: 12px;">
-        — {{ object.company_id.name }}
+        — <t t-out="object.company_id.name or ''">The Team</t>
     </p>
 </div>
         ]]></field>
@@ -100,7 +100,7 @@
         <field name="body_html"><![CDATA[
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <h2 style="color: #2c3e50;">We Loved Having You!</h2>
-    <p>Hi {{ object.contact_name or object.partner_name or 'there' }},</p>
+    <p>Hi <t t-out="object.contact_name or object.partner_name or 'there'">there</t>,</p>
     <p>
         Thank you for attending your free trial class today. We hope you had a great time!
     </p>
@@ -116,7 +116,7 @@
         Questions? Simply reply to this email or give us a call.
     </p>
     <p style="color: #7f8c8d; font-size: 12px;">
-        — {{ object.company_id.name }}
+        — <t t-out="object.company_id.name or ''">The Team</t>
     </p>
 </div>
         ]]></field>
@@ -134,26 +134,26 @@
         <field name="body_html"><![CDATA[
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <h2 style="color: #2c3e50;">Your Trial Has Expired</h2>
-    <p>Hi {{ object.contact_name or object.partner_name or 'there' }},</p>
+    <p>Hi <t t-out="object.contact_name or object.partner_name or 'there'">there</t>,</p>
     <p>
         It looks like the trial class you booked has passed. No worries — we'd love to give
-        you another chance to experience a class at {{ object.company_id.name }}.
+        you another chance to experience a class at <t t-out="object.company_id.name or 'our dojo'">our dojo</t>.
     </p>
-    {% if object.trial_booking_url %}
+    <t t-if="object.trial_booking_url">
     <div style="text-align: center; margin: 24px 0;">
-        <a href="{{ object.trial_booking_url }}"
+        <a t-att-href="object.trial_booking_url"
            style="background: #3498db; color: #fff; padding: 14px 28px;
                   text-decoration: none; border-radius: 6px; font-size: 16px;
                   display: inline-block;">
             Book a New Trial
         </a>
     </div>
-    {% endif %}
+    </t>
     <p>
         Or simply reply to this email and we'll find a time that works for you.
     </p>
     <p style="color: #7f8c8d; font-size: 12px;">
-        — {{ object.company_id.name }}
+        — <t t-out="object.company_id.name or ''">The Team</t>
     </p>
 </div>
         ]]></field>
@@ -172,21 +172,21 @@
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <h2 style="color: #e74c3c;">Missed Trial — Action Needed</h2>
     <p>
-        The trial for lead <strong>{{ object.contact_name or object.partner_name or 'Unknown' }}</strong>
+        The trial for lead <strong><t t-out="object.contact_name or object.partner_name or 'Unknown'">Unknown</t></strong>
         has passed without attendance.
     </p>
     <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
         <tr>
             <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Lead</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{{ object.name }}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.name or ''">-</t></td>
         </tr>
         <tr>
             <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Phone</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{{ object.phone or 'N/A' }}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.phone or 'N/A'">N/A</t></td>
         </tr>
         <tr>
             <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Score</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{{ object.dojo_lead_score }}/100</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="str(object.dojo_lead_score) if hasattr(object, 'dojo_lead_score') else 'N/A'">N/A</t>/100</td>
         </tr>
     </table>
     <p>
@@ -208,26 +208,26 @@
         <field name="body_html"><![CDATA[
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <h2 style="color: #2c3e50;">We Missed You!</h2>
-    <p>Hi {{ object.contact_name or object.partner_name or 'there' }},</p>
+    <p>Hi <t t-out="object.contact_name or object.partner_name or 'there'">there</t>,</p>
     <p>
         It looks like you weren't able to make it to your free trial class.
         No worries — life happens!
     </p>
-    {% if object.trial_booking_url %}
+    <t t-if="object.trial_booking_url">
     <div style="text-align: center; margin: 24px 0;">
-        <a href="{{ object.trial_booking_url }}"
+        <a t-att-href="object.trial_booking_url"
            style="background: #3498db; color: #fff; padding: 12px 24px;
                   text-decoration: none; border-radius: 6px; font-size: 15px;
                   display: inline-block;">
             Reschedule My Trial
         </a>
     </div>
-    {% endif %}
+    </t>
     <p>
         Or reply to this email and we'll find a new time for you.
     </p>
     <p style="color: #7f8c8d; font-size: 12px;">
-        — {{ object.company_id.name }}
+        — <t t-out="object.company_id.name or ''">The Team</t>
     </p>
 </div>
         ]]></field>
@@ -245,37 +245,37 @@
         <field name="body_html"><![CDATA[
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <h2 style="color: #2c3e50;">See You Tomorrow!</h2>
-    <p>Hi {{ object.contact_name or object.partner_name or 'there' }},</p>
+    <p>Hi <t t-out="object.contact_name or object.partner_name or 'there'">there</t>,</p>
     <p>
         Just a friendly reminder that your <strong>free trial class</strong> is coming up!
     </p>
-    {% if object.trial_session_id %}
+    <t t-if="object.trial_session_id">
     <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
         <tr>
             <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Class</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{{ object.trial_session_id.name }}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.trial_session_id.name or ''">-</t></td>
         </tr>
         <tr>
             <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Date &amp; Time</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{{ object.trial_session_id.start_datetime | datetime }}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="str(object.trial_session_id.start_datetime) if object.trial_session_id.start_datetime else ''">-</t></td>
         </tr>
-        {% if object.trial_session_id.instructor_profile_id %}
+        <t t-if="object.trial_session_id.instructor_profile_id">
         <tr>
             <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Instructor</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{{ object.trial_session_id.instructor_profile_id.name }}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.trial_session_id.instructor_profile_id.name or ''">-</t></td>
         </tr>
-        {% endif %}
+        </t>
     </table>
-    {% endif %}
+    </t>
     <p>Please arrive 10 minutes early. Wear comfortable workout clothes.</p>
-    {% if object.trial_manage_url %}
+    <t t-if="object.trial_manage_url">
     <p>
         Need to cancel or reschedule?
-        <a href="{{ object.trial_manage_url }}">Manage your booking here</a>.
+        <a t-att-href="object.trial_manage_url">Manage your booking here</a>.
     </p>
-    {% endif %}
+    </t>
     <p style="color: #7f8c8d; font-size: 12px;">
-        — {{ object.company_id.name }}
+        — <t t-out="object.company_id.name or ''">The Team</t>
     </p>
 </div>
         ]]></field>
@@ -293,7 +293,7 @@
         <field name="body_html"><![CDATA[
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <h2 style="color: #2c3e50;">Your Membership Offer</h2>
-    <p>Hi {{ object.contact_name or object.partner_name or 'there' }},</p>
+    <p>Hi <t t-out="object.contact_name or object.partner_name or 'there'">there</t>,</p>
     <p>
         We've put together a personalised membership offer just for you based on
         your recent trial class. Here are the details:
@@ -314,7 +314,7 @@
         We look forward to welcoming you to the team.
     </p>
     <p style="color: #7f8c8d; font-size: 12px;">
-        — {{ object.company_id.name }}
+        — <t t-out="object.company_id.name or ''">The Team</t>
     </p>
 </div>
         ]]></field>
@@ -332,7 +332,7 @@
         <field name="body_html"><![CDATA[
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <h2 style="color: #e74c3c;">Your Offer is About to Expire!</h2>
-    <p>Hi {{ object.contact_name or object.partner_name or 'there' }},</p>
+    <p>Hi <t t-out="object.contact_name or object.partner_name or 'there'">there</t>,</p>
     <p>
         We wanted to reach out one more time because your special membership offer is
         expiring very soon.
@@ -345,7 +345,7 @@
         we'll work something out. We'd love to have you on the mat!
     </p>
     <p style="color: #7f8c8d; font-size: 12px;">
-        — {{ object.company_id.name }}
+        — <t t-out="object.company_id.name or ''">The Team</t>
     </p>
 </div>
         ]]></field>
@@ -363,7 +363,7 @@
         <field name="body_html"><![CDATA[
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <h2 style="color: #2c3e50;">We're Still Here For You!</h2>
-    <p>Hi {{ object.contact_name or object.partner_name or 'there' }},</p>
+    <p>Hi <t t-out="object.contact_name or object.partner_name or 'there'">there</t>,</p>
     <p>
         We reached out a few days ago after you missed your trial class.
         We completely understand that life gets busy!
@@ -372,21 +372,21 @@
         We have classes running throughout the week at multiple times,
         so there's sure to be a slot that suits you.
     </p>
-    {% if object.trial_booking_url %}
+    <t t-if="object.trial_booking_url">
     <div style="text-align: center; margin: 24px 0;">
-        <a href="{{ object.trial_booking_url }}"
+        <a t-att-href="object.trial_booking_url"
            style="background: #27ae60; color: #fff; padding: 12px 24px;
                   text-decoration: none; border-radius: 6px; font-size: 15px;
                   display: inline-block;">
             Book a New Trial
         </a>
     </div>
-    {% endif %}
+    </t>
     <p>
         No pressure at all. We'll be here whenever you're ready!
     </p>
     <p style="color: #7f8c8d; font-size: 12px;">
-        — {{ object.company_id.name }}
+        — <t t-out="object.company_id.name or ''">The Team</t>
     </p>
 </div>
         ]]></field>
