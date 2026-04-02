@@ -35,7 +35,7 @@ class Domain(models.Model):
 
     def _get_domain_name(self):
         for rec in self:
-            rec.domain_name = rec.subdomain + '.' + 'sip.twilio.com'
+            rec.domain_name = (rec.subdomain or '') + '.' + 'sip.twilio.com' if rec.subdomain else False
 
     def _set_domain_name(self):
         for rec in self:

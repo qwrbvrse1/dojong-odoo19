@@ -303,6 +303,8 @@ class User(models.Model):
         account_sid = self.env['connect.settings'].sudo().get_param('account_sid')
         api_key = self.env['connect.settings'].sudo().get_param('twilio_api_key')
         api_secret = self.env['connect.settings'].sudo().get_param('twilio_api_secret')
+        if not (account_sid and api_key and api_secret):
+            return False
         identity = user.uri
         token = AccessToken(account_sid, api_key, api_secret, identity=identity, ttl=3600)
         voice_grant = VoiceGrant(
