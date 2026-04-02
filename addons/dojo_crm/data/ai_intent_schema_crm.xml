@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
+<odoo>
     <!--
         AI Intent Schema Data — CRM Pipeline Intents
         Defines AI assistant intents for CRM operations.
     -->
+<data noupdate="1">
 
     <!-- ════════════════════════════════════════════════════════════════════ -->
     <!-- Read-Only Intents (Auto-Execute)                                     -->
@@ -142,6 +143,93 @@ Make Sarah a member
 Convert lead to member
 Sign up Mike as a member</field>
         <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- New Write Intents (no noupdate — created/updated on every -u)        -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_lead_create" model="dojo.ai.intent.schema">
+        <field name="intent_type">lead_create</field>
+        <field name="name">Create Lead</field>
+        <field name="description">Add a new prospect/lead to the CRM pipeline</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "contact_name": {"type": "string", "description": "Full name of the prospect"},
+        "phone": {"type": "string", "description": "Phone number"},
+        "email": {"type": "string", "description": "Email address"}
+    },
+    "required": ["contact_name"]
+}</field>
+        <field name="example_phrases">Add new prospect Sarah Lee
+Create a lead for Mike, phone 555-1234
+New trial inquiry from James
+We have a walk-in, his name is David
+Add a walk-in prospect named Carlos
+New prospect came in today, name is Anna Williams
+Create a new lead for Chris, email chris@email.com
+Walk-in prospect just arrived, name is Kevin</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_lead_mark_lost" model="dojo.ai.intent.schema">
+        <field name="intent_type">lead_mark_lost</field>
+        <field name="name">Mark Lead as Lost</field>
+        <field name="description">Mark a CRM lead as lost/not interested</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "lead_name": {"type": "string", "description": "Contact name of the lead"},
+        "lead_id": {"type": "integer", "description": "ID of the lead"}
+    },
+    "required": []
+}</field>
+        <field name="example_phrases">Mark John as lost
+John is not interested anymore
+Close lead for Sarah, she's not coming
+Mark Mike's lead as lost
+Remove prospect David from pipeline
+John decided not to join</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_lead_mark_won" model="dojo.ai.intent.schema">
+        <field name="intent_type">lead_mark_won</field>
+        <field name="name">Mark Lead as Won</field>
+        <field name="description">Mark a CRM lead as won (prospect joined)</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "lead_name": {"type": "string", "description": "Contact name of the lead"},
+        "lead_id": {"type": "integer", "description": "ID of the lead"}
+    },
+    "required": []
+}</field>
+        <field name="example_phrases">Mark John as won
+Sarah signed up
+We got Mike, mark him as won
+Close lead for Anna, she joined
+Mark David's trial as won
+James is officially joining us</field>
+        <field name="allowed_roles">instructor,admin</field>
         <field name="requires_confirmation">True</field>
         <field name="is_undoable">False</field>
         <field name="supports_bulk">False</field>

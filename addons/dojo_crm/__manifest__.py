@@ -16,6 +16,7 @@
         "sms",
         "mail",
         "base_automation",
+        "dojo_assistant",
     ],
     "data": [
         "security/ir.model.access.csv",
