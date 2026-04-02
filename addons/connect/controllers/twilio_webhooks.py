@@ -37,7 +37,7 @@ class ConnectController(Controller):
     @route('/twilio/webhook/callstatus', methods=['POST'], type='http', auth='public', csrf=False)
     def callstatus_webhook(self, **kw):
         if not self.check_signature(kw):
-            return False
+            return '<Response></Response>'
         res = request.env['connect.call'].with_user(request.env.ref("connect.user_connect_webhook")).on_call_status(kw)
         return f'{res}'
 
@@ -51,7 +51,7 @@ class ConnectController(Controller):
     @route('/twilio/webhook/outgoing_callerid', methods=['POST'], type='http', auth='public', csrf=False)
     def outgoing_callerid_webhook(self, **kw):
         if not self.check_signature(kw):
-            return False
+            return '<Response></Response>'
         env = request.env
         outgoing_callerid = env['connect.outgoing_callerid'].with_user(env.ref("connect.user_connect_webhook"))
         res = outgoing_callerid.update_status(kw)
@@ -84,7 +84,7 @@ class ConnectController(Controller):
     @route('/twilio/webhook/recordingstatus', methods=['POST'], type='http', auth='public', csrf=False)
     def recording_status_webhook(self, **kw):
         if not self.check_signature(kw):
-            return False
+            return '<Response></Response>'
         recording = request.env['connect.recording'].with_user(request.env.ref("connect.user_connect_webhook"))
         res = recording.on_recording_status(kw)
         return f'{res}'
