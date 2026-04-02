@@ -71,7 +71,7 @@ Compatibility & deployment
         ],
     },
     'installable': True,
-    'application': True,
+    'application': False,
     'auto_install': False,
     'currency': 'USD',
     'images': [

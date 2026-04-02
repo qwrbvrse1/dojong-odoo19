@@ -75,12 +75,7 @@
             <field name="tag">elevenlabs_connector.voice_assistant_action</field>
         </record>
         
-        <!-- Top-level menu for Voice Assistant -->
-        <menuitem id="menu_voice_assistant_root" name="Voice Assistant" sequence="100" groups="base.group_user"/>
-        
-        <menuitem id="menu_voice_assistant" name="Start Voice Assistant" parent="menu_voice_assistant_root" action="action_voice_assistant_client" sequence="5" groups="base.group_user"/>
-        
-        <menuitem id="menu_voice_conversations" name="Conversation History" parent="menu_voice_assistant_root" action="action_voice_conversation" sequence="10" groups="base.group_user"/>
+        <!-- Menus moved to dojo_assistant module -->
     </data>
 </odoo>
 
