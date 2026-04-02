@@ -57,6 +57,10 @@ _AUTO_EXECUTE_INTENTS = {
     "campaign_lookup",
     "marketing_card_lookup",
     "subscription_expiring",
+    # CRM read intents
+    "lead_lookup",
+    "pipeline_summary",
+    "trial_schedule",
     "unknown",
 }
 
@@ -73,9 +77,14 @@ _KNOWN_INTENT_TYPES = {
     "undo_action", "unknown",
     # Extended intents
     "subscription_pause", "subscription_resume",
+    "subscription_expiring",
     "at_risk_members", "campaign_lookup", "marketing_card_lookup",
     "campaign_create", "campaign_activate",
     "social_post_create", "social_post_schedule",
+    # CRM intents (handlers in dojo_crm/models/ai_crm_service.py via _inherit)
+    "lead_lookup", "pipeline_summary", "trial_schedule",
+    "lead_qualify", "lead_mark_attended", "lead_convert",
+    "lead_create", "lead_mark_lost", "lead_mark_won",
     # CRUD intents
     "program_create", "belt_test_register_crud", "class_template_create",
     "class_enrollment_create", "class_enrollment_cancel",
@@ -1959,6 +1968,16 @@ class AiAssistantService(models.AbstractModel):
             "at_risk_members": self._handle_at_risk_members,
             "subscription_expiring": self._handle_subscription_expiring,
             "campaign_lookup": self._handle_campaign_lookup,
+            # CRM intents (methods defined in dojo_crm/models/ai_crm_service.py via _inherit)
+            "lead_lookup": self._handle_lead_lookup,
+            "pipeline_summary": self._handle_pipeline_summary,
+            "trial_schedule": self._handle_trial_schedule,
+            "lead_qualify": self._handle_lead_qualify,
+            "lead_mark_attended": self._handle_lead_mark_attended,
+            "lead_convert": self._handle_lead_convert,
+            "lead_create": self._handle_lead_create,
+            "lead_mark_lost": self._handle_lead_mark_lost,
+            "lead_mark_won": self._handle_lead_mark_won,
             "marketing_card_lookup": self._handle_marketing_card_lookup,
             "campaign_create": self._handle_campaign_create,
             "campaign_activate": self._handle_campaign_activate,
@@ -2949,10 +2968,10 @@ class AiAssistantService(models.AbstractModel):
 
         subs = self.env["sale.subscription"].search([
             ("state", "=", "active"),
-            ("end_date", "!=", False),
-            ("end_date", ">=", today.isoformat()),
-            ("end_date", "<=", cutoff.isoformat()),
-        ], order="end_date asc")
+            ("date", "!=", False),
+            ("date", ">=", today.isoformat()),
+            ("date", "<=", cutoff.isoformat()),
+        ], order="date asc")
 
         if not subs:
             return {
@@ -2965,10 +2984,10 @@ class AiAssistantService(models.AbstractModel):
         data = []
         for s in subs:
             member_name = s.member_id.name if hasattr(s, "member_id") and s.member_id else "Unknown"
-            days_left = (s.end_date - today).days
-            label = f"today" if days_left == 0 else f"in {days_left} day{'s' if days_left != 1 else ''}"
-            lines.append(f"• {member_name} — expires {label} ({s.end_date})")
-            data.append({"name": member_name, "end_date": str(s.end_date), "days_left": days_left})
+            days_left = (s.date - today).days
+            label = "today" if days_left == 0 else f"in {days_left} day{'s' if days_left != 1 else ''}"
+            lines.append(f"• {member_name} — expires {label} ({s.date})")
+            data.append({"name": member_name, "end_date": str(s.date), "days_left": days_left})
 
         return {
             "success": True,

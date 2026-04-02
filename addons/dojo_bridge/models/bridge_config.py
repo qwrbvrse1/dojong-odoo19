@@ -105,4 +105,4 @@ class BridgeConfig:
 
     @staticmethod
     def set(params, key: str, value: str) -> None:
-        params.set_param(key, value)
+        params.set_str(key, str(value))

@@ -15,7 +15,7 @@ class AiAssistantServiceCrm(models.AbstractModel):
     # Read intent handlers
     # ------------------------------------------------------------------
 
-    def _handle_lead_lookup(self, intent_type, intent_data, resolved_data):
+    def _handle_lead_lookup(self, intent_data, resolved_data, action_log=None):
         """Look up CRM leads by name, email, or phone."""
         params = intent_data.get("parameters", {})
         domain = []
@@ -61,7 +61,7 @@ class AiAssistantServiceCrm(models.AbstractModel):
             "data": data,
         }
 
-    def _handle_pipeline_summary(self, intent_type, intent_data, resolved_data):
+    def _handle_pipeline_summary(self, intent_data, resolved_data, action_log=None):
         """Summarise the CRM pipeline by stage."""
         stages = self.env["crm.stage"].search([], order="sequence")
         summary = []
@@ -80,7 +80,7 @@ class AiAssistantServiceCrm(models.AbstractModel):
             "data": summary,
         }
 
-    def _handle_trial_schedule(self, intent_type, intent_data, resolved_data):
+    def _handle_trial_schedule(self, intent_data, resolved_data, action_log=None):
         """List upcoming trial bookings."""
         params = intent_data.get("parameters", {})
         date_str = params.get("date")
@@ -119,7 +119,7 @@ class AiAssistantServiceCrm(models.AbstractModel):
     # Write intent handlers
     # ------------------------------------------------------------------
 
-    def _handle_lead_qualify(self, intent_type, intent_data, resolved_data, action_log=None):
+    def _handle_lead_qualify(self, intent_data, resolved_data, action_log=None):
         """Move lead to Qualified stage and generate booking link."""
         lead = self._resolve_crm_lead(intent_data)
         if not lead:
@@ -132,13 +132,12 @@ class AiAssistantServiceCrm(models.AbstractModel):
         if not lead.trial_booking_token:
             lead._generate_trial_tokens()
 
-        old_stage = lead.stage_id.name
         lead.write({"stage_id": qualified_stage.id})
 
         if action_log:
-            action_log.write({
-                "undo_data": f'{{"stage_id": {lead.stage_id.id}, "old_stage_name": "{old_stage}"}}',
-            })
+            self.env["dojo.ai.undo.snapshot"].create_snapshot(
+                action_log.id, "crm.lead", lead.id, "write"
+            )
 
         return {
             "success": True,
@@ -146,7 +145,7 @@ class AiAssistantServiceCrm(models.AbstractModel):
             "data": {"id": lead.id, "booking_url": lead.trial_booking_url},
         }
 
-    def _handle_lead_mark_attended(self, intent_type, intent_data, resolved_data, action_log=None):
+    def _handle_lead_mark_attended(self, intent_data, resolved_data, action_log=None):
         """Mark a lead's trial as attended."""
         lead = self._resolve_crm_lead(intent_data)
         if not lead:
@@ -156,23 +155,22 @@ class AiAssistantServiceCrm(models.AbstractModel):
         if not attended_stage:
             return {"success": False, "message": "Trial Attended stage not found."}
 
-        old_stage = lead.stage_id.name
         lead.write({
             "stage_id": attended_stage.id,
             "trial_attended": True,
         })
 
         if action_log:
-            action_log.write({
-                "undo_data": f'{{"stage_id": {lead.stage_id.id}, "old_stage_name": "{old_stage}"}}',
-            })
+            self.env["dojo.ai.undo.snapshot"].create_snapshot(
+                action_log.id, "crm.lead", lead.id, "write"
+            )
 
         return {
             "success": True,
             "message": f"'{lead.contact_name or lead.name}' marked as Trial Attended.",
         }
 
-    def _handle_lead_convert(self, intent_type, intent_data, resolved_data, action_log=None):
+    def _handle_lead_convert(self, intent_data, resolved_data, action_log=None):
         """Convert a CRM lead to a dojo member."""
         lead = self._resolve_crm_lead(intent_data)
         if not lead:
@@ -194,6 +192,63 @@ class AiAssistantServiceCrm(models.AbstractModel):
         except Exception as exc:
             _logger.error("AI CRM: convert lead %s failed: %s", lead.id, exc)
             return {"success": False, "message": f"Conversion failed: {exc}"}
+
+    def _handle_lead_create(self, intent_data, resolved_data, action_log=None):
+        """Create a new CRM lead (prospect)."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        contact_name = params.get("contact_name") or params.get("name")
+        if not contact_name:
+            return {"success": False, "message": "Please provide the prospect's name."}
+
+        phone = params.get("phone", "")
+        email = params.get("email", "")
+
+        first_stage = self.env["crm.stage"].search([], order="sequence asc", limit=1)
+        vals = {
+            "name": f"Trial - {contact_name}",
+            "contact_name": contact_name,
+            "phone": phone,
+            "email_from": email,
+        }
+        if first_stage:
+            vals["stage_id"] = first_stage.id
+
+        lead = self.env["crm.lead"].create(vals)
+
+        if action_log:
+            self.env["dojo.ai.undo.snapshot"].create_snapshot(
+                action_log.id, "crm.lead", lead.id, "create"
+            )
+
+        return {
+            "success": True,
+            "message": f"New prospect '{contact_name}' added to the pipeline.",
+            "data": {"id": lead.id, "name": lead.name},
+        }
+
+    def _handle_lead_mark_lost(self, intent_data, resolved_data, action_log=None):
+        """Mark a CRM lead as lost."""
+        lead = self._resolve_crm_lead(intent_data)
+        if not lead:
+            return {"success": False, "message": "Could not find the specified lead."}
+
+        lead.action_set_lost()
+        return {
+            "success": True,
+            "message": f"Lead '{lead.contact_name or lead.name}' marked as lost.",
+        }
+
+    def _handle_lead_mark_won(self, intent_data, resolved_data, action_log=None):
+        """Mark a CRM lead as won."""
+        lead = self._resolve_crm_lead(intent_data)
+        if not lead:
+            return {"success": False, "message": "Could not find the specified lead."}
+
+        lead.action_set_won()
+        return {
+            "success": True,
+            "message": f"Lead '{lead.contact_name or lead.name}' marked as won.",
+        }
 
     # ------------------------------------------------------------------
     # Helpers

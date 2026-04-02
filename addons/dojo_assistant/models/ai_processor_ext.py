@@ -53,6 +53,16 @@ IMPORTANT RULES:
     "members at risk", "who hasn't come in", "inactive members", "who hasn't attended" → at_risk_members (parameters: {{}})
     "students enrolled today", "today's attendance", "who checked in today", "show today's classes" → schedule_today (parameters: {{}})
     "show all members", "list all students" → member_lookup (parameters: {{}})
+- CRM / LEAD PIPELINE MAPPING:
+    "show leads", "who are our prospects", "find lead [name]", "look up [name] lead" → lead_lookup (parameters: {{"lead_name": "..."}})
+    "pipeline summary", "how many leads", "leads by stage", "show pipeline" → pipeline_summary (parameters: {{}})
+    "upcoming trials", "who has a trial", "trial schedule", "trials this week" → trial_schedule (parameters: {{}})
+    "qualify lead [name]", "move [name] to qualified", "[name] is a good prospect" → lead_qualify (parameters: {{"lead_name": "..."}})
+    "mark trial attended", "[name] came in", "[name] showed up for trial", "trial attended for [name]" → lead_mark_attended (parameters: {{"lead_name": "..."}})
+    "convert [name] to member", "make [name] a member", "[name] signed up" → lead_convert (parameters: {{"lead_name": "..."}})
+    "add new prospect [name]", "new lead for [name]", "create lead [name]", "walk-in [name]" → lead_create (parameters: {{"contact_name": "...", "phone": "...", "email": "..."}})
+    "mark [name] as lost", "[name] not interested", "[name] dropped out of pipeline" → lead_mark_lost (parameters: {{"lead_name": "..."}})
+    "mark [name] as won", "[name] officially joined", "[name] is a new member now" → lead_mark_won (parameters: {{"lead_name": "..."}})
 - CRITICAL: For parameter VALUES, always use the ACTUAL values from the user's input, NEVER use template placeholders like {{member_name}}, {{target_belt}}, {{class_name}} etc.
   Example of CORRECT parameters: {{"member_name": "Mary Smith", "target_belt": "Blue Belt"}}
   Example of WRONG parameters: {{"member_name": "{{member_name}}", "target_belt": "{{target_belt}}"}}
@@ -160,6 +170,26 @@ AGGREGATE / STATS QUERY MAPPING — use these intents for count/summary question
       → {{"intent_type": "schedule_today", "parameters": {{}}, "confidence": 0.92}}
   "all members", "list all students", "show everyone"
       → {{"intent_type": "member_lookup", "parameters": {{}}, "confidence": 0.88}}
+
+CRM / LEAD PIPELINE MAPPING:
+  "show leads", "who are our prospects", "find lead [name]", "look up [name] lead"
+      → {{"intent_type": "lead_lookup", "parameters": {{"lead_name": "..."}}, "confidence": 0.90}}
+  "pipeline summary", "how many leads", "leads by stage", "show pipeline"
+      → {{"intent_type": "pipeline_summary", "parameters": {{}}, "confidence": 0.92}}
+  "upcoming trials", "who has a trial", "trial schedule", "trials this week"
+      → {{"intent_type": "trial_schedule", "parameters": {{}}, "confidence": 0.92}}
+  "qualify lead [name]", "move [name] to qualified"
+      → {{"intent_type": "lead_qualify", "parameters": {{"lead_name": "..."}}, "confidence": 0.90}}
+  "mark trial attended", "[name] came in for trial", "[name] showed up"
+      → {{"intent_type": "lead_mark_attended", "parameters": {{"lead_name": "..."}}, "confidence": 0.90}}
+  "convert [name] to member", "make [name] a member"
+      → {{"intent_type": "lead_convert", "parameters": {{"lead_name": "..."}}, "confidence": 0.92}}
+  "add new prospect [name]", "new lead for [name]", "create lead [name]", "walk-in [name]"
+      → {{"intent_type": "lead_create", "parameters": {{"contact_name": "..."}}, "confidence": 0.90}}
+  "mark [name] as lost", "[name] not interested", "[name] dropped out"
+      → {{"intent_type": "lead_mark_lost", "parameters": {{"lead_name": "..."}}, "confidence": 0.90}}
+  "mark [name] as won", "[name] officially joined", "[name] is now a member"
+      → {{"intent_type": "lead_mark_won", "parameters": {{"lead_name": "..."}}, "confidence": 0.90}}
 
 Example intent blocks for common queries:
   "What belt is Maria?"         → {{"intent_type": "belt_lookup", "parameters": {{"member_name": "Maria"}}, "confidence": 0.95}}
