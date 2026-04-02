@@ -29,7 +29,7 @@
     'author': 'Dojang',
     'category': 'Dojo',
     'license': 'LGPL-3',
-    'application': False,
+    'application': True,
     'installable': True,
     'auto_install': False,
     'depends': [
@@ -44,6 +44,13 @@
         'data/ir_cron.xml',
         'views/ai_assistant_views.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'dojo_assistant/static/src/css/dojo_voice_assistant_page.css',
+            'dojo_assistant/static/src/xml/dojo_voice_assistant_page.xml',
+            'dojo_assistant/static/src/js/dojo_voice_assistant_page.js',
+        ],
+    },
     'demo': [],
     'external_dependencies': {},
 }

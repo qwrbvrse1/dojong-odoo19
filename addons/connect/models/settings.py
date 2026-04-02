@@ -443,7 +443,12 @@ class Settings(models.Model):
             account_sid = self.sudo().get_param('account_sid')
             auth_token = self.sudo().get_param('auth_token')
             client = Client(account_sid, auth_token)
-            client.http_client.logger.setLevel(TWILIO_LOG_LEVEL)
+            # Suppress verbose Twilio HTTP logging; guard against SDK version differences.
+            try:
+                if hasattr(client, 'http_client') and hasattr(client.http_client, 'logger'):
+                    client.http_client.logger.setLevel(TWILIO_LOG_LEVEL)
+            except (AttributeError, TypeError):
+                pass
             return client
         except Exception as e:
             if 'Credentials are required to create a TwilioClient' in str(e):

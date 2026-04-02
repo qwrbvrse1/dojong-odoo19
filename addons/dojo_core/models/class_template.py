@@ -205,6 +205,16 @@ class DojoClassTemplate(models.Model):
                 # No preference record  → enroll on all days (backward-compatible default).
                 # active=False          → skip (explicit opt-out).
                 # active=True           → defer to should_enroll_on_date().
+                # Pre-count existing registered enrollments so we can stop
+                # gracefully when capacity is reached (avoids crashing the cron).
+                _cap = session.capacity or 0
+                _enrolled_count = (
+                    Enrollment.search_count([
+                        ("session_id", "=", session.id),
+                        ("status", "=", "registered"),
+                    ])
+                    if _cap > 0 else 0
+                )
                 for member in self.course_member_ids if self.auto_enroll_members else []:
                     pref = pref_by_member.get(member.id)
                     if pref is None:
@@ -213,6 +223,9 @@ class DojoClassTemplate(models.Model):
                     else:
                         enroll = pref.should_enroll_on_date(current)
                     if enroll:
+                        # Stop auto-enrolling once the session is at capacity.
+                        if _cap > 0 and _enrolled_count >= _cap:
+                            break
                         # Defer sessions that fall outside the member's current
                         # billing period — credits for those days aren't issued yet.
                         _p_end = period_end_by_member.get(member.id)
@@ -228,6 +241,7 @@ class DojoClassTemplate(models.Model):
                                 "status": "registered",
                             }
                         )
+                        _enrolled_count += 1
             current += timedelta(days=1)
 
     def action_generate_sessions(self):

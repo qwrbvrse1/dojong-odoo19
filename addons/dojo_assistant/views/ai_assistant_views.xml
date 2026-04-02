@@ -335,32 +335,69 @@
     </record>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- Dojo AI Voice Assistant — client action (full-page widget)               -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+
+    <record id="action_dojo_voice_assistant_page" model="ir.actions.client">
+        <field name="name">AI Voice Assistant</field>
+        <field name="tag">dojo_assistant.voice_assistant_page</field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- Menu Items                                                              -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
 
-    <!-- Add to Settings menu (parent: base.menu_administration) -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- Top-Level App Menu                                                       -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+
     <menuitem id="menu_ai_assistant_root"
         name="AI Assistant"
-        parent="base.menu_administration"
-        sequence="99"
-        groups="dojo_core.group_dojo_admin"/>
+        sequence="95"
+        web_icon="dojo_assistant,static/description/icon.png"
+        groups="base.group_user"/>
 
+    <!-- Voice Assistant (dojo AI widget — uses elevenlabs STT + dojo intent AI) -->
+    <menuitem id="menu_ai_voice_assistant"
+        name="Voice Assistant"
+        parent="menu_ai_assistant_root"
+        action="action_dojo_voice_assistant_page"
+        sequence="5"
+        groups="base.group_user"/>
+
+    <!-- Conversation History (dojo AI action log) -->
+    <menuitem id="menu_ai_conversation_history"
+        name="Conversation History"
+        parent="menu_ai_assistant_root"
+        action="action_dojo_ai_action_log"
+        sequence="10"
+        groups="base.group_user"/>
+
+    <!-- Action Log -->
     <menuitem id="menu_ai_action_log"
         name="Action Log"
         parent="menu_ai_assistant_root"
         action="action_dojo_ai_action_log"
-        sequence="10"/>
+        sequence="20"
+        groups="dojo_core.group_dojo_admin"/>
+
+    <!-- Configuration submenu -->
+    <menuitem id="menu_ai_config"
+        name="Configuration"
+        parent="menu_ai_assistant_root"
+        sequence="90"
+        groups="dojo_core.group_dojo_admin"/>
 
     <menuitem id="menu_ai_intent_schema"
         name="Intent Schemas"
-        parent="menu_ai_assistant_root"
+        parent="menu_ai_config"
         action="action_dojo_ai_intent_schema"
-        sequence="20"/>
+        sequence="10"/>
 
     <menuitem id="menu_ai_undo_snapshots"
         name="Undo Snapshots"
-        parent="menu_ai_assistant_root"
+        parent="menu_ai_config"
         action="action_dojo_ai_undo_snapshot"
-        sequence="30"/>
+        sequence="20"/>
 
 </odoo>

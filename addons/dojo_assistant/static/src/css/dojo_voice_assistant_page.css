@@ -1,0 +1,36 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Dojo AI Assistant — full-page voice assistant styles
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.o_dojo_voice_assistant_page {
+    min-width: 600px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.o_dojo_voice_assistant_page .btn-primary {
+    background-color: #b41e16;
+    border-color: #b41e16;
+}
+
+.o_dojo_voice_assistant_page .btn-primary:hover {
+    background-color: #931912;
+    border-color: #931912;
+}
+
+.o_dojo_voice_assistant_page .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.o_dojo_voice_assistant_page .rounded-circle {
+    border-radius: 50% !important;
+}
+
+.o_dojo_voice_assistant_page #current-conversation-result .card-body {
+    font-size: 1.05rem;
+}
+
+.o_dojo_voice_assistant_page #current-conversation-result h6 {
+    font-size: 1.1rem;
+}

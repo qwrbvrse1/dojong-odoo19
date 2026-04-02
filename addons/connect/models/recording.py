@@ -60,7 +60,10 @@ class Recording(models.Model):
                     api_key=openai_api_key, http_client=httpx.Client(proxy=os.environ.get('HTTPS_PROXY')))
             else:
                 client = openai.OpenAI(api_key=openai_api_key)
-            response = requests.get(self.media_url, stream=True)
+            account_sid = self.env['connect.settings'].sudo().get_param('account_sid')
+            auth_token = self.env['connect.settings'].sudo().get_param('auth_token')
+            response = requests.get(self.media_url, stream=True,
+                                    auth=(account_sid, auth_token))
             response.raise_for_status()
             with NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
                 # Write the content from the URL to the temporary file

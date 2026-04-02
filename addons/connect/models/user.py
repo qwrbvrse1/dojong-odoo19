@@ -239,7 +239,8 @@ class User(models.Model):
         client = Client(
             statusCallbackEvent='initiated answered completed',
             statusCallback=status_url)
-        client.identity(self.uri)
+        # Must match the identity used in get_client_token (username only, not full URI)
+        client.identity(self.username)
         client.parameter(name='CallerName', value=caller_name)
         if call and call.partner:
             partner_id = call.partner.id
@@ -300,12 +301,16 @@ class User(models.Model):
             return False
         if not user.client_enabled:
             return False
-        account_sid = self.env['connect.settings'].sudo().get_param('account_sid')
-        api_key = self.env['connect.settings'].sudo().get_param('twilio_api_key')
-        api_secret = self.env['connect.settings'].sudo().get_param('twilio_api_secret')
+        account_sid = (self.env['connect.settings'].sudo().get_param('account_sid') or '').strip()
+        api_key = (self.env['connect.settings'].sudo().get_param('twilio_api_key') or '').strip()
+        api_secret = (self.env['connect.settings'].sudo().get_param('twilio_api_secret') or '').strip()
         if not (account_sid and api_key and api_secret):
             return False
-        identity = user.uri
+        # Twilio Voice SDK 2.x identity must be URL-safe (letters, numbers, dashes,
+        # underscores only). The full SIP URI (user@domain.sip.twilio.com) contains
+        # '@' and '.' which cause Twilio signaling to reject the token with 53000.
+        # Use username only — must match the identity used in route_call TwiML.
+        identity = user.username
         token = AccessToken(account_sid, api_key, api_secret, identity=identity, ttl=3600)
         voice_grant = VoiceGrant(
             outgoing_application_sid=user.application.sid or user.domain.application.sid,
@@ -332,13 +337,25 @@ class User(models.Model):
         if not userinfo:
             # Return empty set.
             return self.env['connect.user']
+        # Try full SIP/Client URI first: sip:user@domain or client:user@domain
         re_call_uri = re.compile(r'^(?:sip|client):([^\s@]+@[^\s;]+)(?:;[^&\s]+(?:&[^&\s]+)*)?')
         found_uri = re_call_uri.search(userinfo)
         if found_uri:
             user = self.env['connect.user'].search([
                 ('uri', '=', found_uri.group(1))])
-            debug(self, 'Found user: {} by {}.'.format(user.username, userinfo))
-            return user
+            if user:
+                debug(self, 'Found user: {} by {}.'.format(user.username, userinfo))
+                return user
+        # Fallback: extract bare username from sip:/client: prefix (Twilio Voice SDK
+        # sends identity as "client:username" when device registers with username-only identity).
+        re_username = re.compile(r'^(?:sip|client):([a-zA-Z0-9_\-\.]+)(?:@|;|$)')
+        found_name = re_username.search(userinfo)
+        if found_name:
+            username = found_name.group(1)
+            user = self.env['connect.user'].search([('username', '=', username)])
+            if user:
+                debug(self, 'Found user by username: {} from {}'.format(username, userinfo))
+                return user
         # Return empty set.
         return self.env['connect.user']
 
@@ -367,10 +384,13 @@ class User(models.Model):
 
     def render_voicemail_prompt(self):
         self.ensure_one()
-        # Render user greeting.
-        environment = jinja2.Environment()
+        # Render user greeting with a restricted context to prevent template injection.
+        # Only expose user-facing display fields, not the full ORM record.
+        environment = jinja2.Environment(autoescape=False)
         template = environment.from_string(self.voicemail_prompt)
-        return template.render({'user': self})
+        return template.render({
+            'user': type('obj', (object,), {'name': self.user.name if self.user else self.username})()
+        })
 
     @api.onchange('domain')
     def _restrict_sip_domain_change(self):
