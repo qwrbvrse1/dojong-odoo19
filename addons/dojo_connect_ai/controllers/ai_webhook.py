@@ -56,9 +56,17 @@ class AiWebhookController(Controller):
                 {"error": "Invalid JSON"}, status=400
             )
 
-        agent_id_str = data.get("agent_id", "")
+        # ElevenLabs wraps the payload: {"type": "post_call_transcription", "data": {...}}
+        # agent_id and all conversation fields live inside "data", not at the top level.
+        event_type = data.get("type", "")
+        payload = data.get("data", data)  # fall back to raw data if already flat
+
+        agent_id_str = payload.get("agent_id", "")
         if not agent_id_str:
-            _logger.warning("conversation_end webhook missing agent_id")
+            _logger.warning(
+                "conversation_end webhook missing agent_id (type=%s keys=%s)",
+                event_type, list(data.keys()),
+            )
             return request.make_json_response(
                 {"error": "agent_id required"}, status=400
             )
@@ -78,7 +86,8 @@ class AiWebhookController(Controller):
             )
 
         # Validate webhook signature if configured
-        signature = request.httprequest.headers.get("X-ElevenLabs-Signature", "")
+        signature = request.httprequest.headers.get("ElevenLabs-Signature", "") or \
+                    request.httprequest.headers.get("X-ElevenLabs-Signature", "")
         if agent.webhook_secret and not agent.verify_webhook_signature(
             raw_body, signature
         ):
@@ -91,5 +100,5 @@ class AiWebhookController(Controller):
         agent_with_user = agent.with_user(
             request.env.ref("connect.user_connect_webhook")
         )
-        result = agent_with_user.process_conversation_end(data)
+        result = agent_with_user.process_conversation_end(payload)
         return request.make_json_response(result)

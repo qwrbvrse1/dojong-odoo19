@@ -31,9 +31,15 @@ class Number(models.Model):
         ('user', 'User'),
         ('callflow', 'CallFlow'),
         ('twiml', 'TwiML'),
+        ('external', 'External URL'),
     ])
     callflow = fields.Many2one('connect.callflow', ondelete='set null')
     user = fields.Many2one('connect.user', ondelete='set null')
+    external_voice_url = fields.Char(
+        string='External Voice URL',
+        help='External webhook URL for inbound voice (e.g. ElevenLabs). '
+             'When set with External destination, sync will point Twilio voice here instead of Odoo.',
+    )
 
     _sql_constrains = [
         ('sid_unique', 'UNIQUE(sid)', 'This SID is already used!'),
@@ -45,13 +51,18 @@ class Number(models.Model):
         fallback_url = self.env['connect.settings'].get_param('api_fallback_url')
         for rec in self:
             rec.voice_status_url = urljoin(api_url, 'twilio/webhook/callstatus')
-            rec.voice_url = urljoin(api_url, 'twilio/webhook/number')
+            # When destination is external, use the external voice URL
+            if rec.destination == 'external' and rec.external_voice_url:
+                rec.voice_url = rec.external_voice_url
+                rec.voice_fallback_url = ''
+            else:
+                rec.voice_url = urljoin(api_url, 'twilio/webhook/number')
+                if fallback_url:
+                    rec.voice_fallback_url = urljoin(fallback_url, 'twilio/webhook/number')
+                else:
+                    rec.voice_fallback_url = ''
             rec.message_url = urljoin(api_url, 'twilio/webhook/message')
             rec.message_fallback_url = urljoin(api_url, 'twilio/webhook/message')
-            if fallback_url:
-                rec.voice_fallback_url = urljoin(fallback_url, 'twilio/webhook/number')
-            else:
-                rec.voice_fallback_url = ''
 
     def update_twilio_number(self, client):
         self.ensure_one()
@@ -78,6 +89,8 @@ class Number(models.Model):
             for field in ['user', 'callflow', 'twiml']:
                 if field != vals['destination']:
                     vals.update({field: None})
+            if vals['destination'] != 'external':
+                vals['external_voice_url'] = False
         res = super().write(vals)
         client = self.env['connect.settings'].get_client()
         for rec in self:
@@ -135,5 +148,9 @@ class Number(models.Model):
             return number.user.render(request)
         elif number.destination == 'callflow' and number.callflow:
             return number.callflow.render(request)
+        elif number.destination == 'external':
+            # External destination — calls go directly to external URL via Twilio,
+            # they should never hit this Odoo webhook. Return a fallback just in case.
+            return '<Response><Say>This number is handled externally.</Say></Response>'
         else:
             return '<Response><Say>Number not configured. Goodbye!</Say></Response>'

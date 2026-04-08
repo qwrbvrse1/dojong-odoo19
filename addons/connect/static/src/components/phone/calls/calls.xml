@@ -61,7 +61,7 @@
 
     <!-- Calls -->
     <t t-name="connect.calls" owl="1">
-        <div t-attf-class="{{ state.call ? 'o_hide' : '' }} o_history_list">
+        <div t-attf-class="{{ state.call ? 'd-none' : '' }} o_history_list">
             <t t-if="state.calls">
                 <table class="o_history_table">
                     <t t-foreach="state.calls" t-as="call" t-key="call.id">
@@ -102,9 +102,7 @@
                                 </div>
                             </td>
                             <td class="o_history_info w-100 d-flex flex-row">
-                                <div class="d-flex flex-column info-card"
-                                     t-on-click="() => this._onClickContactCall(caller)"
-                                     t-attf-title="Call to {{caller}}">
+                                <div class="d-flex flex-column info-card">
                                     <div>
                                         <div class="card-identifier">
                                             <t t-out="caller_id"/>
@@ -125,6 +123,10 @@
                                     </div>
                                 </div>
                                 <div class="o_favorite">
+                                    <button aria-label="Call" class="o_recent_call_btn" t-attf-title="Call {{caller}}"
+                                            t-on-click="() => this._onClickContactCall(caller)">
+                                        <i class="fa fa-phone"/>
+                                    </button>
                                     <button aria-label="Favorite" t-attf-title="Add {{caller_id}} to Favorites"
                                             t-on-click="() => this._onClickFavorite(call)">
                                         <i t-attf-class="fa {{call.favorite ? 'fa-star' : 'fa-star-o'}}"/>

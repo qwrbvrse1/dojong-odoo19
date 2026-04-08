@@ -336,12 +336,22 @@ class CrmLead(models.Model):
     # ------------------------------------------------------------------
 
     def _create_call_activity(self):
-        """Create a 'Call' activity for the salesperson, due in 2 hours."""
+        """Create a 'Call' activity for the salesperson, due in 2 hours.
+        Skipped if an open call activity with the same summary already exists."""
         call_type = self.env.ref("mail.mail_activity_data_call", raise_if_not_found=False)
         if not call_type:
             return
         for rec in self:
             salesperson = rec.user_id or self.env.user
+            summary = _("Follow up on trial booking for %s", rec.contact_name or rec.partner_name or "lead")
+            existing = self.env["mail.activity"].search([
+                ("res_model", "=", "crm.lead"),
+                ("res_id", "=", rec.id),
+                ("activity_type_id", "=", call_type.id),
+                ("summary", "=", summary),
+            ], limit=1)
+            if existing:
+                continue
             session_info = ""
             if rec.trial_session_id:
                 session_info = (
@@ -351,7 +361,7 @@ class CrmLead(models.Model):
             rec.activity_schedule(
                 "mail.mail_activity_data_call",
                 date_deadline=fields.Date.today(),
-                summary=_("Follow up on trial booking for %s", rec.contact_name or rec.partner_name or "lead"),
+                summary=summary,
                 note=_(
                     "Call the lead to confirm attendance and answer questions.%s",
                     session_info,
@@ -360,18 +370,28 @@ class CrmLead(models.Model):
             )
 
     def _schedule_post_trial_followups(self):
-        """Schedule Day 1 / Day 3 / Day 5 follow-up activities after trial attended."""
+        """Schedule Day 1 / Day 3 / Day 5 follow-up activities after trial attended.
+        Skipped entirely if any of these activities already exist on the lead."""
         todo_type = self.env.ref("mail.mail_activity_data_todo", raise_if_not_found=False)
         call_type = self.env.ref("mail.mail_activity_data_call", raise_if_not_found=False)
         today = fields.Date.today()
         for rec in self:
             salesperson = rec.user_id or self.env.user
+            # Guard: if any post-trial follow-up already exists, skip the whole set
+            day1_summary = _("Send recap email to %s", rec.contact_name or "lead")
+            existing = self.env["mail.activity"].search([
+                ("res_model", "=", "crm.lead"),
+                ("res_id", "=", rec.id),
+                ("summary", "=", day1_summary),
+            ], limit=1)
+            if existing:
+                continue
             # Day 1: email recap
             if todo_type:
                 rec.activity_schedule(
                     "mail.mail_activity_data_todo",
                     date_deadline=today + timedelta(days=1),
-                    summary=_("Send recap email to %s", rec.contact_name or "lead"),
+                    summary=day1_summary,
                     note=_("Send a personalised recap of their trial experience. Follow up on any questions."),
                     user_id=salesperson.id,
                 )

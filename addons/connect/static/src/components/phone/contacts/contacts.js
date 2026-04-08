@@ -1,8 +1,8 @@
 /** @odoo-module **/
 
-import {useService} from "@web/core/utils/hooks"
-import {setFocus} from "@connect/js/utils"
-import {Component, useState, useRef, onWillStart} from "@odoo/owl"
+import { useService } from "@web/core/utils/hooks"
+import { setFocus } from "@connect/js/utils"
+import { Component, useState, useRef, onWillStart, onWillDestroy } from "@odoo/owl"
 
 const searching = {
     all: 'all',
@@ -22,7 +22,7 @@ export class Contacts extends Component {
 
     constructor() {
         super(...arguments)
-        const {bus, isTransfer = false, isForward = false, isContact = false, contactSearch = 'all'} = this.props
+        const { bus, isTransfer = false, isForward = false, isContact = false, contactSearch = 'all' } = this.props
         this.bus = bus
         this.isTransfer = isTransfer
         this.isForward = isForward
@@ -30,6 +30,7 @@ export class Contacts extends Component {
         this.contactSearch = contactSearch
         this.searchQuery = ''
         this.users = []
+        this.isFavoritesMode = contactSearch === 'favorites'
     }
 
     setup(props) {
@@ -38,24 +39,38 @@ export class Contacts extends Component {
         this.action = useService('action')
         this.contactInput = useRef('contact-input')
         this.state = useState({
-            isContactMode: false,
+            isContactMode: !this.isFavoritesMode,
             partners: [],
             users: this.users,
+            hasSearched: false,
         })
 
         onWillStart(async () => {
-            this.bus.addEventListener('busContactSetState', ({detail}) => this._busContactSetState(detail))
-            this.bus.addEventListener('busContactSearchQuery', ({detail}) => this._busContactSearchQuery(detail))
+            this._isAlive = true
+            this._onBusContactSetState = ({ detail }) => this._busContactSetState(detail)
+            this._onBusContactSearchQuery = ({ detail }) => this._busContactSearchQuery(detail)
+            this.bus.addEventListener('busContactSetState', this._onBusContactSetState)
+            this.bus.addEventListener('busContactSearchQuery', this._onBusContactSearchQuery)
+            if (this.isFavoritesMode) {
+                await this._loadFavorites()
+            }
+        })
+
+        onWillDestroy(() => {
+            this._isAlive = false
+            this.bus.removeEventListener('busContactSetState', this._onBusContactSetState)
+            this.bus.removeEventListener('busContactSearchQuery', this._onBusContactSearchQuery)
         })
     }
 
-    _busContactSetState({isTransfer = false, isForward = false, isContact = false, isContactMode = false}) {
+    _busContactSetState({ isTransfer = false, isForward = false, isContact = false, isContactMode = false }) {
         this.state.isContactMode = isContactMode
         this.isTransfer = isTransfer
         this.isContact = isContact
         this.isForward = isForward
         this.state.partners = []
         this.state.users = []
+        this.state.hasSearched = false
         this.searchQuery = ''
         if (this.contactInput.el) {
             this.contactInput.el.value = ''
@@ -63,7 +78,7 @@ export class Contacts extends Component {
         }
     }
 
-    _busContactSearchQuery({searchQuery = ''}) {
+    _busContactSearchQuery({ searchQuery = '' }) {
         this.searchQuery = searchQuery
         this.searchUser()
         this.searchPartner()
@@ -73,17 +88,18 @@ export class Contacts extends Component {
         if (ev.key === "Enter") {
             this._contactCall()
         } else {
-            this._contactSearchQuery({searchQuery: ev.target.value})
+            this._contactSearchQuery({ searchQuery: ev.target.value })
         }
     }
 
     _onClickClearSearchContact(ev) {
-        this._contactSearchQuery({searchQuery: ''})
+        this._contactSearchQuery({ searchQuery: '' })
+        this.state.hasSearched = false
         this.contactInput.el.value = ''
         setFocus(this.contactInput.el)
     }
 
-    _contactSearchQuery({searchQuery = ''}) {
+    _contactSearchQuery({ searchQuery = '' }) {
         this.searchQuery = searchQuery
         this.searchUser()
         this.searchPartner()
@@ -125,9 +141,11 @@ export class Contacts extends Component {
                     ['mobile', '!=', null]
                 ],
                 ['id', 'name', 'email', 'connect_phone_normalized', 'connect_mobile_normalized'],
-                {order: 'name asc', limit: 10}
+                { order: 'name asc', limit: 10 }
             ).then((records) => {
+                if (!self._isAlive) return
                 self.state.partners = records
+                self.state.hasSearched = true
             })
         } else {
             self.state.partners = []
@@ -145,9 +163,11 @@ export class Contacts extends Component {
                     ['user', '=ilike', `%${self.searchQuery}%`]
                 ],
                 ['id', 'name', 'exten_number', 'user'],
-                {order: 'exten_number asc', limit: 10}
+                { order: 'exten_number asc', limit: 10 }
             ).then((records) => {
+                if (!self._isAlive) return
                 self.state.users = records
+                self.state.hasSearched = true
             })
         } else {
             self.state.users = []
@@ -155,7 +175,7 @@ export class Contacts extends Component {
     }
 
     _onClickMakeCall(phoneNumber) {
-        this.bus.trigger('busPhoneMakeCall', {phone: phoneNumber})
+        this.bus.trigger('busPhoneMakeCall', { phone: phoneNumber })
     }
 
     _onClickMakeTransfer(phoneNumber) {
@@ -174,5 +194,43 @@ export class Contacts extends Component {
             type: 'ir.actions.act_window',
             views: [[false, 'form']],
         })
+    }
+
+    async _loadFavorites() {
+        const favorites = await this.orm.searchRead('connect.favorite', [], ['phone_number', 'partner', 'user', 'name'])
+        if (!this._isAlive) return
+
+        const partnerIds = favorites.filter(f => f.partner).map(f => f.partner[0])
+        const userIds = favorites.filter(f => f.user).map(f => f.user[0])
+
+        if (partnerIds.length > 0) {
+            this.state.partners = await this.orm.searchRead(
+                'res.partner',
+                [['id', 'in', partnerIds]],
+                ['id', 'name', 'email', 'connect_phone_normalized', 'connect_mobile_normalized'],
+                { order: 'name asc' }
+            )
+        }
+        if (userIds.length > 0) {
+            this.state.users = await this.orm.searchRead(
+                'connect.user',
+                [['id', 'in', userIds]],
+                ['id', 'name', 'exten_number', 'user'],
+                { order: 'exten_number asc' }
+            )
+        }
+
+        // For favorites that have neither partner nor user, show as plain entries
+        const plainFavs = favorites.filter(f => !f.partner && !f.user)
+        for (const fav of plainFavs) {
+            this.state.partners.push({
+                id: -fav.id,
+                name: fav.name || fav.phone_number,
+                connect_phone_normalized: fav.phone_number,
+                connect_mobile_normalized: false,
+            })
+        }
+
+        this.state.hasSearched = true
     }
 }

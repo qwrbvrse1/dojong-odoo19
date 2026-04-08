@@ -83,7 +83,9 @@ class DojoAiIntentSchema(models.Model):
     allowed_roles = fields.Char(
         string="Allowed Roles",
         default="instructor,admin",
-        help="Comma-separated list of roles that can execute this intent (kiosk,instructor,admin)",
+        help="Comma-separated list of roles that can execute this intent (kiosk,caller,instructor,admin). "
+             "kiosk = in-person kiosk check-in; caller = inbound phone caller (member/guardian/unknown); "
+             "instructor = dojo instructor (full access); admin = admin (full access)",
     )
 
     # ─── Confirmation ─────────────────────────────────────────────────────────
