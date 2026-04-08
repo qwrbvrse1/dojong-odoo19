@@ -16,7 +16,7 @@
         "connect",
         "dojo_crm",
         "dojo_assistant",
-        "elevenlabs_connector",
+        "dojo_ai_caller",
     ],
     "data": [
         # Security
@@ -28,7 +28,6 @@
         "views/connect_ai_agent_views.xml",
         "views/connect_call_views.xml",
         "views/connect_number_views.xml",
-        "views/res_config_settings_views.xml",
     ],
     "installable": True,
     "application": False,

@@ -20,6 +20,7 @@
     ],
     "data": [
         "security/ir.model.access.csv",
+        "security/dojo_crm_security.xml",
         "data/crm_tag.xml",
         "data/crm_stage.xml",
         "data/mail_template_crm.xml",

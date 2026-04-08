@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem id="menu_ai_caller_root"
+              name="AI Caller"
+              parent="crm.crm_menu_root"
+              sequence="90"/>
+
+    <menuitem id="menu_ai_campaigns"
+              name="Campaigns"
+              parent="menu_ai_caller_root"
+              action="action_ai_campaign"
+              sequence="10"/>
+
+    <menuitem id="menu_ai_call_logs"
+              name="Call Logs"
+              parent="menu_ai_caller_root"
+              action="action_ai_campaign_log"
+              sequence="20"/>
+
+</odoo>

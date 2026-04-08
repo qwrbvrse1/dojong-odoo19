@@ -4,11 +4,9 @@ import hashlib
 import hmac
 import json
 import logging
-from urllib.parse import urljoin
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
-from twilio.twiml.voice_response import VoiceResponse, Connect, Stream
 
 _logger = logging.getLogger(__name__)
 
@@ -22,10 +20,18 @@ class ConnectAiAgent(models.Model):
     active = fields.Boolean(default=True)
 
     # ── ElevenLabs configuration ─────────────────────────────────────
+    synced_agent_id = fields.Many2one(
+        "dojo.elevenlabs.agent",
+        string="ElevenLabs Agent",
+        help="Select a synced agent from ElevenLabs. Sync via Connect → Settings → API Keys.",
+    )
     elevenlabs_agent_id = fields.Char(
-        string="ElevenLabs Agent ID",
+        string="Agent ID",
+        compute="_compute_elevenlabs_agent_id",
+        inverse="_inverse_elevenlabs_agent_id",
+        store=True,
         required=True,
-        help="Agent ID from the ElevenLabs Conversational AI dashboard.",
+        help="Auto-filled from synced agent, or enter manually.",
     )
     system_prompt = fields.Text(
         string="System Prompt (reference)",
@@ -85,6 +91,18 @@ class ConnectAiAgent(models.Model):
                 [("ai_agent_id", "=", rec.id)]
             )
 
+    @api.depends("synced_agent_id", "synced_agent_id.elevenlabs_id")
+    def _compute_elevenlabs_agent_id(self):
+        for rec in self:
+            if rec.synced_agent_id:
+                rec.elevenlabs_agent_id = rec.synced_agent_id.elevenlabs_id
+            elif not rec.elevenlabs_agent_id:
+                rec.elevenlabs_agent_id = ""
+
+    def _inverse_elevenlabs_agent_id(self):
+        """Allow manual entry of agent ID without a synced agent."""
+        pass
+
     # ------------------------------------------------------------------
     # Stat button actions
     # ------------------------------------------------------------------
@@ -110,63 +128,6 @@ class ConnectAiAgent(models.Model):
             "domain": [("ai_agent_id", "=", self.id)],
             "context": {"default_ai_agent_id": self.id},
         }
-
-    # ------------------------------------------------------------------
-    # TwiML rendering — returns <Connect><Stream> pointing to ElevenLabs
-    # ------------------------------------------------------------------
-
-    def render_twiml(self, request_params):
-        """Build TwiML that bridges the Twilio call to ElevenLabs Conversational AI.
-
-        Uses Twilio's <Connect><Stream> verb to open a bidirectional audio
-        WebSocket directly from Twilio to ElevenLabs — no WebSocket server
-        needed in Odoo.
-        """
-        self.ensure_one()
-        response = VoiceResponse()
-
-        # Build the ElevenLabs WebSocket URL with dynamic context
-        caller_phone = request_params.get("From", "")
-        caller_name = self._resolve_caller_name(caller_phone)
-
-        # ElevenLabs Twilio Media Stream endpoint — agent_id in the path
-        stream_url = (
-            f"wss://api.elevenlabs.io/v1/convai/conversation"
-            f"?agent_id={self.elevenlabs_agent_id}"
-        )
-
-        connect = Connect()
-        # track="both_tracks" enables bidirectional audio (required for TTS to reach caller)
-        stream = Stream(url=stream_url, track="both_tracks")
-
-        # Pass caller metadata as Stream parameters (available inside ElevenLabs agent)
-        stream.parameter(name="caller_phone", value=caller_phone)
-        if caller_name:
-            stream.parameter(name="caller_name", value=caller_name)
-        stream.parameter(name="call_sid", value=request_params.get("CallSid", ""))
-
-        # Pass the Odoo tool base URL so the agent knows where to call back
-        api_url = self.env["connect.settings"].sudo().get_param("api_url")
-        if api_url:
-            stream.parameter(name="odoo_api_url", value=api_url)
-
-        connect.append(stream)
-        response.append(connect)
-
-        # After the stream ends (AI hangs up or stream closes), say goodbye.
-        # Live transfers during the call are handled via the transfer tool
-        # endpoint, which updates the Twilio call with new TwiML.
-        response.say("Thank you for calling. Goodbye!", voice="Polly.Joanna")
-        response.hangup()
-
-        return str(response)
-
-    def _resolve_caller_name(self, phone):
-        """Look up caller by phone number and return display name if found."""
-        if not phone:
-            return ""
-        partner = self.env["res.partner"].sudo().get_partner_by_number(phone)
-        return partner.name if partner else ""
 
     # ------------------------------------------------------------------
     # Post-conversation processing (called from webhook controller)
@@ -206,7 +167,27 @@ class ConnectAiAgent(models.Model):
             if t.get("message")
         )
 
-        # Find matching call record
+        # Resolve caller partner
+        partner = False
+        if caller_phone:
+            partner = self.env["res.partner"].sudo().get_partner_by_number(
+                caller_phone
+            )
+
+        # Build call summary HTML from analysis + transcript
+        summary_text = analysis.get("summary", "")
+        call_summary_html = ""
+        if summary_text:
+            call_summary_html += f"<p><strong>Summary:</strong> {summary_text}</p>"
+        if transcript_html:
+            call_summary_html += (
+                f"<p><strong>Transcript:</strong></p>"
+                f"<p>{transcript_html}</p>"
+            )
+
+        # Find matching call record (legacy path — when Twilio still routes
+        # through Odoo and creates a channel)
+        Call = self.env["connect.call"].sudo()
         call = False
         if call_sid:
             channel = self.env["connect.channel"].sudo().search(
@@ -215,20 +196,35 @@ class ConnectAiAgent(models.Model):
             if channel and channel.call:
                 call = channel.call
 
-        # Update call with AI data
-        if call:
-            call.sudo().write({
-                "ai_conversation_id": conversation_id,
-                "ai_transcript": transcript_plain,
-                "ai_agent_id": self.id,
-            })
-
-        # Resolve caller partner
-        partner = False
-        if caller_phone:
-            partner = self.env["res.partner"].sudo().get_partner_by_number(
-                caller_phone
+        # Also check if we already logged this conversation (avoid duplicates
+        # on webhook retries)
+        if not call and conversation_id:
+            call = Call.search(
+                [("ai_conversation_id", "=", conversation_id)], limit=1
             )
+
+        call_vals = {
+            "ai_conversation_id": conversation_id,
+            "ai_transcript": transcript_plain,
+            "ai_agent_id": self.id,
+            "summary": call_summary_html or False,
+        }
+
+        if call:
+            call.write(call_vals)
+        else:
+            # Twilio routes directly to ElevenLabs — no channel/call exists
+            # in Odoo yet.  Create a call log entry so the conversation
+            # appears in the Connect call list.
+            called_number = _dyn_vars.get("called_number", "")
+            call_vals.update({
+                "caller": caller_phone or "Unknown",
+                "called": called_number or "AI Receptionist",
+                "direction": "incoming",
+                "status": "completed",
+                "partner": partner.id if partner else False,
+            })
+            call = Call.create(call_vals)
 
         # Skip CRM lead creation for instructor callers — they're issuing
         # commands, not leads. Check by dojo.instructor.profile.
@@ -452,7 +448,7 @@ class ConnectAiAgent(models.Model):
     # Conversation Initiation Webhook
     # ------------------------------------------------------------------
 
-    def get_conversation_init_data(self, caller_phone="", call_sid=""):
+    def get_conversation_init_data(self, caller_phone="", call_sid="", called_number=""):
         """Build ElevenLabs conversation_initiation_client_data payload.
 
         Called before the agent speaks its first word. Looks up the caller
@@ -688,6 +684,7 @@ class ConnectAiAgent(models.Model):
         # post-call webhook under conversation_initiation_client_data.dynamic_variables
         dyn["caller_phone"] = caller_phone or ""
         dyn["call_sid"] = call_sid or ""
+        dyn["called_number"] = called_number or ""
 
         return {
             "type": "conversation_initiation_client_data",
@@ -703,7 +700,7 @@ class ConnectAiAgent(models.Model):
     # Webhook signature validation
     # ------------------------------------------------------------------
 
-    def verify_webhook_signature(self, payload_body, signature_header):
+    def verify_webhook_signature(self, payload_body, signature_header, signing_secret=None):
         """Validate ElevenLabs post-call webhook signature.
 
         ElevenLabs signs webhooks using the format:
@@ -712,7 +709,8 @@ class ConnectAiAgent(models.Model):
         The signed payload is: "<timestamp>,<raw_body>"
         """
         self.ensure_one()
-        if not self.elevenlabs_webhook_secret:
+        secret = signing_secret or self.elevenlabs_webhook_secret
+        if not secret:
             return True  # No secret configured — skip validation (dev mode)
 
         if not signature_header:
@@ -734,7 +732,7 @@ class ConnectAiAgent(models.Model):
         signed_payload = f"{timestamp}.{body_str}"
 
         expected = hmac.new(
-            self.elevenlabs_webhook_secret.encode(),
+            secret.encode(),
             signed_payload.encode(),
             hashlib.sha256,
         ).hexdigest()

@@ -85,11 +85,12 @@ class AiWebhookController(Controller):
                 {"error": "Agent not found"}, status=404
             )
 
-        # Validate webhook signature if configured
+        # Validate webhook signature via global signing secret
         signature = request.httprequest.headers.get("ElevenLabs-Signature", "") or \
                     request.httprequest.headers.get("X-ElevenLabs-Signature", "")
-        if agent.webhook_secret and not agent.verify_webhook_signature(
-            raw_body, signature
+        signing_secret = request.env["connect.settings"].sudo().get_param("elevenlabs_signing_secret")
+        if signing_secret and not agent.verify_webhook_signature(
+            raw_body, signature, signing_secret
         ):
             _logger.warning("conversation_end: invalid webhook signature")
             return request.make_json_response(

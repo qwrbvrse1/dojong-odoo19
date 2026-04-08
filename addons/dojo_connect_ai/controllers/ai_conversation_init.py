@@ -76,11 +76,11 @@ class AiConversationInitController(Controller):
             _logger.warning("conversation_init: missing X-Api-Key header")
             return request.make_json_response({"error": "Unauthorized"}, status=401)
 
-        agent = request.env["connect.ai.agent"].sudo().search(
-            [("webhook_secret", "=", token), ("active", "=", True)], limit=1
-        )
-        if not agent:
-            _logger.warning("conversation_init: no agent found for provided token")
+        # Authenticate via global Connect settings key
+        settings = request.env["connect.settings"].sudo()
+        expected_key = settings.get_param("elevenlabs_tool_api_key")
+        if not expected_key or token != expected_key:
+            _logger.warning("conversation_init: invalid X-Api-Key")
             return request.make_json_response({"error": "Unauthorized"}, status=401)
 
         # ── Parse request body ───────────────────────────────────────
@@ -92,6 +92,22 @@ class AiConversationInitController(Controller):
 
         caller_id = data.get("caller_id", "")
         call_sid = data.get("call_sid", "")
+        called_number = data.get("called_number", "")
+        el_agent_id = data.get("agent_id", "")
+
+        # Identify agent from payload agent_id
+        agent = False
+        if el_agent_id:
+            agent = request.env["connect.ai.agent"].sudo().search(
+                [("elevenlabs_agent_id", "=", el_agent_id), ("active", "=", True)], limit=1
+            )
+        if not agent:
+            agent = request.env["connect.ai.agent"].sudo().search(
+                [("active", "=", True)], limit=1
+            )
+        if not agent:
+            _logger.warning("conversation_init: no active AI agent found")
+            return request.make_json_response({"error": "No agent configured"}, status=404)
 
         _logger.info(
             "conversation_init: agent=%s caller=%s call_sid=%s",
@@ -102,5 +118,6 @@ class AiConversationInitController(Controller):
         result = agent.sudo().get_conversation_init_data(
             caller_phone=caller_id,
             call_sid=call_sid,
+            called_number=called_number,
         )
         return request.make_json_response(result)

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ════════════════════ LIST ════════════════════ -->
+    <record id="view_ai_campaign_log_list" model="ir.ui.view">
+        <field name="name">dojo.ai.campaign.log.list</field>
+        <field name="model">dojo.ai.campaign.log</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="campaign_id"/>
+                <field name="lead_name"/>
+                <field name="phone"/>
+                <field name="status" widget="badge"
+                       decoration-success="status == 'completed'"
+                       decoration-danger="status == 'failed'"
+                       decoration-warning="status == 'calling'"
+                       decoration-info="status == 'pending'"
+                       decoration-muted="status == 'no_answer'"/>
+                <field name="outcome" optional="show"/>
+                <field name="duration" optional="show"/>
+                <field name="started_at"/>
+                <field name="ended_at" optional="hide"/>
+                <field name="elevenlabs_conversation_id" optional="hide"/>
+                <field name="error_message" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ════════════════════ FORM ════════════════════ -->
+    <record id="view_ai_campaign_log_form" model="ir.ui.view">
+        <field name="name">dojo.ai.campaign.log.form</field>
+        <field name="model">dojo.ai.campaign.log</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_fetch_results" type="object"
+                            string="Fetch Results" class="btn-primary"
+                            invisible="status not in ('calling', 'pending')"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="campaign_id"/>
+                            <field name="lead_id"/>
+                            <field name="phone"/>
+                            <field name="status"/>
+                            <field name="outcome"/>
+                        </group>
+                        <group>
+                            <field name="started_at"/>
+                            <field name="ended_at"/>
+                            <field name="duration"/>
+                            <field name="elevenlabs_conversation_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Transcript" name="transcript">
+                            <field name="transcript" nolabel="1"
+                                   placeholder="Transcript will appear after the call finishes and results are fetched."/>
+                        </page>
+                        <page string="Error" name="error"
+                              invisible="not error_message">
+                            <field name="error_message" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ════════════════════ SEARCH ════════════════════ -->
+    <record id="view_ai_campaign_log_search" model="ir.ui.view">
+        <field name="name">dojo.ai.campaign.log.search</field>
+        <field name="model">dojo.ai.campaign.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="lead_name"/>
+                <field name="phone"/>
+                <field name="campaign_id"/>
+                <filter name="completed" string="Completed"
+                        domain="[('status', '=', 'completed')]"/>
+                <filter name="failed" string="Failed"
+                        domain="[('status', '=', 'failed')]"/>
+                <separator/>
+                <filter name="group_campaign" string="Campaign"
+                        domain="[]" context="{'group_by': 'campaign_id'}"/>
+                <filter name="group_status" string="Status"
+                        domain="[]" context="{'group_by': 'status'}"/>
+                <filter name="group_outcome" string="Outcome"
+                        domain="[]" context="{'group_by': 'outcome'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ════════════════════ ACTION ════════════════════ -->
+    <record id="action_ai_campaign_log" model="ir.actions.act_window">
+        <field name="name">Call Logs</field>
+        <field name="res_model">dojo.ai.campaign.log</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_ai_campaign_log_search"/>
+    </record>
+
+</odoo>

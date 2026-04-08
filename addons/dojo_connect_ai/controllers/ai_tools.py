@@ -54,10 +54,10 @@ class AiToolsController(Controller):
                 {"error": "Unauthorized"}, status=401
             )
 
-        agent = request.env["connect.ai.agent"].sudo().search(
-            [("webhook_secret", "=", token), ("active", "=", True)], limit=1
-        )
-        if not agent:
+        # Authenticate via global Connect settings key
+        settings = request.env["connect.settings"].sudo()
+        expected_key = settings.get_param("elevenlabs_tool_api_key")
+        if not expected_key or token != expected_key:
             return request.make_json_response(
                 {"error": "Unauthorized"}, status=401
             )
@@ -71,6 +71,18 @@ class AiToolsController(Controller):
         if not user_message:
             return request.make_json_response(
                 {"error": "user_message is required"}, status=400
+            )
+
+        # Identify agent from payload agent_id or fall back to first active
+        agent = False
+        el_agent_id = data.get("agent_id", "")
+        if el_agent_id:
+            agent = request.env["connect.ai.agent"].sudo().search(
+                [("elevenlabs_agent_id", "=", el_agent_id), ("active", "=", True)], limit=1
+            )
+        if not agent:
+            agent = request.env["connect.ai.agent"].sudo().search(
+                [("active", "=", True)], limit=1
             )
 
         tools = request.env["connect.ai.tools"].with_user(
