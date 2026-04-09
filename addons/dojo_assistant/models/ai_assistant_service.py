@@ -719,8 +719,12 @@ class AiAssistantService(models.AbstractModel):
 
         # ── Inject conversation history into the prompt ──────────────────────────
         if conversation_history:
+            _turns_cfg = self.env["ir.config_parameter"].sudo().get_int(
+                "dojo_assistant.context_window_turns", 10
+            )
+            _max_messages = max(1, min(50, _turns_cfg)) * 2  # each turn = user + assistant
             turns = [
-                m for m in conversation_history[-10:]
+                m for m in conversation_history[-_max_messages:]
                 if isinstance(m, dict)
                 and m.get("role") in ("user", "assistant", "ai")
                 and m.get("text")

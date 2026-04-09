@@ -5,3 +5,4 @@ from . import ai_undo_snapshot
 from . import ai_processor_ext
 from . import ai_assistant_service
 from . import dojo_walkie_talkie
+from . import res_config_settings

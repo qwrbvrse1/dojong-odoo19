@@ -499,4 +499,46 @@
         sequence="7"
         groups="dojo_core.group_dojo_instructor,dojo_core.group_dojo_admin"/>
 
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- AI Assistant — Settings tile (Settings → AI Assistant)                -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <record id="res_config_settings_view_dojo_assistant" model="ir.ui.view">
+        <field name="name">res.config.settings.view.dojo.assistant</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <div class="app_settings_block"
+                     data-string="AI Assistant"
+                     string="AI Assistant"
+                     data-key="dojo_assistant">
+
+                    <h2>AI Assistant Settings</h2>
+
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <span class="fa fa-comments fa-2x text-primary"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="ai_context_window_turns"
+                                       string="Context Window (turns)"/>
+                                <div class="text-muted">
+                                    Number of previous conversation turns sent to the AI
+                                    with each request. 1 turn = one user message + one AI reply.
+                                    Higher values give the AI more context but use more tokens.
+                                    Allowed range: 1–50. Default: 10.
+                                </div>
+                                <div class="content-group mt8">
+                                    <field name="ai_context_window_turns"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>

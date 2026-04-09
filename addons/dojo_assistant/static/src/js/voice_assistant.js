@@ -69,12 +69,19 @@ export class DojoVoiceAssistant extends Component {
         this._pendingTranscript = "";
         this._silenceTimer      = null;
         this._hasBeenOpened     = false;  // tracks first open vs reopen
+        this._contextWindowMax  = 10;     // turns; overwritten by /dojo/ai/config on mount
 
         onMounted(() => {
             // Keyboard shortcut: Ctrl+Shift+A to toggle panel
             document.addEventListener("keydown", (e) => {
                 if (e.ctrlKey && e.shiftKey && e.key === "A") this.toggle();
             });
+            // Fetch configurable context window size
+            rpc("/dojo/ai/config", {}).then((cfg) => {
+                if (cfg && cfg.context_window_turns) {
+                    this._contextWindowMax = cfg.context_window_turns;
+                }
+            }).catch(() => { /* keep default */ });
         });
 
         onWillUnmount(() => {
@@ -547,8 +554,8 @@ export class DojoVoiceAssistant extends Component {
         const cw = this.state.contextWindow;
         if (userText) cw.push({ role: "user", text: userText });
         if (aiText) cw.push({ role: "assistant", text: aiText });
-        // Cap at 20 items (10 turns)
-        if (cw.length > 20) cw.splice(0, cw.length - 20);
+        const maxItems = this._contextWindowMax * 2;  // each turn = user + assistant
+        if (cw.length > maxItems) cw.splice(0, cw.length - maxItems);
     }
     _scrollToBottom() {
         if (this.endRef.el) {

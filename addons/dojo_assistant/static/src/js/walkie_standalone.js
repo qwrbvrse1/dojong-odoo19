@@ -251,6 +251,7 @@
                 statusLabel: "Hold to talk",
                 error: null,
             });
+            this._contextWindowMax  = (window.WT_CONFIG && window.WT_CONFIG.context_window_turns) || 10;
             this._mediaRecorder = null;
             this._audioChunks   = [];
             this._stream        = null;
@@ -516,7 +517,8 @@
             const cw = this.state.contextWindow;
             if (userText) cw.push({ role: "user", text: userText });
             if (aiText)   cw.push({ role: "assistant", text: aiText });
-            if (cw.length > 20) cw.splice(0, cw.length - 20);
+            const maxItems = this._contextWindowMax * 2;  // each turn = user + assistant
+            if (cw.length > maxItems) cw.splice(0, cw.length - maxItems);
         }
 
         _pushError(msg) {

@@ -348,6 +348,28 @@ class DojoAiAssistantController(http.Controller):
             _logger.error("Dojo AI /dojo/ai/intents failed: %s", exc, exc_info=True)
             return {"success": False, "intents": [], "error": str(exc)}
 
+    @http.route("/dojo/ai/config", type="jsonrpc", auth="user", methods=["GET", "POST"])
+    def get_config(self, **kwargs):
+        """
+        Return client-facing AI assistant configuration values.
+
+        Returns:
+            {
+                success: bool,
+                context_window_turns: int,
+                error: str | None
+            }
+        """
+        try:
+            turns = request.env["ir.config_parameter"].sudo().get_int(
+                "dojo_assistant.context_window_turns", 10
+            )
+            turns = max(1, min(50, turns))
+            return {"success": True, "context_window_turns": turns, "error": None}
+        except Exception as exc:
+            _logger.error("Dojo AI /dojo/ai/config failed: %s", exc, exc_info=True)
+            return {"success": True, "context_window_turns": 10, "error": str(exc)}
+
     # ═══════════════════════════════════════════════════════════════════════════
     # Legacy Endpoints (Backward Compatibility)
     # ═══════════════════════════════════════════════════════════════════════════
@@ -509,6 +531,11 @@ class DojoWalkieTalkieController(http.Controller):
         ver_css = _wt_static_ver("static/src/css/walkie_standalone.css")
         name_escaped = (record.name or "AI Walkie-Talkie").replace("'", "\\'")
 
+        context_window_turns = request.env["ir.config_parameter"].sudo().get_int(
+            "dojo_assistant.context_window_turns", 10
+        )
+        context_window_turns = max(1, min(50, context_window_turns))
+
         html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -524,6 +551,7 @@ class DojoWalkieTalkieController(http.Controller):
     <script>
         window.WT_TOKEN = '{token}';
         window.WT_NAME  = '{name_escaped}';
+        window.WT_CONFIG = {{ context_window_turns: {context_window_turns} }};
         window.onerror  = function(msg, src, line, col, err) {{
             document.getElementById('wt-root').innerHTML =
                 '<pre style="color:red;background:#111;padding:20px;font-size:13px;white-space:pre-wrap">'
