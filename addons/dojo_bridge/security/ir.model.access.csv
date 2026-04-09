@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_x_bridge_identity,x.bridge.identity user,model_x_bridge_identity,base.group_user,1,1,1,1
+access_x_bridge_service,x.bridge.service user,model_x_bridge_service,base.group_user,1,1,1,1
+access_x_bridge_webhook_handler,x.bridge.webhook.handler user,model_x_bridge_webhook_handler,base.group_user,1,1,1,1

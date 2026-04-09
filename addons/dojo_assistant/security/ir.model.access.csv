@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_dojo_ai_undo_snapshot,dojo.ai.undo.snapshot user,model_dojo_ai_undo_snapshot,base.group_user,1,1,1,1
+access_ai_assistant_service,ai.assistant.service user,model_ai_assistant_service,base.group_user,1,1,1,0
+access_dojo_ai_intent_schema,dojo.ai.intent.schema user,model_dojo_ai_intent_schema,base.group_user,1,1,1,1
+access_dojo_ai_action_log,dojo.ai.action.log user,model_dojo_ai_action_log,base.group_user,1,1,1,0

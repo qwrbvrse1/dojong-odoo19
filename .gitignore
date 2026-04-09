@@ -51,6 +51,7 @@ CLAUDE.md
 # =============================================================================
 *.zip
 *.csv
+!addons/**/security/ir.model.access.csv
 dojo_schema.sql
 dojo_schema.md
 CLAUDE.md

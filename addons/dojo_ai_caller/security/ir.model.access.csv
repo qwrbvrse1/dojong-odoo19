@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_ai_campaign_admin,dojo.ai.campaign admin,model_dojo_ai_campaign,base.group_system,1,1,1,1
+access_ai_campaign_user,dojo.ai.campaign user,model_dojo_ai_campaign,sales_team.group_sale_salesman,1,1,1,0
+access_ai_campaign_log_admin,dojo.ai.campaign.log admin,model_dojo_ai_campaign_log,base.group_system,1,1,1,1
+access_ai_campaign_log_user,dojo.ai.campaign.log user,model_dojo_ai_campaign_log,sales_team.group_sale_salesman,1,0,0,0
+access_elevenlabs_agent_admin,dojo.elevenlabs.agent admin,model_dojo_elevenlabs_agent,base.group_system,1,1,1,1
+access_elevenlabs_agent_user,dojo.elevenlabs.agent user,model_dojo_elevenlabs_agent,sales_team.group_sale_salesman,1,0,0,0
+access_elevenlabs_phone_admin,dojo.elevenlabs.phone admin,model_dojo_elevenlabs_phone,base.group_system,1,1,1,1
+access_elevenlabs_phone_user,dojo.elevenlabs.phone user,model_dojo_elevenlabs_phone,sales_team.group_sale_salesman,1,0,0,0
