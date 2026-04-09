@@ -1,0 +1,13 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_dojo_dashboard_user,dojo.dashboard user,model_dojo_dashboard,base.group_user,1,0,0,0
+access_dojo_dashboard_belt_stat_user,dojo.dashboard.belt.stat user,model_dojo_dashboard_belt_stat,base.group_user,1,0,0,0
+access_dojo_dashboard_style_stat_user,dojo.dashboard.style.stat user,model_dojo_dashboard_style_stat,base.group_user,1,0,0,0
+access_dojo_session_user,dojo.session user,model_dojo_session,base.group_user,1,1,1,1
+access_dojo_student_user,dojo.student user,model_dojo_student,base.group_user,1,1,1,1
+access_dojo_attendance_user,dojo.attendance user,model_dojo_attendance,base.group_user,1,1,1,1
+access_dojo_payment_user,dojo.payment user,model_dojo_payment,base.group_user,1,1,1,1
+access_dojo_martial_arts_style_user,dojo.martial_arts_style user,model_dojo_martial_arts_style,base.group_user,1,1,1,1
+access_dojo_belt_rank_user,dojo.belt_rank user,model_dojo_belt_rank,base.group_user,1,1,1,1
+access_belt_promotion_wizard_user,belt.promotion.wizard user,model_belt_promotion_wizard,base.group_user,1,1,1,0
+access_attendance_wizard_user,attendance.wizard user,model_attendance_wizard,base.group_user,1,1,1,0
+access_attendance_wizard_line_user,attendance.wizard.line user,model_attendance_wizard_line,base.group_user,1,1,1,0

@@ -1,0 +1,13 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_automation_configuration_user,automation.configuration.user,model_automation_configuration,group_automation_user,1,0,0,0
+access_automation_configuration_manager,automation.configuration.manager,model_automation_configuration,group_automation_manager,1,1,1,1
+access_automation_configuration_step_user,automation.configuration.step.user,model_automation_configuration_step,group_automation_user,1,0,0,0
+access_automation_configuration_step_manager,automation.configuration.step.manager,model_automation_configuration_step,group_automation_manager,1,1,1,1
+access_automation_filter_user,automation.filter.user,model_automation_filter,group_automation_user,1,0,0,0
+access_automation_filter_manager,automation.filter.manager,model_automation_filter,group_automation_manager,1,1,1,1
+access_automation_record_user,automation.record.user,model_automation_record,group_automation_user,1,0,0,0
+access_automation_record_manager,automation.record.manager,model_automation_record,group_automation_manager,1,1,1,1
+access_automation_record_step_user,automation.record.step.user,model_automation_record_step,group_automation_user,1,0,0,0
+access_automation_record_step_manager,automation.record.step.manager,model_automation_record_step,group_automation_manager,1,1,1,1
+access_automation_tag_user,automation.tag.user,model_automation_tag,group_automation_user,1,0,0,0
+access_automation_tag_manager,automation.tag.manager,model_automation_tag,group_automation_manager,1,1,1,1

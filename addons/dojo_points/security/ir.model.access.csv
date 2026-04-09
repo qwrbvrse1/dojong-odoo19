@@ -1,0 +1,8 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_dojo_points_transaction_admin,dojo.points.transaction admin,model_dojo_points_transaction,dojo_core.group_dojo_admin,1,1,1,1
+access_dojo_points_transaction_instructor,dojo.points.transaction instructor,model_dojo_points_transaction,dojo_core.group_dojo_instructor,1,1,1,0
+access_dojo_points_transaction_parent,dojo.points.transaction parent,model_dojo_points_transaction,dojo_core.group_dojo_parent_student,1,0,0,0
+access_dojo_points_config_admin,dojo.points.config admin,model_dojo_points_config,dojo_core.group_dojo_admin,1,1,1,1
+access_dojo_points_config_instructor,dojo.points.config instructor,model_dojo_points_config,dojo_core.group_dojo_instructor,1,0,0,0
+access_dojo_points_award_wizard_admin,dojo.points.award.wizard admin,model_dojo_points_award_wizard,dojo_core.group_dojo_admin,1,1,1,1
+access_dojo_points_award_wizard_instructor,dojo.points.award.wizard instructor,model_dojo_points_award_wizard,dojo_core.group_dojo_instructor,1,1,1,1
