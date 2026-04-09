@@ -1,0 +1,26 @@
+{
+    'name': 'Dojo AI Caller',
+    'version': 'saas~19.2.1.0.0',
+    'category': 'CRM',
+    'summary': 'AI-powered outbound calling campaigns via ElevenLabs Conversational AI',
+    'author': 'Dojo Team',
+    'license': 'LGPL-3',
+    'application': False,
+    'installable': True,
+    'auto_install': False,
+    'depends': [
+        'crm',
+        'connect',
+        'elevenlabs_connector',
+        'dojo_core',
+    ],
+    'data': [
+        'security/ir.model.access.csv',
+        'data/ir_cron.xml',
+        'data/ir_cron_fetch.xml',
+        'views/ai_campaign_log_views.xml',
+        'views/ai_campaign_views.xml',
+        'views/connect_settings_inherit.xml',
+        'views/menus.xml',
+    ],
+}

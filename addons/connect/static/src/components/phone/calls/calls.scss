@@ -1,7 +1,17 @@
-$color-light-gray: #e9ecef;
-//History
+// ── Shared dark palette (mirrors phone.scss vars via local copies) ──
+$cp-bg: #1b2b34;
+$cp-surface: #253441;
+$cp-accent: #5d8da8;
+$cp-text: #e0eaf0;
+$cp-text-muted: #6d8fa3;
+$cp-border: #2a3f50;
+$cp-call: #1dc959;
+$cp-end: #ff5757;
+$cp-active-bg: rgba(93, 141, 168, 0.14);
+
+// Recent / Call history list
 .o_history_list {
-  height: 455px;
+  flex: 1;
   overflow: auto;
 
   .o_history_table {
@@ -9,14 +19,16 @@ $color-light-gray: #e9ecef;
 
     tr {
       height: 62px;
-      border-bottom: 1px solid $o-brand-odoo;
+      border-bottom: 1px solid $cp-border;
+      cursor: default;
 
       &:hover {
-        background-color: $color-light-gray;
+        background-color: $cp-active-bg;
       }
 
-      .o_partner_icon:hover, .o_history_info:hover, {
-        background: radial-gradient(transparent, #c7c8c8ef);
+      .o_partner_icon:hover,
+      .o_history_info:hover {
+        background: transparent;
       }
     }
 
@@ -25,62 +37,86 @@ $color-light-gray: #e9ecef;
     }
 
     .partner-icon {
-      padding-left: 2px;
-      padding-right: 2px;
+      padding-left: 4px;
+      padding-right: 4px;
       margin-top: 8px;
-      border-right: 1px solid $o-brand-odoo;
-      width: 50px;
+      border-right: 1px solid $cp-border;
+      width: 52px;
 
       .o_user_avatar {
         max-width: 44px;
         max-height: 44px;
         height: 44px;
+        border-radius: 50%;
       }
     }
 
     .o_history_info {
       cursor: default;
-      font-size: 15px;
-      color: $o-brand-odoo;
+      font-size: 14px;
+      color: $cp-text;
 
       .o_contact_phone {
-        margin-left: 5px;
+        margin-left: 4px;
+        font-size: 11px;
+        color: $cp-text-muted;
       }
 
       .info-card {
         height: 59px;
-        width: 194px;
-        padding-left: 5px;
+        width: 160px;
+        padding-left: 6px;
 
-        &:hover {
-          cursor: pointer;
-        }
 
         .card-identifier {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
           font-weight: 600;
+          color: $cp-text;
         }
 
         .card-date {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          font-size: 13px;
+          font-size: 12px;
+          color: $cp-text-muted;
         }
       }
 
       .o_favorite {
         margin: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        .o_recent_call_btn {
+          color: $cp-call;
+          border: none;
+          background: transparent;
+          padding: 2px 4px;
+
+          &:hover {
+            color: darken($cp-call, 10%);
+          }
+
+          .fa {
+            font-size: 16px;
+          }
+        }
 
         button {
-          color: $o-brand-odoo;
+          color: $cp-text-muted;
           border: none;
           background: transparent;
 
+          &:hover {
+            color: $cp-text;
+          }
+
           i {
-            font-size: x-large;
+            font-size: 18px;
           }
         }
       }
@@ -88,12 +124,16 @@ $color-light-gray: #e9ecef;
 
     .o_history_call_button {
       button {
-        color: $o-brand-odoo;
+        color: $cp-call;
         border: none;
         background: transparent;
 
+        &:hover {
+          color: darken($cp-call, 10%);
+        }
+
         .fa {
-          font-size: 25px;
+          font-size: 22px;
         }
       }
     }
@@ -101,20 +141,21 @@ $color-light-gray: #e9ecef;
 
   .o_phone_call_details {
     .action-container {
-      margin-bottom: 5px;
+      margin-bottom: 6px;
     }
   }
 }
 
 .o_call_detail_header {
   i {
-    font-size: 30px;
-    color: $o-brand-odoo;
+    font-size: 28px;
+    color: $cp-accent;
     margin-top: 10px;
     margin-left: 10px;
 
     &:hover {
       cursor: pointer;
+      color: $cp-text;
     }
   }
 }

@@ -1,0 +1,952 @@
+/* ============================================================
+   United Family Taekwondo — Dojo Design System
+   Shared design tokens + Odoo backend overrides
+   ============================================================ */
+
+/* ── Design Tokens ─────────────────────────────────────────── */
+:root {
+  --dojo-primary:        #C94B2C;
+  --dojo-primary-dark:   #A03820;
+  --dojo-primary-light:  #FDF0EC;
+  --dojo-primary-rgb:    201, 75, 44;
+
+  --dojo-bg:             #F5F5F5;
+  --dojo-sidebar-bg:     #FFFFFF;
+  --dojo-card-bg:        #FFFFFF;
+  --dojo-card-dark:      #1C1C1C;
+
+  --dojo-text-primary:   #111111;
+  --dojo-text-secondary: #6B7280;
+  --dojo-text-muted:     #9CA3AF;
+  --dojo-border:         #E5E7EB;
+
+  --dojo-success:        #16A34A;
+  --dojo-success-light:  #DCFCE7;
+  --dojo-warning:        #F59E0B;
+  --dojo-warning-light:  #FEF3C7;
+  --dojo-danger:         #EF4444;
+  --dojo-danger-light:   #FEE2E2;
+
+  --dojo-radius-sm:      6px;
+  --dojo-radius-card:    12px;
+  --dojo-radius-badge:   20px;
+
+  --dojo-shadow-card:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --dojo-shadow-hover:   0 4px 12px rgba(0,0,0,0.12);
+  --dojo-shadow-modal:   0 20px 60px rgba(0,0,0,0.2);
+
+  /* Belt colors */
+  --dojo-belt-white-bg:  #E5E7EB;
+  --dojo-belt-white-fg:  #374151;
+  --dojo-belt-yellow-bg: #F59E0B;
+  --dojo-belt-orange-bg: #F97316;
+  --dojo-belt-green-bg:  #22C55E;
+  --dojo-belt-blue-bg:   #3B82F6;
+  --dojo-belt-red-bg:    #EF4444;
+  --dojo-belt-black-bg:  #111111;
+}
+
+/* ── Odoo App Background ────────────────────────────────────── */
+.o_web_client,
+.o_action_manager,
+.o_content {
+  background: var(--dojo-bg) !important;
+}
+
+/* ── Sidebar / App Menu ─────────────────────────────────────── */
+.o_home_menu,
+.o_menu_sections,
+.o_main_navbar {
+  background: var(--dojo-sidebar-bg) !important;
+  border-right: 1px solid var(--dojo-border);
+}
+
+.o_menu_brand {
+  color: var(--dojo-primary) !important;
+  font-weight: 700 !important;
+  font-size: 18px !important;
+  letter-spacing: -0.01em;
+}
+
+/* Active nav item */
+.o_nav_entry.o_active,
+.o_menu_entry_action.o_active,
+.o_menu_entry.active {
+  border-left: 3px solid var(--dojo-primary) !important;
+  color: var(--dojo-primary) !important;
+  background: var(--dojo-primary-light) !important;
+}
+
+.o_nav_entry:hover,
+.o_menu_entry_action:hover {
+  background: var(--dojo-primary-light) !important;
+  color: var(--dojo-primary) !important;
+}
+
+/* muk_web theme sidebar overrides */
+.muk_web_sidebar .sidebar_menu .sidebar_item.active,
+.muk_web_sidebar .sidebar_menu .sidebar_item.active > a {
+  color: var(--dojo-primary) !important;
+  border-left: 3px solid var(--dojo-primary);
+  background: var(--dojo-primary-light) !important;
+}
+
+.muk_web_sidebar .sidebar_menu .sidebar_item > a:hover {
+  color: var(--dojo-primary) !important;
+  background: var(--dojo-primary-light) !important;
+}
+
+.muk_web_sidebar {
+  background: var(--dojo-sidebar-bg) !important;
+  border-right: 1px solid var(--dojo-border) !important;
+}
+
+/* ── Primary Button Override ────────────────────────────────── */
+.btn-primary,
+.o_form_button_save,
+.o_statusbar_buttons .btn-primary {
+  background-color: var(--dojo-primary) !important;
+  border-color: var(--dojo-primary) !important;
+  border-radius: var(--dojo-radius-sm) !important;
+  font-weight: 600;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--dojo-primary-dark) !important;
+  border-color: var(--dojo-primary-dark) !important;
+}
+
+.btn-secondary {
+  border-radius: var(--dojo-radius-sm) !important;
+}
+
+/* ── List View ──────────────────────────────────────────────── */
+.o_list_view {
+  background: var(--dojo-card-bg);
+  border-radius: var(--dojo-radius-card);
+  box-shadow: var(--dojo-shadow-card);
+  border: 1px solid var(--dojo-border);
+  overflow: hidden;
+}
+
+.o_list_view thead th {
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: var(--dojo-text-secondary) !important;
+  font-weight: 600 !important;
+  background: var(--dojo-bg) !important;
+  border-bottom: 1px solid var(--dojo-border) !important;
+  padding: 10px 12px !important;
+}
+
+.o_list_view .o_data_row {
+  border-bottom: 1px solid var(--dojo-border);
+  transition: background 0.12s;
+}
+
+.o_list_view .o_data_row:hover {
+  background: var(--dojo-primary-light) !important;
+}
+
+.o_list_view .o_data_row td {
+  padding: 12px !important;
+  vertical-align: middle !important;
+  font-size: 14px;
+  color: var(--dojo-text-primary);
+}
+
+/* ── Kanban View ────────────────────────────────────────────── */
+.o_kanban_view .o_kanban_record {
+  border-radius: var(--dojo-radius-card) !important;
+  box-shadow: var(--dojo-shadow-card) !important;
+  border: 1px solid var(--dojo-border) !important;
+  transition: box-shadow 0.15s;
+}
+
+.o_kanban_view .o_kanban_record:hover {
+  box-shadow: var(--dojo-shadow-hover) !important;
+}
+
+/* ── Form View ──────────────────────────────────────────────── */
+.o_form_view .o_group {
+  background: var(--dojo-card-bg);
+  border-radius: var(--dojo-radius-card);
+  box-shadow: var(--dojo-shadow-card);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border: 1px solid var(--dojo-border);
+}
+
+.o_form_view .o_sheet {
+  background: var(--dojo-bg);
+}
+
+/* ── Status Bar ─────────────────────────────────────────────── */
+.o_statusbar_status .btn.btn-secondary.o_arrow_button {
+  border-radius: var(--dojo-radius-sm) !important;
+}
+
+.o_form_statusbar {
+  border-bottom: 1px solid var(--dojo-border) !important;
+  background: var(--dojo-card-bg) !important;
+}
+
+/* ── Chatter ────────────────────────────────────────────────── */
+.o_thread_message {
+  border-radius: var(--dojo-radius-card) !important;
+}
+
+/* ── Control Panel ──────────────────────────────────────────── */
+.o_control_panel {
+  background: var(--dojo-card-bg) !important;
+  border-bottom: 1px solid var(--dojo-border) !important;
+  box-shadow: none !important;
+}
+
+.o_control_panel .breadcrumb-item,
+.o_control_panel .o_breadcrumb {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--dojo-text-primary);
+}
+
+/* ── Search Bar ─────────────────────────────────────────────── */
+.o_searchview {
+  border: 1px solid var(--dojo-border) !important;
+  border-radius: var(--dojo-radius-sm) !important;
+  background: var(--dojo-bg) !important;
+}
+
+/* ── ═══════════════════════════════════════════════════════════
+   SHARED UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Belt Badge ─────────────────────────────────────────────── */
+.dojo-belt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--dojo-radius-badge);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dojo-belt-white  { background: var(--dojo-belt-white-bg);  color: var(--dojo-belt-white-fg); }
+.dojo-belt-yellow { background: var(--dojo-belt-yellow-bg); color: #fff; }
+.dojo-belt-orange { background: var(--dojo-belt-orange-bg); color: #fff; }
+.dojo-belt-green  { background: var(--dojo-belt-green-bg);  color: #fff; }
+.dojo-belt-blue   { background: var(--dojo-belt-blue-bg);   color: #fff; }
+.dojo-belt-red    { background: var(--dojo-belt-red-bg);    color: #fff; }
+.dojo-belt-black  { background: var(--dojo-belt-black-bg);  color: #fff; }
+
+/* High belt variants (lighter tint) */
+.dojo-belt-high-yellow { background: #FEF3C7; color: #92400E; }
+.dojo-belt-high-blue   { background: #DBEAFE; color: #1E40AF; }
+.dojo-belt-high-red    { background: #FEE2E2; color: #991B1B; }
+
+/* ── Status Badges ──────────────────────────────────────────── */
+.dojo-status-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: var(--dojo-radius-badge);
+  text-transform: uppercase;
+}
+
+.dojo-status-active   { background: var(--dojo-success-light); color: var(--dojo-success); }
+.dojo-status-inactive { background: #F3F4F6; color: var(--dojo-text-secondary); }
+.dojo-status-pending  { background: var(--dojo-warning-light); color: #92400E; }
+.dojo-status-ready    { background: var(--dojo-success-light); color: var(--dojo-success); }
+
+/* ── Stat Card ──────────────────────────────────────────────── */
+.dojo-stat-card {
+  background: var(--dojo-card-bg);
+  border-radius: var(--dojo-radius-card);
+  box-shadow: var(--dojo-shadow-card);
+  border: 1px solid var(--dojo-border);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dojo-stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--dojo-text-secondary);
+  font-weight: 600;
+}
+
+.dojo-stat-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--dojo-text-primary);
+  line-height: 1;
+}
+
+.dojo-stat-trend {
+  font-size: 12px;
+  color: var(--dojo-success);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dojo-stat-trend.negative { color: var(--dojo-danger); }
+
+.dojo-stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: var(--dojo-primary-light);
+  color: var(--dojo-primary);
+  margin-bottom: 8px;
+}
+
+/* ── Card ───────────────────────────────────────────────────── */
+.dojo-card {
+  background: var(--dojo-card-bg);
+  border-radius: var(--dojo-radius-card);
+  box-shadow: var(--dojo-shadow-card);
+  border: 1px solid var(--dojo-border);
+  overflow: hidden;
+}
+
+.dojo-card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--dojo-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dojo-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--dojo-text-primary);
+  margin: 0;
+}
+
+.dojo-card-subtitle {
+  font-size: 13px;
+  color: var(--dojo-text-secondary);
+  margin: 2px 0 0;
+}
+
+.dojo-card-body {
+  padding: 20px;
+}
+
+/* Dark card variant */
+.dojo-card-dark {
+  background: var(--dojo-card-dark);
+  border-radius: var(--dojo-radius-card);
+  color: #fff;
+  border: none;
+  padding: 32px;
+}
+
+.dojo-card-dark .dojo-card-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dojo-primary);
+  margin-bottom: 12px;
+}
+
+.dojo-card-dark h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 12px;
+}
+
+.dojo-card-dark p {
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── Avatar ─────────────────────────────────────────────────── */
+.dojo-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+  flex-shrink: 0;
+  background: var(--dojo-primary);
+}
+
+.dojo-avatar-lg {
+  width: 64px;
+  height: 64px;
+  font-size: 22px;
+}
+
+.dojo-avatar-xl {
+  width: 80px;
+  height: 80px;
+  font-size: 28px;
+}
+
+/* Avatar color variants */
+.dojo-avatar-blue   { background: #3B82F6; }
+.dojo-avatar-green  { background: #22C55E; }
+.dojo-avatar-orange { background: #F97316; }
+.dojo-avatar-purple { background: #8B5CF6; }
+.dojo-avatar-teal   { background: #14B8A6; }
+.dojo-avatar-red    { background: var(--dojo-primary); }
+
+/* ── Table ──────────────────────────────────────────────────── */
+.dojo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.dojo-table thead th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--dojo-text-secondary);
+  font-weight: 600;
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--dojo-border);
+  background: var(--dojo-bg);
+}
+
+.dojo-table tbody tr {
+  border-bottom: 1px solid var(--dojo-border);
+  transition: background 0.12s;
+}
+
+.dojo-table tbody tr:hover {
+  background: var(--dojo-primary-light);
+}
+
+.dojo-table tbody td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  color: var(--dojo-text-primary);
+}
+
+.dojo-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* ── Filter Chips ───────────────────────────────────────────── */
+.dojo-filter-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dojo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--dojo-radius-badge);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--dojo-border);
+  background: var(--dojo-card-bg);
+  color: var(--dojo-text-primary);
+  transition: all 0.15s;
+}
+
+.dojo-chip:hover {
+  border-color: var(--dojo-primary);
+  color: var(--dojo-primary);
+}
+
+.dojo-chip.active {
+  background: var(--dojo-primary);
+  border-color: var(--dojo-primary);
+  color: #fff;
+}
+
+/* ── Progress Bar ───────────────────────────────────────────── */
+.dojo-progress {
+  height: 6px;
+  background: var(--dojo-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.dojo-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--dojo-primary);
+  transition: width 0.3s ease;
+}
+
+.dojo-progress-bar.good    { background: var(--dojo-success); }
+.dojo-progress-bar.warning { background: var(--dojo-warning); }
+.dojo-progress-bar.danger  { background: var(--dojo-danger); }
+
+/* ── Buttons ────────────────────────────────────────────────── */
+.dojo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--dojo-radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+
+.dojo-btn-primary {
+  background: var(--dojo-primary);
+  color: #fff;
+  border-color: var(--dojo-primary);
+}
+
+.dojo-btn-primary:hover {
+  background: var(--dojo-primary-dark);
+  border-color: var(--dojo-primary-dark);
+  color: #fff;
+}
+
+.dojo-btn-outline {
+  background: transparent;
+  color: var(--dojo-primary);
+  border-color: var(--dojo-primary);
+}
+
+.dojo-btn-outline:hover {
+  background: var(--dojo-primary-light);
+}
+
+.dojo-btn-ghost {
+  background: transparent;
+  color: var(--dojo-text-secondary);
+  border-color: var(--dojo-border);
+}
+
+.dojo-btn-ghost:hover {
+  background: var(--dojo-bg);
+  color: var(--dojo-text-primary);
+}
+
+.dojo-btn-lg {
+  padding: 12px 24px;
+  font-size: 15px;
+  border-radius: 8px;
+}
+
+/* ── Brand Logo ─────────────────────────────────────────────── */
+.dojo-brand-logo {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+}
+
+.dojo-brand-logo-sm {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ── Dashboard Layout ───────────────────────────────────────── */
+.dojo-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.dojo-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--dojo-text-primary);
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+
+.dojo-page-subtitle {
+  font-size: 14px;
+  color: var(--dojo-text-secondary);
+  margin: 0;
+}
+
+.dojo-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+  .dojo-stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .dojo-stats-row { grid-template-columns: 1fr; }
+}
+
+.dojo-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .dojo-content-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Category Label ─────────────────────────────────────────── */
+.dojo-category-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dojo-category-mastery    { color: var(--dojo-primary); }
+.dojo-category-promotion  { color: #8B5CF6; }
+.dojo-category-enrollment { color: var(--dojo-success); }
+
+/* ── Action Icon Buttons ────────────────────────────────────── */
+.dojo-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--dojo-radius-sm);
+  color: var(--dojo-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.12s;
+  font-size: 16px;
+}
+
+.dojo-icon-btn:hover {
+  background: var(--dojo-bg);
+  color: var(--dojo-text-primary);
+}
+
+/* ── Quick Action Cards ─────────────────────────────────────── */
+.dojo-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.dojo-quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 12px;
+  border-radius: var(--dojo-radius-card);
+  border: 1px solid var(--dojo-border);
+  background: var(--dojo-card-bg);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  color: var(--dojo-text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.dojo-quick-action:hover {
+  border-color: var(--dojo-primary);
+  background: var(--dojo-primary-light);
+  color: var(--dojo-primary);
+  box-shadow: var(--dojo-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.dojo-quick-action .dojo-qa-icon {
+  font-size: 22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--dojo-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.dojo-quick-action:hover .dojo-qa-icon {
+  background: var(--dojo-primary-light);
+}
+
+/* ── Stars Rating ───────────────────────────────────────────── */
+.dojo-stars {
+  display: inline-flex;
+  gap: 2px;
+  color: var(--dojo-warning);
+  font-size: 14px;
+}
+
+.dojo-stars .empty { color: var(--dojo-border); }
+
+/* ── Checklist ──────────────────────────────────────────────── */
+.dojo-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dojo-checklist-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.dojo-checklist-item .dojo-check-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--dojo-border);
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.dojo-checklist-item.checked .dojo-check-icon {
+  background: var(--dojo-primary);
+  border-color: var(--dojo-primary);
+  color: #fff;
+}
+
+.dojo-checklist-item-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dojo-text-primary);
+}
+
+.dojo-checklist-item-sub {
+  font-size: 12px;
+  color: var(--dojo-text-secondary);
+  margin-top: 1px;
+}
+
+/* ── Post-Exam Action Grid ──────────────────────────────────── */
+.dojo-action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.dojo-action-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px;
+  border-radius: var(--dojo-radius-sm);
+  border: 1px solid var(--dojo-border);
+  background: var(--dojo-bg);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--dojo-text-secondary);
+}
+
+.dojo-action-tile:hover {
+  border-color: var(--dojo-primary);
+  color: var(--dojo-primary);
+  background: var(--dojo-primary-light);
+}
+
+.dojo-action-tile i { font-size: 20px; }
+
+/* ── Loading Spinner ────────────────────────────────────────── */
+.dojo-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--dojo-text-secondary);
+  gap: 12px;
+}
+
+.dojo-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--dojo-border);
+  border-top-color: var(--dojo-primary);
+  border-radius: 50%;
+  animation: dojo-spin 0.8s linear infinite;
+}
+
+@keyframes dojo-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Empty State ────────────────────────────────────────────── */
+.dojo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--dojo-text-secondary);
+}
+
+.dojo-empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+.dojo-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dojo-text-primary);
+  margin: 0 0 4px;
+}
+
+.dojo-empty-text {
+  font-size: 14px;
+  color: var(--dojo-text-secondary);
+  margin: 0;
+}
+
+/* ── Pagination ─────────────────────────────────────────────── */
+.dojo-pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dojo-page-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--dojo-radius-sm);
+  border: 1px solid var(--dojo-border);
+  background: var(--dojo-card-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+  color: var(--dojo-text-primary);
+}
+
+.dojo-page-btn:hover { border-color: var(--dojo-primary); color: var(--dojo-primary); }
+.dojo-page-btn.active { background: var(--dojo-primary); border-color: var(--dojo-primary); color: #fff; }
+
+/* ── Class Schedule Calendar ────────────────────────────────── */
+.dojo-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.dojo-cal-col-header {
+  text-align: center;
+  padding: 8px 4px;
+}
+
+.dojo-cal-day-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--dojo-text-secondary);
+  font-weight: 600;
+}
+
+.dojo-cal-day-num {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--dojo-text-primary);
+  margin-top: 2px;
+}
+
+.dojo-class-card {
+  background: var(--dojo-card-bg);
+  border: 1px solid var(--dojo-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dojo-class-card:hover {
+  box-shadow: var(--dojo-shadow-hover);
+  border-color: var(--dojo-primary);
+}
+
+.dojo-class-card.selected {
+  border-color: var(--dojo-primary);
+  background: var(--dojo-primary-light);
+}
+
+.dojo-class-category-chip {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--dojo-primary);
+  background: var(--dojo-primary-light);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.dojo-class-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dojo-text-primary);
+  margin: 4px 0;
+  line-height: 1.3;
+}
+
+.dojo-class-time {
+  font-size: 12px;
+  color: var(--dojo-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+

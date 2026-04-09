@@ -4,11 +4,9 @@ import hashlib
 import hmac
 import json
 import logging
-from urllib.parse import urljoin
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
-from twilio.twiml.voice_response import VoiceResponse, Connect, Stream
 
 _logger = logging.getLogger(__name__)
 
@@ -22,10 +20,18 @@ class ConnectAiAgent(models.Model):
     active = fields.Boolean(default=True)
 
     # ── ElevenLabs configuration ─────────────────────────────────────
+    synced_agent_id = fields.Many2one(
+        "dojo.elevenlabs.agent",
+        string="ElevenLabs Agent",
+        help="Select a synced agent from ElevenLabs. Sync via Connect → Settings → API Keys.",
+    )
     elevenlabs_agent_id = fields.Char(
-        string="ElevenLabs Agent ID",
+        string="Agent ID",
+        compute="_compute_elevenlabs_agent_id",
+        inverse="_inverse_elevenlabs_agent_id",
+        store=True,
         required=True,
-        help="Agent ID from the ElevenLabs Conversational AI dashboard.",
+        help="Auto-filled from synced agent, or enter manually.",
     )
     system_prompt = fields.Text(
         string="System Prompt (reference)",
@@ -85,6 +91,18 @@ class ConnectAiAgent(models.Model):
                 [("ai_agent_id", "=", rec.id)]
             )
 
+    @api.depends("synced_agent_id", "synced_agent_id.elevenlabs_id")
+    def _compute_elevenlabs_agent_id(self):
+        for rec in self:
+            if rec.synced_agent_id:
+                rec.elevenlabs_agent_id = rec.synced_agent_id.elevenlabs_id
+            elif not rec.elevenlabs_agent_id:
+                rec.elevenlabs_agent_id = ""
+
+    def _inverse_elevenlabs_agent_id(self):
+        """Allow manual entry of agent ID without a synced agent."""
+        pass
+
     # ------------------------------------------------------------------
     # Stat button actions
     # ------------------------------------------------------------------
@@ -112,63 +130,6 @@ class ConnectAiAgent(models.Model):
         }
 
     # ------------------------------------------------------------------
-    # TwiML rendering — returns <Connect><Stream> pointing to ElevenLabs
-    # ------------------------------------------------------------------
-
-    def render_twiml(self, request_params):
-        """Build TwiML that bridges the Twilio call to ElevenLabs Conversational AI.
-
-        Uses Twilio's <Connect><Stream> verb to open a bidirectional audio
-        WebSocket directly from Twilio to ElevenLabs — no WebSocket server
-        needed in Odoo.
-        """
-        self.ensure_one()
-        response = VoiceResponse()
-
-        # Build the ElevenLabs WebSocket URL with dynamic context
-        caller_phone = request_params.get("From", "")
-        caller_name = self._resolve_caller_name(caller_phone)
-
-        # ElevenLabs Twilio Media Stream endpoint — agent_id in the path
-        stream_url = (
-            f"wss://api.elevenlabs.io/v1/convai/conversation"
-            f"?agent_id={self.elevenlabs_agent_id}"
-        )
-
-        connect = Connect()
-        # track="both_tracks" enables bidirectional audio (required for TTS to reach caller)
-        stream = Stream(url=stream_url, track="both_tracks")
-
-        # Pass caller metadata as Stream parameters (available inside ElevenLabs agent)
-        stream.parameter(name="caller_phone", value=caller_phone)
-        if caller_name:
-            stream.parameter(name="caller_name", value=caller_name)
-        stream.parameter(name="call_sid", value=request_params.get("CallSid", ""))
-
-        # Pass the Odoo tool base URL so the agent knows where to call back
-        api_url = self.env["connect.settings"].sudo().get_param("api_url")
-        if api_url:
-            stream.parameter(name="odoo_api_url", value=api_url)
-
-        connect.append(stream)
-        response.append(connect)
-
-        # After the stream ends (AI hangs up or stream closes), say goodbye.
-        # Live transfers during the call are handled via the transfer tool
-        # endpoint, which updates the Twilio call with new TwiML.
-        response.say("Thank you for calling. Goodbye!", voice="Polly.Joanna")
-        response.hangup()
-
-        return str(response)
-
-    def _resolve_caller_name(self, phone):
-        """Look up caller by phone number and return display name if found."""
-        if not phone:
-            return ""
-        partner = self.env["res.partner"].sudo().get_partner_by_number(phone)
-        return partner.name if partner else ""
-
-    # ------------------------------------------------------------------
     # Post-conversation processing (called from webhook controller)
     # ------------------------------------------------------------------
 
@@ -179,11 +140,18 @@ class ConnectAiAgent(models.Model):
         the connect.call record.
         """
         self.ensure_one()
+        # caller_phone and call_sid may come from the top-level payload (legacy flat format)
+        # or from conversation_initiation_client_data.dynamic_variables (set by our
+        # initiation webhook). Define the dynamic_variables lookup first.
+        _dyn_vars = (
+            data.get("conversation_initiation_client_data", {})
+                .get("dynamic_variables", {})
+        )
         conversation_id = data.get("conversation_id", "")
-        call_sid = data.get("call_sid", "")
+        call_sid = data.get("call_sid", "") or _dyn_vars.get("call_sid", "")
+        caller_phone = data.get("caller_phone", "") or _dyn_vars.get("caller_phone", "")
         transcript_data = data.get("transcript", [])
         analysis = data.get("analysis", {})
-        caller_phone = data.get("caller_phone", "")
 
         # Format transcript
         transcript_lines = []
@@ -199,7 +167,27 @@ class ConnectAiAgent(models.Model):
             if t.get("message")
         )
 
-        # Find matching call record
+        # Resolve caller partner
+        partner = False
+        if caller_phone:
+            partner = self.env["res.partner"].sudo().get_partner_by_number(
+                caller_phone
+            )
+
+        # Build call summary HTML from analysis + transcript
+        summary_text = analysis.get("summary", "")
+        call_summary_html = ""
+        if summary_text:
+            call_summary_html += f"<p><strong>Summary:</strong> {summary_text}</p>"
+        if transcript_html:
+            call_summary_html += (
+                f"<p><strong>Transcript:</strong></p>"
+                f"<p>{transcript_html}</p>"
+            )
+
+        # Find matching call record (legacy path — when Twilio still routes
+        # through Odoo and creates a channel)
+        Call = self.env["connect.call"].sudo()
         call = False
         if call_sid:
             channel = self.env["connect.channel"].sudo().search(
@@ -208,29 +196,57 @@ class ConnectAiAgent(models.Model):
             if channel and channel.call:
                 call = channel.call
 
-        # Update call with AI data
-        if call:
-            call.sudo().write({
-                "ai_conversation_id": conversation_id,
-                "ai_transcript": transcript_plain,
-                "ai_agent_id": self.id,
-            })
-
-        # Resolve caller partner
-        partner = False
-        if caller_phone:
-            partner = self.env["res.partner"].sudo().get_partner_by_number(
-                caller_phone
+        # Also check if we already logged this conversation (avoid duplicates
+        # on webhook retries)
+        if not call and conversation_id:
+            call = Call.search(
+                [("ai_conversation_id", "=", conversation_id)], limit=1
             )
 
-        # Find or create CRM lead
-        lead = self._find_or_create_lead(
-            caller_phone=caller_phone,
-            partner=partner,
-            call=call,
-            analysis=analysis,
-            transcript_html=transcript_html,
-        )
+        call_vals = {
+            "ai_conversation_id": conversation_id,
+            "ai_transcript": transcript_plain,
+            "ai_agent_id": self.id,
+            "summary": call_summary_html or False,
+        }
+
+        if call:
+            call.write(call_vals)
+        else:
+            # Twilio routes directly to ElevenLabs — no channel/call exists
+            # in Odoo yet.  Create a call log entry so the conversation
+            # appears in the Connect call list.
+            called_number = _dyn_vars.get("called_number", "")
+            call_vals.update({
+                "caller": caller_phone or "Unknown",
+                "called": called_number or "AI Receptionist",
+                "direction": "incoming",
+                "status": "completed",
+                "partner": partner.id if partner else False,
+            })
+            call = Call.create(call_vals)
+
+        # Skip CRM lead creation for instructor callers — they're issuing
+        # commands, not leads. Check by dojo.instructor.profile.
+        is_instructor_caller = False
+        if partner and partner.exists():
+            is_instructor_caller = bool(
+                self.env["dojo.instructor.profile"].sudo().search(
+                    [("partner_id", "=", partner.id), ("active", "=", True)],
+                    limit=1,
+                )
+            )
+
+        if is_instructor_caller:
+            lead = False
+        else:
+            lead = self._find_or_create_lead(
+                caller_phone=caller_phone,
+                partner=partner,
+                call=call,
+                analysis=analysis,
+                transcript_html=transcript_html,
+            )
 
         # Link lead to call
         if call and lead:
@@ -429,10 +445,262 @@ class ConnectAiAgent(models.Model):
         return lead
 
     # ------------------------------------------------------------------
+    # Conversation Initiation Webhook
+    # ------------------------------------------------------------------
+
+    def get_conversation_init_data(self, caller_phone="", call_sid="", called_number=""):
+        """Build ElevenLabs conversation_initiation_client_data payload.
+
+        Called before the agent speaks its first word. Looks up the caller
+        by phone number. Handles three scenarios:
+          1. Caller is a dojo.member (student calling directly)
+          2. Caller is a guardian whose children are members
+          3. Caller is unknown
+
+        Returns a dict matching ElevenLabs' conversation_initiation_client_data schema.
+        """
+        self.ensure_one()
+        from datetime import date as _date
+
+        # ── Caller lookup ────────────────────────────────────────────
+        partner = False
+        member = False
+        is_guardian_call = False
+        is_instructor_call = False
+        instructor = False
+        student_members = self.env["dojo.member"]
+
+        if caller_phone:
+            partner = self.env["res.partner"].sudo().get_partner_by_number(caller_phone)
+            if partner:
+                # Check if caller is a dojo instructor first
+                instructor = self.env["dojo.instructor.profile"].sudo().search(
+                    [("partner_id", "=", partner.id), ("active", "=", True)],
+                    limit=1,
+                )
+                is_instructor_call = bool(instructor)
+
+                if not is_instructor_call:
+                    # Try direct member match
+                    member = self.env["dojo.member"].sudo().search(
+                        [("partner_id", "=", partner.id), ("active", "=", True)],
+                        limit=1,
+                    )
+                if not is_instructor_call and not member and partner.is_guardian:
+                    # Guardian calling — find their household's student members
+                    # Household is the parent_id of the guardian partner
+                    household = partner.parent_id.filtered("is_household")
+                    if household:
+                        student_partners = household.child_ids.filtered(
+                            lambda p: p.is_student and p.id != partner.id
+                        )
+                    else:
+                        # No household record — look for students that share
+                        # the same parent or are directly linked via primary_guardian
+                        student_partners = self.env["res.partner"].sudo().search([
+                            ("parent_id", "=", partner.id),
+                            ("is_student", "=", True),
+                        ])
+                    if student_partners:
+                        student_members = self.env["dojo.member"].sudo().search([
+                            ("partner_id", "in", student_partners.ids),
+                            ("active", "=", True),
+                        ])
+                        is_guardian_call = bool(student_members)
+
+        # ── Helper: build per-member summary ─────────────────────────
+        def _member_summary(m):
+            rank = m.current_rank_id
+            last_log = m.attendance_log_ids.sorted("checkin_datetime", reverse=True)[:1]
+            last_date_str = ""
+            days_str = ""
+            if last_log and last_log.checkin_datetime:
+                last_date = last_log.checkin_datetime.date()
+                last_date_str = last_date.strftime("%B %-d, %Y")
+                days_str = str((_date.today() - last_date).days)
+            program_name = ""
+            if m.active_subscription_id and m.active_subscription_id.plan_id:
+                plan = m.active_subscription_id.plan_id
+                if hasattr(plan, "program_id") and plan.program_id:
+                    program_name = plan.program_id.name
+            return {
+                "name": m.name.split()[0] if m.name else "",
+                "full_name": m.name or "",
+                "status": m.membership_state or "unknown",
+                "belt_rank": rank.name if rank else "Unranked",
+                "total_classes": str(m.total_sessions or 0),
+                "last_class_date": last_date_str or "unknown",
+                "days_since_class": days_str or "unknown",
+                "program": program_name or "General",
+            }
+
+        # ── Build dynamic variables ──────────────────────────────────
+        dyn = {}
+
+        # Caller identity
+        if partner and partner.name:
+            dyn["caller_name"] = partner.name.split()[0]
+            dyn["caller_full_name"] = partner.name
+        else:
+            dyn["caller_name"] = ""
+            dyn["caller_full_name"] = ""
+
+        dyn["is_guardian"] = "true" if is_guardian_call else "false"
+        dyn["is_instructor"] = "true" if is_instructor_call else "false"
+        dyn["caller_role"] = "instructor" if is_instructor_call else ("guardian" if is_guardian_call else ("member" if member else "unknown"))
+
+        if is_instructor_call:
+            # Instructor calling — personal assistant mode, full access
+            dyn["is_member"] = "false"
+            dyn["membership_status"] = "Staff"
+            dyn["belt_rank"] = ""
+            dyn["total_classes"] = ""
+            dyn["last_class_date"] = ""
+            dyn["days_since_class"] = ""
+            dyn["program"] = ""
+            dyn["student_name"] = ""
+            dyn["student_full_name"] = ""
+            dyn["student_status"] = ""
+            dyn["student_belt_rank"] = ""
+            dyn["student_total_classes"] = ""
+            dyn["student_last_class_date"] = ""
+            dyn["student_days_since_class"] = ""
+            dyn["student_program"] = ""
+            dyn["students_summary"] = ""
+
+        elif is_guardian_call:
+            # Guardian calling on behalf of children
+            dyn["is_member"] = "false"
+            dyn["membership_status"] = "Guardian"
+            dyn["belt_rank"] = ""
+            dyn["total_classes"] = ""
+            dyn["last_class_date"] = ""
+            dyn["days_since_class"] = ""
+            dyn["program"] = ""
+
+            # Build a readable summary of all students in the household
+            summaries = [_member_summary(m) for m in student_members]
+            # Single child — expose their data directly for easy prompt templating
+            if len(summaries) == 1:
+                s = summaries[0]
+                dyn["student_name"] = s["name"]
+                dyn["student_full_name"] = s["full_name"]
+                dyn["student_status"] = s["status"].capitalize()
+                dyn["student_belt_rank"] = s["belt_rank"]
+                dyn["student_total_classes"] = s["total_classes"]
+                dyn["student_last_class_date"] = s["last_class_date"]
+                dyn["student_days_since_class"] = s["days_since_class"]
+                dyn["student_program"] = s["program"]
+                dyn["students_summary"] = (
+                    f"{s['full_name']} ({s['belt_rank']}, "
+                    f"{s['total_classes']} classes, last attended {s['last_class_date']})"
+                )
+            else:
+                # Multiple children — build a comma-separated summary string
+                parts = [
+                    f"{s['full_name']} ({s['belt_rank']})" for s in summaries
+                ]
+                dyn["student_name"] = ""
+                dyn["student_full_name"] = ""
+                dyn["student_status"] = ""
+                dyn["student_belt_rank"] = ""
+                dyn["student_total_classes"] = ""
+                dyn["student_last_class_date"] = ""
+                dyn["student_days_since_class"] = ""
+                dyn["student_program"] = ""
+                dyn["students_summary"] = ", ".join(parts)
+
+        elif member:
+            # Student calling directly
+            s = _member_summary(member)
+            dyn["is_member"] = "true"
+            dyn["membership_status"] = dict(
+                self.env["dojo.member"]._fields["membership_state"].selection
+            ).get(member.membership_state, member.membership_state or "unknown").capitalize()
+            dyn["belt_rank"] = s["belt_rank"]
+            dyn["total_classes"] = s["total_classes"]
+            dyn["last_class_date"] = s["last_class_date"]
+            dyn["days_since_class"] = s["days_since_class"]
+            dyn["program"] = s["program"]
+            dyn["student_name"] = ""
+            dyn["student_full_name"] = ""
+            dyn["student_status"] = ""
+            dyn["student_belt_rank"] = ""
+            dyn["student_total_classes"] = ""
+            dyn["student_last_class_date"] = ""
+            dyn["student_days_since_class"] = ""
+            dyn["student_program"] = ""
+            dyn["students_summary"] = ""
+
+        else:
+            dyn["is_member"] = "false"
+            dyn["membership_status"] = "Non-member"
+            dyn["belt_rank"] = ""
+            dyn["total_classes"] = ""
+            dyn["last_class_date"] = ""
+            dyn["days_since_class"] = ""
+            dyn["program"] = ""
+            dyn["student_name"] = ""
+            dyn["student_full_name"] = ""
+            dyn["student_status"] = ""
+            dyn["student_belt_rank"] = ""
+            dyn["student_total_classes"] = ""
+            dyn["student_last_class_date"] = ""
+            dyn["student_days_since_class"] = ""
+            dyn["student_program"] = ""
+            dyn["students_summary"] = ""
+
+        # ── Personalised first_message ────────────────────────────────
+        caller_name = dyn.get("caller_name", "")
+        if is_instructor_call and caller_name:
+            first_message = (
+                f"Hey {caller_name}! What can I do for you?"
+            )
+        elif is_guardian_call and caller_name:
+            students_summary = dyn.get("students_summary", "")
+            if students_summary:
+                first_message = (
+                    f"Hi {caller_name}! I can see you're calling about "
+                    f"{students_summary}. How can I help today?"
+                )
+            else:
+                first_message = (
+                    f"Hi {caller_name}! How can I help you today?"
+                )
+        elif member and member.membership_state == "active" and caller_name:
+            first_message = (
+                f"Hi {caller_name}! Great to hear from you. How can I help you today?"
+            )
+        elif member and member.membership_state == "trial" and caller_name:
+            first_message = (
+                f"Hi {caller_name}! Welcome — glad you're trying us out. How can I help?"
+            )
+        elif caller_name:
+            first_message = f"Hi {caller_name}! Thanks for calling. How can I help you today?"
+        else:
+            first_message = "Thanks for calling! How can I help you today?"
+
+        # Include caller_phone in dynamic_variables so it's available in the
+        # post-call webhook under conversation_initiation_client_data.dynamic_variables
+        dyn["caller_phone"] = caller_phone or ""
+        dyn["call_sid"] = call_sid or ""
+        dyn["called_number"] = called_number or ""
+
+        return {
+            "type": "conversation_initiation_client_data",
+            "dynamic_variables": dyn,
+            "conversation_config_override": {
+                "agent": {
+                    "first_message": first_message,
+                }
+            },
+        }
+
+    # ------------------------------------------------------------------
     # Webhook signature validation
     # ------------------------------------------------------------------
 
-    def verify_webhook_signature(self, payload_body, signature_header):
+    def verify_webhook_signature(self, payload_body, signature_header, signing_secret=None):
         """Validate ElevenLabs post-call webhook signature.
 
         ElevenLabs signs webhooks using the format:
@@ -441,7 +709,8 @@ class ConnectAiAgent(models.Model):
         The signed payload is: "<timestamp>,<raw_body>"
         """
         self.ensure_one()
-        if not self.elevenlabs_webhook_secret:
+        secret = signing_secret or self.elevenlabs_webhook_secret
+        if not secret:
             return True  # No secret configured — skip validation (dev mode)
 
         if not signature_header:
@@ -463,7 +732,7 @@ class ConnectAiAgent(models.Model):
         signed_payload = f"{timestamp}.{body_str}"
 
         expected = hmac.new(
-            self.elevenlabs_webhook_secret.encode(),
+            secret.encode(),
             signed_payload.encode(),
             hashlib.sha256,
         ).hexdigest()

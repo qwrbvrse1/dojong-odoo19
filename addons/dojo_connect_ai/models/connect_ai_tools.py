@@ -37,12 +37,13 @@ class ConnectAiTools(models.AbstractModel):
     def ask_assistant(self, user_message, caller_phone="", call_sid="", agent_id=False):
         """Route the caller's request through dojo_assistant.
 
-        1. Check if the message is a transfer request → handle via Twilio API
-        2. Otherwise, pass to ai.assistant.service.handle_command()
-        3. If the intent requires confirmation, auto-confirm (voice callers
+        1. Resolve caller identity: instructor → role='instructor'; member/guardian → role='kiosk' + context
+        2. Check if the message is a transfer request → handle via Twilio API
+        3. Otherwise, pass to ai.assistant.service.handle_command() with correct role
+        4. If the intent requires confirmation, auto-confirm (voice callers
            can't click buttons — the ElevenLabs agent handles confirmation
            conversationally)
-        4. Return a plain-text response for the ElevenLabs agent to speak
+        5. Return a plain-text response for the ElevenLabs agent to speak
         """
         # ── Transfer detection ───────────────────────────────────────
         msg_lower = user_message.lower()
@@ -54,17 +55,93 @@ class ConnectAiTools(models.AbstractModel):
                 return {"response": result.get("error", "I'm unable to transfer right now. Please try calling back.")}
             return {"response": "I'd be happy to transfer you, but I'm unable to do so right now. Please try calling back during business hours."}
 
-        # ── Enrich message with caller context ───────────────────────
-        enriched = user_message
+        # ── Caller identity resolution ───────────────────────────────
+        role = "caller"   # default for all phone callers
+        context_tags = []
+
         if caller_phone:
-            enriched = f"[Caller phone: {caller_phone}] {user_message}"
+            context_tags.append(f"Caller phone: {caller_phone}")
+            try:
+                caller_partner = self.env["res.partner"].sudo().get_partner_by_number(caller_phone)
+                if caller_partner and caller_partner.exists():
+                    # 1. Check if this is a dojo instructor
+                    instructor = self.env["dojo.instructor.profile"].sudo().search(
+                        [("partner_id", "=", caller_partner.id), ("active", "=", True)],
+                        limit=1,
+                    )
+                    if instructor:
+                        role = "instructor"
+                        context_tags.append(f"Caller is Instructor: {instructor.name}")
+                        context_tags.append("Authorization: full access to all member data and commands")
+                    else:
+                        # 2. Direct dojo member
+                        member = self.env["dojo.member"].sudo().search(
+                            [("partner_id", "=", caller_partner.id)], limit=1
+                        )
+                        if member.exists():
+                            role = "caller"
+                            context_tags.append(
+                                f"Caller is Member: {member.name} (Member ID: {member.id})"
+                            )
+                            context_tags.append(
+                                "Authorization: caller may only access their own member data"
+                            )
+                        else:
+                            # 3. Guardian — find their household children who are students
+                            student_names = []
+                            if getattr(caller_partner, "is_guardian", False):
+                                household = (
+                                    caller_partner.parent_id
+                                    if caller_partner.parent_id
+                                    and getattr(caller_partner.parent_id, "is_household", False)
+                                    else None
+                                )
+                                if household:
+                                    student_partners = household.child_ids.filtered(
+                                        lambda p: getattr(p, "is_student", False)
+                                    )
+                                    student_members = self.env["dojo.member"].sudo().search(
+                                        [("partner_id", "in", student_partners.ids)]
+                                    )
+                                    student_names = student_members.mapped("name")
+
+                            if student_names:
+                                role = "caller"
+                                names_str = ", ".join(student_names)
+                                context_tags.append(
+                                    f"Caller is Guardian of: {names_str}"
+                                )
+                                context_tags.append(
+                                    f"Authorization: caller may access data for their students ({names_str}) only"
+                                )
+                            else:
+                                role = "caller"
+                                context_tags.append(
+                                    f"Caller: {caller_partner.name or caller_phone} (no member or guardian record found)"
+                                )
+                                context_tags.append(
+                                    "Authorization: no member record — provide general information and offer to book a trial"
+                                )
+                else:
+                    role = "caller"
+                    context_tags.append("Caller: unrecognized number — no member record found")
+                    context_tags.append(
+                        "Authorization: no member record — provide general information and offer to book a trial"
+                    )
+            except Exception:
+                _logger.warning("ask_assistant: caller identity lookup failed for %s", caller_phone)
+                context_tags.append(f"Caller phone: {caller_phone}")
+
+        # ── Enrich message with caller context ───────────────────────
+        prefix = " ".join(f"[{tag}]" for tag in context_tags)
+        enriched = f"{prefix} {user_message}".strip() if prefix else user_message
 
         # ── Route through dojo_assistant ─────────────────────────────
         try:
             service = self.env["ai.assistant.service"].sudo()
             result = service.handle_command(
                 text=enriched,
-                role="kiosk",       # safe role for phone callers
+                role=role,
                 input_type="text",
             )
         except Exception:
@@ -72,9 +149,7 @@ class ConnectAiTools(models.AbstractModel):
             return {"response": "I'm sorry, I wasn't able to process that request. Could you try asking in a different way?"}
 
         if not result.get("success"):
-            error = result.get("error", "")
-            response_text = result.get("response", "")
-            return {"response": response_text or error or "I'm sorry, I didn't understand that. Could you rephrase?"}
+            return {"response": self._shape_error_response(result)}
 
         state = result.get("state", "")
 
@@ -90,17 +165,44 @@ class ConnectAiTools(models.AbstractModel):
                     confirmed=True,
                 )
                 if execution.get("success"):
-                    # Use the confirmation prompt as context + execution result
                     exec_response = execution.get("response", "")
                     confirmation = result.get("confirmation_prompt", "")
                     return {"response": exec_response or f"Done. {confirmation}"}
-                return {"response": execution.get("error", "I wasn't able to complete that action.")}
+                return {"response": self._shape_error_response(execution)}
             except Exception:
                 _logger.exception("ask_assistant: execute_confirmed failed")
                 return {"response": "I understood your request but ran into an issue completing it. Please try again."}
 
         # ── Conversational response (no action needed) ───────────────
         return {"response": result.get("response", result.get("confirmation_prompt", "I'm here to help. What would you like to know?"))}
+
+    @api.model
+    def _shape_error_response(self, result):
+        """Convert an unsuccessful result dict into a natural spoken response."""
+        error = result.get("error", "")
+        response_text = result.get("response", "")
+        state = result.get("state", "")
+
+        # Permission denied (role blocked the intent)
+        if "permission" in error.lower() or "not allowed" in error.lower() or state == "permission_denied":
+            return "I'm sorry, I can only provide information related to your own account."
+
+        # Record not found
+        if "not found" in error.lower() or "no record" in error.lower():
+            return "I wasn't able to find that record. Could you confirm the name or spelling?"
+
+        # Missing information needed to proceed
+        if "missing" in error.lower() or "required" in error.lower() or state == "needs_info":
+            detail = response_text or "more details"
+            return f"I need a bit more information to help with that. {detail}"
+
+        # Use the response or error text if it's already human-readable
+        if response_text:
+            return response_text
+        if error and len(error) < 200:
+            return error
+
+        return "I understood your request but ran into an issue. Would you like me to transfer you to a team member?"
 
     # ------------------------------------------------------------------
     # Internal: Transfer call to human via Twilio REST API

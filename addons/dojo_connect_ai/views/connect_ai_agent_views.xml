@@ -10,7 +10,7 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
-                <field name="elevenlabs_agent_id"/>
+                <field name="synced_agent_id" string="Agent"/>
                 <field name="fallback_user_id"/>
                 <field name="auto_create_lead"/>
                 <field name="call_count" string="Calls"/>
@@ -48,13 +48,9 @@
                     </div>
                     <group>
                         <group string="ElevenLabs Configuration">
-                            <field name="elevenlabs_agent_id"/>
-                            <field name="webhook_secret" password="True"
-                                   string="Tool API Key (X-Api-Key)"
-                                   groups="base.group_erp_manager"/>
-                            <field name="elevenlabs_webhook_secret" password="True"
-                                   string="Post-call Signing Secret (wsec_...)"
-                                   groups="base.group_erp_manager"/>
+                            <field name="synced_agent_id"/>
+                            <field name="elevenlabs_agent_id"
+                                   invisible="synced_agent_id"/>
                         </group>
                         <group string="Call Handling">
                             <field name="fallback_user_id"/>

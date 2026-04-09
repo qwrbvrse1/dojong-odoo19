@@ -1,8 +1,8 @@
 /** @odoo-module **/
 
-import {useService} from "@web/core/utils/hooks"
-import {Component, useState, onWillStart} from "@odoo/owl"
-import {user} from "@web/core/user"
+import { useService } from "@web/core/utils/hooks"
+import { Component, useState, onWillStart } from "@odoo/owl"
+import { user } from "@web/core/user"
 
 const uid = user.userId
 
@@ -90,7 +90,7 @@ export class Calls extends Component {
     static props = {
         bus: Object,
     }
-    static components = {CallDetail}
+    static components = { CallDetail }
 
     constructor() {
         super(...arguments)
@@ -141,13 +141,21 @@ export class Calls extends Component {
     }
 
     _onClickContactCall(phoneNumber) {
-        this.bus.trigger('busPhoneMakeCall', {phone: phoneNumber})
+        this.bus.trigger('busPhoneMakeCall', { phone: phoneNumber })
     }
 
     async _onClickFavorite(call) {
         const kwargs = {}
         const isCalled = call.called_users[0] === this.user
         kwargs.phone_number = isCalled ? call.caller : call.called
+        // Fallback: if the primary field is empty, try the other direction
+        if (!kwargs.phone_number) {
+            kwargs.phone_number = isCalled ? call.called : call.caller
+        }
+        if (!kwargs.phone_number) {
+            this.notification.add('No phone number available for this call', { title: 'Phone', type: 'warning' })
+            return
+        }
         if (call.partner) {
             kwargs.partner = call.partner[0]
         } else {
@@ -166,11 +174,11 @@ export class Calls extends Component {
         if (getFavorite.length === 0) {
             await this.orm.create('connect.favorite', [kwargs])
             await this._getFavorites()
-            this.notification.add('Added to Favorite!', {title: 'Phone', type: 'info'})
+            this.notification.add('Added to Favorite!', { title: 'Phone', type: 'info' })
         } else {
             await this.orm.unlink("connect.favorite", getFavorite, {})
             await this._getFavorites()
-            this.notification.add('Removed from Favorite!', {title: 'Phone', type: 'info'})
+            this.notification.add('Removed from Favorite!', { title: 'Phone', type: 'info' })
         }
     }
 

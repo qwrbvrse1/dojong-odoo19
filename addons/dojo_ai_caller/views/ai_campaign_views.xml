@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ════════════════════ FORM ════════════════════ -->
+    <record id="view_ai_campaign_form" model="ir.ui.view">
+        <field name="name">dojo.ai.campaign.form</field>
+        <field name="model">dojo.ai.campaign</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start" type="object" string="Start"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_pause" type="object" string="Pause"
+                            class="btn-warning"
+                            invisible="state != 'running'"/>
+                    <button name="action_start" type="object" string="Resume"
+                            class="btn-primary"
+                            invisible="state != 'paused'"/>
+                    <button name="action_done" type="object" string="Mark Done"
+                            invisible="state not in ('running', 'paused')"/>
+                    <button name="action_reset_draft" type="object" string="Reset to Draft"
+                            invisible="state not in ('done', 'paused')"/>
+                    <button name="action_send_test_call" type="object"
+                            string="Send Test Call" class="btn-secondary"
+                            invisible="state == 'done'"/>
+                    <button name="action_fetch_all_results" type="object"
+                            string="Fetch Call Results" class="btn-secondary"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,running,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_preview_leads" type="object"
+                                class="oe_stat_button" icon="fa-filter">
+                            <field name="record_count" string="Matching Leads"
+                                   widget="statinfo"/>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-phone"
+                                name="action_view_logs" type="object">
+                            <field name="total_calls" string="Calls" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Campaign Name"/></h1>
+                    </div>
+                    <group>
+                        <group string="ElevenLabs Configuration">
+                            <field name="elevenlabs_agent_id"/>
+                            <field name="elevenlabs_phone_id"/>
+                            <field name="from_number"/>
+                            <separator string="Advanced Override"/>
+                            <field name="elevenlabs_api_key" password="True"
+                                   help="Leave blank to use Connect settings key."/>
+                            <field name="agent_id"
+                                   invisible="elevenlabs_agent_id"
+                                   help="Manual override when no synced agent selected."/>
+                            <field name="phone_number_id"
+                                   invisible="elevenlabs_phone_id"
+                                   help="Manual override when no synced phone selected."/>
+                        </group>
+                        <group string="Scheduling">
+                            <field name="start_time" widget="float_time_12h"/>
+                            <field name="end_time" widget="float_time_12h"/>
+                            <field name="delay_seconds"/>
+                            <field name="is_active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lead Targeting" name="targeting">
+                            <group>
+                                <field name="filter_domain" widget="domain"
+                                       options="{'model': 'crm.lead'}"/>
+                                <field name="tag_on_complete_id"/>
+                                <field name="skip_already_called"/>
+                            </group>
+                        </page>
+                        <page string="Agent Script" name="script">
+                            <group>
+                                <field name="first_message"
+                                       placeholder="Hi {lead_name}, this is..."/>
+                                <field name="system_prompt_override"
+                                       placeholder="Optional system prompt override..."/>
+                            </group>
+                        </page>
+                        <page string="Call Logs" name="logs">
+                            <field name="log_ids">
+                                <list>
+                                    <field name="lead_name"/>
+                                    <field name="phone"/>
+                                    <field name="status"
+                                           decoration-success="status == 'completed'"
+                                           decoration-danger="status == 'failed'"
+                                           decoration-warning="status == 'calling'"
+                                           widget="badge"/>
+                                    <field name="outcome" optional="show"/>
+                                    <field name="duration" optional="show"/>
+                                    <field name="started_at"/>
+                                    <field name="error_message" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Stats" name="stats">
+                            <group>
+                                <group>
+                                    <field name="total_calls"/>
+                                    <field name="completed_calls"/>
+                                    <field name="failed_calls"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ════════════════════ LIST ════════════════════ -->
+    <record id="view_ai_campaign_list" model="ir.ui.view">
+        <field name="name">dojo.ai.campaign.list</field>
+        <field name="model">dojo.ai.campaign</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'running'"
+                       decoration-info="state == 'draft'"
+                       decoration-muted="state == 'done'"
+                       decoration-warning="state == 'paused'"/>
+                <field name="elevenlabs_agent_id" string="Agent"/>
+                <field name="record_count" string="Leads"/>
+                <field name="total_calls" string="Calls"/>
+                <field name="completed_calls" string="Done"/>
+                <field name="failed_calls" string="Failed"/>
+                <field name="create_date" string="Created"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ════════════════════ SEARCH ════════════════════ -->
+    <record id="view_ai_campaign_search" model="ir.ui.view">
+        <field name="name">dojo.ai.campaign.search</field>
+        <field name="model">dojo.ai.campaign</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <filter name="running" string="Running"
+                        domain="[('state', '=', 'running')]"/>
+                <filter name="draft" string="Draft"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter name="done" string="Done"
+                        domain="[('state', '=', 'done')]"/>
+                <separator/>
+                <filter name="group_state" string="State"
+                        domain="[]" context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ════════════════════ ACTION ════════════════════ -->
+    <record id="action_ai_campaign" model="ir.actions.act_window">
+        <field name="name">AI Campaigns</field>
+        <field name="res_model">dojo.ai.campaign</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_ai_campaign_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first AI calling campaign
+            </p>
+            <p>
+                Set up ElevenLabs agent, target CRM leads with filters,
+                and let AI handle outbound calls automatically.
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -66,6 +66,10 @@ export class Phone extends Component {
             inCall: false,
             inIncoming: false,
             isContactList: false,
+            isCountryPicker: false,
+            isFavTab: false,
+            selectedCountryCode: '',
+            selectedCountryFlag: '',
             phoneNumber: '',
             callPhoneNumber: '',
             contact_search_query: '',
@@ -113,6 +117,41 @@ export class Phone extends Component {
         this.windows = [this.id]
         this.sipSessions = []
         this.suppressBroadcastChannel = false
+        this.COUNTRY_CODES = [
+            { code: '+1', flag: '🇺🇸', name: 'US / Canada' },
+            { code: '+44', flag: '🇬🇧', name: 'United Kingdom' },
+            { code: '+61', flag: '🇦🇺', name: 'Australia' },
+            { code: '+64', flag: '🇳🇿', name: 'New Zealand' },
+            { code: '+353', flag: '🇮🇪', name: 'Ireland' },
+            { code: '+27', flag: '🇿🇦', name: 'South Africa' },
+            { code: '+49', flag: '🇩🇪', name: 'Germany' },
+            { code: '+33', flag: '🇫🇷', name: 'France' },
+            { code: '+34', flag: '🇪🇸', name: 'Spain' },
+            { code: '+39', flag: '🇮🇹', name: 'Italy' },
+            { code: '+31', flag: '🇳🇱', name: 'Netherlands' },
+            { code: '+46', flag: '🇸🇪', name: 'Sweden' },
+            { code: '+47', flag: '🇳🇴', name: 'Norway' },
+            { code: '+45', flag: '🇩🇰', name: 'Denmark' },
+            { code: '+358', flag: '🇫🇮', name: 'Finland' },
+            { code: '+41', flag: '🇨🇭', name: 'Switzerland' },
+            { code: '+48', flag: '🇵🇱', name: 'Poland' },
+            { code: '+7', flag: '🇷🇺', name: 'Russia' },
+            { code: '+81', flag: '🇯🇵', name: 'Japan' },
+            { code: '+82', flag: '🇰🇷', name: 'South Korea' },
+            { code: '+86', flag: '🇨🇳', name: 'China' },
+            { code: '+91', flag: '🇮🇳', name: 'India' },
+            { code: '+65', flag: '🇸🇬', name: 'Singapore' },
+            { code: '+852', flag: '🇭🇰', name: 'Hong Kong' },
+            { code: '+971', flag: '🇦🇪', name: 'UAE' },
+            { code: '+966', flag: '🇸🇦', name: 'Saudi Arabia' },
+            { code: '+55', flag: '🇧🇷', name: 'Brazil' },
+            { code: '+52', flag: '🇲🇽', name: 'Mexico' },
+            { code: '+54', flag: '🇦🇷', name: 'Argentina' },
+            { code: '+57', flag: '🇨🇴', name: 'Colombia' },
+            { code: '+234', flag: '🇳🇬', name: 'Nigeria' },
+            { code: '+20', flag: '🇪🇬', name: 'Egypt' },
+            { code: '+212', flag: '🇲🇦', name: 'Morocco' },
+        ]
     }
 
     setup() {
@@ -168,10 +207,16 @@ export class Phone extends Component {
         })
 
         onMounted(() => {
-            // Suppress AbortError from Twilio SDK play()/pause() race condition
-            // to prevent Odoo's formatTraceback crash on errors without .stack
+            // Suppress unhandled rejections that have no .stack property —
+            // Odoo's formatTraceback calls .split() on stack and crashes if it's undefined.
+            // This covers AbortError (Twilio audio race), DOMException, and bare rejected values.
             window.addEventListener('unhandledrejection', (event) => {
-                if (event.reason && event.reason.name === 'AbortError') {
+                const reason = event.reason
+                if (!reason || typeof reason.stack === 'undefined') {
+                    event.preventDefault()
+                    return
+                }
+                if (reason.name === 'AbortError') {
                     event.preventDefault()
                 }
             })
@@ -607,6 +652,7 @@ export class Phone extends Component {
         this.state.isDialingPanel = true
         this.state.isContacts = false
         this.state.isFavorites = false
+        this.state.isFavTab = false
         this.state.isCalls = false
         this.state.isDisplay = true
         this.state.isKeypad = false
@@ -621,6 +667,7 @@ export class Phone extends Component {
         this.state.isKeypad = this.lastActiveTab === this.tabs.phone
         this.state.isContacts = this.lastActiveTab === this.tabs.contacts
         this.state.isFavorites = this.lastActiveTab === this.tabs.favorites
+        this.state.isFavTab = this.lastActiveTab === 'fav'
         this.state.isCalls = this.lastActiveTab === this.tabs.calls
         this.state.isTransfer = false
         this.state.isForward = false
@@ -759,7 +806,11 @@ export class Phone extends Component {
 
     _onClickMakeCall(ev) {
         if (this.state.phoneNumber) {
-            this.state.callPhoneNumber = this.state.phoneNumber.replace(/\(|\)|-| /gm, '')
+            let rawNum = this.state.phoneNumber.replace(/\(|\)|-| /gm, '')
+            if (this.state.selectedCountryCode && !rawNum.startsWith('+')) {
+                rawNum = this.state.selectedCountryCode + rawNum
+            }
+            this.state.callPhoneNumber = rawNum
             this.state.phoneNumber = ''
             this.phoneInput.el.value = this.state.phoneNumber
             this.prepareCall({ phone: this.state.callPhoneNumber })
@@ -785,6 +836,7 @@ export class Phone extends Component {
         this.state.isContacts = false
         this.state.isCalls = false
         this.state.isFavorites = false
+        this.state.isFavTab = false
         setFocus(this.phoneInput.el)
     }
 
@@ -796,6 +848,19 @@ export class Phone extends Component {
         this.state.isContacts = true
         this.state.isContactList = false
         this.state.isFavorites = false
+        this.state.isFavTab = false
+        this.state.isCalls = false
+        this.state.isDialingPanel = false
+    }
+
+    _onClickFavTab(ev) {
+        this.state.activeTab = 'fav'
+        this.setLastActiveTab()
+        this.state.isKeypad = false
+        this.state.isContacts = false
+        this.state.isContactList = false
+        this.state.isFavorites = false
+        this.state.isFavTab = true
         this.state.isCalls = false
         this.state.isDialingPanel = false
     }
@@ -807,6 +872,7 @@ export class Phone extends Component {
         this.state.isContacts = false
         this.state.isContactList = false
         this.state.isFavorites = true
+        this.state.isFavTab = false
         this.state.isCalls = false
         this.state.isDialingPanel = false
     }
@@ -818,6 +884,7 @@ export class Phone extends Component {
         this.state.isContacts = false
         this.state.isContactList = false
         this.state.isFavorites = false
+        this.state.isFavTab = false
         this.state.isCalls = true
         this.state.isDialingPanel = false
         this.getCalls()
@@ -830,6 +897,7 @@ export class Phone extends Component {
         this.state.isForward = false
         this.state.isCalls = false
         this.state.isKeypad = false
+        this.state.isFavTab = false
         this.state.isDialingPanel = true
     }
 
@@ -840,6 +908,7 @@ export class Phone extends Component {
         this.state.isForward = false
         this.state.isCalls = false
         this.state.isKeypad = true
+        this.state.isFavTab = false
         this.state.isDialingPanel = false
         setFocus(this.phoneInput.el)
     }
@@ -849,6 +918,7 @@ export class Phone extends Component {
         this.state.isForward = false
         this.state.isKeypad = false
         this.state.isDialingPanel = false
+        this.state.isFavTab = false
         this.state.isContacts = true
         this.state.isTransfer = true
         this.bus.trigger('busContactSetState', { isTransfer: true, isContactMode: true })
@@ -859,6 +929,7 @@ export class Phone extends Component {
         this.state.isTransfer = false
         this.state.isKeypad = false
         this.state.isDialingPanel = false
+        this.state.isFavTab = false
         this.state.isForward = true
         this.state.isContacts = true
         this.bus.trigger('busContactSetState', { isForward: true, isContactMode: true })
@@ -927,14 +998,16 @@ export class Phone extends Component {
     }
 
     _onClickKeypadButton(ev) {
+        const btn = ev.target.closest('.o_keypad_button')
+        const digit = btn ? btn.dataset.digit : ev.target.textContent
         if (this.state.inCall) {
             if (this.session) {
-                this.sendDTMF(ev.target.textContent)
+                this.sendDTMF(digit)
             } else {
-                this.bc.postMessage({ event: "tbcDtmf", params: { key: ev.target.textContent } })
+                this.bc.postMessage({ event: "tbcDtmf", params: { key: digit } })
             }
         } else {
-            this.state.phoneNumber += ev.target.textContent
+            this.state.phoneNumber += digit
             this.phoneInput.el.value = this.state.phoneNumber
         }
         this.phoneInput.el.focus()
@@ -968,6 +1041,7 @@ export class Phone extends Component {
             } else {
                 this.state.phoneNumber = this.phoneInput.el.value
                 this.state.isContactList = this.state.phoneNumber !== ''
+                this.state.isCountryPicker = false
                 this.bus.trigger('busContactSetState', { isContact: true })
                 this.bus.trigger('busContactSearchQuery', { searchQuery: this.phoneInput.el.value })
             }
@@ -996,5 +1070,18 @@ export class Phone extends Component {
         } else {
             this.bc.postMessage({ event: "tbcCancelForward" })
         }
+    }
+
+    _onClickGlobe() {
+        this.state.isCountryPicker = !this.state.isCountryPicker
+        if (this.state.isCountryPicker) {
+            this.state.isContactList = false
+        }
+    }
+
+    _onSelectCountry(country) {
+        this.state.selectedCountryCode = country.code
+        this.state.selectedCountryFlag = country.flag
+        this.state.isCountryPicker = false
     }
 }

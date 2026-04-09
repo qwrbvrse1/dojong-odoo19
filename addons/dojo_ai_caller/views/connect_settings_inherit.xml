@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Add Sync button to ElevenLabs section in Connect settings -->
+    <record id="connect_settings_form_elevenlabs" model="ir.ui.view">
+        <field name="name">connect.settings.form.elevenlabs</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" ref="connect.connect_settings_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='elevenlabs_api']" position="inside">
+                <button colspan="2" name="action_sync_elevenlabs" type="object"
+                        string="SYNC ELEVENLABS AGENTS &amp; PHONES"
+                        class="btn btn-primary"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

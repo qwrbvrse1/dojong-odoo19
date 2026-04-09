@@ -1,102 +1,198 @@
-$color-light-gray: #e9ecef;
-//History
-.o_favorites_list {
-  height: 455px;
-  overflow: auto;
+// ── Shared dark palette ──
+$cp-bg: #1b2b34;
+$cp-surface: #253441;
+$cp-accent: #5d8da8;
+$cp-text: #e0eaf0;
+$cp-text-muted: #6d8fa3;
+$cp-border: #2a3f50;
+$cp-call: #1dc959;
+$cp-end: #ff5757;
+$cp-overdue: #ff7043;
+$cp-active-bg: rgba(93, 141, 168, 0.14);
 
-  .o_favorites_table {
-    width: 100%;
+// Activities panel
+.o_activities_panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
 
-    tr {
-      height: 54px;
-      border-bottom: 1px solid $o-brand-odoo;
+// Loading
+.o_activities_loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $cp-text-muted;
+  font-size: 22px;
+}
 
-      &:hover {
-        background-color: $color-light-gray;
-      }
-    }
+// Empty state
+.o_activities_empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
 
-    .o_partner_icon:hover {
-      cursor: pointer;
-    }
+  .o_activities_empty_emoji {
+    font-size: 48px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
 
-    .partner-icon {
-      padding-left: 2px;
-      padding-right: 2px;
-      margin-top: 4px;
-      border-right: 1px solid $o-brand-odoo;
-      width: 50px;
+  .o_activities_empty_title {
+    font-size: 15px;
+    font-weight: 600;
+    color: $cp-text;
+  }
 
-      .o_user_avatar {
-        max-width: 44px;
-        max-height: 44px;
-        height: 44px;
-      }
-    }
-
-    .o_history_info {
-      cursor: default;
-      font-size: 15px;
-      color: $o-brand-odoo;
-
-      .o_contact_phone {
-        margin-left: 5px;
-      }
-
-      .info-card {
-        height: 53px;
-        width: 195px;
-        padding-left: 5px;
-
-        &:hover {
-          cursor: pointer;
-        }
-
-        .card-identifier {
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-      }
-
-      .o_favorite {
-        margin: auto;
-
-        button {
-          color: $o-brand-odoo;
-          border: none;
-          background: transparent;
-
-          i {
-            font-size: x-large;
-          }
-        }
-      }
-    }
-
-    .o_history_call_button {
-      button {
-        color: $o-brand-odoo;
-        border: none;
-        background: transparent;
-
-        .fa {
-          font-size: 25px;
-        }
-      }
-    }
+  .o_activities_empty_sub {
+    font-size: 12px;
+    color: $cp-text-muted;
+    text-align: center;
   }
 }
 
-.o_call_detail_header {
-  i {
-    font-size: 30px;
-    color: $o-brand-odoo;
-    margin-top: 10px;
-    margin-left: 10px;
+// Scrollable list
+.o_activities_list {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba($cp-accent, 0.3) transparent;
 
-    &:hover {
-      cursor: pointer;
-    }
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($cp-accent, 0.3);
+    border-radius: 3px;
+  }
+}
+
+// Single activity row
+.o_activity_row {
+  display: flex;
+  align-items: center;
+  padding: 9px 12px;
+  gap: 10px;
+  border-bottom: 1px solid $cp-border;
+  cursor: pointer;
+  transition: background 0.1s;
+
+  &:hover {
+    background: $cp-active-bg;
+  }
+
+  &.overdue {
+    border-left: 3px solid $cp-overdue;
+  }
+}
+
+// Activity type icon
+.o_activity_icon_wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: $cp-surface;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .o_activity_type_icon {
+    font-size: 14px;
+    color: $cp-accent;
+  }
+}
+
+// Activity body text
+.o_activity_body {
+  flex: 1;
+  min-width: 0;
+
+  .o_activity_name {
+    font-size: 13px;
+    font-weight: 600;
+    color: $cp-text;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .o_activity_summary {
+    font-size: 11px;
+    color: $cp-text-muted;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+  }
+
+  .o_activity_type {
+    font-size: 10px;
+    color: $cp-accent;
+    margin-top: 1px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+// Due / overdue badge + call action column
+.o_activity_actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.o_activity_badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: rgba($cp-accent, 0.15);
+  color: $cp-accent;
+  white-space: nowrap;
+
+  &.overdue {
+    background: rgba($cp-overdue, 0.15);
+    color: $cp-overdue;
+  }
+}
+
+// Activity call button
+.o_activity_call_btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: $cp-call;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s, transform 0.08s;
+  flex-shrink: 0;
+
+  .fa {
+    font-size: 12px;
+    pointer-events: none;
+  }
+
+  &:hover {
+    background: darken($cp-call, 10%);
+  }
+
+  &:active {
+    transform: scale(0.88);
   }
 }

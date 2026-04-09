@@ -2,7 +2,8 @@
 <templates xml:space="preserve">
 
     <t t-name="connect.phone" owl="1">
-        <div t-attf-class="{{state.isDisplay ? '' : 'o_hide'}} o_root_connect_phone" t-ref="phone-root">
+        <div t-attf-class="{{state.isDisplay ? '' : 'd-none'}} o_root_connect_phone" t-ref="phone-root">
+
             <!--Header-->
             <div class="o_header_phone" t-ref="phone-header">
                 <div class="o_header_content">
@@ -10,53 +11,68 @@
                     <div class="o_header_title">
                         <b t-out="title"/>
                     </div>
-                    <div aria-label="Hide" class="fa fa-window-minimize o_header_close" title="Hide" t-on-click="_onClickClose"/>
+                    <div aria-label="Hide" class="o_header_close" title="Hide" t-on-click="_onClickClose">
+                        <i class="fa fa-minus"/>
+                    </div>
                 </div>
             </div>
-            <div t-attf-class="o_dial_panel o_phone_tabs flex-container">
-                <button aria-label="Keypad" t-attf-class="flex-item{{state.activeTab === tabs.phone ? ' active' : ''}}" title="Keypad" t-on-click="_onClickPhone">
-                    <i class="fa fa-mobile"/>
-                </button>
-                <!--<button aria-label="Contacts" t-attf-class="flex-item{{state.activeTab === tabs.contacts ? ' active' : ''}}" title="Contacts" t-on-click="_onClickContacts">-->
-                <!--    <i class="fa fa-address-book"/>-->
-                <!--</button>-->
-                <button aria-label="Favorites" t-attf-class="flex-item{{state.activeTab === tabs.favorites ? ' active' : ''}}" title="Favorites" t-on-click="_onClickFavorites">
-                    <i class="fa fa-star"/>
-                </button>
-                <button aria-label="History" t-attf-class="flex-item{{state.activeTab === tabs.calls ? ' active' : ''}}" title="History" t-on-click="_onClickHistory">
-                    <i class="fa fa-history"/>
-                </button>
-            </div>
-            <!--Keypad-->
-            <div t-attf-class="{{state.isKeypad ? '' : 'o_hide'}} o_body_phone">
+
+            <!--Keypad body: input + grid OR inline contact results-->
+            <div t-attf-class="{{state.isKeypad ? '' : 'd-none'}} o_body_phone">
                 <div class="o_phone_number_content">
-                    <input class="o_phone_number_input" type="tel" t-ref="connect-phone-input" t-on-keyup="debounceEnterPhoneNumber" placeholder="Enter name or number" autocomplete="off"/>
+                    <div class="o_country_trigger" t-on-click="_onClickGlobe" t-att-title="state.selectedCountryCode ? state.selectedCountryCode : 'Select country code'">
+                        <span t-if="state.selectedCountryFlag" class="o_country_flag" t-out="state.selectedCountryFlag"/>
+                        <i t-else="" class="fa fa-globe o_country_icon"/>
+                    </div>
+                    <input class="o_phone_number_input" type="tel" t-ref="connect-phone-input" t-on-keyup="debounceEnterPhoneNumber" placeholder="Type a name or number" autocomplete="off"/>
                     <div aria-label="Backspace" class="fa fa-long-arrow-left o_phone_number_back" role="img" title="Backspace" t-on-click="_onClickBackSpace"/>
                 </div>
-                <div class="o_keypad" t-if="!state.isContactList">
-                    <button class="o_keypad_button" t-on-click="_onClickKeypadButton">1</button>
-                    <button class="o_keypad_button" t-on-click="_onClickKeypadButton">2</button>
-                    <button class="o_keypad_button" t-on-click="_onClickKeypadButton">3</button>
-                    <button class="o_keypad_button" t-on-click="_onClickKeypadButton">4</button>
-                    <button class="o_keypad_button" t-on-click="_onClickKeypadButton">5</button>
-                    <button class="o_keypad_button" t-on-click="_onClickKeypadButton">6</button>
-                    <button class="o_keypad_button" t-on-click="_onClickKeypadButton">7</button>
-                    <button class="o_keypad_button" t-on-click="_onClickKeypadButton">8</button>
-                    <button class="o_keypad_button" t-on-click="_onClickKeypadButton">9</button>
-                    <button class="o_keypad_button" t-on-click="_onClickKeypadButton">*</button>
-                    <button class="o_keypad_button" t-on-click="_onClickKeypadButton">0</button>
-                    <button class="o_keypad_button" t-on-click="_onClickKeypadButton">#</button>
+                <!--Country code picker (shown when globe is clicked)-->
+                <div t-if="state.isCountryPicker" class="o_country_picker_panel">
+                    <div class="o_country_picker_header">
+                        <span>Select Country Code</span>
+                        <button class="o_country_picker_close" t-on-click="_onClickGlobe"><i class="fa fa-times"/></button>
+                    </div>
+                    <div class="o_country_picker_list">
+                        <t t-foreach="this.COUNTRY_CODES" t-as="cc" t-key="cc.code">
+                            <button t-attf-class="o_country_item{{ state.selectedCountryCode === cc.code ? ' active' : '' }}" t-on-click="() => this._onSelectCountry(cc)">
+                                <span class="o_ci_flag" t-out="cc.flag"/>
+                                <span class="o_ci_code" t-out="cc.code"/>
+                                <span class="o_ci_name" t-out="cc.name"/>
+                            </button>
+                        </t>
+                    </div>
+                </div>
+                <!--Keypad grid (hidden when typing/searching)-->
+                <div class="o_keypad" t-if="!state.isContactList and !state.isCountryPicker">
+                    <button class="o_keypad_button" data-digit="1" data-letters="" t-on-click="_onClickKeypadButton"><span class="o_digit">1</span></button>
+                    <button class="o_keypad_button" data-digit="2" data-letters="ABC" t-on-click="_onClickKeypadButton"><span class="o_digit">2</span><span class="o_letters">ABC</span></button>
+                    <button class="o_keypad_button" data-digit="3" data-letters="DEF" t-on-click="_onClickKeypadButton"><span class="o_digit">3</span><span class="o_letters">DEF</span></button>
+                    <button class="o_keypad_button" data-digit="4" data-letters="GHI" t-on-click="_onClickKeypadButton"><span class="o_digit">4</span><span class="o_letters">GHI</span></button>
+                    <button class="o_keypad_button" data-digit="5" data-letters="JKL" t-on-click="_onClickKeypadButton"><span class="o_digit">5</span><span class="o_letters">JKL</span></button>
+                    <button class="o_keypad_button" data-digit="6" data-letters="MNO" t-on-click="_onClickKeypadButton"><span class="o_digit">6</span><span class="o_letters">MNO</span></button>
+                    <button class="o_keypad_button" data-digit="7" data-letters="PQRS" t-on-click="_onClickKeypadButton"><span class="o_digit">7</span><span class="o_letters">PQRS</span></button>
+                    <button class="o_keypad_button" data-digit="8" data-letters="TUV" t-on-click="_onClickKeypadButton"><span class="o_digit">8</span><span class="o_letters">TUV</span></button>
+                    <button class="o_keypad_button" data-digit="9" data-letters="WXYZ" t-on-click="_onClickKeypadButton"><span class="o_digit">9</span><span class="o_letters">WXYZ</span></button>
+                    <button class="o_keypad_button" data-digit="*" data-letters="" t-on-click="_onClickKeypadButton"><span class="o_digit">*</span></button>
+                    <button class="o_keypad_button" data-digit="0" data-letters="+" t-on-click="_onClickKeypadButton"><span class="o_digit">0</span><span class="o_letters">+</span></button>
+                    <button class="o_keypad_button" data-digit="#" data-letters="" t-on-click="_onClickKeypadButton"><span class="o_digit">#</span></button>
+                </div>
+                <!--Inline contact search results (shown when typing)-->
+                <div t-if="state.isContactList" class="o_inline_contacts">
+                    <Contacts bus="bus" isTransfer="state.isTransfer" isForward="state.isForward"/>
                 </div>
             </div>
-            <!--Dial panel-->
-            <div t-attf-class="{{ state.isDialingPanel ? '' : 'o_hide' }} o_body_phone">
+
+            <!--Dial panel (in-call view)-->
+            <div t-attf-class="{{ state.isDialingPanel ? '' : 'd-none' }} o_body_phone">
                 <div class="o_phone_call_details flex-column">
                     <t t-if="state.isPartner">
                         <div class="o_partner_link" t-on-click="() => this._openPartner(state.callerId.partnerId)">
                             <img alt="Avatar" class="o_partner_avatar" t-if="state.callerId.partnerId" t-att-src="state.callerId.partnerIconUrl"/>
                             <span class="o_partner_name"><t t-out="state.callerId.partnerName"/></span>
                             <span class="o_partner_name"><t t-out="state.callerId.phoneNumber"/></span>
-                            <span class="o_partner_name"><t t-out="state.callDurationTime"/></span>
+                            <span class="o_partner_name o_call_duration"><t t-out="state.callDurationTime"/></span>
                         </div>
                         <div t-if="state.isCallForwarded" class="text-center mt-1" title="Cancel Forward">
                             <button class="btn p-3 border rounded-circle" t-on-click="_cancelForward">
@@ -68,7 +84,7 @@
                         <img t-if="state.callerId.partnerId" alt="Avatar" class="o_partner_avatar" t-att-src="state.callerId.partnerIconUrl"/>
                         <span t-if="state.callerId.partnerId" class="o_partner_name"><t t-out="state.callerId.partnerName"/></span>
                         <span class="o_partner_name"><t t-out="state.callerId.phoneNumber"/></span>
-                        <span class="o_partner_name"><t t-out="state.callDurationTime"/></span>
+                        <span class="o_partner_name o_call_duration"><t t-out="state.callDurationTime"/></span>
                         <div class="text-center" title="Customer">
                             <button class="btn p-3 border rounded-circle" t-on-click="_createPartner">
                                 <i aria-label="Customer" class="fa fa-fw fa-lg fa-user"/>
@@ -92,60 +108,83 @@
                     </div>
                 </div>
             </div>
-            <!--Contacts-->
-            <div t-attf-class="{{ state.isContacts || state.isContactList ? '' : 'o_hide' }} o_body_phone">
+
+            <!--Contacts tab (full contacts view with its own search)-->
+            <div t-attf-class="{{ state.isContacts ? '' : 'd-none' }} o_body_phone">
                 <Contacts bus="bus" isTransfer="state.isTransfer" isForward="state.isForward"/>
             </div>
-            <!--Favorites-->
-            <div t-attf-class="{{ state.isFavorites ? '' : 'o_hide' }} o_body_phone">
+
+            <!--Favorites (saved contacts)-->
+            <div t-attf-class="{{ state.isFavTab ? '' : 'd-none' }} o_body_phone">
+                <Contacts t-if="state.isFavTab" bus="bus" isTransfer="state.isTransfer" isForward="state.isForward" contactSearch="'favorites'"/>
+            </div>
+
+            <!--Activities-->
+            <div t-attf-class="{{ state.isFavorites ? '' : 'd-none' }} o_body_phone">
                 <Favorites t-if="state.isFavorites" bus="bus"/>
             </div>
-            <!--Calls-->
-            <div t-attf-class="{{ state.isCalls ? '' : 'o_hide' }} o_body_phone">
+
+            <!--Calls / Recent-->
+            <div t-attf-class="{{ state.isCalls ? '' : 'd-none' }} o_body_phone">
                 <Calls bus="bus"/>
             </div>
 
-
-            <div class="mt-auto">
-                <!--Optional call buttons-->
-                <div t-attf-class="{{ state.isKeypad or state.inCall or state.inIncoming ? '' : 'o_hide' }} o_dial_panel o_optional_dial_panel_position flex-container">
-                    <button t-if="state.phone_status === status.accepted" aria-label="Call" t-attf-class="flex-item {{ state.isDialingPanel ? 'active' : '' }}" title="Call" t-on-click="_onClickDialingPanel">
-                        <i class="icon-phone_in_talk fa"/>
-                    </button>
-                    <button t-if="state.phone_status === status.accepted" aria-label="DTMF" t-attf-class="flex-item {{ state.isKeypad ? 'active' : '' }}" title="DTMF" t-on-click="_onClickKeypad">
-                        <i class="icon-dialpad fa"/>
-                    </button>
-<!--                    <button t-if="state.phone_status === status.accepted" aria-label="Transfer" t-attf-class="flex-item{{ state.isTransfer ? ' active' : '' }} {{ state.phone_status === status.accepted ? '' : 'o_hide' }} " title="Transfer" t-on-click="_onClickTransfer">-->
-<!--                        <i class="fa fa-exchange"/>-->
-<!--                    </button>-->
-                    <button t-if="state.phone_status === status.accepted" aria-label="Forward" t-attf-class="flex-item {{ state.isForward ? 'active' : '' }}" title="Forward" t-on-click="_onClickForward">
-                        <i class="fa icon-redo2"/>
-                    </button>
-                    <button t-if="state.phone_status !== status.accepted" aria-label="Mute Sound" class="flex-item" t-attf-title="{{ state.isSoundMute ? 'Unmute Sound' : 'Mute Sound' }}" t-on-click="_onClickSoundMute">
-                        <i t-attf-class="fa {{ state.isSoundMute ? 'icon-volume_off' : 'icon-volume_up'}}"/>
-                    </button>
-                    <button t-if="state.phone_status === status.accepted" aria-label="Mute Microphone" t-attf-class="flex-item" t-attf-title="{{ state.isMicrophoneMute ? 'Unmute Microphone' : 'Mute Microphone' }}" t-on-click="_onClickMicrophoneMute">
-                        <i t-attf-class="fa {{ state.isMicrophoneMute ? 'icon-mic_off' : 'icon-mic' }}"/>
-                    </button>
-                </div>
-
-                <!--Call buttons-->
-                <div t-attf-class="{{ state.isKeypad or state.inCall or state.inIncoming ? '' : 'o_hide' }} o_dial_panel o_dial_panel_position flex-container">
-                    <button aria-label="Call" t-attf-class="{{ state.inCall ? 'o_hide' : '' }} flex-item" title="Call" t-on-click="_onClickMakeCall">
-                        <i class="icon-call call"/>
-                    </button>
-                    <button aria-label="End Call" t-attf-class="{{ state.inCall and !state.inIncoming ? '' : 'o_hide' }} flex-item" title="End Call" t-on-click="_onClickEndCall">
-                        <i class="icon-call_end reject-call"/>
-                    </button>
-                    <button aria-label="Take call" t-attf-class="{{ state.inIncoming ? '' : 'o_hide' }} flex-item" title="Accept" t-on-click="_onClickAcceptIncoming">
-                        <i class="icon-call call"/>
-                    </button>
-                    <button aria-label="Reject call" t-attf-class="{{ state.inIncoming ? '' : 'o_hide' }} flex-item" title="Reject">
-                        <i class="icon-call_end reject-call" t-on-click="_onClickRejectIncoming"/>
-                    </button>
-                </div>
+            <!--In-call controls (mute, DTMF, forward) \u2014 only visible during active call-->
+            <div t-if="state.phone_status === status.accepted" class="o_optional_dial_panel flex-container">
+                <button aria-label="Call" t-attf-class="flex-item {{ state.isDialingPanel ? 'active' : '' }}" title="Call" t-on-click="_onClickDialingPanel">
+                    <i class="icon-phone_in_talk fa"/>
+                </button>
+                <button aria-label="DTMF" t-attf-class="flex-item {{ state.isKeypad ? 'active' : '' }}" title="DTMF" t-on-click="_onClickKeypad">
+                    <i class="icon-dialpad fa"/>
+                </button>
+                <button aria-label="Forward" t-attf-class="flex-item {{ state.isForward ? 'active' : '' }}" title="Forward" t-on-click="_onClickForward">
+                    <i class="fa icon-redo2"/>
+                </button>
+                <button aria-label="Mute Microphone" t-attf-class="flex-item" t-attf-title="{{ state.isMicrophoneMute ? 'Unmute Microphone' : 'Mute Microphone' }}" t-on-click="_onClickMicrophoneMute">
+                    <i t-attf-class="fa {{ state.isMicrophoneMute ? 'icon-mic_off' : 'icon-mic' }}"/>
+                </button>
             </div>
-      </div>
-    </t>
 
+            <!--Call button row (keypad + in-call only)-->
+            <div t-if="state.isKeypad or state.inCall or state.inIncoming" class="o_call_btn_row">
+                <button t-if="!state.inCall and !state.inIncoming" aria-label="Call" class="o_call_btn" title="Call" t-on-click="_onClickMakeCall">
+                    <i class="icon-call fa"/>
+                </button>
+                <button t-if="state.inCall and !state.inIncoming" aria-label="End Call" class="o_call_btn o_end_call_btn" title="End Call" t-on-click="_onClickEndCall">
+                    <i class="icon-call_end fa"/>
+                </button>
+                <button t-if="state.inIncoming" aria-label="Take call" class="o_call_btn" title="Accept" t-on-click="_onClickAcceptIncoming">
+                    <i class="icon-call fa"/>
+                </button>
+                <button t-if="state.inIncoming" aria-label="Reject call" class="o_call_btn o_end_call_btn" title="Reject" t-on-click="_onClickRejectIncoming">
+                    <i class="icon-call_end fa"/>
+                </button>
+            </div>
+
+            <!--Bottom tab bar-->
+            <div class="o_phone_tabs flex-container">
+                <button aria-label="Keypad" t-attf-class="flex-item{{state.activeTab === tabs.phone ? ' active' : ''}}" title="Keypad" t-on-click="_onClickPhone">
+                    <i class="fa fa-th"/>
+                    <span>Keypad</span>
+                </button>
+                <button aria-label="Recent" t-attf-class="flex-item{{state.activeTab === tabs.calls ? ' active' : ''}}" title="Recent" t-on-click="_onClickHistory">
+                    <i class="fa fa-history"/>
+                    <span>Recent</span>
+                </button>
+                <button aria-label="Contacts" t-attf-class="flex-item{{state.activeTab === tabs.contacts ? ' active' : ''}}" title="Contacts" t-on-click="_onClickContacts">
+                    <i class="fa fa-address-book"/>
+                    <span>Contacts</span>
+                </button>
+                <button aria-label="Favorites" t-attf-class="flex-item{{state.activeTab === 'fav' ? ' active' : ''}}" title="Favorites" t-on-click="_onClickFavTab">
+                    <i class="fa fa-star"/>
+                    <span>Favorites</span>
+                </button>
+                <button aria-label="Activities" t-attf-class="flex-item{{state.activeTab === tabs.favorites ? ' active' : ''}}" title="Activities" t-on-click="_onClickFavorites">
+                    <i class="fa fa-clock-o"/>
+                    <span>Activities</span>
+                </button>
+            </div>
+
+        </div>
+    </t>
 </templates>

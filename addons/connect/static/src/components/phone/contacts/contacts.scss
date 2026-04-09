@@ -1,18 +1,56 @@
+// ── Shared dark palette ──
+$cp-bg: #1b2b34;
+$cp-surface: #253441;
+$cp-accent: #5d8da8;
+$cp-text: #e0eaf0;
+$cp-text-muted: #6d8fa3;
+$cp-border: #2a3f50;
+$cp-call: #1dc959;
+$cp-active-bg: rgba(93, 141, 168, 0.14);
+
+// No results message
+.o_no_results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  color: $cp-text-muted;
+  gap: 10px;
+
+  .fa {
+    font-size: 28px;
+    opacity: 0.5;
+  }
+
+  span {
+    font-size: 14px;
+    font-weight: 400;
+  }
+}
+
 // Contacts
 .o_dial_contact_list {
-  height: 330px;
+  flex: 1;
   overflow: auto;
 }
+
 // Contact List
 .o_contact_table {
-  tr:hover {
-    background-color: $color-light-gray;
+  width: 100%;
+
+  tr {
+    border-bottom: 1px solid $cp-border;
+
+    &:hover {
+      background-color: $cp-active-bg;
+    }
   }
 
   .o_contact_avatar {
-    margin: 5px 10px 5px 10px;
-    width: 50px;
-    height: 50px;
+    margin: 5px 8px;
+    width: 44px;
+    height: 44px;
 
     img {
       border-radius: 50%;
@@ -21,31 +59,36 @@
 
   .o_contact_info {
     cursor: default;
-    font-size: 15px;
-    color: $o-brand-odoo;
+    font-size: 14px;
+    color: $cp-text;
     width: 150px;
 
     .o_contact_phone {
-      margin-left: 5px;
-      font-size: 14px;
+      margin-left: 4px;
+      font-size: 12px;
+      color: $cp-text-muted;
 
       &.fa-mobile:before {
-        margin-right: 8px;
-        font-size: 14px;
+        margin-right: 6px;
+        font-size: 13px;
       }
     }
   }
 
   .o_contact_call_button {
-    width: 80px;
+    width: 70px;
 
     button {
-      color: $o-brand-odoo;
+      color: $cp-call;
       border: none;
       background: transparent;
 
+      &:hover {
+        color: darken($cp-call, 10%);
+      }
+
       .fa {
-        font-size: 25px;
+        font-size: 22px;
       }
     }
   }
