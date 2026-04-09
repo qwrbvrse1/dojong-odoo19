@@ -63,6 +63,30 @@ IMPORTANT RULES:
     "add new prospect [name]", "new lead for [name]", "create lead [name]", "walk-in [name]" → lead_create (parameters: {{"contact_name": "...", "phone": "...", "email": "..."}})
     "mark [name] as lost", "[name] not interested", "[name] dropped out of pipeline" → lead_mark_lost (parameters: {{"lead_name": "..."}})
     "mark [name] as won", "[name] officially joined", "[name] is a new member now" → lead_mark_won (parameters: {{"lead_name": "..."}})
+- TASK / TODO MAPPING:
+    "my tasks", "what's on my list", "show my todos", "what do I have to do" → task_list (parameters: {{}})
+    "overdue tasks", "what tasks are late" → task_list (parameters: {{"overdue": true}})
+    "create a task", "add a to-do", "remind me to", "make a task" → task_create (parameters: {{"name": "..."}})
+    "mark task done", "complete task", "finished the task", "check off task" → task_complete (parameters: {{"task_name": "..."}})
+    "update task deadline", "move task due date", "add note to task" → task_update (parameters: {{"task_name": "..."}})
+- CALENDAR MAPPING:
+    "what's on my calendar", "show calendar events", "my schedule today" → calendar_event_list (parameters: {{"date_filter": "today"}})
+    "calendar this week", "events this week" → calendar_event_list (parameters: {{"date_filter": "this_week"}})
+    "create calendar event", "add event", "schedule a meeting" → calendar_event_create (parameters: {{"name": "...", "start": "..."}})
+    "cancel event", "remove calendar event", "delete event" → calendar_event_cancel (parameters: {{"event_name": "..."}})
+- INVOICE / BILLING MAPPING:
+    "has [name] paid", "check [name]'s invoice", "is [name] up to date", "payment status for [name]" → invoice_lookup (parameters: {{"member_name": "..."}})
+    "show overdue invoices", "who hasn't paid", "unpaid invoices", "who is behind on payments" → invoice_list (parameters: {{"filter": "overdue"}})
+    "show unpaid invoices" → invoice_list (parameters: {{"filter": "unpaid"}})
+    "show paid invoices" → invoice_list (parameters: {{"filter": "paid"}})
+- COMMUNICATION MAPPING:
+    "email [name]: [message]", "send email to [name]", "write an email to [name]" → send_email (parameters: {{"member_name": "...", "subject": "...", "body": "..."}})
+    "text [name]: [message]", "send SMS to [name]", "SMS [name]" → send_sms (parameters: {{"member_name": "...", "body": "..."}})
+    "email all members about", "blast email", "send email to everyone" → email_blast (parameters: {{"subject": "...", "body": "..."}}) (admin only)
+    "text all members", "SMS blast", "send SMS to everyone" → sms_blast (parameters: {{"body": "..."}}) (admin only)
+- ACTIVITY MAPPING:
+    "schedule a follow-up", "my follow-ups", "what activities do I have", "pending reminders" → activity_list (parameters: {{}})
+    "schedule a follow-up call with [name]", "add an activity for [name]", "set a reminder to" → activity_create (parameters: {{"summary": "...", "date_deadline": "..."}})
 - CRITICAL: For parameter VALUES, always use the ACTUAL values from the user's input, NEVER use template placeholders like {{member_name}}, {{target_belt}}, {{class_name}} etc.
   Example of CORRECT parameters: {{"member_name": "Mary Smith", "target_belt": "Blue Belt"}}
   Example of WRONG parameters: {{"member_name": "{{member_name}}", "target_belt": "{{target_belt}}"}}
@@ -190,6 +214,52 @@ CRM / LEAD PIPELINE MAPPING:
       → {{"intent_type": "lead_mark_lost", "parameters": {{"lead_name": "..."}}, "confidence": 0.90}}
   "mark [name] as won", "[name] officially joined", "[name] is now a member"
       → {{"intent_type": "lead_mark_won", "parameters": {{"lead_name": "..."}}, "confidence": 0.90}}
+
+TASK / TODO MAPPING:
+  "my tasks", "what's on my list", "show todos", "what do I need to do"
+      → {{"intent_type": "task_list", "parameters": {{}}, "confidence": 0.92}}
+  "overdue tasks", "late tasks"
+      → {{"intent_type": "task_list", "parameters": {{"overdue": true}}, "confidence": 0.92}}
+  "create a task", "add a reminder", "make a to-do", "remind me to"
+      → {{"intent_type": "task_create", "parameters": {{"name": "..."}}, "confidence": 0.90}}
+  "mark task done", "complete the task", "finished the task", "check off"
+      → {{"intent_type": "task_complete", "parameters": {{"task_name": "..."}}, "confidence": 0.90}}
+  "update task deadline", "move due date", "add note to task"
+      → {{"intent_type": "task_update", "parameters": {{"task_name": "..."}}, "confidence": 0.88}}
+
+CALENDAR MAPPING:
+  "what's on my calendar today", "my schedule", "show events today"
+      → {{"intent_type": "calendar_event_list", "parameters": {{"date_filter": "today"}}, "confidence": 0.92}}
+  "calendar this week", "events this week", "what's happening this week"
+      → {{"intent_type": "calendar_event_list", "parameters": {{"date_filter": "this_week"}}, "confidence": 0.92}}
+  "create a calendar event", "add event to calendar", "schedule a meeting"
+      → {{"intent_type": "calendar_event_create", "parameters": {{"name": "...", "start": "..."}}, "confidence": 0.90}}
+  "cancel event", "delete calendar event", "remove the meeting"
+      → {{"intent_type": "calendar_event_cancel", "parameters": {{"event_name": "..."}}, "confidence": 0.90}}
+
+INVOICE / BILLING MAPPING:
+  "has [name] paid", "check [name]'s account", "is [name] up to date", "payment status"
+      → {{"intent_type": "invoice_lookup", "parameters": {{"member_name": "..."}}, "confidence": 0.90}}
+  "show overdue invoices", "who hasn't paid", "who's behind on payments"
+      → {{"intent_type": "invoice_list", "parameters": {{"filter": "overdue"}}, "confidence": 0.92}}
+  "unpaid invoices", "all unpaid accounts"
+      → {{"intent_type": "invoice_list", "parameters": {{"filter": "unpaid"}}, "confidence": 0.90}}
+
+COMMUNICATION MAPPING:
+  "email [name]: [message]", "send email to [name] about", "write email to"
+      → {{"intent_type": "send_email", "parameters": {{"member_name": "...", "subject": "...", "body": "..."}}, "confidence": 0.92}}
+  "text [name]: [message]", "SMS [name]", "send a text to [name]"
+      → {{"intent_type": "send_sms", "parameters": {{"member_name": "...", "body": "..."}}, "confidence": 0.92}}
+  "email all members", "blast email", "send announcement email" (admin only)
+      → {{"intent_type": "email_blast", "parameters": {{"subject": "...", "body": "..."}}, "confidence": 0.90}}
+  "text all members", "SMS blast", "mass text" (admin only)
+      → {{"intent_type": "sms_blast", "parameters": {{"body": "..."}}, "confidence": 0.90}}
+
+ACTIVITY MAPPING:
+  "what follow-ups do I have", "show activities", "pending reminders"
+      → {{"intent_type": "activity_list", "parameters": {{}}, "confidence": 0.90}}
+  "schedule a follow-up with [name]", "add activity for", "remind me to call", "set a reminder"
+      → {{"intent_type": "activity_create", "parameters": {{"summary": "...", "date_deadline": "..."}}, "confidence": 0.88}}
 
 Example intent blocks for common queries:
   "What belt is Maria?"         → {{"intent_type": "belt_lookup", "parameters": {{"member_name": "Maria"}}, "confidence": 0.95}}

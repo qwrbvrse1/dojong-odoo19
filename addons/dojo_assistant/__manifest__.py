@@ -36,6 +36,10 @@
         'dojo_core',
         'base',
         'mail',
+        'calendar',
+        'sms',
+        'mass_mailing',
+        'mass_mailing_sms',
         'elevenlabs_connector',
     ],
     'data': [

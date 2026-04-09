@@ -94,6 +94,17 @@ _KNOWN_INTENT_TYPES = {
     "belt_test_registration_create", "marketing_card_create",
     "kiosk_announcement_create", "course_auto_enroll_create",
     "compound_chain",
+    # ── Core Odoo module intents ────────────────────────────────────────────
+    # Tasks / Project
+    "task_list", "task_create", "task_complete", "task_update",
+    # Calendar
+    "calendar_event_list", "calendar_event_create", "calendar_event_cancel",
+    # Direct communication
+    "send_email", "send_sms", "email_blast", "sms_blast",
+    # Invoicing (read-only)
+    "invoice_lookup", "invoice_list",
+    # Activities
+    "activity_create", "activity_list",
 }
 
 # ─── Intent Handler Configuration (for generic read handler) ──────────────────
@@ -137,6 +148,39 @@ _INTENT_HANDLER_CONFIG = {
         "model": "dojo.class.session",
         "domain_builder": "_domain_schedule_today",
         "fields": ["id", "template_id", "start_datetime", "capacity", "state", "seats_taken"],
+        "limit": 20,
+    },
+    # ── Core Odoo module read intents ────────────────────────────────────────
+    "task_list": {
+        "model": "project.task",
+        "domain_builder": "_domain_task_list",
+        "fields": ["id", "name", "stage_id", "date_deadline", "priority", "project_id", "user_ids"],
+        "limit": 20,
+    },
+    "invoice_lookup": {
+        "model": "account.move",
+        "domain_builder": "_domain_invoice_lookup",
+        "fields": ["id", "name", "partner_id", "invoice_date_due", "amount_total", "payment_state", "state"],
+        "limit": 5,
+        "use_sudo": True,
+    },
+    "invoice_list": {
+        "model": "account.move",
+        "domain_builder": "_domain_invoice_list",
+        "fields": ["id", "name", "partner_id", "invoice_date_due", "amount_total", "payment_state", "state"],
+        "limit": 20,
+        "use_sudo": True,
+    },
+    "activity_list": {
+        "model": "mail.activity",
+        "domain_builder": "_domain_activity_list",
+        "fields": ["id", "summary", "activity_type_id", "date_deadline", "res_model", "res_name", "user_id"],
+        "limit": 20,
+    },
+    "calendar_event_list": {
+        "model": "calendar.event",
+        "domain_builder": "_domain_calendar_event_list",
+        "fields": ["id", "name", "start", "stop", "location", "description", "attendee_ids"],
         "limit": 20,
     },
 }
@@ -433,6 +477,32 @@ _CRUD_HANDLER_CONFIG = {
             "template_id": {"required": True, "type": "many2one", "resolver": "_resolve_class_template"},
             "mode": {"required": False, "type": "selection", "default": "permanent"},
             "active": {"required": False, "type": "boolean", "default": True},
+        },
+        "allow_undo": True,
+    },
+    # ── Core Odoo module write intents ────────────────────────────────────────
+    "task_create": {
+        "model": "project.task",
+        "operation": "create",
+        "fields": {
+            "name": {"required": True, "type": "char"},
+            "project_id": {"required": False, "type": "many2one", "resolver": "_resolve_project"},
+            "description": {"required": False, "type": "text"},
+            "date_deadline": {"required": False, "type": "date"},
+            "priority": {"required": False, "type": "selection", "default": "0"},
+        },
+        "allow_undo": True,
+    },
+    "activity_create": {
+        "model": "mail.activity",
+        "operation": "create",
+        "fields": {
+            "summary": {"required": True, "type": "char"},
+            "activity_type_id": {"required": False, "type": "many2one", "resolver": "_resolve_activity_type"},
+            "date_deadline": {"required": False, "type": "date", "default_builder": "_default_today"},
+            "note": {"required": False, "type": "text"},
+            "res_model": {"required": False, "type": "char", "default": "dojo.member"},
+            "res_id": {"required": False, "type": "integer"},
         },
         "allow_undo": True,
     },
@@ -2041,6 +2111,16 @@ class AiAssistantService(models.AbstractModel):
             "campaign_activate": self._handle_campaign_activate,
             "social_post_create": self._handle_social_post_create,
             "social_post_schedule": self._handle_social_post_schedule,
+            # Core Odoo module intents (defined in ai_calendar_service.py / ai_communication_service.py)
+            "calendar_event_create": self._handle_calendar_event_create,
+            "calendar_event_cancel": self._handle_calendar_event_cancel,
+            "send_email": self._handle_send_email,
+            "send_sms": self._handle_send_sms,
+            "email_blast": self._handle_email_blast,
+            "sms_blast": self._handle_sms_blast,
+            # Task intents with custom logic
+            "task_complete": self._handle_task_complete,
+            "task_update": self._handle_task_update,
         }
 
         handler = handlers.get(intent_type, self._handle_unknown)
@@ -2080,6 +2160,8 @@ class AiAssistantService(models.AbstractModel):
         
         try:
             Model = self.env[model_name]
+            if config.get("use_sudo"):
+                Model = Model.sudo()
         except KeyError:
             return {"success": False, "error": f"Model '{model_name}' does not exist"}
         
@@ -3287,3 +3369,238 @@ class AiAssistantService(models.AbstractModel):
         else:
             days = int(seconds / 86400)
             return f"{days} day{'s' if days != 1 else ''} ago"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Core Odoo Module — Domain Builders (Task, Invoice, Activity)
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _domain_task_list(self, intent_data, resolved_data):
+        """Domain for listing project tasks for the calling user."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        uid = self.env.uid
+        domain = []
+
+        # Filter by calling user unless admin requests all
+        role = resolved_data.get("role", "instructor")
+        if role != "admin":
+            domain.append(("user_ids", "in", [uid]))
+
+        # Optional: filter by project name
+        project_name = params.get("project_name")
+        if project_name:
+            projects = self.env["project.project"].search([("name", "ilike", project_name)], limit=5)
+            if projects:
+                domain.append(("project_id", "in", projects.ids))
+
+        # Optional: filter by overdue
+        if params.get("overdue"):
+            domain.append(("date_deadline", "<", fields.Date.today()))
+            domain.append(("stage_id.fold", "=", False))
+
+        # Optional: filter by member name (link via partner)
+        member_name = params.get("member_name")
+        if member_name:
+            members = self.env["dojo.member"].search([("name", "ilike", member_name)], limit=3)
+            if members:
+                partners = members.mapped("partner_id")
+                domain.append(("partner_id", "in", partners.ids))
+
+        # Default: exclude done/cancelled stages
+        if not params.get("include_done"):
+            domain.append(("stage_id.fold", "=", False))
+
+        return domain
+
+    @api.model
+    def _domain_invoice_lookup(self, intent_data, resolved_data):
+        """Domain for looking up invoices for a specific member/family."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        member_id = resolved_data.get("member_id")
+        domain = [("move_type", "in", ["out_invoice", "out_refund"]), ("state", "!=", "cancel")]
+
+        if member_id:
+            member = self.env["dojo.member"].browse(member_id)
+            if member.exists() and member.partner_id:
+                # Get the commercial partner (household) so we catch household-level invoices
+                commercial = member.partner_id.commercial_partner_id
+                domain.append(("partner_id", "child_of", commercial.id))
+        else:
+            member_name = params.get("member_name") or params.get("name")
+            if member_name:
+                members = self.env["dojo.member"].sudo().search([("name", "ilike", member_name)], limit=3)
+                if members:
+                    commercial_ids = members.mapped("partner_id.commercial_partner_id").ids
+                    domain.append(("partner_id", "child_of", commercial_ids))
+
+        return domain
+
+    @api.model
+    def _domain_invoice_list(self, intent_data, resolved_data):
+        """Domain for listing invoices — defaults to unpaid/overdue."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = [("move_type", "in", ["out_invoice", "out_refund"]), ("state", "=", "posted")]
+
+        filter_type = params.get("filter", "overdue")
+        if filter_type == "overdue":
+            domain += [("payment_state", "!=", "paid"), ("invoice_date_due", "<", fields.Date.today())]
+        elif filter_type == "unpaid":
+            domain.append(("payment_state", "!=", "paid"))
+        elif filter_type == "paid":
+            domain.append(("payment_state", "=", "paid"))
+        else:
+            # Default: all unpaid
+            domain.append(("payment_state", "!=", "paid"))
+
+        return domain
+
+    @api.model
+    def _domain_activity_list(self, intent_data, resolved_data):
+        """Domain for listing mail activities for the calling user."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        uid = self.env.uid
+        domain = [("user_id", "=", uid)]
+
+        # Optional: overdue only
+        if params.get("overdue"):
+            domain.append(("date_deadline", "<", fields.Date.today()))
+
+        # Optional: specific model (e.g., 'dojo.member')
+        res_model = params.get("res_model")
+        if res_model:
+            domain.append(("res_model", "=", res_model))
+
+        return domain
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Core Odoo Module — Resolvers (Task, Activity)
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _resolve_project(self, value, model=None):
+        """Resolve a project by name — defaults to 'Instructor Alerts' project."""
+        if isinstance(value, int):
+            return value
+        Project = self.env["project.project"]
+        if not value:
+            # Default to the instructor alerts project
+            project = Project.search([("name", "ilike", "Instructor Alerts")], limit=1)
+            return project.id if project else Project.search([], limit=1).id
+        project = Project.search([("name", "ilike", value), ("active", "=", True)], limit=1)
+        return project.id if project else None
+
+    @api.model
+    def _resolve_activity_type(self, value, model=None):
+        """Resolve a mail.activity.type by name."""
+        if isinstance(value, int):
+            return value
+        if not value:
+            # Default to 'To-Do' activity type
+            activity_type = self.env["mail.activity.type"].search([("name", "ilike", "Todo")], limit=1)
+            if not activity_type:
+                activity_type = self.env["mail.activity.type"].search([], limit=1)
+            return activity_type.id if activity_type else None
+        activity_type = self.env["mail.activity.type"].search([("name", "ilike", value)], limit=1)
+        return activity_type.id if activity_type else None
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Core Odoo Module — Task Write Handlers
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _handle_task_complete(self, intent_data, resolved_data, action_log):
+        """Mark a task as done by moving it to a folded (done) stage."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        task_name = params.get("task_name") or params.get("name")
+        task_id = params.get("task_id") or resolved_data.get("task_id")
+
+        Task = self.env["project.task"]
+        if task_id:
+            task = Task.browse(int(task_id))
+        elif task_name:
+            # Search in the calling user's tasks
+            task = Task.search([
+                ("name", "ilike", task_name),
+                ("user_ids", "in", [self.env.uid]),
+                ("stage_id.fold", "=", False),
+            ], limit=1)
+        else:
+            return {"success": False, "error": "Please specify a task name to complete."}
+
+        if not task.exists():
+            return {"success": False, "error": f"Task '{task_name}' not found."}
+
+        # Find a done/folded stage for this project
+        done_stage = self.env["project.task.type"].search([
+            ("fold", "=", True),
+            ("project_ids", "in", [task.project_id.id] if task.project_id else []),
+        ], limit=1)
+        if not done_stage:
+            # Fall back to any global done stage
+            done_stage = self.env["project.task.type"].search([("fold", "=", True)], limit=1)
+
+        if not done_stage:
+            return {"success": False, "error": "No 'Done' stage found in this project."}
+
+        # Snapshot for undo
+        Snapshot = self.env["dojo.ai.undo.snapshot"]
+        Snapshot.create_snapshot(action_log.id, "project.task", task.id, "write",
+                                  snapshot_data={"stage_id": task.stage_id.id})
+
+        task.write({"stage_id": done_stage.id})
+        return {
+            "success": True,
+            "message": f"Marked '{task.name}' as done.",
+            "data": {"task_id": task.id, "task_name": task.name, "stage": done_stage.name},
+        }
+
+    @api.model
+    def _handle_task_update(self, intent_data, resolved_data, action_log):
+        """Update a task's deadline, assignee, or add a note."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        task_name = params.get("task_name") or params.get("name")
+        task_id = params.get("task_id") or resolved_data.get("task_id")
+
+        Task = self.env["project.task"]
+        if task_id:
+            task = Task.browse(int(task_id))
+        elif task_name:
+            task = Task.search([
+                ("name", "ilike", task_name),
+                ("user_ids", "in", [self.env.uid]),
+                ("stage_id.fold", "=", False),
+            ], limit=1)
+        else:
+            return {"success": False, "error": "Please specify a task name to update."}
+
+        if not task.exists():
+            return {"success": False, "error": f"Task '{task_name}' not found."}
+
+        values = {}
+        old_values = {}
+
+        # Deadline update
+        new_deadline = params.get("date_deadline") or params.get("deadline")
+        if new_deadline:
+            old_values["date_deadline"] = str(task.date_deadline) if task.date_deadline else None
+            try:
+                values["date_deadline"] = fields.Date.from_string(new_deadline) if isinstance(new_deadline, str) else new_deadline
+            except Exception:
+                pass
+
+        # Add a chatter note
+        note = params.get("note") or params.get("message")
+        if note:
+            task.message_post(body=note)
+
+        if values:
+            Snapshot = self.env["dojo.ai.undo.snapshot"]
+            Snapshot.create_snapshot(action_log.id, "project.task", task.id, "write", snapshot_data=old_values)
+            task.write(values)
+
+        updated = list(values.keys()) + (["note"] if note else [])
+        return {
+            "success": True,
+            "message": f"Updated task '{task.name}'.",
+            "data": {"task_id": task.id, "task_name": task.name, "updated_fields": updated},
+        }
