@@ -164,6 +164,13 @@ class DojoClassSession(models.Model):
                 raise UserError("Only cancelled sessions can be reset to draft.")
         self.write({"state": "draft"})
 
+    def action_reopen(self):
+        """Done → Open (reopen a completed session for changes)."""
+        for session in self:
+            if session.state != "done":
+                raise UserError("Only completed sessions can be reopened.")
+        self.write({"state": "open"})
+
     def action_open_attendance_wizard(self):
         """Open the quick attendance marking wizard for this session."""
         self.ensure_one()

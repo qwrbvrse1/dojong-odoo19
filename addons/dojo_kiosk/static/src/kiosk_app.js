@@ -1488,9 +1488,14 @@ class InstructorRosterTile extends Component {
 
 class InstructorSessionCard extends Component {
     static template = xml`
-        <div class="k-session-card">
+        <div t-attf-class="k-session-card #{props.session.state === 'done' ? 'k-session-card--done' : ''}">
             <div class="k-session-card__header">
-                <div class="k-session-card__title" t-esc="props.session.template_name"/>
+                <div class="k-session-card__title">
+                    <t t-esc="props.session.template_name"/>
+                    <t t-if="props.session.state === 'done'">
+                        <span class="k-session-card__done-badge">✓ Done</span>
+                    </t>
+                </div>
                 <div class="k-session-card__meta">
                     <span class="k-session-card__time">
                         <t t-esc="formatTime(props.session.start)"/> – <t t-esc="formatTime(props.session.end)"/>
@@ -1526,33 +1531,45 @@ class InstructorSessionCard extends Component {
             </t>
 
             <div class="k-session-card__footer">
-                <button class="k-btn k-session-action k-session-action--assign"
-                    t-on-click="() => props.onAssignRoster(props.session)">
-                    👥 Assign Roster
-                </button>
-                <button class="k-btn k-session-action k-session-action--edit"
-                    t-on-click="() => props.onEdit(props.session)">
-                    ✎ Edit
-                </button>
-                <button t-attf-class="k-btn k-session-action #{hasPending() ? 'k-session-action--done-blocked' : 'k-session-action--done'}"
-                    t-att-title="hasPending() ? 'All members must have attendance recorded before marking done' : 'Close this session'"
-                    t-on-click="() => props.onClose(props.session.id)">
-                    ✓ Mark Done
-                    <t t-if="hasPending()">
-                        <span class="k-session-action--done-pending-badge" title="Pending attendance remaining">
-                            <t t-esc="pendingCount()"/>
-                        </span>
-                    </t>
-                </button>
-                <button class="k-btn k-session-action k-session-action--delete"
-                    t-on-click="() => props.onDelete(props.session.id)">
-                    🗑 Delete
-                </button>
+                <t t-if="props.session.state === 'done'">
+                    <button class="k-btn k-session-action k-session-action--reopen"
+                        t-on-click="() => props.onReopen(props.session.id)">
+                        ↺ Reopen
+                    </button>
+                    <button class="k-btn k-session-action k-session-action--delete"
+                        t-on-click="() => props.onDelete(props.session.id)">
+                        🗑 Delete
+                    </button>
+                </t>
+                <t t-else="">
+                    <button class="k-btn k-session-action k-session-action--assign"
+                        t-on-click="() => props.onAssignRoster(props.session)">
+                        👥 Assign Roster
+                    </button>
+                    <button class="k-btn k-session-action k-session-action--edit"
+                        t-on-click="() => props.onEdit(props.session)">
+                        ✎ Edit
+                    </button>
+                    <button t-attf-class="k-btn k-session-action #{hasPending() ? 'k-session-action--done-blocked' : 'k-session-action--done'}"
+                        t-att-title="hasPending() ? 'All members must have attendance recorded before marking done' : 'Close this session'"
+                        t-on-click="() => props.onClose(props.session.id)">
+                        ✓ Mark Done
+                        <t t-if="hasPending()">
+                            <span class="k-session-action--done-pending-badge" title="Pending attendance remaining">
+                                <t t-esc="pendingCount()"/>
+                            </span>
+                        </t>
+                    </button>
+                    <button class="k-btn k-session-action k-session-action--delete"
+                        t-on-click="() => props.onDelete(props.session.id)">
+                        🗑 Delete
+                    </button>
+                </t>
             </div>
         </div>
     `;
 
-    static props = ["session", "roster", "loading", "onMark", "onProfile", "onRemoveAttendance", "onClose", "onDelete", "onEdit", "onAssignRoster"];
+    static props = ["session", "roster", "loading", "onMark", "onProfile", "onRemoveAttendance", "onClose", "onReopen", "onDelete", "onEdit", "onAssignRoster"];
     static components = { InstructorRosterTile };
     formatTime(dt) { return formatTime(dt); }
 
@@ -2629,8 +2646,8 @@ class KioskApp extends Component {
                             title="Switch to Instructor Mode">🥋</button>
                     </t>
                     <!-- Reload -->
-                    <button class="k-header__action-btn" t-on-click="reloadSessions" title="Reload">
-                        <span class="material-symbols-outlined" style="font-size:20px;">sync</span>
+                    <button class="k-header__action-btn" t-on-click="reloadSessions" title="Reload" t-att-disabled="state.reloading">
+                        <span class="material-symbols-outlined" t-attf-style="font-size:20px;#{state.reloading ? 'animation:k-spin .6s linear infinite;' : ''}">sync</span>
                     </button>
                     <!-- Settings -->
                     <button class="k-header__action-btn" t-on-click="openSettings" title="Settings"><span class="material-symbols-outlined" style="font-size:20px;">settings</span></button>
@@ -2680,7 +2697,7 @@ class KioskApp extends Component {
                     <t t-if="!filteredSessions().length">
                         <div class="k-empty">
                             <div class="k-empty__icon">📅</div>
-                            <div class="k-empty__text">No open sessions today</div>
+                            <div class="k-empty__text">No sessions today</div>
                             <button class="k-btn k-btn--primary" style="margin-top:16px;"
                                 t-on-click="openCreateSession">
                                 ➕ Create Session
@@ -2704,6 +2721,7 @@ class KioskApp extends Component {
                                     onProfile="(memberId, sessionId) => this.openProfile(memberId, sessionId)"
                                     onRemoveAttendance="(memberId, sessionId) => this.promptRemoveAttendance(memberId, sessionId)"
                                     onClose="(sessionId) => this.closeSessionById(sessionId)"
+                                    onReopen="(sessionId) => this.reopenSessionById(sessionId)"
                                     onDelete="(sessionId) => this.deleteSessionById(sessionId)"
                                     onEdit="(session) => this.openEditSession(session)"
                                     onAssignRoster="(session) => this.openAssignRoster(session)"/>
@@ -2864,6 +2882,7 @@ class KioskApp extends Component {
             instructorMode: false,
             showPin: false,
             sessionDoneError: null,
+            reloading: false,
             profileMember: null,
             profileSessionId: null,
             removeAttendancePending: null,
@@ -2967,8 +2986,13 @@ class KioskApp extends Component {
     }
 
     async reloadSessions() {
-        await this._loadSessions(this.state.filterDate || null);
-        if (this.state.instructorMode) this._loadAllSessionRosters();
+        this.state.reloading = true;
+        try {
+            await this._loadSessions(this.state.filterDate || null);
+            if (this.state.instructorMode) this._loadAllSessionRosters();
+        } finally {
+            this.state.reloading = false;
+        }
     }
 
     filteredSessions() {
@@ -3362,10 +3386,26 @@ class KioskApp extends Component {
                 return;
             }
             this.state.sessionDoneError = null;
-            delete this.state.sessionRosters[sessionId];
             await this._loadSessions(this.state.filterDate || null);
         } catch (e) {
             console.error("Kiosk: close session failed", e);
+        }
+    }
+
+    async reopenSessionById(sessionId) {
+        try {
+            const result = await jsonPost("/kiosk/instructor/session/reopen", { session_id: sessionId });
+            if (!result.success) {
+                this.state.sessionDoneError = result.error || "Could not reopen session.";
+                clearTimeout(this._doneErrorTimer);
+                this._doneErrorTimer = setTimeout(() => { this.state.sessionDoneError = null; }, 6000);
+                return;
+            }
+            this.state.sessionDoneError = null;
+            await this._loadSessions(this.state.filterDate || null);
+            this._loadSessionRoster(sessionId);
+        } catch (e) {
+            console.error("Kiosk: reopen session failed", e);
         }
     }
 

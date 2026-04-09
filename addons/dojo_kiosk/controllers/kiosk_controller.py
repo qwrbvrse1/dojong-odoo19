@@ -362,6 +362,19 @@ class KioskController(http.Controller):
         return svc.close_session(session_id)
 
     @http.route(
+        "/kiosk/instructor/session/reopen",
+        type="jsonrpc", auth="public", methods=["POST"], csrf=False,
+    )
+    def kiosk_session_reopen(self, session_id=None, token=None, **kw):
+        if not session_id:
+            return {"success": False, "error": "session_id is required."}
+        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        if guard is not None:
+            return guard
+        svc = request.env["dojo.kiosk.service"].sudo()
+        return svc.reopen_session(session_id)
+
+    @http.route(
         "/kiosk/instructor/session/delete",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )

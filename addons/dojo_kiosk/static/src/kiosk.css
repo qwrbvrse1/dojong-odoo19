@@ -1060,6 +1060,32 @@ select { background: var(--k-surface-2); }
 }
 .k-session-action--delete:hover { background: var(--k-danger); color: #fff; }
 
+/* Done session card — muted appearance */
+.k-session-card--done {
+    opacity: 0.65;
+    border-color: var(--k-success);
+    border-left: 4px solid var(--k-success);
+}
+.k-session-card--done:hover { opacity: 0.85; }
+.k-session-card__done-badge {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--k-success);
+    background: var(--k-success-dim);
+    border-radius: var(--k-radius-pill);
+    padding: 2px 10px;
+    vertical-align: middle;
+    letter-spacing: 0.03em;
+}
+.k-session-action--reopen {
+    background: var(--k-accent-dim);
+    color: var(--k-accent);
+    border-color: var(--k-accent);
+}
+.k-session-action--reopen:hover { background: var(--k-accent); color: #fff; }
+
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    7. MEMBER PROFILE MODAL

@@ -121,5 +121,5 @@ class DojoClassSession(models.Model):
             "res_model": "dojo.send.message.wizard",
             "view_mode": "form",
             "target": "new",
-            "context": {"default_member_ids": [(6, 0, member_ids)]},
+            "context": {"default_member_ids": member_ids},
         }

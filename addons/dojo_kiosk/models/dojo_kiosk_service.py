@@ -9,6 +9,7 @@ import pytz
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError
+from odoo.tools import html2plaintext
 
 # Module-level rate limit state: {key: {"attempts": int, "locked_until": datetime|None}}
 # Protected by _PIN_ATTEMPTS_LOCK for thread safety within a single worker.
@@ -47,7 +48,7 @@ class DojoKioskService(models.AbstractModel):
         config = self.validate_token(token)
         sessions = self.get_todays_sessions()
         announcements = [
-            {"id": a.id, "title": a.title or "", "body": a.body or ""}
+            {"id": a.id, "title": a.title or "", "body": html2plaintext(a.body or "").strip()}
             for a in config.announcement_ids.filtered("active")
         ]
         return {
@@ -262,7 +263,7 @@ class DojoKioskService(models.AbstractModel):
     def get_announcements(self, token):
         config = self.validate_token(token)
         return [
-            {"id": a.id, "title": a.title or "", "body": a.body or ""}
+            {"id": a.id, "title": a.title or "", "body": html2plaintext(a.body or "").strip()}
             for a in config.announcement_ids.filtered("active")
         ]
 
@@ -300,7 +301,7 @@ class DojoKioskService(models.AbstractModel):
         today_end = tz.localize(today_end_local).astimezone(pytz.utc).replace(tzinfo=None)
 
         sessions = self.env["dojo.class.session"].search([
-            ("state", "=", "open"),
+            ("state", "in", ("open", "done")),
             ("start_datetime", ">=", fields.Datetime.to_string(today_start)),
             ("start_datetime", "<=", fields.Datetime.to_string(today_end)),
             ("company_id", "in", [self.env.company.id, False]),
@@ -311,6 +312,7 @@ class DojoKioskService(models.AbstractModel):
             result.append({
                 "id": s.id,
                 "name": s.name,
+                "state": s.state,
                 "template_name": s.template_id.name if s.template_id else "",
                 "program_name": s.template_id.program_id.name if (s.template_id and s.template_id.program_id) else "",
                 "is_trial": s.template_id.program_id.is_trial if (s.template_id and s.template_id.program_id) else False,
@@ -1012,6 +1014,17 @@ class DojoKioskService(models.AbstractModel):
             }
 
         session.state = "done"
+        return {"success": True}
+
+    @api.model
+    def reopen_session(self, session_id):
+        """Re-open a session that was previously marked done."""
+        session = self.env["dojo.class.session"].browse(session_id)
+        if not session.exists():
+            return {"success": False, "error": "Session not found."}
+        if session.state != "done":
+            return {"success": False, "error": "Only done sessions can be reopened."}
+        session.state = "open"
         return {"success": True}
 
     @api.model
