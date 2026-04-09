@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_connect_ai_agent_admin,connect.ai.agent admin,dojo_connect_ai.model_connect_ai_agent,connect.group_connect_admin,1,1,1,1
+access_connect_ai_agent_user,connect.ai.agent user,dojo_connect_ai.model_connect_ai_agent,connect.group_connect_user,1,0,0,0
+access_connect_ai_agent_webhook,connect.ai.agent webhook,dojo_connect_ai.model_connect_ai_agent,connect.group_connect_webhook,1,0,0,0
+access_connect_ai_tools_webhook,connect.ai.tools webhook,dojo_connect_ai.model_connect_ai_tools,connect.group_connect_webhook,1,1,1,0
+access_connect_ai_tools_admin,connect.ai.tools admin,dojo_connect_ai.model_connect_ai_tools,connect.group_connect_admin,1,1,1,1
