@@ -82,7 +82,17 @@ class DojoBeltPromotionWizard(models.TransientModel):
         MemberRank = self.env["dojo.member.rank"]
         instructor = self.test_id.instructor_profile_id if self.test_id else False
         promoted = 0
+        skipped = 0
         for line in self.line_ids.filtered(lambda l: l.do_promote):
+            # Skip if this rank already exists for the member in the same program
+            existing = MemberRank.search_count([
+                ("member_id", "=", line.member_id.id),
+                ("rank_id", "=", line.target_rank_id.id),
+                ("program_id", "=", self.program_id.id),
+            ])
+            if existing:
+                skipped += 1
+                continue
             MemberRank.create({
                 "member_id": line.member_id.id,
                 "rank_id": line.target_rank_id.id,
@@ -96,8 +106,8 @@ class DojoBeltPromotionWizard(models.TransientModel):
             "tag": "display_notification",
             "params": {
                 "title": "Promotions Applied",
-                "message": f"{promoted} member(s) promoted successfully.",
-                "type": "success",
+                "message": f"{promoted} member(s) promoted.{f' {skipped} skipped (already held rank).' if skipped else ''}",
+                "type": "success" if promoted else "warning",
                 "sticky": False,
                 "next": {"type": "ir.actions.act_window_close"},
             },

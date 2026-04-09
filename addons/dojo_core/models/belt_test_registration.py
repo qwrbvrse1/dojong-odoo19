@@ -53,8 +53,17 @@ class DojoBeltTestRegistration(models.Model):
 
     def action_award_rank(self):
         """Create a dojo.member.rank record for passing registrations."""
+        MemberRank = self.env["dojo.member.rank"]
         for reg in self.filtered(lambda r: r.result == "pass"):
-            self.env["dojo.member.rank"].create(
+            # Skip if this rank already exists for the member in the same program
+            existing = MemberRank.search_count([
+                ("member_id", "=", reg.member_id.id),
+                ("rank_id", "=", reg.target_rank_id.id),
+                ("program_id", "=", reg.test_id.program_id.id or False),
+            ])
+            if existing:
+                continue
+            MemberRank.create(
                 {
                     "member_id": reg.member_id.id,
                     "rank_id": reg.target_rank_id.id,

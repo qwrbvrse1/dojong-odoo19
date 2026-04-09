@@ -1302,6 +1302,18 @@ class DojoKioskService(models.AbstractModel):
         if not rank.exists():
             return {"success": False, "error": "Rank not found."}
 
+        # Check if this rank already exists for the member in the same program
+        domain = [
+            ("member_id", "=", member.id),
+            ("rank_id", "=", rank.id),
+        ]
+        if program_id:
+            domain.append(("program_id", "=", program_id))
+        else:
+            domain.append(("program_id", "=", False))
+        if self.env["dojo.member.rank"].search_count(domain):
+            return {"success": False, "error": f"{member.name} already holds {rank.name} in this program."}
+
         vals = {
             "member_id": member.id,
             "rank_id": rank.id,
