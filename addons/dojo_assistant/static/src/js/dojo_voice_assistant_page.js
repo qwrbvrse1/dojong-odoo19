@@ -16,15 +16,19 @@
 import { Component, useState, onWillStart } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { rpc } from "@web/core/network/rpc";
+import { useService } from "@web/core/utils/hooks";
 
 class DojoVoiceAssistantPage extends Component {
     static template = "dojo_assistant.VoiceAssistantPage";
 
     setup() {
+        this.notification = useService("notification");
         this.state = useState({
             mode: "voice",              // "voice" | "text"
             isRecording: false,
             isProcessing: false,
+            ttsEnabled: false,
+            isSpeaking: false,
             textInput: "",
             transcribedText: "",
             aiResponse: "",
@@ -38,10 +42,13 @@ class DojoVoiceAssistantPage extends Component {
             historyPage: 0,
             historyTotal: 0,
             historyPerPage: 10,
+            // Rolling context window sent to LLM; reset when user clicks Clear Context
+            contextWindow: [],
         });
 
         this._mediaRecorder = null;
         this._audioChunks = [];
+        this._currentAudio = null;
 
         onWillStart(async () => {
             await this.loadHistory();
@@ -162,6 +169,7 @@ class DojoVoiceAssistantPage extends Component {
         try {
             const formData = new FormData();
             formData.append("audio", blob, "voice.webm");
+            formData.append("conversation_history", JSON.stringify(this.state.contextWindow));
 
             const resp = await fetch("/dojo/ai/voice", {
                 method: "POST",
@@ -169,11 +177,15 @@ class DojoVoiceAssistantPage extends Component {
                 credentials: "same-origin",
             });
 
-            if (!resp.ok) throw new Error("Server error " + resp.status);
-            const result = await resp.json();
+            let result;
+            try { result = await resp.json(); } catch (_) {}
+            if (!resp.ok || !result) {
+                const msg = result && result.error ? result.error : `Server error ${resp.status}`;
+                throw new Error(msg);
+            }
             this._handleResult(result, null);
         } catch (e) {
-            this.state.error = "Failed to process audio. Please try again.";
+            this.state.error = e.message || "Failed to process audio. Please try again.";
             console.error("[DojoAI] Audio error:", e);
         } finally {
             this.state.isProcessing = false;
@@ -194,7 +206,10 @@ class DojoVoiceAssistantPage extends Component {
         this.state.textInput = "";
 
         try {
-            const result = await rpc("/dojo/ai/text", { text: entered });
+            const result = await rpc("/dojo/ai/text", {
+                text: entered,
+                conversation_history: this.state.contextWindow,
+            });
             this._handleResult(result, entered);
         } catch (e) {
             this.state.error = "Failed to process command. Please try again.";
@@ -226,14 +241,61 @@ class DojoVoiceAssistantPage extends Component {
             this.state.sessionKey = result.session_key || null;
             this.state.confirmationPrompt = result.confirmation_prompt || result.response || "Please confirm this action.";
             this.state.aiResponse = "";
+            this._speakResponse(this.state.confirmationPrompt);
         } else if (result.state === "executed") {
             this.state.awaitingConfirmation = false;
             this.state.sessionKey = null;
             this.state.aiResponse = result.response || "Done!";
             this.state.undoAvailable = !!result.undo_available;
+            this._speakResponse(this.state.aiResponse);
+            // Update rolling context window
+            const userText = this.state.transcribedText || fallbackText || "";
+            if (userText) this.state.contextWindow.push({ role: "user", text: userText });
+            if (this.state.aiResponse) this.state.contextWindow.push({ role: "assistant", text: this.state.aiResponse });
+            if (this.state.contextWindow.length > 20) this.state.contextWindow.splice(0, this.state.contextWindow.length - 20);
             this.loadHistory();
         } else if (result.state === "error") {
             this.state.error = result.error || "An error occurred.";
+        }
+    }
+
+    toggleTts() {
+        this.state.ttsEnabled = !this.state.ttsEnabled;
+        if (!this.state.ttsEnabled && this._currentAudio) {
+            this._currentAudio.pause();
+            this._currentAudio = null;
+            this.state.isSpeaking = false;
+        }
+    }
+
+    async _speakResponse(text) {
+        if (!this.state.ttsEnabled || !text) return;
+        try {
+            const result = await rpc("/dojo/ai/speak", { text });
+            if (!result || !result.success) {
+                this.state.ttsEnabled = false;
+                this.notification.add(
+                    "🔇 Voice playback unavailable — " + (result && result.error ? result.error : "ElevenLabs TTS failed."),
+                    { type: "warning", sticky: true }
+                );
+                return;
+            }
+            const audio = new Audio("data:" + result.mime + ";base64," + result.audio_b64);
+            if (this._currentAudio) {
+                this._currentAudio.pause();
+            }
+            this._currentAudio = audio;
+            this.state.isSpeaking = true;
+            audio.onended = () => { this.state.isSpeaking = false; this._currentAudio = null; };
+            audio.onerror = () => { this.state.isSpeaking = false; this._currentAudio = null; };
+            audio.play().catch(() => { this.state.isSpeaking = false; this._currentAudio = null; });
+        } catch (err) {
+            this.state.isSpeaking = false;
+            this.state.ttsEnabled = false;
+            this.notification.add(
+                "🔇 Voice playback failed — " + (err.message || "unexpected error"),
+                { type: "warning", sticky: true }
+            );
         }
     }
 
@@ -316,6 +378,11 @@ class DojoVoiceAssistantPage extends Component {
 
     clearConversation() {
         this._clearResult();
+    }
+
+    clearContext() {
+        this.state.contextWindow = [];
+        this.notification.add("Context cleared — the AI will start fresh on your next message.", { type: "info", sticky: false });
     }
 
     setMode(mode) {

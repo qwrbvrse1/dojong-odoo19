@@ -83,6 +83,82 @@ class ResConfigSettings(models.TransientModel):
         help='Status of the last connection test to ElevenLabs API',
     )
 
+    # Voice picker — transient display-only; actual selection stored in elevenlabs_voice_id
+    elevenlabs_available_voices = fields.Text(
+        string='Available Voices (JSON)',
+        help='JSON list of voices fetched from ElevenLabs. Populated by "Load Voices" button.',
+    )
+
+    def action_fetch_elevenlabs_voices(self):
+        """Fetch available voices from ElevenLabs and store them for the voice picker."""
+        self.ensure_one()
+        api_key = self.elevenlabs_api_key or self.env['ir.config_parameter'].sudo().get_str('elevenlabs_connector.api_key')
+        if not api_key:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'No API Key',
+                    'message': 'Please enter your ElevenLabs API key first.',
+                    'type': 'warning',
+                    'sticky': False,
+                }
+            }
+        try:
+            service = self.env['elevenlabs.service']
+            voices = service.get_voices(api_key=api_key)
+            import json
+            self.env['ir.config_parameter'].sudo().set_param(
+                'elevenlabs_connector.available_voices',
+                json.dumps(voices)
+            )
+            count = len(voices)
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Voices Loaded',
+                    'message': f'{count} voice{"s" if count != 1 else ""} loaded. Select one below and save.',
+                    'type': 'success',
+                    'sticky': False,
+                }
+            }
+        except Exception as e:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Failed to Load Voices',
+                    'message': str(e),
+                    'type': 'danger',
+                    'sticky': True,
+                }
+            }
+
+    def _get_elevenlabs_voice_selection(self):
+        """Return Selection values from the cached voice list."""
+        import json
+        raw = self.env['ir.config_parameter'].sudo().get_str('elevenlabs_connector.available_voices') or '[]'
+        try:
+            voices = json.loads(raw)
+        except Exception:
+            voices = []
+        result = [(v['voice_id'], f"{v['name']} ({v['category']})" if v.get('category') else v['name']) for v in voices if v.get('voice_id')]
+        if not result:
+            result = [('21m00Tcm4TlvDq8ikWAM', 'Rachel — premade (load voices to see more)')]
+        return result
+
+    elevenlabs_voice_select = fields.Selection(
+        selection='_get_elevenlabs_voice_selection',
+        string='Voice',
+        help='Select a voice. Click "Load Voices" first to populate this list.',
+    )
+
+    @api.onchange('elevenlabs_voice_select')
+    def _onchange_elevenlabs_voice_select(self):
+        if self.elevenlabs_voice_select:
+            self.elevenlabs_voice_id = self.elevenlabs_voice_select
+
     def action_test_elevenlabs_connection(self):
         """Test connection to ElevenLabs API"""
         self.ensure_one()

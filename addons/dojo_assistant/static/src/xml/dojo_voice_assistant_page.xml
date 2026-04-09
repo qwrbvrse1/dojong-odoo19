@@ -9,7 +9,7 @@
                 <p class="text-muted">Voice &amp; text commands — powered by intent AI</p>
             </div>
 
-            <div class="d-flex justify-content-center mb-4">
+            <div class="d-flex justify-content-center align-items-center gap-3 mb-4">
                 <div class="btn-group" role="group">
                     <button t-attf-class="btn btn-sm #{state.mode === 'voice' ? 'btn-primary' : 'btn-outline-secondary'}"
                             t-on-click="() => this.setMode('voice')">
@@ -20,6 +20,19 @@
                         <i class="fa fa-keyboard-o me-1"/> Text
                     </button>
                 </div>
+                <button t-attf-class="btn btn-sm #{state.ttsEnabled ? 'btn-success' : 'btn-outline-secondary'}"
+                        t-on-click="toggleTts"
+                        title="Toggle AI voice responses (ElevenLabs)">
+                    <i t-attf-class="fa #{state.isSpeaking ? 'fa-volume-up' : 'fa-volume-off'} me-1"/>
+                    <t t-if="state.isSpeaking">Speaking…</t>
+                    <t t-elif="state.ttsEnabled">Voice On</t>
+                    <t t-else="">Voice Off</t>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary"
+                        t-on-click="clearContext"
+                        title="Clear conversation context (AI starts fresh on next message)">
+                    <i class="fa fa-eraser me-1"/> Clear Context
+                </button>
             </div>
 
             <!-- ── Voice Input ────────────────────────────────────────── -->

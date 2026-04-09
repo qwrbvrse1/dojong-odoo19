@@ -469,7 +469,7 @@ class AiAssistantService(models.AbstractModel):
     # ═══════════════════════════════════════════════════════════════════════════
 
     @api.model
-    def handle_command(self, text, role="instructor", input_type="text", audio_attachment_id=None, context=None):
+    def handle_command(self, text, role="instructor", input_type="text", audio_attachment_id=None, context=None, conversation_history=None):
         """
         Main entry point for the AI assistant.
         
@@ -482,6 +482,7 @@ class AiAssistantService(models.AbstractModel):
             input_type: 'text' or 'voice'
             audio_attachment_id: ID of stored audio attachment (for voice)
             context: Optional dict of additional context data
+            conversation_history: Optional list of {role, text} dicts for context chaining
         
         Returns:
             dict: {
@@ -497,7 +498,7 @@ class AiAssistantService(models.AbstractModel):
                 "error": str | None
             }
         """
-        return self.parse_and_confirm(text, role, input_type, audio_attachment_id)
+        return self.parse_and_confirm(text, role, input_type, audio_attachment_id, conversation_history=conversation_history)
 
     @api.model
     def handle_compound_command(self, compound_data, role="instructor"):
@@ -695,7 +696,7 @@ class AiAssistantService(models.AbstractModel):
         }
 
     @api.model
-    def parse_and_confirm(self, text, role="instructor", input_type="text", audio_attachment_id=None):
+    def parse_and_confirm(self, text, role="instructor", input_type="text", audio_attachment_id=None, conversation_history=None):
         """
         Phase 1: Parse natural language input into a structured intent.
         
@@ -707,6 +708,7 @@ class AiAssistantService(models.AbstractModel):
             role: User role (kiosk/instructor/admin)
             input_type: 'text' or 'voice'
             audio_attachment_id: ID of stored audio attachment (for voice)
+            conversation_history: Optional list of {role, text} dicts for context chaining
         
         Returns:
             dict: Standard response format (see handle_command)
@@ -714,6 +716,22 @@ class AiAssistantService(models.AbstractModel):
         text = (text or "").strip()
         if not text:
             return self._error_response("Please type or say something.")
+
+        # ── Inject conversation history into the prompt ──────────────────────────
+        if conversation_history:
+            turns = [
+                m for m in conversation_history[-10:]
+                if isinstance(m, dict)
+                and m.get("role") in ("user", "assistant", "ai")
+                and m.get("text")
+            ]
+            if turns:
+                history_lines = []
+                for m in turns:
+                    label = "User" if m["role"] == "user" else "Assistant"
+                    history_lines.append(f"{label}: {m['text']}")
+                history_block = "\n".join(history_lines)
+                text = f"[Conversation context]\n{history_block}\n\n[Current request]\n{text}"
 
         start_time = time.time()
 
@@ -944,6 +962,42 @@ class AiAssistantService(models.AbstractModel):
 
             # If read-only intent, auto-execute
             if not requires_confirmation:
+                # ── Conversational short-circuit for unknown intents ───────────────
+                # Instead of executing _handle_unknown (which returns a static error),
+                # use the LLM's conversational response.  If not already populated
+                # (e.g. OpenAI JSON-only path that never called process_conversational_query),
+                # make a conversational call now so the reply feels natural.
+                if intent_type == "unknown":
+                    if not response_text:
+                        try:
+                            conv_result = ai_proc.process_conversational_query(text, role, db_ctx)
+                            response_text = conv_result.get("response", "")
+                        except Exception:
+                            pass
+                    conversational_reply = response_text or (
+                        "I'm not quite sure how to help with that. Could you rephrase?"
+                    )
+                    execution_time_ms = int((time.time() - start_time) * 1000)
+                    log.log_execution(
+                        success=True,
+                        result={"success": True, "message": conversational_reply},
+                        execution_time_ms=execution_time_ms,
+                        is_undoable=False,
+                    )
+                    return {
+                        "success": True,
+                        "state": "executed",
+                        "session_key": log.session_key,
+                        "intent": intent_data,
+                        "auto_executed": True,
+                        "result": {"success": True, "message": conversational_reply},
+                        "response": conversational_reply,
+                        "confirmation_prompt": None,
+                        "resolved_data": {},
+                        "error": None,
+                    }
+                # ─────────────────────────────────────────────────────────────────
+
                 exec_result = self._execute_intent(intent_type, intent_data, resolved_data, log)
                 execution_time_ms = int((time.time() - start_time) * 1000)
 

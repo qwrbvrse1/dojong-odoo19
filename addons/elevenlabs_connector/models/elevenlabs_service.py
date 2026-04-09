@@ -127,6 +127,35 @@ class ElevenLabsService(models.AbstractModel):
             _logger.error('ElevenLabs connection test failed: %s', str(e), exc_info=True)
             raise UserError(f'Connection test failed: {str(e)}')
 
+    def get_voices(self, api_key=None):
+        """
+        Fetch all available voices from ElevenLabs.
+
+        Returns a list of dicts:
+            [{'voice_id': str, 'name': str, 'category': str}, ...]
+
+        Voices are sorted: 'premade' category last, then alphabetically by name.
+        """
+        try:
+            response = self._make_request('GET', self.ELEVENLABS_VOICES_ENDPOINT, api_key=api_key)
+            data = json.loads(response.text)
+            voices = data.get('voices', [])
+            result = []
+            for v in voices:
+                result.append({
+                    'voice_id': v.get('voice_id', ''),
+                    'name': v.get('name', 'Unknown'),
+                    'category': v.get('category', ''),
+                })
+            # Sort: own voices first (cloned/generated → category != 'premade'), then by name
+            result.sort(key=lambda v: (v['category'] == 'premade', v['name'].lower()))
+            return result
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error('ElevenLabs get_voices failed: %s', str(e), exc_info=True)
+            raise UserError(f'Failed to fetch voices: {str(e)}')
+
     def generate_speech(self, text, voice_id=None, language=None, model_id='eleven_multilingual_v2'):
         """
         Generate speech from text using ElevenLabs TTS API

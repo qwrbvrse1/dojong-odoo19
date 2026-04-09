@@ -43,7 +43,8 @@ export class DojoVoiceAssistant extends Component {
 
         this.state = useState({
             open: false,
-            messages: [],          // [{role, text, time}]
+            messages: [],          // [{role, text, time}] — grows forever, never cleared
+            contextWindow: [],     // [{role, text}] — rolling window sent to LLM; resets on new session
             input: "",
             recording: false,
             processing: false,
@@ -61,11 +62,13 @@ export class DojoVoiceAssistant extends Component {
         this._mediaRecorder = null;
         this._audioChunks   = [];
         this._stream        = null;
+        this._currentAudio  = null;
         this._recordTimeout     = null;
         this._speechSupported   = ('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window);
         this._recognition       = null;
         this._pendingTranscript = "";
         this._silenceTimer      = null;
+        this._hasBeenOpened     = false;  // tracks first open vs reopen
 
         onMounted(() => {
             // Keyboard shortcut: Ctrl+Shift+A to toggle panel
@@ -75,6 +78,7 @@ export class DojoVoiceAssistant extends Component {
         });
 
         onWillUnmount(() => {
+            if (this._currentAudio) { this._currentAudio.pause(); this._currentAudio = null; }
             if (this._recognition) {
                 this._recognition.abort();
                 this._recognition = null;
@@ -101,10 +105,16 @@ export class DojoVoiceAssistant extends Component {
 
     toggle() {
         this.state.open = !this.state.open;
-        if (this.state.open && this.state.messages.length === 0) {
-            this._pushMsg("assistant", "👋 Hi! I can help you look up students, check class schedules, or send messages to parents. What would you like to do?");
-        }
         if (this.state.open) {
+            if (!this._hasBeenOpened) {
+                // Very first open — show welcome
+                this._pushMsg("assistant", "👋 Hi! I can help you look up students, check class schedules, or send messages to parents. What would you like to do?");
+                this._hasBeenOpened = true;
+            } else {
+                // Reopen after close — start a new session in this window
+                this._pushDivider("── New Session ──");
+                this.state.contextWindow = [];
+            }
             setTimeout(() => this._scrollToBottom(), 60);
             setTimeout(() => this.inputRef.el && this.inputRef.el.focus(), 80);
         }
@@ -138,9 +148,13 @@ export class DojoVoiceAssistant extends Component {
         this._scrollToBottom();
 
         try {
-            const result = await rpc("/dojo/ai/text", { text });
+            const result = await rpc("/dojo/ai/text", {
+                text,
+                conversation_history: this.state.contextWindow,
+            });
             if (result.success) {
                 this._handleAiResult(result);
+                this._updateContextWindow(text, result.response || "");
             } else {
                 this._pushMsg("assistant", "⚠️ " + (result.error || "Unknown error."));
             }
@@ -304,6 +318,7 @@ export class DojoVoiceAssistant extends Component {
 
         const formData = new FormData();
         formData.append("audio", blob, "recording.webm");
+        formData.append("conversation_history", JSON.stringify(this.state.contextWindow));
 
         try {
             const resp = await fetch("/dojo/ai/voice", {
@@ -321,6 +336,7 @@ export class DojoVoiceAssistant extends Component {
                     lastUser.text = "🎙️ " + result.transcribed;
                 }
                 this._handleAiResult(result);
+                this._updateContextWindow(result.transcribed || "", result.response || "");
             } else {
                 this._pushMsg("assistant", "⚠️ " + (result.error || "Voice processing failed."));
             }
@@ -338,12 +354,9 @@ export class DojoVoiceAssistant extends Component {
         const text = result.response || "";
         if (text) this._pushMsg("assistant", text);
 
-        // Speak response if TTS is enabled
-        if (this.state.ttsEnabled && text && "speechSynthesis" in window) {
-            const utter = new SpeechSynthesisUtterance(text);
-            utter.rate = 1.05;
-            window.speechSynthesis.cancel(); // stop any in-progress speech
-            window.speechSynthesis.speak(utter);
+        // Speak response if TTS is enabled (ElevenLabs)
+        if (this.state.ttsEnabled && text) {
+            this._speakResponse(text);
         }
 
         // ── Two-phase confirmation (enroll, belt, etc.) ──────────────────────
@@ -478,7 +491,41 @@ export class DojoVoiceAssistant extends Component {
 
     toggleTts() {
         this.state.ttsEnabled = !this.state.ttsEnabled;
-        if (!this.state.ttsEnabled) window.speechSynthesis && window.speechSynthesis.cancel();
+        if (!this.state.ttsEnabled && this._currentAudio) {
+            this._currentAudio.pause();
+            this._currentAudio = null;
+        }
+        this.notification.add(
+            this.state.ttsEnabled ? "🔊 Voice responses ON" : "🔇 Voice responses OFF",
+            { type: "info", sticky: false }
+        );
+    }
+
+    async _speakResponse(text) {
+        if (!text) return;
+        try {
+            const result = await rpc("/dojo/ai/speak", { text });
+            if (!result || !result.success) {
+                this.state.ttsEnabled = false;
+                this.notification.add(
+                    "🔇 Voice playback unavailable — " + (result && result.error ? result.error : "ElevenLabs TTS failed."),
+                    { type: "warning", sticky: true }
+                );
+                return;
+            }
+            const audio = new Audio("data:" + result.mime + ";base64," + result.audio_b64);
+            if (this._currentAudio) this._currentAudio.pause();
+            this._currentAudio = audio;
+            audio.onended = () => { this._currentAudio = null; };
+            audio.onerror = () => { this._currentAudio = null; };
+            audio.play().catch(() => { this._currentAudio = null; });
+        } catch (err) {
+            this.state.ttsEnabled = false;
+            this.notification.add(
+                "🔇 Voice playback failed — " + (err.message || "unexpected error"),
+                { type: "warning", sticky: true }
+            );
+        }
     }
 
     // ── utils ─────────────────────────────────────────────────────────────────
@@ -486,7 +533,23 @@ export class DojoVoiceAssistant extends Component {
     _pushMsg(role, text) {
         this.state.messages.push({ role, text, time: nowLabel() });
     }
+    _pushDivider(text) {
+        this.state.messages.push({ role: "divider", text });
+    }
 
+    clearContext() {
+        this.state.contextWindow = [];
+        this._pushDivider("── Context Cleared ──");
+        this._scrollToBottom();
+    }
+
+    _updateContextWindow(userText, aiText) {
+        const cw = this.state.contextWindow;
+        if (userText) cw.push({ role: "user", text: userText });
+        if (aiText) cw.push({ role: "assistant", text: aiText });
+        // Cap at 20 items (10 turns)
+        if (cw.length > 20) cw.splice(0, cw.length - 20);
+    }
     _scrollToBottom() {
         if (this.endRef.el) {
             this.endRef.el.scrollIntoView({ behavior: "smooth" });

@@ -3,7 +3,7 @@
 import { Component, useState, onWillStart, onMounted, useRef } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { DojoVoiceAssistant } from "./voice_assistant";
+import { DojoVoiceAssistant } from "@dojo_assistant/js/voice_assistant";
 
 class AdminDashboard extends Component {
     static template = "dojo_core.AdminDashboard";

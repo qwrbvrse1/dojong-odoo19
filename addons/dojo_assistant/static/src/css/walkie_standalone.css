@@ -1,0 +1,524 @@
+/* ═══════════════════════════════════════════════════════════
+   Dojo AI Walkie-Talkie — Standalone page styles
+   Industrial dark UI — matches Kiosk design language.
+   Palette: true black + dojo red (#b41e16)
+   Self-contained; covers full page layout + PIN screen + UI.
+   All UI selectors scoped to .dojo-wt-* / .wt-*
+═══════════════════════════════════════════════════════════ */
+
+/* ── Page / reset ───────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    background: #000000;
+    color: #e8eaed;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+}
+
+.wt-app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* ── PIN screen ──────────────────────────────────────────── */
+
+.wt-pin-screen {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: #000000;
+}
+
+.wt-pin-card {
+    background: #0c0c0c;
+    border: 1px solid #272727;
+    border-radius: 12px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+}
+
+.wt-pin-card__icon {
+    font-size: 48px;
+    color: #b41e16;
+    margin-bottom: 8px;
+}
+
+.wt-pin-card__title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #e8eaed;
+    margin: 0;
+    text-align: center;
+    letter-spacing: -0.02em;
+}
+
+.wt-pin-card__sub {
+    font-size: 11px;
+    color: #4b5563;
+    margin: 0 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    font-weight: 600;
+}
+
+.wt-pin-card__label {
+    font-size: 14px;
+    color: #9aa0a6;
+    margin: 12px 0 4px;
+}
+
+.wt-pin-card__input-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.wt-pin-input {
+    flex: 1;
+    background: #141414;
+    border: 1.5px solid #272727;
+    border-radius: 8px;
+    color: #e8eaed;
+    font-size: 18px;
+    letter-spacing: 0.2em;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.18s;
+    text-align: center;
+}
+
+.wt-pin-input::placeholder {
+    color: #383838;
+    letter-spacing: normal;
+    font-size: 14px;
+}
+
+.wt-pin-input:focus {
+    border-color: #b41e16;
+}
+
+.wt-pin-input:disabled {
+    opacity: 0.5;
+}
+
+.wt-pin-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    border: none;
+    background: #b41e16;
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.18s, opacity 0.18s;
+}
+
+.wt-pin-btn:hover:not(:disabled) {
+    background: #8a1510;
+}
+
+.wt-pin-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.wt-pin-error {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: #fca5a5;
+    text-align: center;
+}
+
+/* ── Walkie-Talkie root ──────────────────────────────────── */
+
+.dojo-wt-root {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    background: #000000;
+    color: #e8eaed;
+    overflow: hidden;
+}
+
+/* ── Header — Dojo red, matches kiosk instructor header ── */
+
+.dojo-wt-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: #b41e16;
+    border-bottom: 1px solid #8a1510;
+    flex-shrink: 0;
+}
+
+.dojo-wt-header__logo {
+    font-size: 22px;
+    color: rgba(255,255,255,0.85);
+}
+
+.dojo-wt-header__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    flex: 1;
+    letter-spacing: -0.01em;
+}
+
+.dojo-wt-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 8px;
+}
+
+.dojo-wt-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 4px;
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    font-size: 14px;
+}
+
+.dojo-wt-icon-btn:hover {
+    background: rgba(255,255,255,0.30);
+    color: #fff;
+}
+
+.dojo-wt-header__status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+}
+
+.dojo-wt-header__status-text {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* Status dot */
+.dojo-wt-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.3s;
+}
+.dojo-wt-dot--idle       { background: rgba(255,255,255,0.35); }
+.dojo-wt-dot--recording  { background: #fff; animation: dojo-wt-pulse 0.9s infinite; }
+.dojo-wt-dot--processing { background: #f59e0b; animation: dojo-wt-pulse 0.9s infinite; }
+.dojo-wt-dot--speaking   { background: #22c55e; animation: dojo-wt-pulse 0.9s infinite; }
+
+/* ── Error banner ────────────────────────────────────────── */
+
+.dojo-wt-error {
+    background: rgba(180,30,22,0.18);
+    border-left: 3px solid #b41e16;
+    color: #fca5a5;
+    padding: 8px 16px;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+/* ── Conversation thread ─────────────────────────────────── */
+
+.dojo-wt-thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-behavior: smooth;
+    min-height: 0;
+    background: #000;
+}
+
+/* Empty state */
+.dojo-wt-empty {
+    margin: auto;
+    text-align: center;
+    color: #383838;
+    padding: 40px 20px;
+}
+.dojo-wt-empty__icon {
+    font-size: 52px;
+    margin-bottom: 16px;
+    display: block;
+    color: #272727;
+}
+.dojo-wt-empty__hint {
+    font-size: 15px;
+    color: #4b5563;
+    margin-bottom: 6px;
+}
+.dojo-wt-empty__tips {
+    font-size: 12px;
+    color: #374151;
+}
+
+/* Divider */
+.dojo-wt-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0;
+    font-size: 10px;
+    font-weight: 600;
+    color: #383838;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    white-space: nowrap;
+}
+.dojo-wt-divider::before,
+.dojo-wt-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #272727;
+}
+
+/* Bubbles */
+.dojo-wt-bubble {
+    display: flex;
+    flex-direction: column;
+    max-width: 78%;
+}
+.dojo-wt-bubble--user { align-self: flex-end; align-items: flex-end; }
+.dojo-wt-bubble--ai   { align-self: flex-start; align-items: flex-start; }
+
+.dojo-wt-bubble__body {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.55;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+/* User bubble — dojo red */
+.dojo-wt-bubble--user .dojo-wt-bubble__body {
+    background: #b41e16;
+    color: #fff;
+    border-bottom-right-radius: 3px;
+    flex-direction: row-reverse;
+}
+
+/* AI bubble — dark surface */
+.dojo-wt-bubble--ai .dojo-wt-bubble__body {
+    background: #141414;
+    color: #e8eaed;
+    border-bottom-left-radius: 3px;
+    border: 1px solid #272727;
+}
+
+.dojo-wt-bubble__icon {
+    font-size: 12px;
+    opacity: 0.55;
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.dojo-wt-bubble__time {
+    font-size: 10px;
+    color: #383838;
+    margin: 3px 4px 0;
+    letter-spacing: 0.03em;
+}
+
+/* Confirmation buttons */
+.dojo-wt-confirm-btns {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 0 2px;
+}
+
+.dojo-wt-btn {
+    padding: 7px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.02em;
+}
+.dojo-wt-btn:active  { transform: scale(0.96); }
+.dojo-wt-btn:disabled { opacity: 0.35; cursor: default; }
+
+.dojo-wt-btn--confirm { background: #188038; color: #fff; }
+.dojo-wt-btn--confirm:hover:not(:disabled) { background: #146c30; }
+
+.dojo-wt-btn--cancel { background: #1c1c1c; color: #9aa0a6; border: 1px solid #272727; }
+.dojo-wt-btn--cancel:hover:not(:disabled) { background: #272727; color: #e8eaed; }
+
+/* Thinking dots */
+.dojo-wt-thinking {
+    display: flex;
+    gap: 5px;
+    padding: 10px 14px;
+    align-self: flex-start;
+    background: #141414;
+    border: 1px solid #272727;
+    border-radius: 12px;
+    border-bottom-left-radius: 3px;
+}
+.dojo-wt-thinking__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #383838;
+    animation: dojo-wt-thinking 1.2s infinite;
+}
+.dojo-wt-thinking__dot:nth-child(2) { animation-delay: 0.2s; }
+.dojo-wt-thinking__dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ── Controls / PTT area ─────────────────────────────────── */
+
+.dojo-wt-controls {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 24px 32px;
+    background: #0c0c0c;
+    border-top: 1px solid #1c1c1c;
+    gap: 12px;
+}
+
+.dojo-wt-status-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    color: #4b5563;
+    margin: 0;
+    font-weight: 600;
+}
+
+/* PTT button — industrial ring style */
+.dojo-wt-ptt {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    border: 3px solid #1c1c1c;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #141414;
+    box-shadow: 0 4px 28px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+    transition: background 0.18s, border-color 0.18s, transform 0.1s, box-shadow 0.18s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    outline: none;
+}
+.dojo-wt-ptt:hover:not(:disabled) {
+    background: #1c1c1c;
+    border-color: #272727;
+    box-shadow: 0 6px 32px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Recording — dojo red */
+.dojo-wt-ptt:active,
+.dojo-wt-ptt--recording {
+    background: #b41e16 !important;
+    border-color: #8a1510 !important;
+    transform: scale(0.95);
+    box-shadow: 0 0 0 8px rgba(180,30,22,0.22), 0 4px 24px rgba(0,0,0,0.5);
+    animation: dojo-wt-ring-red 1.1s infinite;
+}
+
+/* Processing — amber */
+.dojo-wt-ptt--processing {
+    background: #92400e !important;
+    border-color: #78350f !important;
+    cursor: not-allowed;
+    animation: none;
+}
+
+/* Speaking — green */
+.dojo-wt-ptt--speaking {
+    background: #14532d !important;
+    border-color: #166534 !important;
+    cursor: not-allowed;
+    animation: dojo-wt-ring-green 1.4s infinite;
+}
+
+.dojo-wt-ptt:disabled { opacity: 0.6; }
+
+.dojo-wt-ptt__icon {
+    font-size: 44px;
+    color: #e8eaed;
+    pointer-events: none;
+}
+
+.dojo-wt-hint {
+    font-size: 12px;
+    color: #374151;
+    margin: 0;
+    text-align: center;
+    min-height: 18px;
+    letter-spacing: 0.02em;
+}
+.dojo-wt-hint strong { color: #6b7280; }
+
+/* ── Animations ──────────────────────────────────────────── */
+
+@keyframes dojo-wt-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.25; }
+}
+@keyframes dojo-wt-ring-red {
+    0%   { box-shadow: 0 0 0  4px rgba(180,30,22,0.40); }
+    70%  { box-shadow: 0 0 0 22px rgba(180,30,22,0.00); }
+    100% { box-shadow: 0 0 0  4px rgba(180,30,22,0.00); }
+}
+@keyframes dojo-wt-ring-green {
+    0%   { box-shadow: 0 0 0  4px rgba(24,128,56,0.40); }
+    70%  { box-shadow: 0 0 0 20px rgba(24,128,56,0.00); }
+    100% { box-shadow: 0 0 0  4px rgba(24,128,56,0.00); }
+}
+@keyframes dojo-wt-thinking {
+    0%, 60%, 100% { transform: translateY(0);    opacity: 0.35; }
+    30%            { transform: translateY(-5px); opacity: 1;    }
+}

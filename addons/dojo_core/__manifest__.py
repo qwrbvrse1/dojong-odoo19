@@ -55,8 +55,6 @@
             'dojo_core/static/src/js/admin_dashboard.js',
             'dojo_core/static/src/xml/member_profile.xml',
             'dojo_core/static/src/js/member_profile.js',
-            'dojo_core/static/src/xml/voice_assistant.xml',
-            'dojo_core/static/src/js/voice_assistant.js',
         ],
     },
 }

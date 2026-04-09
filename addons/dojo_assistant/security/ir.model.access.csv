@@ -3,3 +3,5 @@ access_dojo_ai_undo_snapshot,dojo.ai.undo.snapshot user,model_dojo_ai_undo_snaps
 access_ai_assistant_service,ai.assistant.service user,model_ai_assistant_service,base.group_user,1,1,1,0
 access_dojo_ai_intent_schema,dojo.ai.intent.schema user,model_dojo_ai_intent_schema,base.group_user,1,1,1,1
 access_dojo_ai_action_log,dojo.ai.action.log user,model_dojo_ai_action_log,base.group_user,1,1,1,0
+access_dojo_walkie_talkie_instructor,dojo.walkie.talkie instructor,model_dojo_walkie_talkie,dojo_core.group_dojo_instructor,1,0,0,0
+access_dojo_walkie_talkie_admin,dojo.walkie.talkie admin,model_dojo_walkie_talkie,dojo_core.group_dojo_admin,1,1,1,1
