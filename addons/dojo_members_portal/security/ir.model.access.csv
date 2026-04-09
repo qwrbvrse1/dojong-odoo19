@@ -1,1 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_account_move_dojo_parent,Dojo Parent: account.move read,account.model_account_move,dojo_core.group_dojo_parent_student,1,0,0,0
+access_account_move_line_dojo_parent,Dojo Parent: account.move.line read,account.model_account_move_line,dojo_core.group_dojo_parent_student,1,0,0,0
+access_account_payment_dojo_parent,Dojo Parent: account.payment read,account.model_account_payment,dojo_core.group_dojo_parent_student,1,0,0,0
+access_account_payment_term_dojo_parent,Dojo Parent: account.payment.term read,account.model_account_payment_term,dojo_core.group_dojo_parent_student,1,0,0,0

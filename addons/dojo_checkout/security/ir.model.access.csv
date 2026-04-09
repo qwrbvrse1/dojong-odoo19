@@ -1,4 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_dojo_checkout_config,dojo.checkout.config user,model_dojo_checkout_config,base.group_user,1,1,1,1
-access_dojo_checkout_session,dojo.checkout.session user,model_dojo_checkout_session,base.group_user,1,1,1,1
-access_dojo_checkout_upsell,dojo.checkout.upsell user,model_dojo_checkout_upsell,base.group_user,1,1,1,1

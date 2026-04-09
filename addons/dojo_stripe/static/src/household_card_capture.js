@@ -30,7 +30,7 @@ import { rpc } from "@web/core/network/rpc";
 
 class HouseholdCardCapture extends Component {
     static template = xml`
-        <div style="width: 100%; padding: 4px 0;">
+        <div style="width: 100%; padding: 4px 16px;">
 
             <!-- ── Billing contact banner ────────────────────────────────── -->
             <div t-if="props.action.params.guardian_name"

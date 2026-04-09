@@ -16,13 +16,36 @@ action_generate_invoice() result is returned unchanged (e-mail invoice path).
 
 Dunning (_handle_billing_failure) is called on immediate errors (tx.state
 becomes 'error' synchronously). Async failures are handled via webhooks.
+
+Connection failures (network timeouts, DNS errors, etc.) are NOT treated
+as billing failures — the daily cron will retry on the next cycle.
 """
 import logging
+import socket
 
 from odoo import _, models
 from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
+
+# Exceptions that indicate a transient connection problem (not a real decline).
+_CONNECTION_ERRORS = (
+    ConnectionError, TimeoutError, socket.timeout, socket.gaierror, OSError,
+)
+
+
+def _is_connection_error(exc):
+    """Return True if the exception chain indicates a transient connection failure."""
+    if isinstance(exc, _CONNECTION_ERRORS):
+        return True
+    cause = getattr(exc, '__cause__', None) or getattr(exc, '__context__', None)
+    if cause and isinstance(cause, _CONNECTION_ERRORS):
+        return True
+    msg = str(exc).lower()
+    return any(kw in msg for kw in (
+        'connection', 'timeout', 'timed out', 'unreachable',
+        'name resolution', 'temporary failure',
+    ))
 
 
 class DojoMemberSubscriptionStripe(models.Model):
@@ -57,6 +80,13 @@ class DojoMemberSubscriptionStripe(models.Model):
         try:
             tx = household.action_charge_invoice(invoice)
         except UserError as exc:
+            if _is_connection_error(exc):
+                _logger.warning(
+                    'Dojo Stripe: connection error charging invoice %s for subscription %s — '
+                    'will retry on next billing cycle: %s',
+                    invoice.name, self.id, exc,
+                )
+                return invoice  # Do NOT escalate dunning; cron retries tomorrow
             # e.g. "No saved Stripe payment method found" or "No active Stripe provider"
             _logger.warning(
                 'Dojo Stripe: could not charge invoice %s for subscription %s: %s',
@@ -65,6 +95,13 @@ class DojoMemberSubscriptionStripe(models.Model):
             self._handle_billing_failure(exc)
             return invoice
         except Exception as exc:
+            if _is_connection_error(exc):
+                _logger.warning(
+                    'Dojo Stripe: connection error charging invoice %s for subscription %s — '
+                    'will retry on next billing cycle: %s',
+                    invoice.name, self.id, exc,
+                )
+                return invoice  # Do NOT escalate dunning; cron retries tomorrow
             _logger.error(
                 'Dojo Stripe: unexpected error charging invoice %s for subscription %s: %s',
                 invoice.name, self.id, exc, exc_info=True,
@@ -116,6 +153,13 @@ class DojoMemberSubscriptionStripe(models.Model):
         try:
             tx = household.action_charge_invoice(invoice)
         except UserError as exc:
+            if _is_connection_error(exc):
+                _logger.warning(
+                    'Dojo Stripe: connection error charging consolidated invoice %s — '
+                    'will retry on next billing cycle: %s',
+                    invoice.name, exc,
+                )
+                return invoice
             _logger.warning(
                 'Dojo Stripe: could not charge consolidated invoice %s: %s',
                 invoice.name, exc,
@@ -124,6 +168,13 @@ class DojoMemberSubscriptionStripe(models.Model):
                 sub._handle_billing_failure(exc)
             return invoice
         except Exception as exc:
+            if _is_connection_error(exc):
+                _logger.warning(
+                    'Dojo Stripe: connection error charging consolidated invoice %s — '
+                    'will retry on next billing cycle: %s',
+                    invoice.name, exc,
+                )
+                return invoice
             _logger.error(
                 'Dojo Stripe: unexpected error charging consolidated invoice %s: %s',
                 invoice.name, exc, exc_info=True,

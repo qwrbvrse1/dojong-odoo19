@@ -141,8 +141,8 @@
                         <field name="students_total_count" readonly="1"/>
                     </group>
                     <group string="Last 30 Days">
-                        <field name="avg_fill_rate" readonly="1" widget="percentage"/>
-                        <field name="attendance_rate" readonly="1" widget="percentage"/>
+                        <field name="avg_fill_rate" readonly="1" string="Avg Fill Rate (%)"/>
+                        <field name="attendance_rate" readonly="1" string="Attendance Rate (%)"/>
                     </group>
                 </sheet>
             </form>
@@ -159,8 +159,8 @@
                 <field name="name"/>
                 <field name="sessions_today_count" string="Today"/>
                 <field name="students_total_count" string="Students"/>
-                <field name="avg_fill_rate" string="Fill Rate %" widget="percentage"/>
-                <field name="attendance_rate" string="Attendance %" widget="percentage"/>
+                <field name="avg_fill_rate" string="Fill Rate (%)"/>
+                <field name="attendance_rate" string="Attendance (%)"/>
             </list>
         </field>
     </record>
@@ -221,10 +221,10 @@
                     <!-- ── Performance ────────────────────────────────── -->
                     <group string="Performance — Last 30 Days">
                         <group>
-                            <field name="avg_fill_rate" readonly="1" widget="percentage" string="Avg Class Fill Rate"/>
+                            <field name="avg_fill_rate" readonly="1" string="Avg Class Fill Rate (%)"/>
                         </group>
                         <group>
-                            <field name="attendance_rate" readonly="1" widget="percentage" string="Attendance Rate"/>
+                            <field name="attendance_rate" readonly="1" string="Attendance Rate (%)"/>
                         </group>
                     </group>
 
