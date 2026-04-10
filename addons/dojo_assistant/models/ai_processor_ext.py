@@ -117,9 +117,28 @@ return an "intents" array instead of a single intent object:
   "reasoning": "<why you split into multiple intents>"
 }}
 
-Only use the "intents" array when the user's message contains two or more clearly distinct
-actions with separate targets (e.g. "enroll John AND text his guardian"). Never split a
+Only use the "intents" array when the user's message contains two or more clearly DIFFERENT
+action types (e.g. "check in John AND create a lead for Sarah"). Never split a
 single action with multiple parameters into compound intents. If in doubt, return a single intent.
+
+BULK OPERATIONS (same action, multiple targets):
+When the user wants the SAME action for multiple people, use a single intent with array parameters
+instead of compound intents. This is faster and handled as one confirmed batch:
+
+  "check in John, Mary, and Bob"
+      → {{"intent_type": "attendance_checkin", "parameters": {{"member_names": ["John", "Mary", "Bob"]}}, "confidence": 0.95}}
+
+  "check out Maria and Carlos"
+      → {{"intent_type": "attendance_checkout", "parameters": {{"member_names": ["Maria", "Carlos"]}}, "confidence": 0.95}}
+
+  "create leads for John Smith and Sarah Jones"
+      → {{"intent_type": "lead_create", "parameters": {{"contacts": [{{"contact_name": "John Smith"}}, {{"contact_name": "Sarah Jones"}}]}}, "confidence": 0.90}}
+
+  "create leads for John (555-1234) and Sarah (555-5678)"
+      → {{"intent_type": "lead_create", "parameters": {{"contacts": [{{"contact_name": "John", "phone": "555-1234"}}, {{"contact_name": "Sarah", "phone": "555-5678"}}]}}, "confidence": 0.90}}
+
+Use compound intents ONLY when the actions are different (e.g. "check in John AND text his guardian").
+Use bulk array params when the actions are the same (e.g. "check in John, Mary, Bob").
 
 User input: {user_input}
 """
@@ -195,6 +214,14 @@ AGGREGATE / STATS QUERY MAPPING — use these intents for count/summary question
   "all members", "list all students", "show everyone"
       → {{"intent_type": "member_lookup", "parameters": {{}}, "confidence": 0.88}}
 
+BIRTHDAY MAPPING:
+  "whose birthday is coming up", "upcoming birthdays", "birthdays this month"
+      → {{"intent_type": "birthday_upcoming", "parameters": {{"days": 30}}, "confidence": 0.92}}
+  "birthdays this week", "any birthdays soon"
+      → {{"intent_type": "birthday_upcoming", "parameters": {{"days": 7}}, "confidence": 0.92}}
+  "when is [name]'s birthday", "[name]'s birthday", "how old is [name]"
+      → {{"intent_type": "member_lookup", "parameters": {{"member_name": "..."}}, "confidence": 0.90}}
+
 CRM / LEAD PIPELINE MAPPING:
   "show leads", "who are our prospects", "find lead [name]", "look up [name] lead"
       → {{"intent_type": "lead_lookup", "parameters": {{"lead_name": "..."}}, "confidence": 0.90}}
@@ -260,6 +287,66 @@ ACTIVITY MAPPING:
       → {{"intent_type": "activity_list", "parameters": {{}}, "confidence": 0.90}}
   "schedule a follow-up with [name]", "add activity for", "remind me to call", "set a reminder"
       → {{"intent_type": "activity_create", "parameters": {{"summary": "...", "date_deadline": "..."}}, "confidence": 0.88}}
+
+PROGRAMS & COURSES MAPPING:
+  "what programs do we offer", "list programs", "show all programs"
+      → {{"intent_type": "program_list", "parameters": {{}}, "confidence": 0.92}}
+  "show courses", "list classes", "what courses are available", "class types"
+      → {{"intent_type": "class_template_list", "parameters": {{}}, "confidence": 0.90}}
+  "courses in [program]", "BJJ courses", "karate classes"
+      → {{"intent_type": "class_template_list", "parameters": {{"program_name": "..."}}, "confidence": 0.90}}
+
+BELT TEST MAPPING:
+  "when is the next belt test", "upcoming belt tests", "show belt tests"
+      → {{"intent_type": "belt_test_list", "parameters": {{}}, "confidence": 0.92}}
+  "belt tests for [program]", "TKD belt test schedule"
+      → {{"intent_type": "belt_test_list", "parameters": {{"program_name": "..."}}, "confidence": 0.90}}
+  "who is registered for the belt test", "who signed up for belt testing", "belt test registrations"
+      → {{"intent_type": "belt_test_registration_list", "parameters": {{}}, "confidence": 0.92}}
+  "is [name] registered for the belt test", "who's testing next"
+      → {{"intent_type": "belt_test_registration_list", "parameters": {{}}, "confidence": 0.90}}
+  IMPORTANT: "who is registered" or "who signed up" = belt_test_registration_list (READ).
+             "register [name] for belt test" = belt_test_register (WRITE). Do NOT confuse them.
+
+ENROLLMENT & ONBOARDING MAPPING:
+  "who is enrolled in [program]", "[name]'s enrollment", "show enrollments"
+      → {{"intent_type": "program_enrollment_lookup", "parameters": {{"program_name": "..."}}, "confidence": 0.90}}
+  "[name]'s onboarding status", "who hasn't finished onboarding", "onboarding progress"
+      → {{"intent_type": "onboarding_status", "parameters": {{}}, "confidence": 0.90}}
+  "is [name] onboarded", "where is [name] in onboarding"
+      → {{"intent_type": "onboarding_status", "parameters": {{"member_name": "..."}}, "confidence": 0.90}}
+
+POINTS & CREDITS MAPPING:
+  "how many points does [name] have", "[name]'s points", "points balance"
+      → {{"intent_type": "points_lookup", "parameters": {{"member_name": "..."}}, "confidence": 0.92}}
+  "[name]'s credits", "credit balance for [name]", "how many credits"
+      → {{"intent_type": "credit_lookup", "parameters": {{"member_name": "..."}}, "confidence": 0.92}}
+
+HOUSEHOLD MAPPING:
+  "[name]'s family", "who's in [name]'s household", "show household for [name]"
+      → {{"intent_type": "household_lookup", "parameters": {{"member_name": "..."}}, "confidence": 0.90}}
+
+SOCIAL MEDIA MAPPING:
+  "show recent posts", "social media posts", "what have we posted"
+      → {{"intent_type": "social_post_list", "parameters": {{}}, "confidence": 0.90}}
+  "any failed posts", "posts that failed", "social errors"
+      → {{"intent_type": "social_post_list", "parameters": {{"state": "error"}}, "confidence": 0.90}}
+
+AUTO-ENROLL RULES MAPPING:
+  "show auto-enroll rules", "who has auto-enroll", "list auto-enrollments"
+      → {{"intent_type": "course_auto_enroll_list", "parameters": {{}}, "confidence": 0.90}}
+  "[name]'s auto-enroll rules", "what is [name] auto-enrolled in"
+      → {{"intent_type": "course_auto_enroll_list", "parameters": {{"member_name": "..."}}, "confidence": 0.90}}
+
+AI CALLING CAMPAIGN MAPPING:
+  "show campaigns", "list campaigns", "what campaigns are running"
+      → {{"intent_type": "campaign_list", "parameters": {{}}, "confidence": 0.90}}
+  "active campaigns", "running campaigns"
+      → {{"intent_type": "campaign_list", "parameters": {{"state": "running"}}, "confidence": 0.90}}
+
+KIOSK ANNOUNCEMENT MAPPING:
+  "show kiosk announcements", "list announcements", "what's on the kiosk"
+      → {{"intent_type": "kiosk_announcement_list", "parameters": {{}}, "confidence": 0.90}}
 
 Example intent blocks for common queries:
   "What belt is Maria?"         → {{"intent_type": "belt_lookup", "parameters": {{"member_name": "Maria"}}, "confidence": 0.95}}

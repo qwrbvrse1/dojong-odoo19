@@ -12,12 +12,13 @@ const KIOSK_TOKEN = window.KIOSK_TOKEN || null;
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
-async function jsonPost(url, params = {}) {
+async function jsonPost(url, params = {}, { signal } = {}) {
     if (KIOSK_TOKEN) params = { token: KIOSK_TOKEN, ...params };
     const resp = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jsonrpc: "2.0", method: "call", params }),
+        signal,
     });
     const data = await resp.json();
     if (data.error) throw new Error(data.error.data?.message || data.error.message);
@@ -2283,7 +2284,11 @@ class KioskVoiceAssistant extends Component {
                                 <span class="k-ai-typing-dot"/>
                                 <span class="k-ai-typing-dot"/>
                                 <span class="k-ai-typing-dot"/>
+                                <t t-if="state.thinkingHint">
+                                    <div class="k-ai-thinking-hint">Still thinking… complex queries take a moment</div>
+                                </t>
                             </div>
+                            <button class="k-ai-cancel-btn" t-on-click="cancelAiRequest">Cancel</button>
                         </t>
                         <div t-ref="msgEnd"/>
                     </div>
@@ -2331,18 +2336,19 @@ class KioskVoiceAssistant extends Component {
             input: "",
             recording: false,
             processing: false,
+            thinkingHint: false,
             liveTranscript: "",
         });
         this._msgListRef = useRef("msgList");
-        this._msgEndRef  = useRef("msgEnd");
+        this._msgEndRef = useRef("msgEnd");
         this._mediaRecorder = null;
-        this._audioChunks   = [];
-        this._stream        = null;
+        this._audioChunks = [];
+        this._stream = null;
         this._recordTimeout = null;
-        this._speechSupported   = ('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window);
-        this._recognition       = null;
+        this._speechSupported = ('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window);
+        this._recognition = null;
         this._pendingTranscript = "";
-        this._silenceTimer      = null;
+        this._silenceTimer = null;
         this._lastRole = null;
         onWillUnmount(() => {
             if (this._recognition) {
@@ -2404,19 +2410,43 @@ class KioskVoiceAssistant extends Component {
         this._push("user", text);
         this.state.processing = true;
         this._scrollBottom();
-        try {
-            const result = await jsonPost("/kiosk/ai/text", { text, role: this._role });
-            if (result.success !== false) {
-                this._push("assistant", result.response || "Done.");
-            } else {
-                this._push("assistant", "⚠️ " + (result.error || "Unknown error."));
+
+        // Abort controller for timeout + cancel
+        this._abortCtrl = new AbortController();
+        const timeoutId = setTimeout(() => this._abortCtrl.abort(), 45000);
+
+        // "Still thinking" hint after 8s
+        const thinkId = setTimeout(() => {
+            if (this.state.processing) {
+                this.state.thinkingHint = true;
             }
-        } catch {
-            this._push("assistant", "⚠️ Network error — please try again.");
+        }, 8000);
+
+        try {
+            const result = await jsonPost("/kiosk/ai/text", { text, role: this._role }, { signal: this._abortCtrl.signal });
+            if (result.success !== false) {
+                this._push("assistant", result.response || "Sorry, I couldn't find an answer for that. Try rephrasing your question.");
+            } else {
+                this._push("assistant", "⚠️ " + (result.error || "Something went wrong. Please try again."));
+            }
+        } catch (err) {
+            if (err.name === "AbortError") {
+                this._push("assistant", "⚠️ That query took too long. Try a simpler question or break it into parts.");
+            } else {
+                this._push("assistant", "⚠️ Network error — please try again.");
+            }
         } finally {
+            clearTimeout(timeoutId);
+            clearTimeout(thinkId);
             this.state.processing = false;
+            this.state.thinkingHint = false;
+            this._abortCtrl = null;
             this._scrollBottom();
         }
+    }
+
+    cancelAiRequest() {
+        if (this._abortCtrl) this._abortCtrl.abort();
     }
 
     async toggleRecording() {
@@ -2430,13 +2460,13 @@ class KioskVoiceAssistant extends Component {
     async _startVoiceInput() {
         if (this._speechSupported) {
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            this._recognition           = new SR();
-            this._recognition.continuous     = true;
+            this._recognition = new SR();
+            this._recognition.continuous = true;
             this._recognition.interimResults = true;
-            this._recognition.lang           = "en-US";
-            this._pendingTranscript          = "";
-            this.state.liveTranscript        = "";
-            this.state.recording             = true;
+            this._recognition.lang = "en-US";
+            this._pendingTranscript = "";
+            this.state.liveTranscript = "";
+            this.state.recording = true;
 
             const resetSilenceTimer = () => {
                 if (this._silenceTimer) clearTimeout(this._silenceTimer);
@@ -2451,16 +2481,16 @@ class KioskVoiceAssistant extends Component {
                 for (let i = 0; i < event.results.length; i++) {
                     full += event.results[i][0].transcript;
                 }
-                this._pendingTranscript  = full;
+                this._pendingTranscript = full;
                 this.state.liveTranscript = full;
                 resetSilenceTimer();
             };
 
             this._recognition.onerror = (event) => {
                 if (this._silenceTimer) { clearTimeout(this._silenceTimer); this._silenceTimer = null; }
-                this._pendingTranscript   = "";
+                this._pendingTranscript = "";
                 this.state.liveTranscript = "";
-                this.state.recording      = false;
+                this.state.recording = false;
                 const msg = event.error === "not-allowed"
                     ? "⚠️ Microphone access denied."
                     : "⚠️ Voice recognition failed, please try again.";
@@ -2469,11 +2499,11 @@ class KioskVoiceAssistant extends Component {
 
             this._recognition.onend = () => {
                 if (this._silenceTimer) { clearTimeout(this._silenceTimer); this._silenceTimer = null; }
-                this.state.recording      = false;
+                this.state.recording = false;
                 this.state.liveTranscript = "";
                 const text = this._pendingTranscript.trim();
-                this._pendingTranscript   = "";
-                this._recognition         = null;
+                this._pendingTranscript = "";
+                this._recognition = null;
                 if (text) {
                     this._submitVoiceTranscript(text);
                 }
@@ -2567,7 +2597,7 @@ class KioskVoiceAssistant extends Component {
                 if (last && last.text === "🎙️ [voice message]" && result.transcribed) {
                     last.text = "🎙️ " + result.transcribed;
                 }
-                this._push("assistant", result.response || "Done.");
+                this._push("assistant", result.response || "Sorry, I couldn't find an answer for that. Try rephrasing your question.");
             } else {
                 this._push("assistant", "⚠️ " + (result.error || "Voice processing failed."));
             }

@@ -38,8 +38,8 @@ export class DojoVoiceAssistant extends Component {
 
     setup() {
         this.notification = useService("notification");
-        this.inputRef      = useRef("msgInput");
-        this.endRef        = useRef("msgEnd");
+        this.inputRef = useRef("msgInput");
+        this.endRef = useRef("msgEnd");
 
         this.state = useState({
             open: false,
@@ -48,6 +48,7 @@ export class DojoVoiceAssistant extends Component {
             input: "",
             recording: false,
             processing: false,
+            thinkingHint: false,
             ttsEnabled: false,     // auto-speak AI responses
             pendingAction: null,   // contact_parent action dict from AI
             actionSubject: "",
@@ -60,16 +61,16 @@ export class DojoVoiceAssistant extends Component {
         });
 
         this._mediaRecorder = null;
-        this._audioChunks   = [];
-        this._stream        = null;
-        this._currentAudio  = null;
-        this._recordTimeout     = null;
-        this._speechSupported   = ('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window);
-        this._recognition       = null;
+        this._audioChunks = [];
+        this._stream = null;
+        this._currentAudio = null;
+        this._recordTimeout = null;
+        this._speechSupported = ('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window);
+        this._recognition = null;
         this._pendingTranscript = "";
-        this._silenceTimer      = null;
-        this._hasBeenOpened     = false;  // tracks first open vs reopen
-        this._contextWindowMax  = 10;     // turns; overwritten by /dojo/ai/config on mount
+        this._silenceTimer = null;
+        this._hasBeenOpened = false;  // tracks first open vs reopen
+        this._contextWindowMax = 10;     // turns; overwritten by /dojo/ai/config on mount
 
         onMounted(() => {
             // Keyboard shortcut: Ctrl+Shift+A to toggle panel
@@ -154,6 +155,17 @@ export class DojoVoiceAssistant extends Component {
         this.state.processing = true;
         this._scrollToBottom();
 
+        // Abort controller for timeout + cancel
+        this._abortCtrl = new AbortController();
+        const timeoutId = setTimeout(() => this._abortCtrl.abort(), 45000);
+
+        // "Still thinking" hint after 8s
+        const thinkId = setTimeout(() => {
+            if (this.state.processing) {
+                this.state.thinkingHint = true;
+            }
+        }, 8000);
+
         try {
             const result = await rpc("/dojo/ai/text", {
                 text,
@@ -166,11 +178,23 @@ export class DojoVoiceAssistant extends Component {
                 this._pushMsg("assistant", "⚠️ " + (result.error || "Unknown error."));
             }
         } catch (err) {
-            this._pushMsg("assistant", "⚠️ Network error — please try again.");
+            if (this._abortCtrl && this._abortCtrl.signal.aborted) {
+                this._pushMsg("assistant", "⚠️ That query took too long. Try a simpler question or break it into parts.");
+            } else {
+                this._pushMsg("assistant", "⚠️ Network error — please try again.");
+            }
         } finally {
+            clearTimeout(timeoutId);
+            clearTimeout(thinkId);
             this.state.processing = false;
+            this.state.thinkingHint = false;
+            this._abortCtrl = null;
             this._scrollToBottom();
         }
+    }
+
+    cancelAiRequest() {
+        if (this._abortCtrl) this._abortCtrl.abort();
     }
 
     // ── voice recording ──────────────────────────────────────────────────────
@@ -188,12 +212,12 @@ export class DojoVoiceAssistant extends Component {
             // ── Chrome / Edge path ──
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
             this._recognition = new SR();
-            this._recognition.continuous      = true;
-            this._recognition.interimResults  = true;
-            this._recognition.lang            = "en-US";
-            this._pendingTranscript           = "";
-            this.state.liveTranscript         = "";
-            this.state.recording              = true;
+            this._recognition.continuous = true;
+            this._recognition.interimResults = true;
+            this._recognition.lang = "en-US";
+            this._pendingTranscript = "";
+            this.state.liveTranscript = "";
+            this.state.recording = true;
 
             const resetSilenceTimer = () => {
                 if (this._silenceTimer) clearTimeout(this._silenceTimer);
@@ -208,16 +232,16 @@ export class DojoVoiceAssistant extends Component {
                 for (let i = 0; i < event.results.length; i++) {
                     full += event.results[i][0].transcript;
                 }
-                this._pendingTranscript   = full;
+                this._pendingTranscript = full;
                 this.state.liveTranscript = full;
                 resetSilenceTimer();
             };
 
             this._recognition.onerror = (event) => {
                 if (this._silenceTimer) { clearTimeout(this._silenceTimer); this._silenceTimer = null; }
-                this._pendingTranscript   = "";
+                this._pendingTranscript = "";
                 this.state.liveTranscript = "";
-                this.state.recording      = false;
+                this.state.recording = false;
                 if (event.error === "not-allowed") {
                     this.notification.add("Microphone access denied.", { type: "warning" });
                 } else {
@@ -228,10 +252,10 @@ export class DojoVoiceAssistant extends Component {
 
             this._recognition.onend = () => {
                 if (this._silenceTimer) { clearTimeout(this._silenceTimer); this._silenceTimer = null; }
-                this.state.recording      = false;
+                this.state.recording = false;
                 this.state.liveTranscript = "";
                 const text = this._pendingTranscript.trim();
-                this._pendingTranscript   = "";
+                this._pendingTranscript = "";
                 if (text) {
                     this._submitVoiceTranscript(text);
                 }
@@ -359,7 +383,11 @@ export class DojoVoiceAssistant extends Component {
 
     _handleAiResult(result) {
         const text = result.response || "";
-        if (text) this._pushMsg("assistant", text);
+        if (text) {
+            this._pushMsg("assistant", text);
+        } else if (result.state !== "pending_confirmation") {
+            this._pushMsg("assistant", "Sorry, I couldn't find an answer for that. Try rephrasing your question.");
+        }
 
         // Speak response if TTS is enabled (ElevenLabs)
         if (this.state.ttsEnabled && text) {
@@ -382,11 +410,11 @@ export class DojoVoiceAssistant extends Component {
         // Handle contact_parent action (legacy)
         const action = result.action;
         if (action && action.type === "contact_parent" && !action.error) {
-            this.state.pendingAction  = action;
-            this.state.actionSubject  = action.suggested_subject || "Message from Dojo";
-            this.state.actionBody     = action.suggested_body || "";
-            this.state.actionEmail    = true;
-            this.state.actionSms      = true;
+            this.state.pendingAction = action;
+            this.state.actionSubject = action.suggested_subject || "Message from Dojo";
+            this.state.actionBody = action.suggested_body || "";
+            this.state.actionEmail = true;
+            this.state.actionSms = true;
         } else if (action && action.error) {
             this._pushMsg("assistant", "⚠️ " + action.error);
         }
@@ -394,10 +422,10 @@ export class DojoVoiceAssistant extends Component {
 
     // ── contact-parent confirmation card ─────────────────────────────────────
 
-    onActionSubjectChange(ev)  { this.state.actionSubject = ev.target.value; }
-    onActionBodyChange(ev)     { this.state.actionBody    = ev.target.value; }
-    onActionEmailChange(ev)    { this.state.actionEmail   = ev.target.checked; }
-    onActionSmsChange(ev)      { this.state.actionSms     = ev.target.checked; }
+    onActionSubjectChange(ev) { this.state.actionSubject = ev.target.value; }
+    onActionBodyChange(ev) { this.state.actionBody = ev.target.value; }
+    onActionEmailChange(ev) { this.state.actionEmail = ev.target.checked; }
+    onActionSmsChange(ev) { this.state.actionSms = ev.target.checked; }
 
     cancelAction() {
         this.state.pendingAction = null;
@@ -462,7 +490,7 @@ export class DojoVoiceAssistant extends Component {
                 session_key: pending.session_key,
                 confirmed: false,
             });
-        } catch (_) {}
+        } catch (_) { }
         this._pushMsg("assistant", "Action cancelled. Let me know if you need anything else.");
     }
 
@@ -473,11 +501,11 @@ export class DojoVoiceAssistant extends Component {
         this.state.processing = true;
         try {
             const result = await rpc("/dojo/ai/send_message", {
-                member_id:  action.member_id,
-                subject:    this.state.actionSubject,
-                body:       this.state.actionBody,
+                member_id: action.member_id,
+                subject: this.state.actionSubject,
+                body: this.state.actionBody,
                 send_email: this.state.actionEmail,
-                send_sms:   this.state.actionSms,
+                send_sms: this.state.actionSms,
             });
             this.state.pendingAction = null;
             if (result.success) {

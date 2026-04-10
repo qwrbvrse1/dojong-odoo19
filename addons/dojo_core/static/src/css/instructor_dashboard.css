@@ -14,15 +14,15 @@ html .o_web_client>.o_action_manager {
     font-family: inherit;
 
     /* ── Admin Dashboard design tokens ── */
-    --ad-primary:        #b41e16;
-    --ad-primary-light:  rgba(180,30,22,0.08);
-    --ad-surface:        #fcf8f8;
-    --ad-surface-low:    #f6f3f2;
-    --ad-surface-high:   #ebe7e7;
-    --ad-on-surface:     #1c1b1b;
-    --ad-secondary:      #5f5e5e;
-    --ad-border:         rgba(227,190,184,0.35);
-    --ad-shadow:         0 8px 32px rgba(28,27,27,0.04);
+    --ad-primary: #b41e16;
+    --ad-primary-light: rgba(180, 30, 22, 0.08);
+    --ad-surface: #fcf8f8;
+    --ad-surface-low: #f6f3f2;
+    --ad-surface-high: #ebe7e7;
+    --ad-on-surface: #1c1b1b;
+    --ad-secondary: #5f5e5e;
+    --ad-border: rgba(227, 190, 184, 0.35);
+    --ad-shadow: 0 8px 32px rgba(28, 27, 27, 0.04);
 }
 
 /* ── Page Header ──────────────────────────────────────────────── */
@@ -796,7 +796,7 @@ html .o_web_client>.o_action_manager {
     font-size: 0.8rem;
     padding: 8px 14px;
     border-radius: 6px;
-    border: 1px solid rgba(227,190,184,0.4);
+    border: 1px solid rgba(227, 190, 184, 0.4);
     background: var(--ad-surface-low);
     color: var(--ad-on-surface);
     cursor: pointer;
@@ -847,12 +847,12 @@ html .o_web_client>.o_action_manager {
 
 .o_ad_stat_chip {
     background: #fff;
-    border: 1px solid rgba(227,190,184,0.3);
+    border: 1px solid rgba(227, 190, 184, 0.3);
     border-left-width: 3px;
     border-radius: 8px;
     padding: 16px 12px;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(28,27,27,0.04);
+    box-shadow: 0 2px 8px rgba(28, 27, 27, 0.04);
     cursor: default;
     transition: background 0.12s ease;
 }
@@ -896,7 +896,9 @@ html .o_web_client>.o_action_manager {
 .o_ad_stat_purple,
 .o_ad_stat_red,
 .o_ad_stat_teal,
-.o_ad_stat_amber  { border-left-color: var(--ad-primary); }
+.o_ad_stat_amber {
+    border-left-color: var(--ad-primary);
+}
 
 /* ── Command Center ───────────────────────────────────────────── */
 .o_ad_section_label {
@@ -944,7 +946,7 @@ html .o_web_client>.o_action_manager {
     justify-content: center;
     color: var(--ad-primary);
     transition: background 0.3s ease, color 0.3s ease;
-    box-shadow: 0 4px 16px rgba(28,27,27,0.06);
+    box-shadow: 0 4px 16px rgba(28, 27, 27, 0.06);
 }
 
 .o_ad_quick_icon .material-symbols-outlined {
@@ -974,7 +976,7 @@ html .o_web_client>.o_action_manager {
 .o_ad_card {
     background: #fff;
     border-radius: 12px;
-    border: 1px solid rgba(227,190,184,0.3);
+    border: 1px solid rgba(227, 190, 184, 0.3);
     box-shadow: var(--ad-shadow);
     position: relative;
     overflow: hidden;
@@ -1930,6 +1932,42 @@ html .o_web_client>.o_action_manager {
     40% {
         transform: translateY(-6px);
     }
+}
+
+.dojo-va-thinking-hint {
+    font-size: 11px;
+    color: #9aa0a6;
+    margin-left: 8px;
+    white-space: nowrap;
+    animation: dojo-va-fade-in 0.5s ease;
+}
+
+@keyframes dojo-va-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.dojo-va-cancel-btn {
+    display: inline-block;
+    margin: 4px 0 4px 48px;
+    padding: 3px 14px;
+    font-size: 11px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dojo-va-cancel-btn:hover {
+    background: #ef4444;
+    color: #fff;
 }
 
 /* ── Contact-parent action card ──────────────────────────────── */
