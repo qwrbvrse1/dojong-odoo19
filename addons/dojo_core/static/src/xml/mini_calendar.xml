@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="dojo_core.MiniCalendar">
+    <div class="o_mc_root">
+
+        <!-- Month navigation -->
+        <div class="o_mc_nav">
+            <button class="o_mc_nav_btn" t-on-click="prevMonth" title="Previous month">
+                <i class="fa fa-chevron-left"/>
+            </button>
+            <span class="o_mc_month_label" t-out="monthName"/>
+            <button class="o_mc_nav_btn" t-on-click="nextMonth" title="Next month">
+                <i class="fa fa-chevron-right"/>
+            </button>
+        </div>
+
+        <!-- Day of week headers -->
+        <div class="o_mc_grid">
+            <div class="o_mc_dow">Su</div>
+            <div class="o_mc_dow">Mo</div>
+            <div class="o_mc_dow">Tu</div>
+            <div class="o_mc_dow">We</div>
+            <div class="o_mc_dow">Th</div>
+            <div class="o_mc_dow">Fr</div>
+            <div class="o_mc_dow">Sa</div>
+
+            <!-- Day cells -->
+            <t t-foreach="calendarDays" t-as="day" t-key="day.dateStr">
+                <div t-attf-class="o_mc_day{{ !day.inMonth ? ' o_mc_day_off' : '' }}{{ day.isToday ? ' o_mc_day_today' : '' }}{{ day.hasSession and day.inMonth ? ' o_mc_day_active' : '' }}">
+                    <span class="o_mc_day_num" t-out="day.dayNum"/>
+                    <t t-if="day.hasSession and day.inMonth">
+                        <span class="o_mc_dot"/>
+                    </t>
+                </div>
+            </t>
+        </div>
+
+        <!-- Footer -->
+        <div class="o_mc_footer">
+            <button class="o_mc_today_btn"
+                    t-att-disabled="isCurrentMonth ? 'disabled' : false"
+                    t-on-click="goToToday">
+                Today
+            </button>
+            <t t-if="props.onNavigateCalendar">
+                <button class="o_mc_full_btn" t-on-click="navigateCalendar">
+                    Full Calendar →
+                </button>
+            </t>
+        </div>
+
+    </div>
+</t>
+
+</templates>

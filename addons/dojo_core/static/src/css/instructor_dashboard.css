@@ -2386,3 +2386,171 @@ select.o_mp_form_control {
     color: #fff;
     border-color: #1a73e8;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI CALENDAR WIDGET  (.o_mc_*)
+═══════════════════════════════════════════════════════════════ */
+
+.o_mc_root {
+    padding: 8px 6px 4px;
+    user-select: none;
+}
+
+/* ── Navigation bar ─────────────────────────────────────────── */
+.o_mc_nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2px 10px;
+    gap: 4px;
+}
+
+.o_mc_month_label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #202124;
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.o_mc_nav_btn {
+    background: none;
+    border: none;
+    color: #5f6368;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 0.12s;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.o_mc_nav_btn:hover {
+    background: #f1f3f4;
+    color: #202124;
+}
+
+/* ── 7-column grid ───────────────────────────────────────────── */
+.o_mc_grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px 0;
+}
+
+.o_mc_dow {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #9aa0a6;
+    text-align: center;
+    padding: 0 0 6px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+/* ── Day cells ───────────────────────────────────────────────── */
+.o_mc_day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 0 2px;
+    min-height: 34px;
+    border-radius: 6px;
+    position: relative;
+    cursor: default;
+}
+
+.o_mc_day_num {
+    font-size: 0.76rem;
+    color: #202124;
+    line-height: 1;
+}
+
+/* Off-month (prev/next month overflow) */
+.o_mc_day_off .o_mc_day_num {
+    color: #dadce0;
+}
+
+/* Days that have sessions — subtle tint + bold number */
+.o_mc_day_active .o_mc_day_num {
+    color: #1a73e8;
+    font-weight: 600;
+}
+
+/* Today — circle badge */
+.o_mc_day_today .o_mc_day_num {
+    background: #1a73e8;
+    color: #fff !important;
+    font-weight: 700;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Session dot under the day number */
+.o_mc_dot {
+    display: block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #1a73e8;
+    margin-top: 2px;
+}
+
+.o_mc_day_today .o_mc_dot {
+    background: rgba(26, 115, 232, 0.45);
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.o_mc_footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 2px 2px;
+    margin-top: 6px;
+    border-top: 1px solid #f1f3f4;
+}
+
+.o_mc_today_btn,
+.o_mc_full_btn {
+    background: none;
+    border: none;
+    font-size: 0.76rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background 0.12s;
+}
+
+.o_mc_today_btn {
+    color: #5f6368;
+}
+
+.o_mc_today_btn:hover:not([disabled]) {
+    background: #f1f3f4;
+    color: #202124;
+}
+
+.o_mc_today_btn[disabled] {
+    color: #dadce0;
+    cursor: default;
+}
+
+.o_mc_full_btn {
+    color: #1a73e8;
+}
+
+.o_mc_full_btn:hover {
+    background: rgba(26, 115, 232, 0.08);
+}
+}

@@ -49,6 +49,8 @@
             'dojo_core/static/src/js/float_time_12h.js',
             'dojo_core/static/src/xml/float_time_12h.xml',
             'dojo_core/static/src/css/instructor_dashboard.css',
+            'dojo_core/static/src/js/mini_calendar.js',
+            'dojo_core/static/src/xml/mini_calendar.xml',
             'dojo_core/static/src/xml/instructor_dashboard.xml',
             'dojo_core/static/src/js/instructor_dashboard.js',
             'dojo_core/static/src/xml/admin_dashboard.xml',

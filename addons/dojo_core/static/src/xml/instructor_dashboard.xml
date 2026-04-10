@@ -142,6 +142,21 @@
             <!-- ── Content 2-col Grid ────────────────────────────────── -->
             <div class="o_di_content_grid">
 
+                <!-- Mini Calendar -->
+                <div class="o_di_card">
+                    <div class="o_di_card_header">
+                        <div class="o_di_card_title">
+                            <i class="fa fa-calendar me-1" style="color:#1a73e8"/>Calendar
+                        </div>
+                        <button class="o_di_view_btn" t-on-click="openCalendar">Full View</button>
+                    </div>
+                    <div class="o_di_card_body" style="max-height:none;overflow:visible">
+                        <MiniCalendar
+                            sessionDates="calendarSessionDates"
+                            onNavigateCalendar.bind="openCalendar"/>
+                    </div>
+                </div>
+
                 <!-- Today's Classes -->
                 <div class="o_di_card">
                     <div class="o_di_card_header">

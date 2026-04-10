@@ -5,10 +5,11 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { user } from "@web/core/user";
 import { DojoVoiceAssistant } from "@dojo_assistant/js/voice_assistant";
+import { MiniCalendar } from "@dojo_core/js/mini_calendar";
 
 class InstructorDashboard extends Component {
     static template = "dojo_core.InstructorDashboard";
-    static components = { DojoVoiceAssistant };
+    static components = { DojoVoiceAssistant, MiniCalendar };
 
     setup() {
         this.orm = useService("orm");
@@ -211,6 +212,21 @@ class InstructorDashboard extends Component {
     openMyStudents() { this.action.doAction("dojo_core.action_my_students"); }
     openCalendar() { this.action.doAction("dojo_core.action_my_sessions_calendar"); }
     openTodos() { this.action.doAction("dojo_core.action_my_todos"); }
+
+    /** Dates (YYYY-MM-DD) of all loaded sessions for the mini calendar dots */
+    get calendarSessionDates() {
+        const dates = new Set();
+        const extractDate = dt => dt ? dt.slice(0, 10) : null;
+        for (const s of this.state.sessionsToday) {
+            const d = extractDate(s.start_datetime);
+            if (d) dates.add(d);
+        }
+        for (const s of this.state.upcomingSessions) {
+            const d = extractDate(s.start_datetime);
+            if (d) dates.add(d);
+        }
+        return [...dates];
+    }
     openKiosk() {
         this.action.doAction({
             type: "ir.actions.act_window",

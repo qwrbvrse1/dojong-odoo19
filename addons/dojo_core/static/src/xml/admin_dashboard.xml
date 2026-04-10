@@ -166,7 +166,23 @@
 
         <!-- ── Content 2-col Grid ────────────────────────────────── -->
         <div class="o_di_content_grid o_ad_content_grid">
-
+            <!-- Mini Calendar -->
+            <div class="o_ad_card">
+                <div class="o_ad_card_header">
+                    <div>
+                        <div class="o_ad_card_title">
+                            <span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;color:#1a73e8">calendar_month</span>
+                            Calendar
+                        </div>
+                    </div>
+                    <button class="o_ad_view_btn" t-on-click="openCalendar">Full View</button>
+                </div>
+                <div class="o_di_card_body" style="max-height:none;overflow:visible">
+                    <MiniCalendar
+                        sessionDates="calendarSessionDates"
+                        onNavigateCalendar.bind="openCalendar"/>
+                </div>
+            </div>
             <!-- Instructor Performance -->
             <div class="o_ad_card">
                 <div class="o_ad_watermark">STAFF</div>
