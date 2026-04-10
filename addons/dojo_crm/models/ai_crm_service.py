@@ -35,7 +35,31 @@ class AiAssistantServiceCrm(models.AbstractModel):
             domain.append(("mobile", "ilike", phone))
 
         if not domain:
-            return {"success": False, "message": "Please provide a name, email, or phone to search."}
+            # No search criteria — return recent/new leads instead of an error
+            from datetime import datetime, timedelta
+            cutoff = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+            domain = [("create_date", ">=", cutoff), ("active", "=", True)]
+            leads = self.env["crm.lead"].search(domain, limit=10, order="create_date desc")
+            if not leads:
+                return {"success": True, "message": "No new leads in the last 30 days.", "data": []}
+            data = []
+            for lead in leads:
+                data.append({
+                    "id": lead.id,
+                    "name": lead.name,
+                    "contact_name": lead.contact_name,
+                    "email": lead.email_from,
+                    "phone": lead.phone,
+                    "stage": lead.stage_id.name,
+                    "score": lead.dojo_lead_score,
+                    "trial_attended": lead.trial_attended,
+                    "is_converted": lead.is_converted,
+                })
+            return {
+                "success": True,
+                "message": f"Found {len(data)} new lead(s) in the last 30 days.",
+                "data": data,
+            }
 
         leads = self.env["crm.lead"].search(domain, limit=10)
         if not leads:
@@ -194,8 +218,42 @@ class AiAssistantServiceCrm(models.AbstractModel):
             return {"success": False, "message": f"Conversion failed: {exc}"}
 
     def _handle_lead_create(self, intent_data, resolved_data, action_log=None):
-        """Create a new CRM lead (prospect)."""
+        """Create a new CRM lead (prospect), supports batch via 'contacts' list."""
         params = intent_data.get("parameters", {}) if intent_data else {}
+
+        # ── Batch mode: contacts list ──────────────────────────────────────
+        contacts = params.get("contacts") or []
+        if isinstance(contacts, list) and len(contacts) > 1:
+            first_stage = self.env["crm.stage"].search([], order="sequence asc", limit=1)
+            results = []
+            for contact in contacts:
+                name = contact.get("contact_name") or contact.get("name") or ""
+                if not name:
+                    results.append({"name": "Unknown", "success": False, "error": "No name provided"})
+                    continue
+                vals = {
+                    "name": f"Trial - {name}",
+                    "contact_name": name,
+                    "phone": contact.get("phone", ""),
+                    "email_from": contact.get("email", ""),
+                }
+                if first_stage:
+                    vals["stage_id"] = first_stage.id
+                lead = self.env["crm.lead"].create(vals)
+                if action_log:
+                    self.env["dojo.ai.undo.snapshot"].create_snapshot(
+                        action_log.id, "crm.lead", lead.id, "create"
+                    )
+                results.append({"name": name, "success": True, "id": lead.id})
+            success_count = sum(1 for r in results if r["success"])
+            return {
+                "success": success_count > 0,
+                "bulk": True,
+                "message": f"Created {success_count}/{len(results)} new leads.",
+                "results": results,
+            }
+
+        # ── Single mode (existing behaviour) ──────────────────────────────
         contact_name = params.get("contact_name") or params.get("name")
         if not contact_name:
             return {"success": False, "message": "Please provide the prospect's name."}

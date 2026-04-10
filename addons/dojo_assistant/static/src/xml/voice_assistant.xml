@@ -89,8 +89,12 @@
                     </div>
                     <div class="dojo-va-msg-bubble dojo-va-typing">
                         <span/><span/><span/>
+                        <t t-if="state.thinkingHint">
+                            <div class="dojo-va-thinking-hint">Still thinking… complex queries take a moment</div>
+                        </t>
                     </div>
                 </div>
+                <button class="dojo-va-cancel-btn" t-on-click="cancelAiRequest">Cancel</button>
             </t>
 
             <!-- General Intent Confirmation Card (enroll, belt, etc.) -->
