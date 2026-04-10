@@ -266,6 +266,11 @@
                             string="Cancel"
                             class="btn-secondary"
                             invisible="state in ('done', 'cancelled')"/>
+                    <button name="action_reopen"
+                            type="object"
+                            string="Reopen"
+                            class="btn-secondary"
+                            invisible="state != 'done'"/>
                     <button name="action_reset_draft"
                             type="object"
                             string="Reset to Draft"

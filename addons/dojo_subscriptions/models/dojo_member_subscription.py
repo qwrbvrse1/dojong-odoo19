@@ -139,6 +139,30 @@ class SaleSubscription(models.Model):
             return from_date + relativedelta(years=1)
         return from_date + relativedelta(months=1)
 
+    def _cancel_unpaid_invoices(self):
+        """Cancel all posted but unpaid invoices linked to this subscription.
+
+        Called when a subscription expires or is cancelled so
+        stale invoices cannot be paid after the subscription ends.
+        """
+        self.ensure_one()
+        invoices = (self.invoice_ids | self.household_invoice_ids).filtered(
+            lambda inv: inv.state == 'posted'
+            and inv.payment_state in ('not_paid', 'partial')
+        )
+        for inv in invoices.sudo():
+            try:
+                inv.button_cancel()
+                _logger.info(
+                    'Dojo billing: cancelled unpaid invoice %s for expired subscription %s.',
+                    inv.name, self.id,
+                )
+            except Exception:
+                _logger.warning(
+                    'Dojo billing: could not cancel invoice %s for subscription %s.',
+                    inv.name, self.id, exc_info=True,
+                )
+
     # ── Invoice generation ────────────────────────────────────────────────
     def _build_invoice_lines(self, today=None):
         """Build invoice line command vals for one billing period and advance recurring_next_date."""
@@ -178,7 +202,10 @@ class SaleSubscription(models.Model):
         )
         if is_first_invoice and plan.initial_fee and plan.initial_fee > 0:
             fee_vals = {
-                'name': '{} – Enrollment Fee'.format(plan.name),
+                'name': '{} – Enrollment Fee ({})'.format(
+                    plan.name,
+                    self.member_id.name if self.member_id else '',
+                ),
                 'quantity': 1.0,
                 'price_unit': plan.initial_fee,
             }
@@ -188,8 +215,9 @@ class SaleSubscription(models.Model):
                 fee_vals['account_id'] = account.id
             line_vals.append((0, 0, fee_vals))
         recurring_vals = {
-            'name': '{} – {} Membership ({})'.format(
+            'name': '{} – {} Membership ({}) — {}'.format(
                 plan.name, period_label, date_range,
+                self.member_id.name if self.member_id else '',
             ),
             'quantity': 1.0,
             'price_unit': plan.price,
@@ -348,6 +376,8 @@ class SaleSubscription(models.Model):
             )
             if rec.member_id:
                 rec.member_id.sudo().write({'membership_state': 'cancelled'})
+            # Cancel any unpaid invoices so the customer cannot pay stale ones
+            rec._cancel_unpaid_invoices()
 
     def action_set_expired(self):
         expired_reason = self.env.ref(
@@ -359,6 +389,8 @@ class SaleSubscription(models.Model):
             )
             if rec.member_id:
                 rec.member_id.sudo().write({'membership_state': 'cancelled'})
+            # Cancel any unpaid invoices so the customer cannot pay stale ones
+            rec._cancel_unpaid_invoices()
 
     def action_set_draft(self):
         stage = self._get_stage_by_type("draft")

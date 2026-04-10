@@ -30,11 +30,13 @@
                 </div>
             </div>
             <div class="dojo-va-header-actions">
-                <button class="dojo-va-icon-btn"
-                        t-attf-class="dojo-va-icon-btn {{ state.ttsEnabled ? 'dojo-va-icon-btn--active' : '' }}"
+                <button t-attf-class="dojo-va-icon-btn {{ state.ttsEnabled ? 'dojo-va-icon-btn--active' : '' }}"
                         t-on-click="toggleTts"
-                        title="Toggle voice responses">
-                    <i class="fa fa-volume-up"/>
+                        t-att-title="state.ttsEnabled ? 'Voice responses ON — click to mute' : 'Voice responses OFF — click to enable'">
+                    <i t-attf-class="fa {{ state.ttsEnabled ? 'fa-volume-up' : 'fa-volume-off' }}"/>
+                </button>
+                <button class="dojo-va-icon-btn" t-on-click="clearContext" title="Clear conversation context">
+                    <i class="fa fa-eraser"/>
                 </button>
                 <button class="dojo-va-icon-btn" t-on-click="close" title="Close">
                     <i class="fa fa-times"/>
@@ -46,7 +48,10 @@
         <div class="dojo-va-messages">
 
             <t t-foreach="state.messages" t-as="msg" t-key="msg_index">
-                <div t-attf-class="dojo-va-msg {{ msg.role === 'user' ? 'dojo-va-msg--user' : 'dojo-va-msg--assistant' }}">
+                <div t-if="msg.role === 'divider'" class="dojo-va-divider">
+                    <t t-out="msg.text"/>
+                </div>
+                <div t-else="" t-attf-class="dojo-va-msg {{ msg.role === 'user' ? 'dojo-va-msg--user' : 'dojo-va-msg--assistant' }}">
                     <t t-if="msg.role === 'assistant'">
                         <div class="dojo-va-msg-avatar">
                             <img src="/dojo_assistant/static/src/img/uft-logo.png" alt="AI"/>
@@ -84,8 +89,12 @@
                     </div>
                     <div class="dojo-va-msg-bubble dojo-va-typing">
                         <span/><span/><span/>
+                        <t t-if="state.thinkingHint">
+                            <div class="dojo-va-thinking-hint">Still thinking… complex queries take a moment</div>
+                        </t>
                     </div>
                 </div>
+                <button class="dojo-va-cancel-btn" t-on-click="cancelAiRequest">Cancel</button>
             </t>
 
             <!-- General Intent Confirmation Card (enroll, belt, etc.) -->

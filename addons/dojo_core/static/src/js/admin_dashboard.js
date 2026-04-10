@@ -3,11 +3,12 @@
 import { Component, useState, onWillStart, onMounted, useRef } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { DojoVoiceAssistant } from "./voice_assistant";
+import { DojoVoiceAssistant } from "@dojo_assistant/js/voice_assistant";
+import { MiniCalendar } from "@dojo_core/js/mini_calendar";
 
 class AdminDashboard extends Component {
     static template = "dojo_core.AdminDashboard";
-    static components = { DojoVoiceAssistant };
+    static components = { DojoVoiceAssistant, MiniCalendar };
 
     setup() {
         this.orm = useService("orm");
@@ -161,6 +162,13 @@ class AdminDashboard extends Component {
     openTodaysSessions() { this.action.doAction("dojo_core.action_all_sessions_today"); }
     openCalendar() { this.action.doAction("dojo_core.action_all_sessions_calendar"); }
     openInstructorKpis() { this.action.doAction("dojo_core.action_all_instructor_kpis"); }
+
+    /** Dates (YYYY-MM-DD) of recent sessions for the mini calendar dots */
+    get calendarSessionDates() {
+        return [...new Set(
+            this.state.recentSessions.map(s => s.date).filter(Boolean)
+        )];
+    }
     openInvoices() {
         this.action.doAction({
             type: "ir.actions.act_window",

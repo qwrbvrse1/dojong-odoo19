@@ -36,6 +36,10 @@
         'dojo_core',
         'base',
         'mail',
+        'calendar',
+        'sms',
+        'mass_mailing',
+        'mass_mailing_sms',
         'elevenlabs_connector',
     ],
     'data': [
@@ -46,9 +50,14 @@
     ],
     'assets': {
         'web.assets_backend': [
+            'dojo_assistant/static/src/xml/voice_assistant.xml',
+            'dojo_assistant/static/src/js/voice_assistant.js',
             'dojo_assistant/static/src/css/dojo_voice_assistant_page.css',
             'dojo_assistant/static/src/xml/dojo_voice_assistant_page.xml',
             'dojo_assistant/static/src/js/dojo_voice_assistant_page.js',
+            'dojo_assistant/static/src/css/walkie_talkie.css',
+            'dojo_assistant/static/src/xml/walkie_talkie.xml',
+            'dojo_assistant/static/src/js/walkie_talkie.js',
         ],
     },
     'demo': [],

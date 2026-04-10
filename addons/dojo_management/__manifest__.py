@@ -43,7 +43,7 @@ Key Features:
         'report/dojo_reports.xml',
         'data/demo_data.xml',
     ],
-    'installable': True,
+    'installable': False,  # kept as reference only
     'application': True,
     'price': 59.99,
     'currency': 'EUR',

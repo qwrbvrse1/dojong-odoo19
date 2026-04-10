@@ -52,7 +52,8 @@
                         <field name="subscription_start_date"
                                invisible="create_subscription == False"/>
                     </group>
-                    <group string="Payment Method">
+                    <group string="Payment Method"
+                           invisible="create_household == False and household_id != False">
                         <field name="payment_captured" invisible="1"/>
                         <field name="skip_payment" invisible="1"/>
                         <field name="stripe_card_display" invisible="1"/>

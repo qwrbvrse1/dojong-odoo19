@@ -28,8 +28,8 @@
                         <field name="message_body" widget="html" colspan="2"/>
                     </group>
                     <p class="text-muted">
-                        Messages are sent to the primary guardian of each member's household,
-                        or directly to the member if no household is configured.
+                        For minors, messages are sent to the primary guardian only.
+                        For adults, messages are sent to both the member and the guardian (if any).
                     </p>
                 </sheet>
                 <footer>

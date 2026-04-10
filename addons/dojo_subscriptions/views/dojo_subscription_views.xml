@@ -158,11 +158,6 @@
                         type="object"
                         string="Pause"
                         invisible="state != 'active'"/>
-                <button name="action_set_cancelled"
-                        type="object"
-                        string="Cancel"
-                        invisible="state in ('cancelled', 'expired')"
-                        confirm="Cancel this subscription? This cannot be easily undone."/>
                 <button name="action_set_draft"
                         type="object"
                         string="Reset to Draft"

@@ -33,6 +33,12 @@ class DojoClassSession(models.Model):
         partner_ids = []
         if self.instructor_profile_id and self.instructor_profile_id.partner_id:
             partner_ids.append(self.instructor_profile_id.partner_id.id)
+        # Add enrolled students' partners
+        enrolled = self.enrollment_ids.filtered(lambda e: e.status == 'registered')
+        for enr in enrolled:
+            pid = enr.member_id.partner_id.id if enr.member_id.partner_id else False
+            if pid and pid not in partner_ids:
+                partner_ids.append(pid)
         vals = {
             "name": name,
             "start": self.start_datetime,

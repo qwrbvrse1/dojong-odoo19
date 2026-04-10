@@ -57,16 +57,26 @@ class DojoSendMessageWizard(models.TransientModel):
         sent_sms = 0
         failed = 0
 
-        # Collect unique guardian partners
+        # Collect unique recipient partners.
+        # Minors  → guardian only (primary guardian of the household).
+        # Adults  → both the member AND the guardian (if a household exists).
         partner_map = {}  # partner_id → res.partner record
         for member in self.member_ids:
             household = member.partner_id.parent_id
-            if household.is_household and household.primary_guardian_id:
-                partner = household.primary_guardian_id
+            has_guardian = household.is_household and household.primary_guardian_id
+
+            if member.partner_id.is_minor:
+                # Minor — send only to guardian
+                if has_guardian:
+                    partner_map.setdefault(household.primary_guardian_id.id, household.primary_guardian_id)
+                else:
+                    partner_map.setdefault(member.partner_id.id, member.partner_id)
             else:
-                partner = member.partner_id
-            if partner.id not in partner_map:
-                partner_map[partner.id] = partner
+                # Adult — send to the member directly
+                partner_map.setdefault(member.partner_id.id, member.partner_id)
+                # …and also to the guardian if one exists
+                if has_guardian:
+                    partner_map.setdefault(household.primary_guardian_id.id, household.primary_guardian_id)
 
         for partner in partner_map.values():
             try:

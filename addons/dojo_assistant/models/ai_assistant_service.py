@@ -35,12 +35,12 @@ _ACTION_END = "##END_ACTION##"
 _MIN_CONFIDENCE = 0.7
 
 # ─── Compound command configuration ──────────────────────────────────────────
-_MAX_COMPOUND_CHAIN = 5
+_MAX_COMPOUND_CHAIN = 10
 
 _COMPOUND_SIGNALS = re.compile(
     r'\band\s+then\b'
     r'|\b(?:and|then)\s+(?:also\s+)?'
-    r'(?:enroll|create|cancel|text|send|add|remove|promote|check|schedule'
+    r'(?:enroll|create|cancel|text|send|add|remove|promote|check\s+(?:in|out)|schedule'
     r'|look|show|find|book|register|get|update|message|list|display)',
     re.IGNORECASE
 )
@@ -61,6 +61,21 @@ _AUTO_EXECUTE_INTENTS = {
     "lead_lookup",
     "pipeline_summary",
     "trial_schedule",
+    # New read intents
+    "belt_test_list",
+    "belt_test_registration_list",
+    "program_list",
+    "class_template_list",
+    "social_post_list",
+    "program_enrollment_lookup",
+    "onboarding_status",
+    "points_lookup",
+    "credit_lookup",
+    "household_lookup",
+    "course_auto_enroll_list",
+    "campaign_list",
+    "kiosk_announcement_list",
+    "birthday_upcoming",
     "unknown",
 }
 
@@ -94,6 +109,23 @@ _KNOWN_INTENT_TYPES = {
     "belt_test_registration_create", "marketing_card_create",
     "kiosk_announcement_create", "course_auto_enroll_create",
     "compound_chain",
+    # ── New read intents ────────────────────────────────────────────────────
+    "belt_test_list", "belt_test_registration_list", "program_list", "class_template_list",
+    "social_post_list", "program_enrollment_lookup", "onboarding_status",
+    "points_lookup", "credit_lookup", "household_lookup",
+    "course_auto_enroll_list", "campaign_list", "kiosk_announcement_list",
+    "birthday_upcoming",
+    # ── Core Odoo module intents ────────────────────────────────────────────
+    # Tasks / Project
+    "task_list", "task_create", "task_complete", "task_update",
+    # Calendar
+    "calendar_event_list", "calendar_event_create", "calendar_event_cancel",
+    # Direct communication
+    "send_email", "send_sms", "email_blast", "sms_blast",
+    # Invoicing (read-only)
+    "invoice_lookup", "invoice_list",
+    # Activities
+    "activity_create", "activity_list",
 }
 
 # ─── Intent Handler Configuration (for generic read handler) ──────────────────
@@ -109,7 +141,10 @@ _INTENT_HANDLER_CONFIG = {
     "member_lookup": {
         "model": "dojo.member",
         "domain_builder": "_domain_member_lookup",
-        "fields": ["id", "name", "email", "phone", "current_rank_id", "membership_state"],
+        "fields": ["id", "name", "email", "phone", "current_rank_id", "membership_state",
+                   "date_of_birth",
+                   "total_sessions", "attendance_rate", "attendance_since_last_rank",
+                   "current_stripe_count", "total_points"],
         "limit": 5,
     },
     "class_list": {
@@ -123,7 +158,9 @@ _INTENT_HANDLER_CONFIG = {
     "subscription_lookup": {
         "model": "sale.subscription",
         "domain_builder": "_domain_subscription_lookup",
-        "fields": ["id", "member_id", "plan_id", "state", "date_start", "date"],
+        "fields": ["id", "member_id", "plan_id", "state", "date_start", "date",
+                   "recurring_next_date", "amount_total", "billing_failure_count",
+                   "last_billing_failure_date", "to_renew"],
         "limit": 1,
     },
     "attendance_history": {
@@ -137,6 +174,120 @@ _INTENT_HANDLER_CONFIG = {
         "model": "dojo.class.session",
         "domain_builder": "_domain_schedule_today",
         "fields": ["id", "template_id", "start_datetime", "capacity", "state", "seats_taken"],
+        "limit": 20,
+    },
+    # ── Core Odoo module read intents ────────────────────────────────────────
+    "task_list": {
+        "model": "project.task",
+        "domain_builder": "_domain_task_list",
+        "fields": ["id", "name", "stage_id", "date_deadline", "priority", "project_id", "user_ids"],
+        "limit": 20,
+    },
+    "invoice_lookup": {
+        "model": "account.move",
+        "domain_builder": "_domain_invoice_lookup",
+        "fields": ["id", "name", "partner_id", "invoice_date_due", "amount_total", "payment_state", "state"],
+        "limit": 5,
+        "use_sudo": True,
+    },
+    "invoice_list": {
+        "model": "account.move",
+        "domain_builder": "_domain_invoice_list",
+        "fields": ["id", "name", "partner_id", "invoice_date_due", "amount_total", "payment_state", "state"],
+        "limit": 20,
+        "use_sudo": True,
+    },
+    "activity_list": {
+        "model": "mail.activity",
+        "domain_builder": "_domain_activity_list",
+        "fields": ["id", "summary", "activity_type_id", "date_deadline", "res_model", "res_name", "user_id"],
+        "limit": 20,
+    },
+    "calendar_event_list": {
+        "model": "calendar.event",
+        "domain_builder": "_domain_calendar_event_list",
+        "fields": ["id", "name", "start", "stop", "location", "description", "attendee_ids"],
+        "limit": 20,
+    },
+    # ── New read intents (Tier 1 & 2) ───────────────────────────────────────
+    "belt_test_list": {
+        "model": "dojo.belt.test",
+        "domain_builder": "_domain_belt_test_list",
+        "fields": ["id", "name", "test_date", "location", "program_id", "state"],
+        "limit": 10,
+    },
+    "belt_test_registration_list": {
+        "model": "dojo.belt.test.registration",
+        "domain_builder": "_domain_belt_test_registration_list",
+        "fields": ["id", "member_id", "test_id", "target_rank_id", "program_id", "result"],
+        "limit": 50,
+    },
+    "program_list": {
+        "model": "dojo.program",
+        "domain_builder": "_domain_program_list",
+        "fields": ["id", "name", "code", "is_trial", "active"],
+        "limit": 20,
+    },
+    "class_template_list": {
+        "model": "dojo.class.template",
+        "domain_builder": "_domain_class_template_list",
+        "fields": ["id", "name", "level", "max_capacity", "duration_minutes", "program_id",
+                   "recurrence_time", "recurrence_active"],
+        "limit": 20,
+    },
+    "social_post_list": {
+        "model": "dojo.social.post",
+        "domain_builder": "_domain_social_post_list",
+        "fields": ["id", "message", "state", "scheduled_date", "account_id", "error_message"],
+        "limit": 10,
+    },
+    "program_enrollment_lookup": {
+        "model": "dojo.program.enrollment",
+        "domain_builder": "_domain_program_enrollment_lookup",
+        "fields": ["id", "member_id", "program_id", "is_active", "enrolled_date", "deactivated_date"],
+        "limit": 10,
+    },
+    "onboarding_status": {
+        "model": "dojo.onboarding.record",
+        "domain_builder": "_domain_onboarding_status",
+        "fields": ["id", "member_id", "state", "progress_pct",
+                   "step_member_info", "step_household", "step_enrollment",
+                   "step_subscription", "step_portal_access"],
+        "limit": 5,
+    },
+    "points_lookup": {
+        "model": "dojo.points.transaction",
+        "domain_builder": "_domain_points_lookup",
+        "fields": ["id", "member_id", "amount", "source_type", "note", "awarded_by", "date"],
+        "limit": 10,
+        "order": "date desc",
+    },
+    "credit_lookup": {
+        "model": "dojo.credit.transaction",
+        "domain_builder": "_domain_credit_lookup",
+        "fields": ["id", "member_id", "amount", "transaction_type", "status", "note", "subscription_id", "date"],
+        "limit": 10,
+        "order": "date desc",
+    },
+    "course_auto_enroll_list": {
+        "model": "dojo.course.auto.enroll",
+        "domain_builder": "_domain_course_auto_enroll_list",
+        "fields": ["id", "member_id", "template_id", "mode", "active",
+                   "date_from", "date_to", "pref_mon", "pref_tue", "pref_wed",
+                   "pref_thu", "pref_fri", "pref_sat", "pref_sun"],
+        "limit": 20,
+    },
+    "campaign_list": {
+        "model": "dojo.ai.campaign",
+        "domain_builder": "_domain_campaign_list",
+        "fields": ["id", "name", "state", "is_active", "total_calls",
+                   "completed_calls", "failed_calls", "from_number"],
+        "limit": 10,
+    },
+    "kiosk_announcement_list": {
+        "model": "dojo.kiosk.announcement",
+        "domain_builder": "_domain_kiosk_announcement_list",
+        "fields": ["id", "title", "body", "active", "config_id", "sequence"],
         "limit": 20,
     },
 }
@@ -436,6 +587,32 @@ _CRUD_HANDLER_CONFIG = {
         },
         "allow_undo": True,
     },
+    # ── Core Odoo module write intents ────────────────────────────────────────
+    "task_create": {
+        "model": "project.task",
+        "operation": "create",
+        "fields": {
+            "name": {"required": True, "type": "char"},
+            "project_id": {"required": False, "type": "many2one", "resolver": "_resolve_project"},
+            "description": {"required": False, "type": "text"},
+            "date_deadline": {"required": False, "type": "date"},
+            "priority": {"required": False, "type": "selection", "default": "0"},
+        },
+        "allow_undo": True,
+    },
+    "activity_create": {
+        "model": "mail.activity",
+        "operation": "create",
+        "fields": {
+            "summary": {"required": True, "type": "char"},
+            "activity_type_id": {"required": False, "type": "many2one", "resolver": "_resolve_activity_type"},
+            "date_deadline": {"required": False, "type": "date", "default_builder": "_default_today"},
+            "note": {"required": False, "type": "text"},
+            "res_model": {"required": False, "type": "char", "default": "dojo.member"},
+            "res_id": {"required": False, "type": "integer"},
+        },
+        "allow_undo": True,
+    },
 }
 
 
@@ -469,7 +646,7 @@ class AiAssistantService(models.AbstractModel):
     # ═══════════════════════════════════════════════════════════════════════════
 
     @api.model
-    def handle_command(self, text, role="instructor", input_type="text", audio_attachment_id=None, context=None):
+    def handle_command(self, text, role="instructor", input_type="text", audio_attachment_id=None, context=None, conversation_history=None):
         """
         Main entry point for the AI assistant.
         
@@ -482,6 +659,7 @@ class AiAssistantService(models.AbstractModel):
             input_type: 'text' or 'voice'
             audio_attachment_id: ID of stored audio attachment (for voice)
             context: Optional dict of additional context data
+            conversation_history: Optional list of {role, text} dicts for context chaining
         
         Returns:
             dict: {
@@ -497,7 +675,7 @@ class AiAssistantService(models.AbstractModel):
                 "error": str | None
             }
         """
-        return self.parse_and_confirm(text, role, input_type, audio_attachment_id)
+        return self.parse_and_confirm(text, role, input_type, audio_attachment_id, conversation_history=conversation_history)
 
     @api.model
     def handle_compound_command(self, compound_data, role="instructor"):
@@ -695,7 +873,7 @@ class AiAssistantService(models.AbstractModel):
         }
 
     @api.model
-    def parse_and_confirm(self, text, role="instructor", input_type="text", audio_attachment_id=None):
+    def parse_and_confirm(self, text, role="instructor", input_type="text", audio_attachment_id=None, conversation_history=None):
         """
         Phase 1: Parse natural language input into a structured intent.
         
@@ -707,6 +885,7 @@ class AiAssistantService(models.AbstractModel):
             role: User role (kiosk/instructor/admin)
             input_type: 'text' or 'voice'
             audio_attachment_id: ID of stored audio attachment (for voice)
+            conversation_history: Optional list of {role, text} dicts for context chaining
         
         Returns:
             dict: Standard response format (see handle_command)
@@ -714,6 +893,26 @@ class AiAssistantService(models.AbstractModel):
         text = (text or "").strip()
         if not text:
             return self._error_response("Please type or say something.")
+
+        # ── Inject conversation history into the prompt ──────────────────────────
+        if conversation_history:
+            _turns_cfg = self.env["ir.config_parameter"].sudo().get_int(
+                "dojo_assistant.context_window_turns", 10
+            )
+            _max_messages = max(1, min(50, _turns_cfg)) * 2  # each turn = user + assistant
+            turns = [
+                m for m in conversation_history[-_max_messages:]
+                if isinstance(m, dict)
+                and m.get("role") in ("user", "assistant", "ai")
+                and m.get("text")
+            ]
+            if turns:
+                history_lines = []
+                for m in turns:
+                    label = "User" if m["role"] == "user" else "Assistant"
+                    history_lines.append(f"{label}: {m['text']}")
+                history_block = "\n".join(history_lines)
+                text = f"[Conversation context]\n{history_block}\n\n[Current request]\n{text}"
 
         start_time = time.time()
 
@@ -808,6 +1007,14 @@ class AiAssistantService(models.AbstractModel):
             # These run UNCONDITIONALLY — if the keyword pattern matches, we trust it
             # over whatever the LLM classified, preventing cross-intent confusion.
             text_lower = text.lower()
+
+            # Detect question phrasing — if user is asking "who/what/how many/show/list",
+            # don't override to write intents (register, create, etc.)
+            _is_question = bool(re.match(
+                r'^\s*(who|what|which|how\s+many|show|list|display|are\s+there|is\s+there|tell\s+me)',
+                text_lower,
+            ))
+
             if any(
                 kw in text_lower for kw in ("roster", "course roster", "permanent roster", "add to the course", "add to course")
             ):
@@ -816,8 +1023,20 @@ class AiAssistantService(models.AbstractModel):
                 if intent_data:
                     intent_data["intent_type"] = "course_enroll"
 
+            # belt_test_registration_list when user asks who is registered/signed up
+            if "belt test" in text_lower and _is_question and any(
+                kw in text_lower for kw in ("register", "signed up", "enrolled", "who", "list")
+            ):
+                _logger.info("Keyword override: %s → belt_test_registration_list (question about registrations)", intent_type)
+                intent_type = "belt_test_registration_list"
+                if intent_data is None:
+                    intent_data = {"intent_type": "belt_test_registration_list", "parameters": {}, "confidence": 0.85}
+                else:
+                    intent_data["intent_type"] = "belt_test_registration_list"
+
             # belt_test_register when the user is asking to register/schedule a test
-            if "belt test" in text_lower and any(
+            # (but NOT when it's a question about who is registered)
+            elif "belt test" in text_lower and not _is_question and any(
                 kw in text_lower for kw in ("register", "sign up", "schedule", "add", "book", "testing for")
             ):
                 _logger.info("Keyword override: %s → belt_test_register (keyword: 'belt test' + action verb)", intent_type)
@@ -944,6 +1163,42 @@ class AiAssistantService(models.AbstractModel):
 
             # If read-only intent, auto-execute
             if not requires_confirmation:
+                # ── Conversational short-circuit for unknown intents ───────────────
+                # Instead of executing _handle_unknown (which returns a static error),
+                # use the LLM's conversational response.  If not already populated
+                # (e.g. OpenAI JSON-only path that never called process_conversational_query),
+                # make a conversational call now so the reply feels natural.
+                if intent_type == "unknown":
+                    if not response_text:
+                        try:
+                            conv_result = ai_proc.process_conversational_query(text, role, db_ctx)
+                            response_text = conv_result.get("response", "")
+                        except Exception:
+                            pass
+                    conversational_reply = response_text or (
+                        "I'm not quite sure how to help with that. Could you rephrase?"
+                    )
+                    execution_time_ms = int((time.time() - start_time) * 1000)
+                    log.log_execution(
+                        success=True,
+                        result={"success": True, "message": conversational_reply},
+                        execution_time_ms=execution_time_ms,
+                        is_undoable=False,
+                    )
+                    return {
+                        "success": True,
+                        "state": "executed",
+                        "session_key": log.session_key,
+                        "intent": intent_data,
+                        "auto_executed": True,
+                        "result": {"success": True, "message": conversational_reply},
+                        "response": conversational_reply,
+                        "confirmation_prompt": None,
+                        "resolved_data": {},
+                        "error": None,
+                    }
+                # ─────────────────────────────────────────────────────────────────
+
                 exec_result = self._execute_intent(intent_type, intent_data, resolved_data, log)
                 execution_time_ms = int((time.time() - start_time) * 1000)
 
@@ -1797,7 +2052,18 @@ class AiAssistantService(models.AbstractModel):
     def _format_exec_result_as_response(self, intent_type, exec_result):
         """Convert an intent execution result dict into a chat-friendly string."""
         if not exec_result or not exec_result.get("success"):
-            return exec_result.get("error") if exec_result else None
+            return (exec_result.get("error") or exec_result.get("message")) if exec_result else None
+
+        # ── Bulk operation result ──────────────────────────────────────────
+        if exec_result.get("bulk"):
+            results = exec_result.get("results", [])
+            lines = [exec_result.get("message", "Done.")]
+            for r in results:
+                if r.get("success"):
+                    lines.append("  ✓ {}".format(r.get("name", "?")))
+                else:
+                    lines.append("  ✗ {} — {}".format(r.get("name", "?"), r.get("error", "Failed")))
+            return "\n".join(lines)
 
         data = exec_result.get("data")
         msg = exec_result.get("message", "")
@@ -1872,6 +2138,19 @@ class AiAssistantService(models.AbstractModel):
                 lines.append("  Email: {}".format(record["email"]))
             if record.get("phone"):
                 lines.append("  Phone: {}".format(record["phone"]))
+            if record.get("date_of_birth"):
+                lines.append("  DOB: {}".format(record["date_of_birth"]))
+            # Stats (if available)
+            if record.get("total_sessions"):
+                lines.append("  Classes attended: {}".format(record["total_sessions"]))
+            if record.get("attendance_rate") is not None and record.get("attendance_rate") > 0:
+                lines.append("  Attendance rate: {:.0f}%".format(record["attendance_rate"]))
+            if record.get("attendance_since_last_rank"):
+                lines.append("  Since last rank: {} classes".format(record["attendance_since_last_rank"]))
+            if record.get("current_stripe_count"):
+                lines.append("  Stripes: {}".format(record["current_stripe_count"]))
+            if record.get("total_points"):
+                lines.append("  Points: {}".format(record["total_points"]))
             return "\n".join(lines)
 
         if intent_type == "belt_lookup":
@@ -1893,10 +2172,20 @@ class AiAssistantService(models.AbstractModel):
             plan_name = plan_val[1] if isinstance(plan_val, (list, tuple)) and len(plan_val) > 1 else "Unknown plan"
             state = record.get("state", "unknown")
             lines = ["{} — {} ({})".format(member_name, plan_name, state)]
-            if record.get("start_date"):
-                lines.append("  Started: {}".format(record["start_date"]))
-            if record.get("end_date"):
-                lines.append("  Ends: {}".format(record["end_date"]))
+            if record.get("date_start"):
+                lines.append("  Started: {}".format(record["date_start"]))
+            if record.get("date"):
+                lines.append("  Ends: {}".format(record["date"]))
+            if record.get("recurring_next_date"):
+                lines.append("  Next billing: {}".format(record["recurring_next_date"]))
+            if record.get("amount_total"):
+                lines.append("  Amount: ${}".format(record["amount_total"]))
+            failures = record.get("billing_failure_count", 0)
+            if failures:
+                lines.append("  ⚠️ Billing failures: {} (last: {})".format(
+                    failures, record.get("last_billing_failure_date", "?")))
+            if record.get("to_renew"):
+                lines.append("  📋 Flagged for renewal")
             return "\n".join(lines)
 
         if intent_type == "attendance_history":
@@ -1906,6 +2195,254 @@ class AiAssistantService(models.AbstractModel):
             for rec in data[:5]:
                 session = rec.get("session") or "Open mat"
                 lines.append("  • {} — {}".format(rec.get("date", "?"), session))
+            return "\n".join(lines)
+
+        if intent_type == "lead_lookup":
+            if not data:
+                return msg
+            lines = [msg]
+            for lead in data[:8]:
+                contact = lead.get("contact_name") or lead.get("name") or "Unknown"
+                stage = lead.get("stage") or "No stage"
+                converted = " ✓ converted" if lead.get("is_converted") else ""
+                lines.append("  • {} — {}{}".format(contact, stage, converted))
+            return "\n".join(lines)
+
+        if intent_type == "task_list":
+            if not data:
+                return msg or "No tasks found."
+            lines = [f"Here are your tasks ({len(data)} total):"]
+            for task in data:
+                name = task.get("name") or "Untitled"
+                deadline = task.get("date_deadline") or ""
+                deadline_str = f" — due {deadline}" if deadline else ""
+                priority_str = " ⚡" if task.get("priority") == "1" else ""
+                stage_val = task.get("stage_id")
+                stage_str = stage_val[1] if isinstance(stage_val, (list, tuple)) and len(stage_val) > 1 else ""
+                stage_disp = f" [{stage_str}]" if stage_str else ""
+                lines.append("  • {}{}{}{}".format(name, stage_disp, deadline_str, priority_str))
+            return "\n".join(lines)
+
+        if intent_type == "belt_test_list":
+            if not data:
+                return msg or "No upcoming belt tests."
+            lines = [f"{len(data)} upcoming belt test(s):"]
+            for t in data:
+                name = t.get("name") or "Belt Test"
+                date_val = t.get("test_date") or "TBD"
+                loc = t.get("location") or ""
+                prog_val = t.get("program_id")
+                prog_str = prog_val[1] if isinstance(prog_val, (list, tuple)) and len(prog_val) > 1 else ""
+                parts = [f"  • {name} — {date_val}"]
+                if prog_str:
+                    parts.append(f"({prog_str})")
+                if loc:
+                    parts.append(f"@ {loc}")
+                lines.append(" ".join(parts))
+            return "\n".join(lines)
+
+        if intent_type == "belt_test_registration_list":
+            if not data:
+                return msg or "No one is registered for upcoming belt tests yet."
+            lines = [f"{len(data)} registration(s) for upcoming belt tests:"]
+            for r in data:
+                member_val = r.get("member_id")
+                member_str = member_val[1] if isinstance(member_val, (list, tuple)) and len(member_val) > 1 else "?"
+                test_val = r.get("test_id")
+                test_str = test_val[1] if isinstance(test_val, (list, tuple)) and len(test_val) > 1 else "?"
+                rank_val = r.get("target_rank_id")
+                rank_str = rank_val[1] if isinstance(rank_val, (list, tuple)) and len(rank_val) > 1 else "?"
+                result = r.get("result") or "pending"
+                icon = {"pending": "⏳", "pass": "✅", "fail": "❌", "withdrew": "🚫"}.get(result, "")
+                lines.append(f"  {icon} {member_str} — testing for {rank_str} ({test_str})")
+            return "\n".join(lines)
+
+        if intent_type == "program_list":
+            if not data:
+                return msg or "No programs found."
+            lines = [f"{len(data)} program(s):"]
+            for p in data:
+                name = p.get("name") or "?"
+                trial = " [Trial]" if p.get("is_trial") else ""
+                lines.append(f"  • {name}{trial}")
+            return "\n".join(lines)
+
+        if intent_type == "class_template_list":
+            if not data:
+                return msg or "No courses found."
+            lines = [f"{len(data)} course(s):"]
+            for c in data:
+                name = c.get("name") or "?"
+                level = c.get("level") or ""
+                cap = c.get("max_capacity") or "?"
+                dur = c.get("duration_minutes") or "?"
+                prog_val = c.get("program_id")
+                prog_str = prog_val[1] if isinstance(prog_val, (list, tuple)) and len(prog_val) > 1 else ""
+                parts = [f"  • {name}"]
+                if level:
+                    parts.append(f"({level})")
+                if prog_str:
+                    parts.append(f"— {prog_str}")
+                parts.append(f"— {dur}min, cap {cap}")
+                lines.append(" ".join(parts))
+            return "\n".join(lines)
+
+        if intent_type == "social_post_list":
+            if not data:
+                return msg or "No social posts found."
+            lines = [f"{len(data)} post(s):"]
+            for p in data:
+                state = p.get("state") or "?"
+                message = (p.get("message") or "")[:60]
+                if len(p.get("message", "")) > 60:
+                    message += "..."
+                sched = p.get("scheduled_date") or ""
+                error = p.get("error_message") or ""
+                icon = {"draft": "📝", "scheduled": "⏰", "posted": "✅", "error": "❌"}.get(state, "")
+                line = f"  {icon} [{state}] {message}"
+                if sched:
+                    line += f" (scheduled: {str(sched)[:16]})"
+                if error:
+                    line += f" — {error}"
+                lines.append(line)
+            return "\n".join(lines)
+
+        if intent_type == "program_enrollment_lookup":
+            if not data:
+                return msg or "No program enrollments found."
+            lines = [f"{len(data)} enrollment(s):"]
+            for e in data:
+                member_val = e.get("member_id")
+                member_str = member_val[1] if isinstance(member_val, (list, tuple)) and len(member_val) > 1 else "?"
+                prog_val = e.get("program_id")
+                prog_str = prog_val[1] if isinstance(prog_val, (list, tuple)) and len(prog_val) > 1 else "?"
+                active = "Active" if e.get("is_active") else "Inactive"
+                lines.append(f"  • {member_str} — {prog_str} ({active})")
+            return "\n".join(lines)
+
+        if intent_type == "onboarding_status":
+            if not data:
+                return msg or "No onboarding records found."
+            lines = [f"{len(data)} onboarding record(s):"]
+            for o in data:
+                member_val = o.get("member_id")
+                member_str = member_val[1] if isinstance(member_val, (list, tuple)) and len(member_val) > 1 else "?"
+                pct = o.get("progress_pct", 0)
+                state = o.get("state", "?")
+                steps_done = sum(1 for k in ("step_member_info", "step_household", "step_enrollment",
+                                             "step_subscription", "step_portal_access") if o.get(k))
+                lines.append(f"  • {member_str} — {pct}% ({state}) — {steps_done}/5 steps done")
+            return "\n".join(lines)
+
+        if intent_type == "points_lookup":
+            if not data:
+                return msg or "No points transactions found."
+            total = sum(r.get("amount", 0) for r in data)
+            member_val = data[0].get("member_id") if data else None
+            member_str = member_val[1] if isinstance(member_val, (list, tuple)) and len(member_val) > 1 else "Member"
+            lines = [f"{member_str} — {total} total points (last {len(data)} transactions):"]
+            for r in data[:5]:
+                source = r.get("source_type") or "?"
+                amt = r.get("amount", 0)
+                note = r.get("note") or ""
+                sign = "+" if amt >= 0 else ""
+                lines.append(f"  • {sign}{amt} pts ({source}){f' — {note}' if note else ''}")
+            return "\n".join(lines)
+
+        if intent_type == "credit_lookup":
+            if not data:
+                return msg or "No credit transactions found."
+            total = sum(r.get("amount", 0) for r in data)
+            member_val = data[0].get("member_id") if data else None
+            member_str = member_val[1] if isinstance(member_val, (list, tuple)) and len(member_val) > 1 else "Member"
+            lines = [f"{member_str} — {total} credit balance (last {len(data)} transactions):"]
+            for r in data[:5]:
+                ttype = r.get("transaction_type") or "?"
+                amt = r.get("amount", 0)
+                status = r.get("status") or ""
+                sign = "+" if amt >= 0 else ""
+                lines.append(f"  • {sign}{amt} ({ttype}) [{status}]")
+            return "\n".join(lines)
+
+        if intent_type == "birthday_upcoming":
+            if not data:
+                return msg or "No upcoming birthdays."
+            lines = [f"🎂 {len(data)} upcoming birthday(s):"]
+            for b in data:
+                name = b.get("name", "?")
+                days = b.get("days_until", "?")
+                age = b.get("age_turning", "?")
+                bday = b.get("birthday", "")
+                if days == 0:
+                    when = "TODAY! 🎉"
+                elif days == 1:
+                    when = "tomorrow"
+                else:
+                    when = f"in {days} days ({bday})"
+                lines.append(f"  • {name} — turning {age}, {when}")
+            return "\n".join(lines)
+
+        if intent_type == "household_lookup":
+            if not data:
+                return msg
+            hname = data.get("household_name", "Household")
+            guardian = data.get("primary_guardian", "None")
+            members_list = data.get("members", [])
+            lines = [f"🏠 {hname} — Primary guardian: {guardian}"]
+            for m in members_list:
+                role = m.get("roles", "Contact")
+                lines.append(f"  • {m.get('name', '?')} ({role})")
+            return "\n".join(lines)
+
+        if intent_type == "course_auto_enroll_list":
+            if not data:
+                return msg or "No auto-enroll rules found."
+            lines = [f"{len(data)} auto-enroll rule(s):"]
+            for r in data:
+                member_val = r.get("member_id")
+                member_str = member_val[1] if isinstance(member_val, (list, tuple)) and len(member_val) > 1 else "?"
+                tpl_val = r.get("template_id")
+                tpl_str = tpl_val[1] if isinstance(tpl_val, (list, tuple)) and len(tpl_val) > 1 else "?"
+                mode = r.get("mode") or "?"
+                days = [d for d, k in [("Mon", "pref_mon"), ("Tue", "pref_tue"), ("Wed", "pref_wed"),
+                                       ("Thu", "pref_thu"), ("Fri", "pref_fri"), ("Sat", "pref_sat"),
+                                       ("Sun", "pref_sun")] if r.get(k)]
+                days_str = ", ".join(days) if days else "all days"
+                active = "✅" if r.get("active") else "❌"
+                lines.append(f"  {active} {member_str} → {tpl_str} ({mode}) — {days_str}")
+            return "\n".join(lines)
+
+        if intent_type == "campaign_list":
+            if not data:
+                return msg or "No AI calling campaigns found."
+            lines = [f"{len(data)} campaign(s):"]
+            for c in data:
+                name = c.get("name") or "Untitled"
+                state = c.get("state") or "?"
+                total = c.get("total_calls", 0)
+                done = c.get("completed_calls", 0)
+                failed = c.get("failed_calls", 0)
+                icon = {"draft": "📝", "running": "▶️", "paused": "⏸️", "done": "✅"}.get(state, "")
+                lines.append(f"  {icon} {name} [{state}] — {done}/{total} calls done, {failed} failed")
+            return "\n".join(lines)
+
+        if intent_type == "kiosk_announcement_list":
+            if not data:
+                return msg or "No kiosk announcements found."
+            lines = [f"{len(data)} announcement(s):"]
+            for a in data:
+                title = a.get("title") or "Untitled"
+                body = (a.get("body") or "")[:60]
+                if len(a.get("body", "")) > 60:
+                    body += "..."
+                kiosk_val = a.get("config_id")
+                kiosk_str = kiosk_val[1] if isinstance(kiosk_val, (list, tuple)) and len(kiosk_val) > 1 else ""
+                parts = [f"  • {title}"]
+                if kiosk_str:
+                    parts.append(f"({kiosk_str})")
+                if body:
+                    parts.append(f"— {body}")
+                lines.append(" ".join(parts))
             return "\n".join(lines)
 
         # Default: return the message
@@ -1983,6 +2520,19 @@ class AiAssistantService(models.AbstractModel):
             "campaign_activate": self._handle_campaign_activate,
             "social_post_create": self._handle_social_post_create,
             "social_post_schedule": self._handle_social_post_schedule,
+            # Core Odoo module intents (defined in ai_calendar_service.py / ai_communication_service.py)
+            "calendar_event_create": self._handle_calendar_event_create,
+            "calendar_event_cancel": self._handle_calendar_event_cancel,
+            "send_email": self._handle_send_email,
+            "send_sms": self._handle_send_sms,
+            "email_blast": self._handle_email_blast,
+            "sms_blast": self._handle_sms_blast,
+            # Task intents with custom logic
+            "task_complete": self._handle_task_complete,
+            "task_update": self._handle_task_update,
+            # Household lookup (traverses res.partner hierarchy)
+            "household_lookup": self._handle_household_lookup,
+            "birthday_upcoming": self._handle_birthday_upcoming,
         }
 
         handler = handlers.get(intent_type, self._handle_unknown)
@@ -2022,6 +2572,8 @@ class AiAssistantService(models.AbstractModel):
         
         try:
             Model = self.env[model_name]
+            if config.get("use_sudo"):
+                Model = Model.sudo()
         except KeyError:
             return {"success": False, "error": f"Model '{model_name}' does not exist"}
         
@@ -2052,7 +2604,8 @@ class AiAssistantService(models.AbstractModel):
             readable_fields = list(model_fields.keys())[:10]  # Safety fallback
         
         # Step 4: Search records
-        records = Model.search(domain, limit=limit, order="name asc")
+        order = config.get("order", "name asc" if "name" in model_fields else "id desc")
+        records = Model.search(domain, limit=limit, order=order)
         
         if not records:
             return {
@@ -2700,7 +3253,46 @@ class AiAssistantService(models.AbstractModel):
 
     @api.model
     def _handle_attendance_checkin(self, intent_data, resolved_data, action_log):
-        """Check in a member for attendance."""
+        """Check in a member (or multiple members) for attendance."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+
+        # ── Batch mode: member_names list ──────────────────────────────────
+        member_names = params.get("member_names") or []
+        if isinstance(member_names, list) and len(member_names) > 1:
+            results = []
+            for name in member_names:
+                members = self._search_members(name, limit=1)
+                if not members:
+                    results.append({"name": name, "success": False, "error": "Not found"})
+                    continue
+                member = members[0]
+                AttLog = self.env["dojo.attendance.log"]
+                from datetime import datetime, date as _date
+                today_start = datetime.combine(_date.today(), datetime.min.time())
+                existing = AttLog.search([
+                    ("member_id", "=", member.id),
+                    ("checkin_datetime", ">=", today_start),
+                    ("checkout_datetime", "=", False),
+                ], limit=1)
+                if existing:
+                    results.append({"name": member.name, "success": False, "error": "Already checked in"})
+                    continue
+                values = {"member_id": member.id, "checkin_datetime": fields.Datetime.now()}
+                session_id = resolved_data.get("session_id")
+                if session_id:
+                    values["session_id"] = session_id
+                log = AttLog.create(values)
+                self.env["dojo.ai.undo.snapshot"].create_snapshot(action_log.id, AttLog._name, log.id, "create")
+                results.append({"name": member.name, "success": True})
+            success_count = sum(1 for r in results if r["success"])
+            return {
+                "success": success_count > 0,
+                "bulk": True,
+                "message": f"Checked in {success_count}/{len(results)} students.",
+                "results": results,
+            }
+
+        # ── Single mode (existing behaviour) ──────────────────────────────
         member_id = resolved_data.get("member_id")
         session_id = resolved_data.get("session_id")
 
@@ -2748,7 +3340,45 @@ class AiAssistantService(models.AbstractModel):
 
     @api.model
     def _handle_attendance_checkout(self, intent_data, resolved_data, action_log):
-        """Check out a member from attendance."""
+        """Check out a member (or multiple members) from attendance."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+
+        # ── Batch mode: member_names list ──────────────────────────────────
+        member_names = params.get("member_names") or []
+        if isinstance(member_names, list) and len(member_names) > 1:
+            results = []
+            AttLog = self.env["dojo.attendance.log"]
+            from datetime import datetime, date as _date
+            today_start = datetime.combine(_date.today(), datetime.min.time())
+            for name in member_names:
+                members = self._search_members(name, limit=1)
+                if not members:
+                    results.append({"name": name, "success": False, "error": "Not found"})
+                    continue
+                member = members[0]
+                log = AttLog.search([
+                    ("member_id", "=", member.id),
+                    ("checkin_datetime", ">=", today_start),
+                    ("checkout_datetime", "=", False),
+                ], order="checkin_datetime desc", limit=1)
+                if not log:
+                    results.append({"name": member.name, "success": False, "error": "Not checked in"})
+                    continue
+                self.env["dojo.ai.undo.snapshot"].create_snapshot(
+                    action_log.id, AttLog._name, log.id, "write",
+                    snapshot_data={"checkout_datetime": False}
+                )
+                log.checkout_datetime = fields.Datetime.now()
+                results.append({"name": member.name, "success": True})
+            success_count = sum(1 for r in results if r["success"])
+            return {
+                "success": success_count > 0,
+                "bulk": True,
+                "message": f"Checked out {success_count}/{len(results)} students.",
+                "results": results,
+            }
+
+        # ── Single mode (existing behaviour) ──────────────────────────────
         member_id = resolved_data.get("member_id")
 
         if not member_id:
@@ -2927,6 +3557,124 @@ class AiAssistantService(models.AbstractModel):
     # ═══════════════════════════════════════════════════════════════════════════
 
     @api.model
+    def _handle_household_lookup(self, intent_data, resolved_data, action_log):
+        """Look up a household and list family members."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        Partner = self.env["res.partner"]
+        household = None
+
+        # If member was resolved, find their household
+        member_id = resolved_data.get("member_id")
+        if member_id:
+            member = self.env["dojo.member"].browse(member_id)
+            if member.exists() and member.partner_id.parent_id and member.partner_id.parent_id.is_household:
+                household = member.partner_id.parent_id
+
+        # Or search by household name
+        if not household:
+            name = params.get("household_name") or params.get("member_name") or params.get("name")
+            if name:
+                household = Partner.search([
+                    ("is_household", "=", True), ("name", "ilike", name),
+                ], limit=1)
+                if not household:
+                    # Try to find via a member name
+                    members = self._search_members(name, limit=1)
+                    if members and members[0].partner_id.parent_id and members[0].partner_id.parent_id.is_household:
+                        household = members[0].partner_id.parent_id
+
+        if not household:
+            return {"success": False, "error": "Household not found. Try providing a member or family name."}
+
+        guardian = household.primary_guardian_id
+        children = household.child_ids.filtered(lambda c: not c.is_household)
+        members_in_household = []
+        for child in children:
+            roles = []
+            if child.is_guardian:
+                roles.append("Guardian")
+            if child.is_student:
+                roles.append("Student")
+            if child.is_minor:
+                roles.append("Minor")
+            members_in_household.append({
+                "name": child.name,
+                "roles": ", ".join(roles) if roles else "Contact",
+                "email": child.email or "",
+                "phone": child.phone or "",
+            })
+
+        return {
+            "success": True,
+            "message": f"Household '{household.name}' — {len(members_in_household)} member(s).",
+            "data": {
+                "household_name": household.name,
+                "primary_guardian": guardian.name if guardian else "None",
+                "members": members_in_household,
+            },
+        }
+
+    def _handle_birthday_upcoming(self, intent_data, resolved_data, action_log):
+        """Return members with upcoming birthdays within N days."""
+        from datetime import timedelta
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        days_ahead = params.get("days", 30)
+        try:
+            days_ahead = int(days_ahead)
+        except (TypeError, ValueError):
+            days_ahead = 30
+
+        today = fields.Date.today()
+        end_date = today + timedelta(days=days_ahead)
+
+        # Search active members who have DOB set
+        members = self.env["dojo.member"].search([
+            ("membership_state", "in", ["active", "trial"]),
+            ("date_of_birth", "!=", False),
+        ])
+
+        upcoming = []
+        for m in members:
+            dob = m.date_of_birth
+            # Calculate this year's birthday
+            try:
+                bday_this_year = dob.replace(year=today.year)
+            except ValueError:
+                # Feb 29 on non-leap year
+                bday_this_year = dob.replace(year=today.year, day=28)
+            # If birthday already passed this year, check next year
+            if bday_this_year < today:
+                try:
+                    bday_this_year = dob.replace(year=today.year + 1)
+                except ValueError:
+                    bday_this_year = dob.replace(year=today.year + 1, day=28)
+            if today <= bday_this_year <= end_date:
+                days_until = (bday_this_year - today).days
+                age = bday_this_year.year - dob.year
+                upcoming.append({
+                    "name": m.name,
+                    "date_of_birth": str(dob),
+                    "birthday": str(bday_this_year),
+                    "days_until": days_until,
+                    "age_turning": age,
+                    "membership_state": m.membership_state,
+                })
+
+        upcoming.sort(key=lambda x: x["days_until"])
+
+        if not upcoming:
+            return {
+                "success": True,
+                "message": f"No member birthdays in the next {days_ahead} days.",
+                "data": [],
+            }
+
+        return {
+            "success": True,
+            "message": f"{len(upcoming)} birthday(s) coming up in the next {days_ahead} days.",
+            "data": upcoming,
+        }
+
     def _handle_at_risk_members(self, intent_data, resolved_data, action_log):
         """Return active members who haven't attended in N days."""
         from datetime import datetime, timedelta
@@ -3229,3 +3977,401 @@ class AiAssistantService(models.AbstractModel):
         else:
             days = int(seconds / 86400)
             return f"{days} day{'s' if days != 1 else ''} ago"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Core Odoo Module — Domain Builders (Task, Invoice, Activity)
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _domain_task_list(self, intent_data, resolved_data):
+        """Domain for listing project tasks for the calling user."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        uid = self.env.uid
+        domain = []
+
+        # Filter by calling user unless admin requests all
+        role = resolved_data.get("role", "instructor")
+        if role != "admin":
+            domain.append(("user_ids", "in", [uid]))
+
+        # Optional: filter by project name
+        project_name = params.get("project_name")
+        if project_name:
+            projects = self.env["project.project"].search([("name", "ilike", project_name)], limit=5)
+            if projects:
+                domain.append(("project_id", "in", projects.ids))
+
+        # Optional: filter by overdue
+        if params.get("overdue"):
+            domain.append(("date_deadline", "<", fields.Date.today()))
+            domain.append(("stage_id.fold", "=", False))
+
+        # Optional: filter by member name (link via partner)
+        member_name = params.get("member_name")
+        if member_name:
+            members = self.env["dojo.member"].search([("name", "ilike", member_name)], limit=3)
+            if members:
+                partners = members.mapped("partner_id")
+                domain.append(("partner_id", "in", partners.ids))
+
+        # Default: exclude done/cancelled stages
+        if not params.get("include_done"):
+            domain.append(("stage_id.fold", "=", False))
+
+        return domain
+
+    @api.model
+    def _domain_invoice_lookup(self, intent_data, resolved_data):
+        """Domain for looking up invoices for a specific member/family."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        member_id = resolved_data.get("member_id")
+        domain = [("move_type", "in", ["out_invoice", "out_refund"]), ("state", "!=", "cancel")]
+
+        if member_id:
+            member = self.env["dojo.member"].browse(member_id)
+            if member.exists() and member.partner_id:
+                # Get the commercial partner (household) so we catch household-level invoices
+                commercial = member.partner_id.commercial_partner_id
+                domain.append(("partner_id", "child_of", commercial.id))
+        else:
+            member_name = params.get("member_name") or params.get("name")
+            if member_name:
+                members = self.env["dojo.member"].sudo().search([("name", "ilike", member_name)], limit=3)
+                if members:
+                    commercial_ids = members.mapped("partner_id.commercial_partner_id").ids
+                    domain.append(("partner_id", "child_of", commercial_ids))
+
+        return domain
+
+    @api.model
+    def _domain_invoice_list(self, intent_data, resolved_data):
+        """Domain for listing invoices — defaults to unpaid/overdue."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = [("move_type", "in", ["out_invoice", "out_refund"]), ("state", "=", "posted")]
+
+        filter_type = params.get("filter", "overdue")
+        if filter_type == "overdue":
+            domain += [("payment_state", "!=", "paid"), ("invoice_date_due", "<", fields.Date.today())]
+        elif filter_type == "unpaid":
+            domain.append(("payment_state", "!=", "paid"))
+        elif filter_type == "paid":
+            domain.append(("payment_state", "=", "paid"))
+        else:
+            # Default: all unpaid
+            domain.append(("payment_state", "!=", "paid"))
+
+        return domain
+
+    @api.model
+    def _domain_activity_list(self, intent_data, resolved_data):
+        """Domain for listing mail activities for the calling user."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        uid = self.env.uid
+        domain = [("user_id", "=", uid)]
+
+        # Optional: overdue only
+        if params.get("overdue"):
+            domain.append(("date_deadline", "<", fields.Date.today()))
+
+        # Optional: specific model (e.g., 'dojo.member')
+        res_model = params.get("res_model")
+        if res_model:
+            domain.append(("res_model", "=", res_model))
+
+        return domain
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # New Read Intent — Domain Builders
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _domain_belt_test_list(self, intent_data, resolved_data):
+        """Domain for listing upcoming belt tests."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = [("state", "!=", "cancelled")]
+
+        # Default: future tests only
+        if not params.get("include_past"):
+            domain.append(("test_date", ">=", fields.Date.today()))
+
+        program_name = params.get("program_name")
+        if program_name:
+            programs = self.env["dojo.program"].search([("name", "ilike", program_name)], limit=3)
+            if programs:
+                domain.append(("program_id", "in", programs.ids))
+        return domain
+
+    def _domain_belt_test_registration_list(self, intent_data, resolved_data):
+        """Domain for listing belt test registrations (who is signed up)."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+
+        # Default: registrations for upcoming tests only
+        upcoming_tests = self.env["dojo.belt.test"].search([
+            ("test_date", ">=", fields.Date.today()),
+            ("state", "!=", "cancelled"),
+        ])
+        if upcoming_tests:
+            domain.append(("test_id", "in", upcoming_tests.ids))
+
+        member_id = resolved_data.get("member_id")
+        if member_id:
+            domain.append(("member_id", "=", member_id))
+
+        result_filter = params.get("result")
+        if result_filter:
+            domain.append(("result", "=", result_filter))
+
+        return domain
+
+    @api.model
+    def _domain_program_list(self, intent_data, resolved_data):
+        """Domain for listing programs."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = [("active", "=", True)]
+        if params.get("is_trial"):
+            domain.append(("is_trial", "=", True))
+        name = params.get("name") or params.get("program_name")
+        if name:
+            domain.append(("name", "ilike", name))
+        return domain
+
+    @api.model
+    def _domain_class_template_list(self, intent_data, resolved_data):
+        """Domain for listing class templates / recurring courses."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = [("active", "=", True)]
+        program_name = params.get("program_name")
+        if program_name:
+            programs = self.env["dojo.program"].search([("name", "ilike", program_name)], limit=3)
+            if programs:
+                domain.append(("program_id", "in", programs.ids))
+        name = params.get("name") or params.get("course_name")
+        if name:
+            domain.append(("name", "ilike", name))
+        return domain
+
+    @api.model
+    def _domain_social_post_list(self, intent_data, resolved_data):
+        """Domain for listing social media posts."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        state = params.get("state")
+        if state and state in ("draft", "scheduled", "posted", "error"):
+            domain.append(("state", "=", state))
+        if params.get("failed"):
+            domain.append(("state", "=", "error"))
+        return domain
+
+    @api.model
+    def _domain_program_enrollment_lookup(self, intent_data, resolved_data):
+        """Domain for looking up program enrollments."""
+        member_id = resolved_data.get("member_id")
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        if member_id:
+            domain.append(("member_id", "=", member_id))
+        program_name = params.get("program_name")
+        if program_name:
+            programs = self.env["dojo.program"].search([("name", "ilike", program_name)], limit=3)
+            if programs:
+                domain.append(("program_id", "in", programs.ids))
+        if params.get("active_only", True):
+            domain.append(("is_active", "=", True))
+        return domain
+
+    @api.model
+    def _domain_onboarding_status(self, intent_data, resolved_data):
+        """Domain for checking onboarding progress."""
+        member_id = resolved_data.get("member_id")
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        if member_id:
+            domain.append(("member_id", "=", member_id))
+        state = params.get("state")
+        if state:
+            domain.append(("state", "=", state))
+        # Default: show incomplete onboardings
+        if not member_id and not state:
+            domain.append(("state", "!=", "done"))
+        return domain
+
+    @api.model
+    def _domain_points_lookup(self, intent_data, resolved_data):
+        """Domain for looking up points transactions for a member."""
+        member_id = resolved_data.get("member_id")
+        domain = []
+        if member_id:
+            domain.append(("member_id", "=", member_id))
+        return domain
+
+    @api.model
+    def _domain_credit_lookup(self, intent_data, resolved_data):
+        """Domain for looking up credit transactions for a member."""
+        member_id = resolved_data.get("member_id")
+        domain = []
+        if member_id:
+            domain.append(("member_id", "=", member_id))
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        status = params.get("status")
+        if status:
+            domain.append(("status", "=", status))
+        return domain
+
+    def _domain_course_auto_enroll_list(self, intent_data, resolved_data):
+        """Domain for listing auto-enroll rules."""
+        member_id = resolved_data.get("member_id")
+        domain = []
+        if member_id:
+            domain.append(("member_id", "=", member_id))
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        if params.get("active_only", True):
+            domain.append(("active", "=", True))
+        return domain
+
+    def _domain_campaign_list(self, intent_data, resolved_data):
+        """Domain for listing AI calling campaigns."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        state = params.get("state")
+        if state:
+            domain.append(("state", "=", state))
+        return domain
+
+    def _domain_kiosk_announcement_list(self, intent_data, resolved_data):
+        """Domain for listing kiosk announcements."""
+        domain = [("active", "=", True)]
+        return domain
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Core Odoo Module — Resolvers (Task, Activity)
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _resolve_project(self, value, model=None):
+        """Resolve a project by name — defaults to 'Instructor Alerts' project."""
+        if isinstance(value, int):
+            return value
+        Project = self.env["project.project"]
+        if not value:
+            # Default to the instructor alerts project
+            project = Project.search([("name", "ilike", "Instructor Alerts")], limit=1)
+            return project.id if project else Project.search([], limit=1).id
+        project = Project.search([("name", "ilike", value), ("active", "=", True)], limit=1)
+        return project.id if project else None
+
+    @api.model
+    def _resolve_activity_type(self, value, model=None):
+        """Resolve a mail.activity.type by name."""
+        if isinstance(value, int):
+            return value
+        if not value:
+            # Default to 'To-Do' activity type
+            activity_type = self.env["mail.activity.type"].search([("name", "ilike", "Todo")], limit=1)
+            if not activity_type:
+                activity_type = self.env["mail.activity.type"].search([], limit=1)
+            return activity_type.id if activity_type else None
+        activity_type = self.env["mail.activity.type"].search([("name", "ilike", value)], limit=1)
+        return activity_type.id if activity_type else None
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Core Odoo Module — Task Write Handlers
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _handle_task_complete(self, intent_data, resolved_data, action_log):
+        """Mark a task as done by moving it to a folded (done) stage."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        task_name = params.get("task_name") or params.get("name")
+        task_id = params.get("task_id") or resolved_data.get("task_id")
+
+        Task = self.env["project.task"]
+        if task_id:
+            task = Task.browse(int(task_id))
+        elif task_name:
+            # Search in the calling user's tasks
+            task = Task.search([
+                ("name", "ilike", task_name),
+                ("user_ids", "in", [self.env.uid]),
+                ("stage_id.fold", "=", False),
+            ], limit=1)
+        else:
+            return {"success": False, "error": "Please specify a task name to complete."}
+
+        if not task.exists():
+            return {"success": False, "error": f"Task '{task_name}' not found."}
+
+        # Find a done/folded stage for this project
+        done_stage = self.env["project.task.type"].search([
+            ("fold", "=", True),
+            ("project_ids", "in", [task.project_id.id] if task.project_id else []),
+        ], limit=1)
+        if not done_stage:
+            # Fall back to any global done stage
+            done_stage = self.env["project.task.type"].search([("fold", "=", True)], limit=1)
+
+        if not done_stage:
+            return {"success": False, "error": "No 'Done' stage found in this project."}
+
+        # Snapshot for undo
+        Snapshot = self.env["dojo.ai.undo.snapshot"]
+        Snapshot.create_snapshot(action_log.id, "project.task", task.id, "write",
+                                  snapshot_data={"stage_id": task.stage_id.id})
+
+        task.write({"stage_id": done_stage.id})
+        return {
+            "success": True,
+            "message": f"Marked '{task.name}' as done.",
+            "data": {"task_id": task.id, "task_name": task.name, "stage": done_stage.name},
+        }
+
+    @api.model
+    def _handle_task_update(self, intent_data, resolved_data, action_log):
+        """Update a task's deadline, assignee, or add a note."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        task_name = params.get("task_name") or params.get("name")
+        task_id = params.get("task_id") or resolved_data.get("task_id")
+
+        Task = self.env["project.task"]
+        if task_id:
+            task = Task.browse(int(task_id))
+        elif task_name:
+            task = Task.search([
+                ("name", "ilike", task_name),
+                ("user_ids", "in", [self.env.uid]),
+                ("stage_id.fold", "=", False),
+            ], limit=1)
+        else:
+            return {"success": False, "error": "Please specify a task name to update."}
+
+        if not task.exists():
+            return {"success": False, "error": f"Task '{task_name}' not found."}
+
+        values = {}
+        old_values = {}
+
+        # Deadline update
+        new_deadline = params.get("date_deadline") or params.get("deadline")
+        if new_deadline:
+            old_values["date_deadline"] = str(task.date_deadline) if task.date_deadline else None
+            try:
+                values["date_deadline"] = fields.Date.from_string(new_deadline) if isinstance(new_deadline, str) else new_deadline
+            except Exception:
+                pass
+
+        # Add a chatter note
+        note = params.get("note") or params.get("message")
+        if note:
+            task.message_post(body=note)
+
+        if values:
+            Snapshot = self.env["dojo.ai.undo.snapshot"]
+            Snapshot.create_snapshot(action_log.id, "project.task", task.id, "write", snapshot_data=old_values)
+            task.write(values)
+
+        updated = list(values.keys()) + (["note"] if note else [])
+        return {
+            "success": True,
+            "message": f"Updated task '{task.name}'.",
+            "data": {"task_id": task.id, "task_name": task.name, "updated_fields": updated},
+        }

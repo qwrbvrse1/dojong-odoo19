@@ -1344,4 +1344,427 @@ Enable auto-enrollment for Test8 in Advanced Sparring</field>
         <field name="active">True</field>
     </record>
 
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Core Odoo Module Intents — Task / Project                            -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_task_list" model="dojo.ai.intent.schema">
+        <field name="intent_type">task_list</field>
+        <field name="name">Task List</field>
+        <field name="description">List my project tasks and instructor todos</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "overdue": {"type": "boolean", "description": "Only show overdue tasks"},
+        "project_name": {"type": "string", "description": "Filter by project name"},
+        "member_name": {"type": "string", "description": "Filter tasks related to a specific member"},
+        "include_done": {"type": "boolean", "description": "Include completed tasks"}
+    }
+}</field>
+        <field name="example_phrases">Show my tasks
+What tasks do I have?
+What's on my to-do list?
+Show overdue tasks
+What tasks are due this week?
+Show my instructor todos
+What do I need to follow up on?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_task_create" model="dojo.ai.intent.schema">
+        <field name="intent_type">task_create</field>
+        <field name="name">Create Task</field>
+        <field name="description">Create a new project task or instructor todo</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["name"],
+    "properties": {
+        "name": {"type": "string", "description": "Task title"},
+        "description": {"type": "string", "description": "Task description or notes"},
+        "date_deadline": {"type": "string", "format": "date", "description": "Deadline date (YYYY-MM-DD)"},
+        "priority": {"type": "string", "enum": ["0", "1"], "description": "Priority: 0=Normal, 1=High"},
+        "project_name": {"type": "string", "description": "Project to add task to (default: Instructor Alerts)"}
+    }
+}</field>
+        <field name="example_phrases">Create a task: follow up with John's parents
+Add a to-do: call Mike about missed classes, due Friday
+Create high priority task: prepare belt test roster for Saturday
+Make a task to review Sarah's attendance this week
+Add reminder to send tournament info to parents</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Create task "{name}" due {date_deadline}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_task_complete" model="dojo.ai.intent.schema">
+        <field name="intent_type">task_complete</field>
+        <field name="name">Complete Task</field>
+        <field name="description">Mark a task as done/completed</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "task_name": {"type": "string", "description": "Name or partial name of the task to complete"},
+        "task_id": {"type": "integer", "description": "ID of the task"}
+    }
+}</field>
+        <field name="example_phrases">Mark task "follow up with John" as done
+Complete the task about Mike's attendance
+I finished the belt test roster task
+Mark done: call parents about tournament
+Check off the task about Sarah</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Mark "{task_name}" as done?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_task_update" model="dojo.ai.intent.schema">
+        <field name="intent_type">task_update</field>
+        <field name="name">Update Task</field>
+        <field name="description">Update a task's deadline, priority, or add a note</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "task_name": {"type": "string", "description": "Name of the task to update"},
+        "task_id": {"type": "integer", "description": "ID of the task"},
+        "date_deadline": {"type": "string", "format": "date", "description": "New deadline (YYYY-MM-DD)"},
+        "note": {"type": "string", "description": "Note to add to the task"}
+    }
+}</field>
+        <field name="example_phrases">Move the belt test task deadline to next Friday
+Update task "call parents" with a note: left voicemail
+Change the deadline on the roster task to Saturday
+Add a note to the John follow-up task: meeting confirmed</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Update task "{task_name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Core Odoo Module Intents — Calendar Events                           -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_calendar_event_list" model="dojo.ai.intent.schema">
+        <field name="intent_type">calendar_event_list</field>
+        <field name="name">Calendar Event List</field>
+        <field name="description">Show upcoming calendar events</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "date_filter": {"type": "string", "enum": ["today", "tomorrow", "this_week", "next_week"], "description": "Time range filter"},
+        "event_name": {"type": "string", "description": "Filter by event name"}
+    }
+}</field>
+        <field name="example_phrases">What's on my calendar today?
+What's on my calendar this week?
+Show calendar events for tomorrow
+Do I have any meetings this week?
+What events are scheduled for next week?
+Show my schedule for today</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_calendar_event_create" model="dojo.ai.intent.schema">
+        <field name="intent_type">calendar_event_create</field>
+        <field name="name">Create Calendar Event</field>
+        <field name="description">Create a new calendar event</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["name", "start"],
+    "properties": {
+        "name": {"type": "string", "description": "Event title"},
+        "start": {"type": "string", "description": "Start date/time (YYYY-MM-DD HH:MM)"},
+        "stop": {"type": "string", "description": "End date/time (YYYY-MM-DD HH:MM)"},
+        "duration_minutes": {"type": "integer", "description": "Duration in minutes (default: 60)"},
+        "description": {"type": "string", "description": "Event description"},
+        "location": {"type": "string", "description": "Event location"}
+    }
+}</field>
+        <field name="example_phrases">Create a calendar event tomorrow at 3pm: instructor meeting
+Add a meeting on Friday at 2pm: parent conference
+Schedule an event next Monday at 10am called belt test prep
+Put a staff meeting on the calendar for Thursday 4pm
+Create event: tournament sign-up deadline on April 20th</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Create calendar event "{name}" on {start}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_calendar_event_cancel" model="dojo.ai.intent.schema">
+        <field name="intent_type">calendar_event_cancel</field>
+        <field name="name">Cancel Calendar Event</field>
+        <field name="description">Cancel and remove a calendar event</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "event_name": {"type": "string", "description": "Name or partial name of the event"},
+        "event_id": {"type": "integer", "description": "ID of the event"},
+        "start": {"type": "string", "description": "Start date to disambiguate events with same name"}
+    }
+}</field>
+        <field name="example_phrases">Cancel the instructor meeting on Friday
+Remove the belt test prep event
+Delete the Thursday 4pm staff meeting
+Cancel the event called parent conference</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Cancel calendar event "{event_name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Core Odoo Module Intents — Direct Communication                      -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_send_email" model="dojo.ai.intent.schema">
+        <field name="intent_type">send_email</field>
+        <field name="name">Send Email</field>
+        <field name="description">Send a direct email to a member, guardian, or contact</field>
+        <field name="category">communication</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member or contact to email"},
+        "contact_name": {"type": "string", "description": "Alternative: contact/guardian name"},
+        "email": {"type": "string", "description": "Email address (if not using member name)"},
+        "subject": {"type": "string", "description": "Email subject line"},
+        "body": {"type": "string", "description": "Email message content"}
+    }
+}</field>
+        <field name="example_phrases">Email John's mom: class is cancelled tomorrow
+Send an email to Sarah's guardian about the belt test
+Email Mike: great job at the tournament this weekend
+Send Sarah an email saying she needs to wear her gi next class
+Write an email to John: your attendance is excellent this month</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Send email to {member_name}: "{subject}"?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_send_sms" model="dojo.ai.intent.schema">
+        <field name="intent_type">send_sms</field>
+        <field name="name">Send SMS</field>
+        <field name="description">Send a direct SMS text message to a member or guardian</field>
+        <field name="category">communication</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member or contact to text"},
+        "contact_name": {"type": "string", "description": "Alternative: contact/guardian name"},
+        "body": {"type": "string", "description": "SMS message text (keep under 160 characters)"},
+        "message": {"type": "string", "description": "Alternative: message field"}
+    }
+}</field>
+        <field name="example_phrases">Text John: don't forget belt test is Saturday
+Send SMS to Mike's mom: class is starting 30 minutes late today
+Text Sarah: great performance this week
+SMS Mike: your uniform needs to be washed before next class
+Send a text to John: come in early on Friday for sparring prep</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Send SMS to {member_name}: "{body}"?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_email_blast" model="dojo.ai.intent.schema">
+        <field name="intent_type">email_blast</field>
+        <field name="name">Email Blast</field>
+        <field name="description">Send a mass email to all members (or filtered group)</field>
+        <field name="category">communication</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["subject", "body"],
+    "properties": {
+        "subject": {"type": "string", "description": "Email subject"},
+        "body": {"type": "string", "description": "Email body text"},
+        "membership_state": {"type": "string", "enum": ["active", "trial", "paused", "cancelled"], "description": "Filter audience by membership state (default: active)"},
+        "send_now": {"type": "boolean", "description": "Send immediately (true) or save as draft (false, default)"}
+    }
+}</field>
+        <field name="example_phrases">Email all active members about the tournament next weekend
+Send a blast email to members: dojo will be closed Monday
+Email all trial members: sign up by Friday to get the first month free
+Send an announcement email to everyone about the belt ceremony
+Create an email campaign for all active students about the new schedule</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Send email blast to all {membership_state} members: "{subject}"?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_sms_blast" model="dojo.ai.intent.schema">
+        <field name="intent_type">sms_blast</field>
+        <field name="name">SMS Blast</field>
+        <field name="description">Send a mass SMS text message to all members (or filtered group)</field>
+        <field name="category">communication</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["body"],
+    "properties": {
+        "body": {"type": "string", "description": "SMS text (keep under 160 chars for single message)"},
+        "message": {"type": "string", "description": "Alternative: message field"},
+        "membership_state": {"type": "string", "enum": ["active", "trial", "paused", "cancelled"], "description": "Filter audience (default: active)"},
+        "send_now": {"type": "boolean", "description": "Send immediately or save as draft"}
+    }
+}</field>
+        <field name="example_phrases">SMS all members: dojo is closed this Saturday
+Text everyone: belt test is moved to Sunday at noon
+Send a text blast to active members about the new class schedule
+SMS all trial members: free week ends Friday, sign up now
+Text everyone about the tornado drill cancellation</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Send SMS blast to all {membership_state} members?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Core Odoo Module Intents — Invoice / Billing (Read-Only)             -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_invoice_lookup" model="dojo.ai.intent.schema">
+        <field name="intent_type">invoice_lookup</field>
+        <field name="name">Invoice Lookup</field>
+        <field name="description">Look up billing/payment status for a specific member or family</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Member or household name to look up"},
+        "name": {"type": "string", "description": "Alternative name field"}
+    }
+}</field>
+        <field name="example_phrases">Has the Smith family paid?
+Check if John's invoice is paid
+Is Sarah's account up to date?
+What's the payment status for the Johnson family?
+Has Mike paid this month?
+Is there an outstanding balance for the Garcias?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_invoice_list" model="dojo.ai.intent.schema">
+        <field name="intent_type">invoice_list</field>
+        <field name="name">Invoice List</field>
+        <field name="description">List invoices filtered by payment status</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "filter": {"type": "string", "enum": ["overdue", "unpaid", "paid"], "description": "Invoice filter (default: overdue)"}
+    }
+}</field>
+        <field name="example_phrases">Show overdue invoices
+Which families haven't paid?
+List all unpaid invoices
+Show me who is behind on payments
+Who has overdue bills?
+Show unpaid accounts
+List paid invoices this month</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Core Odoo Module Intents — Activities                                -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_activity_list" model="dojo.ai.intent.schema">
+        <field name="intent_type">activity_list</field>
+        <field name="name">Activity List</field>
+        <field name="description">List my scheduled follow-up activities</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "overdue": {"type": "boolean", "description": "Only show overdue activities"},
+        "res_model": {"type": "string", "description": "Filter by model (e.g. dojo.member)"}
+    }
+}</field>
+        <field name="example_phrases">What follow-ups do I have?
+Show my scheduled activities
+What calls do I need to make?
+Show overdue activities
+What reminders do I have this week?
+List my pending follow-ups</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_activity_create" model="dojo.ai.intent.schema">
+        <field name="intent_type">activity_create</field>
+        <field name="name">Create Activity</field>
+        <field name="description">Schedule a follow-up activity (call, email reminder, meeting, etc.)</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["summary"],
+    "properties": {
+        "summary": {"type": "string", "description": "Activity description/summary"},
+        "date_deadline": {"type": "string", "format": "date", "description": "Due date (YYYY-MM-DD)"},
+        "activity_type": {"type": "string", "description": "Activity type: Todo, Call, Email, Meeting (default: Todo)"},
+        "note": {"type": "string", "description": "Additional notes for the activity"},
+        "member_name": {"type": "string", "description": "Link activity to a specific member"}
+    }
+}</field>
+        <field name="example_phrases">Schedule a follow-up call with John's parents next Tuesday
+Remind me to check Sarah's attendance on Friday
+Create an activity: send welcome email to new trial students by Monday
+Set a reminder to prepare belt test certificates for Saturday
+Add a follow-up activity for Mike: discuss attendance issues</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Schedule activity "{summary}" due {date_deadline}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
 </odoo>

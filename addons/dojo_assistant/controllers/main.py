@@ -21,6 +21,9 @@ GET  /dojo/ai/intents       (type=jsonrpc) – get available intent schemas
 import json
 import logging
 import base64
+import os
+import hashlib
+from datetime import datetime as _dt
 
 from odoo import http
 from odoo.http import request
@@ -35,7 +38,7 @@ class DojoAiAssistantController(http.Controller):
     # ═══════════════════════════════════════════════════════════════════════════
 
     @http.route("/dojo/ai/text", type="jsonrpc", auth="user", methods=["POST"])
-    def text_query(self, text="", role=None, **kwargs):
+    def text_query(self, text="", role=None, conversation_history=None, **kwargs):
         """
         Process a plain-text query through the dojo AI assistant.
         
@@ -46,6 +49,7 @@ class DojoAiAssistantController(http.Controller):
         Args:
             text: Natural language query
             role: Optional role override (kiosk/instructor/admin)
+            conversation_history: Optional list of {role, text} dicts for context chaining
         
         Returns:
             {
@@ -69,9 +73,16 @@ class DojoAiAssistantController(http.Controller):
         if not role:
             role = self._get_user_role()
 
+        # Decode conversation_history if sent as a JSON string
+        if isinstance(conversation_history, str):
+            try:
+                conversation_history = json.loads(conversation_history)
+            except Exception:
+                conversation_history = None
+
         try:
             assistant = request.env["ai.assistant.service"]
-            result = assistant.handle_command(text, role=role, input_type="text")
+            result = assistant.handle_command(text, role=role, input_type="text", conversation_history=conversation_history)
             return result
         except Exception as exc:
             _logger.error("Dojo AI /dojo/ai/text failed: %s", exc, exc_info=True)
@@ -196,8 +207,7 @@ class DojoAiAssistantController(http.Controller):
             except Exception as exc:
                 _logger.error("Dojo AI STT failed: %s", exc)
                 return _json_resp(
-                    {"success": False, "state": "error", "error": "Speech-to-text failed. Please check the ElevenLabs API key."},
-                    500,
+                    {"success": False, "state": "error", "error": "Speech-to-text failed. Please configure the ElevenLabs API key in Settings → ElevenLabs Voice Connector."},
                 )
 
             transcribed = (transcribed or "").strip()
@@ -210,6 +220,15 @@ class DojoAiAssistantController(http.Controller):
             if not role:
                 role = self._get_user_role()
 
+            # Extract optional conversation history for context chaining
+            conversation_history = None
+            history_raw = kwargs.get("conversation_history")
+            if history_raw:
+                try:
+                    conversation_history = json.loads(history_raw)
+                except Exception:
+                    pass
+
             # Step 2: Process through dojo AI assistant with confirmation flow
             assistant = request.env["ai.assistant.service"]
             result = assistant.handle_command(
@@ -217,6 +236,7 @@ class DojoAiAssistantController(http.Controller):
                 role=role,
                 input_type="voice",
                 audio_attachment_id=attachment.id if attachment else None,
+                conversation_history=conversation_history,
             )
 
             result["transcribed"] = transcribed
@@ -328,6 +348,28 @@ class DojoAiAssistantController(http.Controller):
             _logger.error("Dojo AI /dojo/ai/intents failed: %s", exc, exc_info=True)
             return {"success": False, "intents": [], "error": str(exc)}
 
+    @http.route("/dojo/ai/config", type="jsonrpc", auth="user", methods=["GET", "POST"])
+    def get_config(self, **kwargs):
+        """
+        Return client-facing AI assistant configuration values.
+
+        Returns:
+            {
+                success: bool,
+                context_window_turns: int,
+                error: str | None
+            }
+        """
+        try:
+            turns = request.env["ir.config_parameter"].sudo().get_int(
+                "dojo_assistant.context_window_turns", 10
+            )
+            turns = max(1, min(50, turns))
+            return {"success": True, "context_window_turns": turns, "error": None}
+        except Exception as exc:
+            _logger.error("Dojo AI /dojo/ai/config failed: %s", exc, exc_info=True)
+            return {"success": True, "context_window_turns": 10, "error": str(exc)}
+
     # ═══════════════════════════════════════════════════════════════════════════
     # Legacy Endpoints (Backward Compatibility)
     # ═══════════════════════════════════════════════════════════════════════════
@@ -366,6 +408,43 @@ class DojoAiAssistantController(http.Controller):
             return {"success": False, "error": str(exc)}
 
     # ═══════════════════════════════════════════════════════════════════════════
+    # Text-to-Speech (ElevenLabs)
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @http.route("/dojo/ai/speak", type="jsonrpc", auth="user", methods=["POST"])
+    def speak(self, text="", **kwargs):
+        """
+        Convert text to speech using ElevenLabs TTS.
+
+        Args:
+            text: Text to synthesise
+
+        Returns:
+            {success: True, audio_b64: str, mime: "audio/mpeg"}  on success
+            {success: False, error: str}                          on failure
+        """
+        text = (text or "").strip()
+        if not text:
+            return {"success": False, "error": "No text provided."}
+        # Only instructor / admin may call TTS
+        role = self._get_user_role()
+        if role not in ("instructor", "admin"):
+            return {"success": False, "error": "Access denied."}
+        try:
+            audio_bytes = request.env["elevenlabs.service"].generate_speech(text)
+            if not audio_bytes:
+                return {"success": False, "error": "TTS returned empty audio."}
+            import base64 as _b64
+            return {
+                "success": True,
+                "audio_b64": _b64.b64encode(audio_bytes).decode("ascii"),
+                "mime": "audio/mpeg",
+            }
+        except Exception as exc:
+            _logger.warning("Dojo AI /dojo/ai/speak failed: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    # ═══════════════════════════════════════════════════════════════════════════
     # Helper Methods
     # ═══════════════════════════════════════════════════════════════════════════
 
@@ -383,3 +462,261 @@ class DojoAiAssistantController(http.Controller):
 
         # Default to kiosk (limited permissions)
         return "kiosk"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Standalone Walkie-Talkie (public URL, PIN-gated)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _wt_static_ver(*rel_paths):
+    """Cache-busting hash for standalone walkie-talkie static files."""
+    try:
+        base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        mtimes = "".join(
+            str(int(os.path.getmtime(os.path.join(base, p))))
+            for p in rel_paths
+            if os.path.exists(os.path.join(base, p))
+        )
+        return hashlib.md5(mtimes.encode()).hexdigest()[:8]
+    except Exception:
+        return "1"
+
+
+class DojoWalkieTalkieController(http.Controller):
+    """
+    Standalone walkie-talkie SPA — served at /walkie/<token>.
+    Fully public routes gated by token + PIN validation on every request.
+    No Odoo session required; works outside the backend on any device.
+    """
+
+    def _require_walkie(self, token, pin):
+        """Validate token + PIN; return the record or raise ValueError."""
+        if not token:
+            raise ValueError("Missing token.")
+        record = request.env["dojo.walkie.talkie"].sudo().search(
+            [("walkie_token", "=", token), ("active", "=", True)], limit=1
+        )
+        if not record:
+            raise ValueError("Invalid or inactive walkie-talkie link.")
+        if not record.walkie_pin:
+            raise ValueError("This walkie-talkie has no PIN set. Ask an admin to configure it.")
+        if (pin or "") != record.walkie_pin:
+            raise ValueError("Incorrect PIN.")
+        return record
+
+    # ── SPA shell ──────────────────────────────────────────────────────────────
+
+    @http.route("/walkie/<string:token>", auth="public", type="http", methods=["GET"], csrf=False)
+    def walkie_index(self, token, **kw):
+        """Serve the standalone walkie-talkie SPA."""
+        record = request.env["dojo.walkie.talkie"].sudo().search(
+            [("walkie_token", "=", token), ("active", "=", True)], limit=1
+        )
+        if not record:
+            return request.make_response(
+                "<html><body style='font-family:sans-serif;background:#1a1a2e;color:#e0e0e0;"
+                "display:flex;align-items:center;justify-content:center;height:100vh;margin:0'>"
+                "<h2>Invalid or inactive walkie-talkie link.</h2></body></html>",
+                headers=[("Content-Type", "text/html; charset=utf-8")],
+            )
+        if not record.walkie_pin:
+            return request.make_response(
+                "<html><body style='font-family:sans-serif;background:#1a1a2e;color:#e0e0e0;"
+                "display:flex;align-items:center;justify-content:center;height:100vh;margin:0'>"
+                "<h2>No PIN set for this walkie-talkie. Ask an admin to configure it.</h2></body></html>",
+                headers=[("Content-Type", "text/html; charset=utf-8")],
+            )
+
+        ver_js  = _wt_static_ver("static/src/js/walkie_standalone.js")
+        ver_css = _wt_static_ver("static/src/css/walkie_standalone.css")
+        name_escaped = (record.name or "AI Walkie-Talkie").replace("'", "\\'")
+
+        context_window_turns = request.env["ir.config_parameter"].sudo().get_int(
+            "dojo_assistant.context_window_turns", 10
+        )
+        context_window_turns = max(1, min(50, context_window_turns))
+
+        html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
+    <meta name="robots" content="noindex,nofollow"/>
+    <title>{record.name} — Walkie-Talkie</title>
+    <link rel="stylesheet" href="/web/static/src/libs/fontawesome/css/font-awesome.css"/>
+    <link rel="stylesheet" href="/dojo_assistant/static/src/css/walkie_standalone.css?v={ver_css}"/>
+</head>
+<body>
+    <div id="wt-root"></div>
+    <script>
+        window.WT_TOKEN = '{token}';
+        window.WT_NAME  = '{name_escaped}';
+        window.WT_CONFIG = {{ context_window_turns: {context_window_turns} }};
+        window.onerror  = function(msg, src, line, col, err) {{
+            document.getElementById('wt-root').innerHTML =
+                '<pre style="color:red;background:#111;padding:20px;font-size:13px;white-space:pre-wrap">'
+                + 'JS ERROR:\\n' + msg + '\\nSource: ' + src + ':' + line + ':' + col + '</pre>';
+        }};
+    </script>
+    <script src="/web/static/lib/owl/owl.js"></script>
+    <script src="/dojo_assistant/static/src/js/walkie_standalone.js?v={ver_js}"></script>
+</body>
+</html>"""
+        return request.make_response(html, headers=[("Content-Type", "text/html; charset=utf-8")])
+
+    # ── Auth ───────────────────────────────────────────────────────────────────
+
+    @http.route("/walkie/<string:token>/auth", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    def walkie_auth(self, token, pin="", **kw):
+        """Validate token + PIN. Returns {success: true} or {success: false, error: str}."""
+        try:
+            self._require_walkie(token, pin)
+            return {"success": True}
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
+
+    # ── Text query ─────────────────────────────────────────────────────────────
+
+    @http.route("/walkie/<string:token>/text", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    def walkie_text(self, token, pin="", text="", conversation_history=None, **kw):
+        try:
+            record = self._require_walkie(token, pin)
+        except ValueError as e:
+            return {"success": False, "state": "error", "error": str(e)}
+
+        text = (text or "").strip()
+        if not text:
+            return {"success": False, "state": "error", "error": "No text provided."}
+
+        if isinstance(conversation_history, str):
+            try:
+                conversation_history = json.loads(conversation_history)
+            except Exception:
+                conversation_history = None
+
+        try:
+            record.sudo().write({"last_used": _dt.utcnow()})
+            assistant = request.env["ai.assistant.service"].sudo()
+            return assistant.handle_command(
+                text, role="instructor", input_type="text",
+                conversation_history=conversation_history,
+            )
+        except Exception as exc:
+            _logger.error("Walkie /text failed: %s", exc, exc_info=True)
+            return {"success": False, "state": "error", "error": str(exc)}
+
+    # ── Voice query ────────────────────────────────────────────────────────────
+
+    @http.route("/walkie/<string:token>/voice", type="http", auth="public", methods=["POST"], csrf=False)
+    def walkie_voice(self, token, **kw):
+        def _json_resp(data, status=200):
+            return request.make_response(
+                json.dumps(data, ensure_ascii=False).encode("utf-8"),
+                headers=[("Content-Type", "application/json; charset=utf-8")],
+                status=status,
+            )
+
+        pin = request.httprequest.form.get("pin", "")
+        try:
+            record = self._require_walkie(token, pin)
+        except ValueError as e:
+            return _json_resp({"success": False, "state": "error", "error": str(e)}, 403)
+
+        try:
+            audio_file = request.httprequest.files.get("audio")
+            if not audio_file:
+                return _json_resp({"success": False, "state": "error", "error": "No audio file provided."}, 400)
+            audio_bytes = audio_file.read()
+            if not audio_bytes:
+                return _json_resp({"success": False, "state": "error", "error": "Empty audio file."}, 400)
+
+            attachment = None
+            try:
+                attachment = request.env["ir.attachment"].sudo().create({
+                    "name": f"walkie_voice_{audio_file.filename or 'audio.webm'}",
+                    "datas": base64.b64encode(audio_bytes),
+                    "mimetype": audio_file.content_type or "audio/webm",
+                    "res_model": "dojo.ai.action.log",
+                })
+            except Exception as e:
+                _logger.warning("Could not save walkie audio attachment: %s", e)
+
+            lang = request.env["ir.config_parameter"].sudo().get_str("elevenlabs_connector.language", "en")
+            try:
+                transcribed = request.env["elevenlabs.service"].sudo().transcribe_audio(
+                    audio_bytes, language=lang
+                )
+            except Exception as exc:
+                _logger.error("Walkie STT failed: %s", exc)
+                return _json_resp({"success": False, "state": "error",
+                                   "error": "Speech-to-text failed. Please configure ElevenLabs in Settings."})
+
+            transcribed = (transcribed or "").strip()
+            if not transcribed:
+                return _json_resp({"success": False, "state": "error",
+                                   "error": "Could not understand the audio. Please try again."})
+
+            history_raw = request.httprequest.form.get("conversation_history")
+            conversation_history = None
+            if history_raw:
+                try:
+                    conversation_history = json.loads(history_raw)
+                except Exception:
+                    pass
+
+            record.sudo().write({"last_used": _dt.utcnow()})
+            assistant = request.env["ai.assistant.service"].sudo()
+            result = assistant.handle_command(
+                transcribed,
+                role="instructor",
+                input_type="voice",
+                audio_attachment_id=attachment.id if attachment else None,
+                conversation_history=conversation_history,
+            )
+            result["transcribed"] = transcribed
+            return _json_resp(result)
+
+        except Exception as exc:
+            _logger.error("Walkie /voice failed: %s", exc, exc_info=True)
+            return _json_resp({"success": False, "state": "error", "error": str(exc)}, 500)
+
+    # ── Confirm action ─────────────────────────────────────────────────────────
+
+    @http.route("/walkie/<string:token>/confirm", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    def walkie_confirm(self, token, pin="", session_key="", confirmed=True, **kw):
+        try:
+            self._require_walkie(token, pin)
+        except ValueError as e:
+            return {"success": False, "state": "error", "error": str(e)}
+        if not session_key:
+            return {"success": False, "state": "error", "error": "No session_key provided."}
+        try:
+            assistant = request.env["ai.assistant.service"].sudo()
+            return assistant.execute_confirmed(session_key, confirmed=bool(confirmed))
+        except Exception as exc:
+            _logger.error("Walkie /confirm failed: %s", exc, exc_info=True)
+            return {"success": False, "state": "error", "error": str(exc)}
+
+    # ── Text-to-Speech ─────────────────────────────────────────────────────────
+
+    @http.route("/walkie/<string:token>/speak", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    def walkie_speak(self, token, pin="", text="", **kw):
+        try:
+            self._require_walkie(token, pin)
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
+        text = (text or "").strip()
+        if not text:
+            return {"success": False, "error": "No text provided."}
+        try:
+            audio_bytes = request.env["elevenlabs.service"].sudo().generate_speech(text)
+            if not audio_bytes:
+                return {"success": False, "error": "TTS returned empty audio."}
+            return {
+                "success": True,
+                "audio_b64": base64.b64encode(audio_bytes).decode("ascii"),
+                "mime": "audio/mpeg",
+            }
+        except Exception as exc:
+            _logger.warning("Walkie /speak failed: %s", exc)
+            return {"success": False, "error": str(exc)}
