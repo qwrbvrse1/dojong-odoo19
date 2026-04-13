@@ -143,6 +143,7 @@ class DojoWalkieElder extends Component {
             formData.append("audio", blob, "walkie.webm");
             // Elder mode: always inject elder system prompt via channel param
             formData.append("channel", "elder");
+            if (this.walkieId) formData.append("walkie_id", this.walkieId);
 
             const resp = await fetch("/dojo/ai/voice", {
                 method: "POST", body: formData, credentials: "same-origin",

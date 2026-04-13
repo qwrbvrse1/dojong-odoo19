@@ -240,6 +240,26 @@ class DojoAiAssistantController(http.Controller):
             )
 
             result["transcribed"] = transcribed
+
+            # ── Post to Discuss (Elder / Channel Beta modes) ──────────────
+            walkie_id = kwargs.get("walkie_id")
+            channel = kwargs.get("channel")
+            if walkie_id:
+                try:
+                    walkie_id = int(walkie_id)
+                    walkie_rec = request.env["dojo.walkie.talkie"].sudo().browse(walkie_id).exists()
+                    if walkie_rec and walkie_rec.mode in ("elder_beta", "channel_beta"):
+                        author_id = request.env.user.partner_id.id
+                        walkie_rec.post_voice_to_discuss(
+                            audio_bytes, transcribed,
+                            channel_type=channel, author_id=author_id,
+                        )
+                        ai_text = result.get("response") or result.get("confirmation_prompt") or ""
+                        if ai_text:
+                            walkie_rec.post_ai_response_to_discuss(ai_text, channel_type=channel)
+                except Exception:
+                    _logger.warning("Discuss posting failed (walkie_id=%s)", walkie_id, exc_info=True)
+
             return _json_resp(result)
 
         except Exception as exc:
@@ -708,6 +728,22 @@ class DojoWalkieTalkieController(http.Controller):
                 channel=channel,
             )
             result["transcribed"] = transcribed
+
+            # ── Post to Discuss (Elder / Channel Beta modes) ──────────────
+            if record.mode in ("elder_beta", "channel_beta"):
+                try:
+                    odoobot = request.env.ref("base.partner_root", raise_if_not_found=False)
+                    author_id = odoobot.id if odoobot else None
+                    record.sudo().post_voice_to_discuss(
+                        audio_bytes, transcribed,
+                        channel_type=channel, author_id=author_id,
+                    )
+                    ai_text = result.get("response") or result.get("confirmation_prompt") or ""
+                    if ai_text:
+                        record.sudo().post_ai_response_to_discuss(ai_text, channel_type=channel)
+                except Exception:
+                    _logger.warning("Discuss posting failed (walkie token=%s)", token, exc_info=True)
+
             return _json_resp(result)
 
         except Exception as exc:

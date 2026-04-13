@@ -11,10 +11,13 @@ Each instance also has a standalone public URL: /walkie/<token>
 accessible outside the Odoo backend, similar to the kiosk.
 """
 
+import logging
 import secrets
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
+
+_logger = logging.getLogger(__name__)
 
 
 class DojoWalkieTalkie(models.Model):
@@ -52,6 +55,20 @@ class DojoWalkieTalkie(models.Model):
         string="Standalone URL",
         compute="_compute_walkie_url",
         store=False,
+    )
+
+    # ── Discuss integration ────────────────────────────────────────────────
+    elder_discuss_channel_id = fields.Many2one(
+        "discuss.channel",
+        string="Elder Discuss Channel",
+        ondelete="set null",
+        help="Discuss channel where Elder Beta voice messages and AI responses are posted.",
+    )
+    channel_mapping_ids = fields.One2many(
+        "dojo.walkie.channel.mapping",
+        "walkie_talkie_id",
+        string="Channel → Discuss Mappings",
+        help="Map each AI channel to a Discuss channel for automatic voice message posting.",
     )
 
     @api.depends("walkie_token")
@@ -104,3 +121,79 @@ class DojoWalkieTalkie(models.Model):
                 "walkie_mode": self.mode,
             },
         }
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # Discuss integration helpers
+    # ═══════════════════════════════════════════════════════════════════════
+
+    def _resolve_discuss_channel(self, channel_type=None):
+        """Return the ``discuss.channel`` record for the given AI channel, or False."""
+        self.ensure_one()
+        if self.mode == "elder_beta":
+            return self.elder_discuss_channel_id or self.env["discuss.channel"]
+        if self.mode == "channel_beta":
+            mapping = self.channel_mapping_ids.filtered(
+                lambda m: m.channel_type == (channel_type or "all")
+            )
+            return mapping.discuss_channel_id if mapping else self.env["discuss.channel"]
+        return self.env["discuss.channel"]
+
+    def post_voice_to_discuss(self, audio_bytes, transcription, channel_type=None, author_id=None):
+        """Post the user's voice recording + transcription to the mapped Discuss channel.
+
+        :param bytes audio_bytes: raw WebM/Opus audio
+        :param str transcription: STT transcription text
+        :param str channel_type: AI channel key (e.g. 'attendance'); elder mode ignores this
+        :param int author_id: res.partner id of the message author (logged-in user)
+        :returns: mail.message record or False
+        """
+        self.ensure_one()
+        discuss_channel = self._resolve_discuss_channel(channel_type)
+        if not discuss_channel:
+            return False
+        try:
+            msg = discuss_channel.sudo().message_post(
+                body=transcription or "",
+                message_type="comment",
+                subtype_xmlid="mail.mt_comment",
+                author_id=author_id,
+                attachments=[("walkie.webm", audio_bytes, {"voice": True})],
+            )
+            return msg
+        except Exception:
+            _logger.warning(
+                "Failed to post voice message to Discuss channel %s (walkie %s)",
+                discuss_channel.id, self.id, exc_info=True,
+            )
+            return False
+
+    def post_ai_response_to_discuss(self, response_text, channel_type=None):
+        """Post the AI assistant's text response to the mapped Discuss channel.
+
+        Always authored by OdooBot to distinguish AI messages from human ones.
+
+        :param str response_text: AI response text
+        :param str channel_type: AI channel key
+        :returns: mail.message record or False
+        """
+        self.ensure_one()
+        if not response_text:
+            return False
+        discuss_channel = self._resolve_discuss_channel(channel_type)
+        if not discuss_channel:
+            return False
+        try:
+            odoobot = self.env.ref("base.partner_root", raise_if_not_found=False)
+            msg = discuss_channel.sudo().message_post(
+                body=response_text,
+                message_type="comment",
+                subtype_xmlid="mail.mt_comment",
+                author_id=odoobot.id if odoobot else None,
+            )
+            return msg
+        except Exception:
+            _logger.warning(
+                "Failed to post AI response to Discuss channel %s (walkie %s)",
+                discuss_channel.id, self.id, exc_info=True,
+            )
+            return False

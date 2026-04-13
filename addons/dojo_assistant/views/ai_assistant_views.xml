@@ -482,6 +482,27 @@
                         <strong>Prototype Mode:</strong> Channel Beta and Elder Beta are experimental prototypes
                         being tested with martial arts data. They are not production-ready.
                     </div>
+                    <group string="Discuss Integration"
+                           invisible="mode == 'default'">
+                        <field name="elder_discuss_channel_id"
+                               invisible="mode != 'elder_beta'"
+                               help="All voice messages from this Elder station will be posted to this Discuss channel."/>
+                        <field name="channel_mapping_ids" nolabel="1"
+                               invisible="mode != 'channel_beta'">
+                            <list editable="bottom">
+                                <field name="channel_type"/>
+                                <field name="discuss_channel_id"/>
+                            </list>
+                        </field>
+                        <div class="text-muted" invisible="mode != 'channel_beta'">
+                            Map each AI channel to a Discuss channel. Voice messages and AI responses
+                            will be posted automatically. Create channels in Discuss first, then select them here.
+                        </div>
+                        <div class="text-muted" invisible="mode != 'elder_beta'">
+                            Select a Discuss channel where all Elder mode voice messages and AI responses
+                            will be posted. Create the channel in Discuss first, then select it here.
+                        </div>
+                    </group>
                     <group string="Standalone URL" invisible="not walkie_token">
                         <field name="walkie_url" widget="url" readonly="1"
                                help="Open on any device — no Odoo login required. Keep this link private."/>

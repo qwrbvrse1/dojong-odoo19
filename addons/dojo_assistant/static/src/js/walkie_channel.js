@@ -230,6 +230,7 @@ class DojoWalkieChannel extends Component {
             formData.append("audio", blob, "walkie.webm");
             formData.append("conversation_history", JSON.stringify(this.state.contextWindow));
             formData.append("channel", this.state.activeChannel);
+            if (this.walkieId) formData.append("walkie_id", this.walkieId);
 
             const resp = await fetch("/dojo/ai/voice", {
                 method: "POST",
