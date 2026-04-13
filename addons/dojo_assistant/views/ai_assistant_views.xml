@@ -488,23 +488,16 @@
                            invisible="mode == 'default'">
                         <field name="discuss_post_as_id"
                                help="Voice messages from the standalone URL will be posted as this contact. If blank, defaults to OdooBot."/>
-                        <field name="elder_discuss_channel_id"
-                               invisible="mode != 'elder_beta'"
-                               help="All voice messages from this Elder station will be posted to this Discuss channel."/>
                         <field name="channel_mapping_ids" nolabel="1"
-                               invisible="mode != 'channel_beta'">
+                               invisible="mode not in ('channel_beta', 'elder_beta')">
                             <list editable="bottom">
                                 <field name="channel_type"/>
                                 <field name="discuss_channel_id"/>
                             </list>
                         </field>
-                        <div class="text-muted" invisible="mode != 'channel_beta'">
+                        <div class="text-muted" invisible="mode not in ('channel_beta', 'elder_beta')">
                             Map each AI channel to a Discuss channel. Voice messages and AI responses
                             will be posted automatically. Create channels in Discuss first, then select them here.
-                        </div>
-                        <div class="text-muted" invisible="mode != 'elder_beta'">
-                            Select a Discuss channel where all Elder mode voice messages and AI responses
-                            will be posted. Create the channel in Discuss first, then select it here.
                         </div>
                     </group>
                     <group string="Standalone URL" invisible="not walkie_token">
