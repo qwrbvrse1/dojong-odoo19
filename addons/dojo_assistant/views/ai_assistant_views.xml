@@ -467,6 +467,8 @@
                             <field name="description" placeholder="Optional description…"/>
                             <field name="mode"
                                    help="Default: original walkie-talkie. Channel Beta / Elder Beta are prototypes — do not use in production."/>
+                            <field name="stt_language"
+                                   help="Language used for speech-to-text on the standalone URL. Backend users use their Odoo language preference instead."/>
                             <field name="active"/>
                             <field name="last_used" readonly="1"/>
                         </group>
@@ -484,6 +486,8 @@
                     </div>
                     <group string="Discuss Integration"
                            invisible="mode == 'default'">
+                        <field name="discuss_post_as_id"
+                               help="Voice messages from the standalone URL will be posted as this contact. If blank, defaults to OdooBot."/>
                         <field name="elder_discuss_channel_id"
                                invisible="mode != 'elder_beta'"
                                help="All voice messages from this Elder station will be posted to this Discuss channel."/>

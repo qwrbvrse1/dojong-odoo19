@@ -197,9 +197,15 @@ class DojoAiAssistantController(http.Controller):
                 _logger.warning("Could not save audio attachment: %s", e)
 
             # Step 1: Speech-to-text via ElevenLabs
-            lang = request.env["ir.config_parameter"].sudo().get_str(
-                "elevenlabs_connector.language", "en"
-            )
+            # Use the logged-in user's language when a walkie station is active
+            walkie_id_raw = kwargs.get("walkie_id")
+            if walkie_id_raw:
+                from odoo.addons.dojo_assistant.models.dojo_walkie_talkie import _odoo_lang_to_stt
+                lang = _odoo_lang_to_stt(request.env.user.lang)
+            else:
+                lang = request.env["ir.config_parameter"].sudo().get_str(
+                    "elevenlabs_connector.language", "en"
+                )
             try:
                 transcribed = request.env["elevenlabs.service"].transcribe_audio(
                     audio_bytes, language=lang
@@ -249,14 +255,20 @@ class DojoAiAssistantController(http.Controller):
                     walkie_id = int(walkie_id)
                     walkie_rec = request.env["dojo.walkie.talkie"].sudo().browse(walkie_id).exists()
                     if walkie_rec and walkie_rec.mode in ("elder_beta", "channel_beta"):
+                        from odoo.addons.dojo_assistant.models.dojo_walkie_talkie import _odoo_lang_to_stt
+                        source_lang = _odoo_lang_to_stt(request.env.user.lang)
                         author_id = request.env.user.partner_id.id
                         walkie_rec.post_voice_to_discuss(
                             audio_bytes, transcribed,
                             channel_type=channel, author_id=author_id,
+                            source_lang=source_lang,
                         )
                         ai_text = result.get("response") or result.get("confirmation_prompt") or ""
                         if ai_text:
-                            walkie_rec.post_ai_response_to_discuss(ai_text, channel_type=channel)
+                            walkie_rec.post_ai_response_to_discuss(
+                                ai_text, channel_type=channel,
+                                source_lang=source_lang,
+                            )
                 except Exception:
                     _logger.warning("Discuss posting failed (walkie_id=%s)", walkie_id, exc_info=True)
 
@@ -692,7 +704,7 @@ class DojoWalkieTalkieController(http.Controller):
             except Exception as e:
                 _logger.warning("Could not save walkie audio attachment: %s", e)
 
-            lang = request.env["ir.config_parameter"].sudo().get_str("elevenlabs_connector.language", "en")
+            lang = record.stt_language or "en"
             try:
                 transcribed = request.env["elevenlabs.service"].sudo().transcribe_audio(
                     audio_bytes, language=lang
@@ -732,15 +744,23 @@ class DojoWalkieTalkieController(http.Controller):
             # ── Post to Discuss (Elder / Channel Beta modes) ──────────────
             if record.mode in ("elder_beta", "channel_beta"):
                 try:
-                    odoobot = request.env.ref("base.partner_root", raise_if_not_found=False)
-                    author_id = odoobot.id if odoobot else None
+                    source_lang = record.stt_language or "en"
+                    if record.discuss_post_as_id:
+                        author_id = record.discuss_post_as_id.id
+                    else:
+                        odoobot = request.env.ref("base.partner_root", raise_if_not_found=False)
+                        author_id = odoobot.id if odoobot else None
                     record.sudo().post_voice_to_discuss(
                         audio_bytes, transcribed,
                         channel_type=channel, author_id=author_id,
+                        source_lang=source_lang,
                     )
                     ai_text = result.get("response") or result.get("confirmation_prompt") or ""
                     if ai_text:
-                        record.sudo().post_ai_response_to_discuss(ai_text, channel_type=channel)
+                        record.sudo().post_ai_response_to_discuss(
+                            ai_text, channel_type=channel,
+                            source_lang=source_lang,
+                        )
                 except Exception:
                     _logger.warning("Discuss posting failed (walkie token=%s)", token, exc_info=True)
 
