@@ -108,21 +108,18 @@ class ResConfigSettings(models.TransientModel):
             service = self.env['elevenlabs.service']
             voices = service.get_voices(api_key=api_key)
             import json
-            self.env['ir.config_parameter'].sudo().set_param(
+            self.env['ir.config_parameter'].sudo().set_str(
                 'elevenlabs_connector.available_voices',
-                json.dumps(voices)
+                json.dumps(voices),
             )
             count = len(voices)
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': 'Voices Loaded',
-                    'message': f'{count} voice{"s" if count != 1 else ""} loaded. Select one below and save.',
-                    'type': 'success',
-                    'sticky': False,
-                }
-            }
+            # Re-open the settings form so the Selection field
+            # re-computes its choices from the freshly-saved param.
+            action = self.env['ir.actions.act_window']._for_xml_id(
+                'base_setup.action_general_configuration'
+            )
+            action['target'] = 'main'
+            return action
         except Exception as e:
             return {
                 'type': 'ir.actions.client',

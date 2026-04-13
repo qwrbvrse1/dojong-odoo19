@@ -251,18 +251,7 @@ class ElevenLabsService(models.AbstractModel):
             _logger.error('STT transcription failed: %s', str(e))
             raise UserError(f'Failed to transcribe audio: {str(e)}')
 
-    def get_voices(self):
-        """Get list of available voices from ElevenLabs"""
-        try:
-            response = self._make_request('GET', self.ELEVENLABS_VOICES_ENDPOINT)
-            # Force UTF-8 encoding before parsing JSON
-            if response.encoding is None or response.encoding.lower() in ('iso-8859-1', 'latin-1'):
-                response.encoding = 'utf-8'
-            result = json.loads(response.text)
-            return result.get('voices', [])
-        except Exception as e:
-            _logger.error('Failed to fetch voices: %s', str(e))
-            return []
+
 
     def generate_speech_attachment(self, text, voice_id=None, language=None, filename='voice_output.mp3'):
         """
