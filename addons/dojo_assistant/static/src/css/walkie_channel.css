@@ -1,0 +1,320 @@
+/* ═══════════════════════════════════════════════════════════
+   PROTOTYPE — Dojo AI Walkie-Talkie: Channel Beta styles
+   Extends walkie_talkie.css / walkie_standalone.css.
+   Scope: .dojo-wt-dial* / .dojo-wt-ch-*
+   Palette: inherits base — dojo red (#b41e16) for active state.
+═══════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────
+   LAYOUT ANCHOR FIXES
+   Problem: #wt-root (OWL mount point) has no explicit height,
+   breaking the height:100% chain — thread overflows and controls
+   slide off screen.
+   Fix:
+     1. Give #wt-root / .wt-app an explicit full-viewport height.
+     2. Reinforce the thread flex constraint.
+     3. Pin controls — never shrink, never pushed off.
+   These rules only apply when walkie_channel.css is loaded
+   (channel_beta standalone or backend channel action).
+───────────────────────────────────────────────────────────── */
+
+/* Standalone mount point */
+#wt-root {
+    height: 100%;
+}
+
+/* Standalone app wrapper fallback */
+.wt-app {
+    height: 100%;
+    min-height: 0;
+}
+
+/* Root: position:relative anchors the overlay; height:100% fills parent */
+.dojo-wt-root {
+    position: relative;
+    height: 100%;
+}
+
+/* Thread: flex:1 but MUST shrink — never taller than available space */
+.dojo-wt-thread {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow-y: auto;
+}
+
+/* Controls: locked to bottom — never flex-shrinks, never pushed off */
+.dojo-wt-controls {
+    flex: 0 0 auto !important;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+/* ══════════════════════════════════════════════════════════
+   CHANNEL DIAL BAR
+   Shows: [◄]  prev-label  ══ ACTIVE ══  next-label  [►]
+══════════════════════════════════════════════════════════ */
+
+.dojo-wt-dial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    background: #12161f;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+    height: 54px;
+    position: relative;
+    user-select: none;
+}
+
+/* ── Prev / Next nav arrows ─────────────────────────────── */
+
+.dojo-wt-dial__nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 100%;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+}
+
+.dojo-wt-dial__nav:hover {
+    color: #e8eaed;
+    background: rgba(255,255,255,0.05);
+}
+
+.dojo-wt-dial__nav:active {
+    background: rgba(255,255,255,0.10);
+}
+
+/* ── Track (neighbors + active) ─────────────────────────── */
+
+.dojo-wt-dial__track {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    overflow: hidden;
+}
+
+/* ── Neighbor labels (prev / next) ──────────────────────── */
+
+.dojo-wt-dial__neighbor {
+    font-size: 12px;
+    color: #3d4452;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+    flex-shrink: 1;
+    pointer-events: none;
+    letter-spacing: 0.01em;
+}
+
+/* ── Active channel button (tap to open overlay) ─────────── */
+
+.dojo-wt-dial__active {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 18px 6px 14px;
+    border-radius: 24px;
+    border: 1.5px solid #b41e16;
+    background: rgba(180, 30, 22, 0.12);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+}
+
+.dojo-wt-dial__active:hover {
+    background: rgba(180, 30, 22, 0.22);
+    border-color: #d42820;
+}
+
+.dojo-wt-dial__active:active {
+    background: rgba(180, 30, 22, 0.32);
+}
+
+.dojo-wt-dial__active-icon {
+    font-size: 12px;
+    color: #b41e16;
+}
+
+.dojo-wt-dial__active-label {
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+}
+
+.dojo-wt-dial__caret {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    margin-left: 2px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   CHANNEL PICKER OVERLAY
+   Full-screen backdrop — tap outside to dismiss.
+   Panel slides up from dial bar.
+══════════════════════════════════════════════════════════ */
+
+.dojo-wt-dial-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 100;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 108px; /* header + dial bar height */
+    animation: wt-overlay-in 0.18s ease;
+}
+
+@keyframes wt-overlay-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.dojo-wt-dial-overlay__panel {
+    background: #1a1f2e;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.10);
+    padding: 20px 16px 16px;
+    width: min(360px, calc(100vw - 32px));
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    animation: wt-panel-in 0.20s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes wt-panel-in {
+    from { transform: translateY(-12px) scale(0.96); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.dojo-wt-dial-overlay__title {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #5a6070;
+    margin-bottom: 14px;
+}
+
+/* ── Channel grid (4 cols on wide, 3 on narrow) ─────────── */
+
+.dojo-wt-dial-overlay__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+@media (max-width: 340px) {
+    .dojo-wt-dial-overlay__grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ── Individual channel tile ─────────────────────────────── */
+
+.dojo-wt-dial-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 6px 10px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    color: #8a93a8;
+    cursor: pointer;
+    transition: background 0.13s, border-color 0.13s, color 0.13s, transform 0.10s;
+}
+
+.dojo-wt-dial-tile:hover {
+    background: rgba(255,255,255,0.10);
+    border-color: rgba(255,255,255,0.22);
+    color: #e8eaed;
+    transform: scale(1.04);
+}
+
+.dojo-wt-dial-tile:active {
+    transform: scale(0.97);
+}
+
+.dojo-wt-dial-tile.active {
+    background: rgba(180, 30, 22, 0.18);
+    border-color: #b41e16;
+    color: #fff;
+}
+
+.dojo-wt-dial-tile.active:hover {
+    background: rgba(180, 30, 22, 0.28);
+    border-color: #d42820;
+}
+
+.dojo-wt-dial-tile__icon {
+    font-size: 18px;
+}
+
+.dojo-wt-dial-tile__label {
+    font-size: 10px;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+}
+
+/* ══════════════════════════════════════════════════════════
+   CHANNEL DIVIDER IN THREAD
+   Only shown after a conversation has started.
+══════════════════════════════════════════════════════════ */
+
+.dojo-wt-ch-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 16px;
+    color: #3d4452;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+.dojo-wt-ch-divider::before,
+.dojo-wt-ch-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+}
+
+/* ── Header channel badge ────────────────────────────────── */
+
+.dojo-wt-ch-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.25);
+    color: rgba(255,255,255,0.85);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    margin-left: 4px;
+    vertical-align: middle;
+}

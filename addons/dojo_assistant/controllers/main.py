@@ -527,14 +527,38 @@ class DojoWalkieTalkieController(http.Controller):
                 headers=[("Content-Type", "text/html; charset=utf-8")],
             )
 
-        ver_js  = _wt_static_ver("static/src/js/walkie_standalone.js")
-        ver_css = _wt_static_ver("static/src/css/walkie_standalone.css")
+        # PROTOTYPE: route JS/CSS by mode — default mode unchanged
+        mode = record.mode or "default"
+        _JS_BY_MODE = {
+            "default":      "static/src/js/walkie_standalone.js",
+            "channel_beta": "static/src/js/walkie_channel_standalone.js",
+            "elder_beta":   "static/src/js/walkie_elder_standalone.js",
+        }
+        _CSS_BY_MODE = {
+            "default":      "static/src/css/walkie_standalone.css",
+            "channel_beta": "static/src/css/walkie_standalone.css",   # base + channel pills
+            "elder_beta":   "static/src/css/walkie_standalone.css",   # base + elder overrides
+        }
+        js_path  = _JS_BY_MODE.get(mode, _JS_BY_MODE["default"])
+        css_path = _CSS_BY_MODE.get(mode, _CSS_BY_MODE["default"])
+
+        ver_js  = _wt_static_ver(js_path)
+        ver_css = _wt_static_ver(css_path)
         name_escaped = (record.name or "AI Walkie-Talkie").replace("'", "\\'")
 
         context_window_turns = request.env["ir.config_parameter"].sudo().get_int(
             "dojo_assistant.context_window_turns", 10
         )
         context_window_turns = max(1, min(50, context_window_turns))
+
+        # Extra CSS link for channel/elder prototype overlays
+        extra_css = ""
+        if mode == "channel_beta":
+            ver_ch = _wt_static_ver("static/src/css/walkie_channel.css")
+            extra_css = f'    <link rel="stylesheet" href="/dojo_assistant/static/src/css/walkie_channel.css?v={ver_ch}"/>\n'
+        elif mode == "elder_beta":
+            ver_el = _wt_static_ver("static/src/css/walkie_elder.css")
+            extra_css = f'    <link rel="stylesheet" href="/dojo_assistant/static/src/css/walkie_elder.css?v={ver_el}"/>\n'
 
         html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -545,21 +569,27 @@ class DojoWalkieTalkieController(http.Controller):
     <title>{record.name} — Walkie-Talkie</title>
     <link rel="stylesheet" href="/web/static/src/libs/fontawesome/css/font-awesome.css"/>
     <link rel="stylesheet" href="/dojo_assistant/static/src/css/walkie_standalone.css?v={ver_css}"/>
-</head>
+{extra_css}</head>
 <body>
     <div id="wt-root"></div>
     <script>
         window.WT_TOKEN = '{token}';
         window.WT_NAME  = '{name_escaped}';
-        window.WT_CONFIG = {{ context_window_turns: {context_window_turns} }};
-        window.onerror  = function(msg, src, line, col, err) {{
-            document.getElementById('wt-root').innerHTML =
-                '<pre style="color:red;background:#111;padding:20px;font-size:13px;white-space:pre-wrap">'
-                + 'JS ERROR:\\n' + msg + '\\nSource: ' + src + ':' + line + ':' + col + '</pre>';
+        window.WT_CONFIG = {{ context_window_turns: {context_window_turns}, mode: '{mode}' }};
+        function _wtShowError(msg) {{
+            var el = document.getElementById('wt-root');
+            if (el) el.innerHTML = '<pre style="color:red;background:#111;padding:20px;font-size:13px;white-space:pre-wrap;margin:0">' + msg + '</pre>';
+        }}
+        window.onerror = function(msg, src, line, col, err) {{
+            _wtShowError('JS ERROR:\\n' + msg + '\\nSource: ' + src + ':' + line + ':' + col);
         }};
+        window.addEventListener('unhandledrejection', function(ev) {{
+            var r = ev.reason;
+            _wtShowError('ASYNC ERROR (mount/render):\\n' + (r && r.stack ? r.stack : String(r)));
+        }});
     </script>
     <script src="/web/static/lib/owl/owl.js"></script>
-    <script src="/dojo_assistant/static/src/js/walkie_standalone.js?v={ver_js}"></script>
+    <script src="/dojo_assistant/static/src/js/{js_path.split('/')[-1]}?v={ver_js}"></script>
 </body>
 </html>"""
         return request.make_response(html, headers=[("Content-Type", "text/html; charset=utf-8")])
@@ -578,7 +608,7 @@ class DojoWalkieTalkieController(http.Controller):
     # ── Text query ─────────────────────────────────────────────────────────────
 
     @http.route("/walkie/<string:token>/text", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
-    def walkie_text(self, token, pin="", text="", conversation_history=None, **kw):
+    def walkie_text(self, token, pin="", text="", conversation_history=None, channel=None, **kw):
         try:
             record = self._require_walkie(token, pin)
         except ValueError as e:
@@ -600,6 +630,7 @@ class DojoWalkieTalkieController(http.Controller):
             return assistant.handle_command(
                 text, role="instructor", input_type="text",
                 conversation_history=conversation_history,
+                channel=channel or None,
             )
         except Exception as exc:
             _logger.error("Walkie /text failed: %s", exc, exc_info=True)
@@ -664,6 +695,8 @@ class DojoWalkieTalkieController(http.Controller):
                 except Exception:
                     pass
 
+            channel = request.httprequest.form.get("channel") or None
+
             record.sudo().write({"last_used": _dt.utcnow()})
             assistant = request.env["ai.assistant.service"].sudo()
             result = assistant.handle_command(
@@ -672,6 +705,7 @@ class DojoWalkieTalkieController(http.Controller):
                 input_type="voice",
                 audio_attachment_id=attachment.id if attachment else None,
                 conversation_history=conversation_history,
+                channel=channel,
             )
             result["transcribed"] = transcribed
             return _json_resp(result)

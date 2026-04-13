@@ -646,13 +646,13 @@ class AiAssistantService(models.AbstractModel):
     # ═══════════════════════════════════════════════════════════════════════════
 
     @api.model
-    def handle_command(self, text, role="instructor", input_type="text", audio_attachment_id=None, context=None, conversation_history=None):
+    def handle_command(self, text, role="instructor", input_type="text", audio_attachment_id=None, context=None, conversation_history=None, channel=None):
         """
         Main entry point for the AI assistant.
-        
+
         This is the primary method that should be called by consuming modules.
         Aliases: parse_and_confirm (for backward compatibility)
-        
+
         Args:
             text: User's natural language input
             role: User role (kiosk/instructor/admin)
@@ -660,7 +660,9 @@ class AiAssistantService(models.AbstractModel):
             audio_attachment_id: ID of stored audio attachment (for voice)
             context: Optional dict of additional context data
             conversation_history: Optional list of {role, text} dicts for context chaining
-        
+            channel: Optional channel name for Channel Beta mode — narrows AI focus via
+                     system prompt prefix injection (e.g. "attendance", "members"). PROTOTYPE.
+
         Returns:
             dict: {
                 "success": bool,
@@ -675,7 +677,7 @@ class AiAssistantService(models.AbstractModel):
                 "error": str | None
             }
         """
-        return self.parse_and_confirm(text, role, input_type, audio_attachment_id, conversation_history=conversation_history)
+        return self.parse_and_confirm(text, role, input_type, audio_attachment_id, conversation_history=conversation_history, channel=channel)
 
     @api.model
     def handle_compound_command(self, compound_data, role="instructor"):
@@ -872,27 +874,56 @@ class AiAssistantService(models.AbstractModel):
             "error": None,
         }
 
+    # ── Channel Beta system prompt prefixes (PROTOTYPE) ─────────────────────────
+    _CHANNEL_PREFIXES = {
+        "attendance":   "CHANNEL FOCUS: Attendance only. Prioritise check-in, check-out, and attendance query intents. Treat unrelated requests as out-of-scope but still attempt to help.",
+        "members":      "CHANNEL FOCUS: Members only. Prioritise member lookup, create, and update intents. Treat unrelated requests as out-of-scope but still attempt to help.",
+        "enrollment":   "CHANNEL FOCUS: Enrollment only. Prioritise class enrollment, unenrollment, and program enrollment intents. Treat unrelated requests as out-of-scope but still attempt to help.",
+        "belts":        "CHANNEL FOCUS: Belt & Ranks only. Prioritise rank promotion, belt lookup, and belt test intents. Treat unrelated requests as out-of-scope but still attempt to help.",
+        "billing":      "CHANNEL FOCUS: Billing only. Prioritise subscription, credit, and payment query intents. Treat unrelated requests as out-of-scope but still attempt to help.",
+        "lookup":       "CHANNEL FOCUS: Lookup / read-only mode. Only perform read-only information lookups — do NOT execute any create, update, delete, enroll, or send actions even if asked.",
+        "all":          None,  # no prefix — same as default
+        # PROTOTYPE: Elder Beta mode — injected on every request from walkie_elder
+        "elder":        (
+            "ELDER MODE: You are speaking to an elderly or less tech-savvy user. "
+            "Rules: (1) Respond in short, plain sentences — no jargon, no bullet points, no markdown. "
+            "(2) No martial arts terminology assumed — use plain English. "
+            "(3) Always repeat the subject back before confirming an action: "
+            "'You want to check in Jordan Smith — is that right?' "
+            "(4) Keep every response under three sentences. "
+            "(5) If unsure, ask one simple clarifying question."
+        ),
+    }
+
     @api.model
-    def parse_and_confirm(self, text, role="instructor", input_type="text", audio_attachment_id=None, conversation_history=None):
+    def parse_and_confirm(self, text, role="instructor", input_type="text", audio_attachment_id=None, conversation_history=None, channel=None):
         """
         Phase 1: Parse natural language input into a structured intent.
-        
+
         For read-only intents, auto-executes and returns result.
         For mutating intents, returns confirmation prompt.
-        
+
         Args:
             text: User's natural language input
             role: User role (kiosk/instructor/admin)
             input_type: 'text' or 'voice'
             audio_attachment_id: ID of stored audio attachment (for voice)
             conversation_history: Optional list of {role, text} dicts for context chaining
-        
+            channel: Optional Channel Beta channel name — injects a system prompt prefix
+                     to narrow AI focus. PROTOTYPE — pure prompt injection, no hard filter.
+
         Returns:
             dict: Standard response format (see handle_command)
         """
         text = (text or "").strip()
         if not text:
             return self._error_response("Please type or say something.")
+
+        # ── PROTOTYPE: Channel Beta system prompt prefix injection ───────────────
+        if channel and channel != "all":
+            prefix = self._CHANNEL_PREFIXES.get(channel)
+            if prefix:
+                text = f"[SYSTEM CONTEXT — {prefix}]\n\n{text}"
 
         # ── Inject conversation history into the prompt ──────────────────────────
         if conversation_history:

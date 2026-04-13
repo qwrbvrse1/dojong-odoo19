@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PROTOTYPE — Elder Beta Walkie-Talkie backend OWL template -->
+<templates xml:space="preserve">
+    <t t-name="dojo_assistant.WalkieElder" owl="1">
+        <div class="wt-elder-root">
+
+            <!-- ── Minimal header ──────────────────────────────────── -->
+            <div class="wt-elder-header">
+                <i class="fa fa-podcast wt-elder-header__icon"/>
+                <span class="wt-elder-header__name" t-out="state.walkieName"/>
+            </div>
+
+            <!-- ── Error banner ────────────────────────────────────── -->
+            <div t-if="state.error" class="wt-elder-error">
+                <i class="fa fa-exclamation-triangle"/> <t t-out="state.error"/>
+            </div>
+
+            <!-- ── Response area ───────────────────────────────────── -->
+            <div class="wt-elder-response">
+
+                <!-- Large status text -->
+                <p t-attf-class="wt-elder-status
+                    #{state.isHolding    ? 'wt-elder-status--listening' : ''}
+                    #{state.isSpeaking   ? 'wt-elder-status--speaking'  : ''}
+                    #{state.isProcessing ? 'wt-elder-status--thinking'  : ''}">
+                    <t t-if="state.isHolding">Listening…</t>
+                    <t t-elif="state.isProcessing">Thinking…</t>
+                    <t t-elif="state.isSpeaking">Speaking…</t>
+                    <t t-elif="state.awaitingConfirmation">Waiting for your answer…</t>
+                    <t t-else="">Ready</t>
+                </p>
+
+                <!-- Last AI response — large text -->
+                <div t-if="state.lastResponse"
+                     class="wt-elder-last-response"
+                     t-out="state.lastResponse"/>
+                <div t-else=""
+                     class="wt-elder-last-response wt-elder-last-response--empty">
+                    Hold the big button below and speak
+                </div>
+
+                <!-- Confirmation hint — verbal only, no buttons -->
+                <p t-if="state.awaitingConfirmation"
+                   class="wt-elder-confirm-hint">
+                    Say "Yes" to confirm or "No" to cancel
+                </p>
+
+                <!-- Say that again button — only shown after successful TTS -->
+                <button t-if="state.lastAudioB64 and not state.isSpeaking and not state.isHolding and not state.isProcessing"
+                        class="wt-elder-replay"
+                        t-on-click="replayLastAudio">
+                    <i class="fa fa-repeat wt-elder-replay__icon"/>
+                    Say that again
+                </button>
+
+            </div>
+
+            <!-- ── Giant PTT area ──────────────────────────────────── -->
+            <div class="wt-elder-ptt-area">
+
+                <button
+                    t-attf-class="wt-elder-ptt
+                        #{state.isHolding    ? 'wt-elder-ptt--recording'  : ''}
+                        #{state.isProcessing ? 'wt-elder-ptt--processing' : ''}
+                        #{state.isSpeaking   ? 'wt-elder-ptt--speaking'   : ''}"
+                    t-att-disabled="state.isProcessing or state.isSpeaking"
+                    t-on-mousedown="onPttDown"
+                    t-on-mouseup="onPttUp"
+                    t-on-mouseleave="onPttLeave"
+                    t-on-touchstart="onPttDown"
+                    t-on-touchend="onPttUp"
+                    t-on-touchcancel="onPttLeave"
+                    aria-label="Hold to talk">
+                    <i t-attf-class="fa #{state.isSpeaking ? 'fa-volume-up' : state.isProcessing ? 'fa-spinner fa-spin' : 'fa-microphone'} wt-elder-ptt__icon"/>
+                </button>
+
+                <p class="wt-elder-ptt-label">
+                    <t t-if="state.awaitingConfirmation">Say Yes or No</t>
+                    <t t-else="">Hold to talk</t>
+                </p>
+
+            </div>
+
+        </div>
+    </t>
+</templates>

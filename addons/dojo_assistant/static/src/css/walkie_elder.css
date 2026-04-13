@@ -1,0 +1,264 @@
+/* ═══════════════════════════════════════════════════════════
+   PROTOTYPE — Dojo AI Walkie-Talkie: Elder Beta styles
+   Design goals:
+     - Maximum simplicity — one job, one giant button
+     - High contrast: pure white on #0f1117
+     - Dojo red ONLY for PTT active state
+     - All small / secondary UI hidden
+     - Everything oversized for easy tap + reading
+   Scope: .wt-elder-* prefix for new elements;
+          .dojo-wt-* overrides reset default styles.
+═══════════════════════════════════════════════════════════ */
+
+/* ── Standalone anchors (same pattern as channel) ─────────── */
+
+#wt-root       { height: 100%; }
+.wt-app        { height: 100%; min-height: 0; }
+
+/* ── Root layout ─────────────────────────────────────────── */
+
+.wt-elder-root {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    height: 100%;
+    min-height: 0;
+    background: #0f1117;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    position: relative;
+}
+
+/* ── Minimal header ──────────────────────────────────────── */
+
+.wt-elder-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: #b41e16;
+    border-bottom: 1px solid rgba(0,0,0,0.3);
+    flex: 0 0 auto;
+}
+
+.wt-elder-header__icon {
+    font-size: 22px;
+    color: rgba(255,255,255,0.9);
+}
+
+.wt-elder-header__name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    flex: 1;
+    letter-spacing: -0.01em;
+}
+
+/* ── Response area — fills space above PTT ───────────────── */
+
+.wt-elder-response {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 28px 16px;
+    gap: 20px;
+    text-align: center;
+}
+
+/* Large status text ("LISTENING…", "SPEAKING…") */
+.wt-elder-status {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #6b7280;
+    min-height: 22px;
+    transition: color 0.2s;
+}
+.wt-elder-status--listening { color: #b41e16; }
+.wt-elder-status--speaking  { color: #4ade80; }
+.wt-elder-status--thinking  { color: #fbbf24; }
+
+/* Last AI response — large, readable */
+.wt-elder-last-response {
+    font-size: 26px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: #ffffff;
+    max-width: 480px;
+    word-break: break-word;
+}
+
+.wt-elder-last-response--empty {
+    font-size: 18px;
+    color: #374151;
+    font-weight: 400;
+}
+
+/* "Say that again" replay button */
+.wt-elder-replay {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    border-radius: 40px;
+    border: 2px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.07);
+    color: #e8eaed;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    letter-spacing: 0.01em;
+}
+.wt-elder-replay:hover  { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.32); }
+.wt-elder-replay:active { transform: scale(0.97); }
+.wt-elder-replay__icon  { font-size: 18px; }
+
+/* Awaiting confirmation hint */
+.wt-elder-confirm-hint {
+    font-size: 20px;
+    font-weight: 600;
+    color: #fbbf24;
+    letter-spacing: 0.02em;
+    animation: wt-elder-pulse 1.6s infinite;
+}
+
+@keyframes wt-elder-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.45; }
+}
+
+/* ── Giant PTT area — ~50% of viewport height ────────────── */
+
+.wt-elder-ptt-area {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 24px max(24px, env(safe-area-inset-bottom));
+    background: #0b0d14;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    gap: 16px;
+    /* Takes 50% of viewport height */
+    min-height: 50vh;
+}
+
+/* Giant PTT button */
+.wt-elder-ptt {
+    /* Fills most of the 50vh area */
+    width:  min(220px, 40vw);
+    height: min(220px, 40vw);
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.10);
+    background: #1a1d27;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow:
+        0 6px 48px rgba(0,0,0,0.8),
+        0 0 0 2px rgba(255,255,255,0.04),
+        inset 0 2px 0 rgba(255,255,255,0.06);
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.2s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    outline: none;
+}
+
+.wt-elder-ptt:hover:not(:disabled) {
+    background: #252836;
+    border-color: rgba(255,255,255,0.18);
+}
+
+.wt-elder-ptt--recording {
+    background: #b41e16 !important;
+    border-color: #8a1510 !important;
+    transform: scale(0.96);
+    box-shadow:
+        0 0 0 14px rgba(180,30,22,0.22),
+        0 0 48px rgba(180,30,22,0.35),
+        0 6px 32px rgba(0,0,0,0.6);
+    animation: wt-elder-ring 1.0s infinite;
+}
+
+.wt-elder-ptt--processing {
+    background: #92400e !important;
+    border-color: #78350f !important;
+    cursor: not-allowed;
+}
+
+.wt-elder-ptt--speaking {
+    background: #14532d !important;
+    border-color: #166534 !important;
+    cursor: not-allowed;
+    box-shadow:
+        0 0 0 14px rgba(20,83,45,0.22),
+        0 0 48px rgba(34,197,94,0.18);
+    animation: wt-elder-ring-green 1.4s infinite;
+}
+
+.wt-elder-ptt:disabled { opacity: 0.55; }
+
+.wt-elder-ptt__icon {
+    font-size: clamp(52px, 10vw, 80px);
+    color: #e8eaed;
+    pointer-events: none;
+}
+
+/* Label under PTT */
+.wt-elder-ptt-label {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #4b5563;
+    margin: 0;
+}
+
+/* ── Error banner ────────────────────────────────────────── */
+
+.wt-elder-error {
+    position: absolute;
+    top: 64px;
+    left: 0; right: 0;
+    background: rgba(180,30,22,0.22);
+    border-bottom: 2px solid #b41e16;
+    color: #fca5a5;
+    padding: 12px 20px;
+    font-size: 16px;
+    text-align: center;
+    z-index: 20;
+}
+
+/* ── Animations ──────────────────────────────────────────── */
+
+@keyframes wt-elder-ring {
+    0%   { box-shadow: 0 0 0  10px rgba(180,30,22,0.45), 0 0 48px rgba(180,30,22,0.35); }
+    70%  { box-shadow: 0 0 0  40px rgba(180,30,22,0.00), 0 0 48px rgba(180,30,22,0.15); }
+    100% { box-shadow: 0 0 0  10px rgba(180,30,22,0.00), 0 0 48px rgba(180,30,22,0.35); }
+}
+
+@keyframes wt-elder-ring-green {
+    0%   { box-shadow: 0 0 0  10px rgba(20,83,45,0.40), 0 0 48px rgba(34,197,94,0.18); }
+    70%  { box-shadow: 0 0 0  36px rgba(20,83,45,0.00), 0 0 48px rgba(34,197,94,0.08); }
+    100% { box-shadow: 0 0 0  10px rgba(20,83,45,0.00), 0 0 48px rgba(34,197,94,0.18); }
+}
+
+/* ── PIN screen (standalone) — larger everything ─────────── */
+
+.wt-elder-root .wt-pin-card {
+    max-width: 420px;
+    padding: 56px 48px;
+}
+
+.wt-elder-root .wt-pin-card__title { font-size: 26px; }
+.wt-elder-root .wt-pin-input       { font-size: 22px; padding: 16px 20px; }
+.wt-elder-root .wt-pin-btn         { width: 60px; height: 60px; font-size: 22px; }
+.wt-elder-root .wt-pin-card__label { font-size: 16px; }

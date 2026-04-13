@@ -26,6 +26,17 @@ class DojoWalkieTalkie(models.Model):
     description = fields.Text(string="Description")
     active = fields.Boolean(default=True)
     last_used = fields.Datetime(string="Last Used", readonly=True)
+    # PROTOTYPE: mode selector — default keeps original behaviour untouched
+    mode = fields.Selection(
+        selection=[
+            ("default", "Default"),
+            ("channel_beta", "Channel Beta (Prototype)"),
+            ("elder_beta", "Elder Beta (Prototype)"),
+        ],
+        string="Mode",
+        default="default",
+        required=True,
+    )
     walkie_token = fields.Char(
         string="Standalone Token",
         readonly=True,
@@ -68,4 +79,28 @@ class DojoWalkieTalkie(models.Model):
             "type": "ir.actions.act_url",
             "url": f"/walkie/{self.walkie_token}",
             "target": "new",
+        }
+
+    def action_launch_backend(self):
+        """
+        Open the walkie-talkie as an Odoo backend client action, routed by mode.
+        PROTOTYPE: channel_beta and elder_beta use their own client action tags.
+        """
+        self.ensure_one()
+        self.sudo().write({"last_used": fields.Datetime.now()})
+        tag_map = {
+            "default": "dojo_assistant.walkie_talkie",
+            "channel_beta": "dojo_assistant.walkie_channel",
+            "elder_beta": "dojo_assistant.walkie_elder",
+        }
+        tag = tag_map.get(self.mode, "dojo_assistant.walkie_talkie")
+        return {
+            "type": "ir.actions.client",
+            "tag": tag,
+            "name": self.name,
+            "context": {
+                "walkie_id": self.id,
+                "walkie_name": self.name,
+                "walkie_mode": self.mode,
+            },
         }

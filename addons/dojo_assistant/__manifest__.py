@@ -58,6 +58,14 @@
             'dojo_assistant/static/src/css/walkie_talkie.css',
             'dojo_assistant/static/src/xml/walkie_talkie.xml',
             'dojo_assistant/static/src/js/walkie_talkie.js',
+            # PROTOTYPE: Channel Beta mode assets
+            'dojo_assistant/static/src/css/walkie_channel.css',
+            'dojo_assistant/static/src/xml/walkie_channel.xml',
+            'dojo_assistant/static/src/js/walkie_channel.js',
+            # PROTOTYPE: Elder Beta mode assets
+            'dojo_assistant/static/src/css/walkie_elder.css',
+            'dojo_assistant/static/src/xml/walkie_elder.xml',
+            'dojo_assistant/static/src/js/walkie_elder.js',
         ],
     },
     'demo': [],

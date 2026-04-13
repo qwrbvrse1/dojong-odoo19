@@ -410,6 +410,18 @@
         <field name="tag">dojo_assistant.walkie_talkie</field>
     </record>
 
+    <!-- PROTOTYPE: Channel Beta client action -->
+    <record id="action_dojo_walkie_channel" model="ir.actions.client">
+        <field name="name">AI Walkie-Talkie — Channel Beta</field>
+        <field name="tag">dojo_assistant.walkie_channel</field>
+    </record>
+
+    <!-- PROTOTYPE: Elder Beta client action -->
+    <record id="action_dojo_walkie_elder" model="ir.actions.client">
+        <field name="name">AI Walkie-Talkie — Elder Beta</field>
+        <field name="tag">dojo_assistant.walkie_elder</field>
+    </record>
+
     <!-- ── Walkie-Talkie Instance list view ─────────────────────────────── -->
     <record id="view_dojo_walkie_talkie_list" model="ir.ui.view">
         <field name="name">dojo.walkie.talkie.list</field>
@@ -417,6 +429,9 @@
         <field name="arch" type="xml">
             <list string="AI Walkie-Talkies">
                 <field name="name"/>
+                <field name="mode" widget="badge"
+                    decoration-info="mode == 'channel_beta'"
+                    decoration-warning="mode == 'elder_beta'"/>
                 <field name="walkie_url" widget="url" string="Standalone URL" readonly="1"/>
                 <field name="last_used" string="Last Used"/>
                 <field name="active"/>
@@ -450,6 +465,8 @@
                     <group>
                         <group string="Station Settings">
                             <field name="description" placeholder="Optional description…"/>
+                            <field name="mode"
+                                   help="Default: original walkie-talkie. Channel Beta / Elder Beta are prototypes — do not use in production."/>
                             <field name="active"/>
                             <field name="last_used" readonly="1"/>
                         </group>
@@ -460,6 +477,11 @@
                                    help="PIN required to access this station on the standalone URL. Set by admin."/>
                         </group>
                     </group>
+                    <div class="alert alert-warning" role="alert"
+                         invisible="mode == 'default'">
+                        <strong>Prototype Mode:</strong> Channel Beta and Elder Beta are experimental prototypes
+                        being tested with martial arts data. They are not production-ready.
+                    </div>
                     <group string="Standalone URL" invisible="not walkie_token">
                         <field name="walkie_url" widget="url" readonly="1"
                                help="Open on any device — no Odoo login required. Keep this link private."/>

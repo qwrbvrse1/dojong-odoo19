@@ -1,16 +1,11 @@
 /**
- * Dojo AI Walkie-Talkie — Standalone SPA
+ * PROTOTYPE — Dojo AI Walkie-Talkie: Channel Beta (standalone SPA)
  *
- * Served at /walkie/<token> — completely outside the Odoo backend.
- * Uses plain OWL (global `owl` from owl.js) + fetch-based API calls.
- * No Odoo module system — all components in one file.
+ * Served at /walkie/<token> when the walkie-talkie instance is in channel_beta mode.
+ * Extends the default standalone with a horizontal channel pill row.
  *
- * Authentication:
- *   1. Page loads → PIN screen shown
- *   2. Instructor enters PIN → POST /walkie/<token>/auth validates it
- *   3. On success: PIN stored in JS memory, walkie UI shown
- *   4. Every API call sends token (in URL) + PIN (in body) — validated server-side
- *   5. PIN lost on page refresh → user re-enters PIN (by design)
+ * Authentication: PIN screen → token + PIN sent on every API call.
+ * Channel: runtime UI state only — never persisted.
  */
 
 /* global owl */
@@ -20,7 +15,21 @@
 
     const { Component, useState, useRef, onWillUnmount, mount, xml } = owl;
 
-    // ── Constants ────────────────────────────────────────────────────────────
+    // ── Channel definitions ───────────────────────────────────────────────────
+
+    const CHANNELS = [
+        { id: "all",        label: "All",          icon: "fa-th" },
+        { id: "attendance", label: "Attendance",   icon: "fa-check-square-o" },
+        { id: "members",    label: "Members",      icon: "fa-users" },
+        { id: "enrollment", label: "Enrollment",   icon: "fa-calendar-plus-o" },
+        { id: "belts",      label: "Belt & Ranks", icon: "fa-trophy" },
+        { id: "billing",    label: "Billing",      icon: "fa-credit-card" },
+        { id: "lookup",     label: "Lookup Only",  icon: "fa-search" },
+    ];
+
+    const CHANNEL_LABEL = Object.fromEntries(CHANNELS.map(c => [c.id, c.label]));
+
+    // ── Constants ─────────────────────────────────────────────────────────────
 
     const YES_RE = /\b(yes|confirm|yeah|yep|sure|correct|ok|okay|affirmative|do it)\b/i;
     const NO_RE  = /\b(no|cancel|nope|stop|abort|never mind|nevermind|don'?t)\b/i;
@@ -29,7 +38,7 @@
         return new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
     }
 
-    // ── JSON-RPC helper ──────────────────────────────────────────────────────
+    // ── JSON-RPC helper ───────────────────────────────────────────────────────
 
     async function jsonRpc(url, params) {
         const resp = await fetch(url, {
@@ -47,31 +56,24 @@
         return data.result;
     }
 
-    // ── PIN Screen ───────────────────────────────────────────────────────────
+    // ── PIN Screen (identical to default standalone) ──────────────────────────
 
     class PinScreen extends Component {
         static template = xml`
             <div class="wt-pin-screen">
                 <div class="wt-pin-card">
-                    <div class="wt-pin-card__icon">
-                        <i class="fa fa-podcast"/>
-                    </div>
+                    <div class="wt-pin-card__icon"><i class="fa fa-podcast"/></div>
                     <h2 class="wt-pin-card__title" t-out="props.name"/>
-                    <p class="wt-pin-card__sub">AI Walkie-Talkie</p>
+                    <p class="wt-pin-card__sub">AI Walkie-Talkie — Channel Beta</p>
                     <p class="wt-pin-card__label">Enter your PIN to continue</p>
                     <div class="wt-pin-card__input-row">
-                        <input
-                            type="password"
-                            inputmode="numeric"
-                            maxlength="12"
-                            placeholder="PIN"
-                            class="wt-pin-input"
-                            t-att-value="state.pin"
-                            t-on-input="onInput"
-                            t-on-keydown="onKeydown"
-                            t-att-disabled="state.loading"
-                            autofocus="1"
-                        />
+                        <input type="password" inputmode="numeric" maxlength="12"
+                               placeholder="PIN" class="wt-pin-input"
+                               t-att-value="state.pin"
+                               t-on-input="onInput"
+                               t-on-keydown="onKeydown"
+                               t-att-disabled="state.loading"
+                               autofocus="1"/>
                         <button class="wt-pin-btn"
                                 t-att-disabled="state.loading or !state.pin"
                                 t-on-click="submit">
@@ -87,30 +89,21 @@
             this.state = useState({ pin: "", loading: false, error: "" });
         }
 
-        onInput(ev) {
-            this.state.pin = ev.target.value;
-            this.state.error = "";
-        }
-
-        onKeydown(ev) {
-            if (ev.key === "Enter") this.submit();
-        }
+        onInput(ev) { this.state.pin = ev.target.value; this.state.error = ""; }
+        onKeydown(ev) { if (ev.key === "Enter") this.submit(); }
 
         async submit() {
             if (!this.state.pin || this.state.loading) return;
             this.state.loading = true;
             this.state.error = "";
             try {
-                const result = await jsonRpc(
-                    `/walkie/${window.WT_TOKEN}/auth`,
-                    { pin: this.state.pin }
-                );
+                const result = await jsonRpc(`/walkie/${window.WT_TOKEN}/auth`, { pin: this.state.pin });
                 if (result && result.success) {
                     this.props.onAuth(this.state.pin);
                 } else {
                     this.state.error = (result && result.error) || "Incorrect PIN.";
                 }
-            } catch (e) {
+            } catch (_) {
                 this.state.error = "Could not connect. Please try again.";
             } finally {
                 this.state.loading = false;
@@ -120,9 +113,9 @@
 
     PinScreen.props = ["name", "onAuth"];
 
-    // ── Walkie-Talkie Component ───────────────────────────────────────────────
+    // ── Channel Walkie component ──────────────────────────────────────────────
 
-    class StandaloneWalkie extends Component {
+    class StandaloneWalkieChannel extends Component {
         static template = xml`
             <div class="dojo-wt-root">
 
@@ -141,6 +134,44 @@
                     </span>
                 </div>
 
+                <!-- Channel dial bar -->
+                <div class="dojo-wt-dial">
+                    <button class="dojo-wt-dial__nav" t-on-click="prevChannel" aria-label="Previous channel">
+                        <i class="fa fa-chevron-left"/>
+                    </button>
+                    <div class="dojo-wt-dial__track">
+                        <span class="dojo-wt-dial__neighbor dojo-wt-dial__neighbor--prev"
+                              t-out="prevChannelLabel"/>
+                        <button class="dojo-wt-dial__active" t-on-click="toggleDialOverlay"
+                                title="Show all channels">
+                            <i t-attf-class="fa #{activeChannelIcon} dojo-wt-dial__active-icon"/>
+                            <span class="dojo-wt-dial__active-label" t-out="state.activeChannelLabel"/>
+                            <i class="fa fa-chevron-down dojo-wt-dial__caret"/>
+                        </button>
+                        <span class="dojo-wt-dial__neighbor dojo-wt-dial__neighbor--next"
+                              t-out="nextChannelLabel"/>
+                    </div>
+                    <button class="dojo-wt-dial__nav" t-on-click="nextChannel" aria-label="Next channel">
+                        <i class="fa fa-chevron-right"/>
+                    </button>
+                </div>
+
+                <!-- Channel picker overlay -->
+                <div t-if="state.showDialOverlay" class="dojo-wt-dial-overlay" t-on-click="toggleDialOverlay">
+                    <div class="dojo-wt-dial-overlay__panel" t-on-click.stop="">
+                        <div class="dojo-wt-dial-overlay__title">Select Channel</div>
+                        <div class="dojo-wt-dial-overlay__grid">
+                            <t t-foreach="channels" t-as="ch" t-key="ch.id">
+                                <button t-attf-class="dojo-wt-dial-tile #{state.activeChannel === ch.id ? 'active' : ''}"
+                                        t-on-click="() => this.switchChannel(ch.id)">
+                                    <i t-attf-class="fa #{ch.icon} dojo-wt-dial-tile__icon"/>
+                                    <span class="dojo-wt-dial-tile__label" t-out="ch.label"/>
+                                </button>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Error banner -->
                 <div t-if="state.error" class="dojo-wt-error">
                     <i class="fa fa-exclamation-triangle me-2"/>
@@ -152,12 +183,12 @@
 
                     <div t-if="state.messages.length === 0" class="dojo-wt-empty">
                         <i class="fa fa-microphone dojo-wt-empty__icon"/>
-                        <p class="dojo-wt-empty__hint">Hold the button below and speak to the AI</p>
-                        <p class="dojo-wt-empty__tips">Try: "Who checked in today?" or "Enroll Jordan in BJJ"</p>
+                        <p class="dojo-wt-empty__hint">Hold the button and speak to the AI</p>
+                        <p class="dojo-wt-empty__tips">Channel: <strong t-out="state.activeChannelLabel"/></p>
                     </div>
 
                     <t t-foreach="state.messages" t-as="msg" t-key="msg_index">
-                        <div t-if="msg.role === 'divider'" class="dojo-wt-divider">
+                        <div t-if="msg.role === 'divider'" class="dojo-wt-ch-divider">
                             <span t-out="msg.text"/>
                         </div>
                         <div t-elif="msg.role === 'user'" class="dojo-wt-bubble dojo-wt-bubble--user">
@@ -229,23 +260,29 @@
 
         setup() {
             this.threadRef = useRef("thread");
+            this.channels  = CHANNELS;
+
             this.state = useState({
                 isHolding: false,
                 isProcessing: false,
                 isSpeaking: false,
                 messages: [],
                 contextWindow: [],
+                activeChannel: "all",
+                activeChannelLabel: CHANNEL_LABEL["all"],
+                showDialOverlay: false,
                 awaitingConfirmation: false,
                 confirmationPrompt: "",
                 sessionKey: null,
                 statusLabel: "Hold to talk",
                 error: null,
             });
-            this._contextWindowMax  = (window.WT_CONFIG && window.WT_CONFIG.context_window_turns) || 10;
+
+            this._contextWindowMax = (window.WT_CONFIG && window.WT_CONFIG.context_window_turns) || 10;
             this._mediaRecorder = null;
-            this._audioChunks   = [];
-            this._stream        = null;
-            this._currentAudio  = null;
+            this._audioChunks    = [];
+            this._stream         = null;
+            this._currentAudio   = null;
             this._lastTranscribed = "";
 
             onWillUnmount(() => {
@@ -254,7 +291,56 @@
             });
         }
 
-        // ── Push-to-talk ────────────────────────────────────────────────────
+        // ── Dial computed props ───────────────────────────────────────────────
+
+        get activeChannelIcon() {
+            const ch = CHANNELS.find(c => c.id === this.state.activeChannel);
+            return ch ? ch.icon : "fa-th";
+        }
+
+        get prevChannelLabel() {
+            const idx = CHANNELS.findIndex(c => c.id === this.state.activeChannel);
+            return CHANNELS[(idx - 1 + CHANNELS.length) % CHANNELS.length].label;
+        }
+
+        get nextChannelLabel() {
+            const idx = CHANNELS.findIndex(c => c.id === this.state.activeChannel);
+            return CHANNELS[(idx + 1) % CHANNELS.length].label;
+        }
+
+        // ── Channel switching ─────────────────────────────────────────────────
+
+        switchChannel(channelId) {
+            if (channelId === this.state.activeChannel) return;
+            this.state.activeChannel = channelId;
+            this.state.activeChannelLabel = CHANNEL_LABEL[channelId] || channelId;
+            this.state.contextWindow = [];
+            this.state.awaitingConfirmation = false;
+            this.state.sessionKey = null;
+            this.state.showDialOverlay = false;
+            // Only add divider when there is existing conversation to separate
+            if (this.state.messages.length > 0) {
+                this._pushDivider(`── Channel: ${CHANNEL_LABEL[channelId] || channelId} ──`);
+            }
+        }
+
+        prevChannel() {
+            const idx = CHANNELS.findIndex(c => c.id === this.state.activeChannel);
+            const prev = CHANNELS[(idx - 1 + CHANNELS.length) % CHANNELS.length];
+            this.switchChannel(prev.id);
+        }
+
+        nextChannel() {
+            const idx = CHANNELS.findIndex(c => c.id === this.state.activeChannel);
+            const next = CHANNELS[(idx + 1) % CHANNELS.length];
+            this.switchChannel(next.id);
+        }
+
+        toggleDialOverlay() {
+            this.state.showDialOverlay = !this.state.showDialOverlay;
+        }
+
+        // ── PTT ──────────────────────────────────────────────────────────────
 
         async onPttDown(ev) {
             ev.preventDefault();
@@ -268,9 +354,7 @@
             this._stopRecording();
         }
 
-        onPttLeave(ev) {
-            if (this.state.isHolding) this._stopRecordingCancel();
-        }
+        onPttLeave() { if (this.state.isHolding) this._stopRecordingCancel(); }
 
         async _startRecording() {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -286,8 +370,7 @@
 
             this._audioChunks = [];
             const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-                ? "audio/webm;codecs=opus"
-                : "audio/webm";
+                ? "audio/webm;codecs=opus" : "audio/webm";
             this._mediaRecorder = new MediaRecorder(this._stream, { mimeType });
             this._mediaRecorder.ondataavailable = (e) => {
                 if (e.data && e.data.size > 0) this._audioChunks.push(e.data);
@@ -301,9 +384,7 @@
         }
 
         _stopRecording() {
-            if (this._mediaRecorder && this._mediaRecorder.state !== "inactive") {
-                this._mediaRecorder.stop();
-            }
+            if (this._mediaRecorder && this._mediaRecorder.state !== "inactive") this._mediaRecorder.stop();
             this._releaseStream();
             this.state.isHolding = false;
             this.state.statusLabel = "Processing…";
@@ -325,22 +406,16 @@
         }
 
         _releaseStream() {
-            if (this._stream) {
-                this._stream.getTracks().forEach(t => t.stop());
-                this._stream = null;
-            }
+            if (this._stream) { this._stream.getTracks().forEach(t => t.stop()); this._stream = null; }
         }
 
-        // ── Audio → STT → AI ────────────────────────────────────────────────
+        // ── Audio → STT → AI ─────────────────────────────────────────────────
 
         async _processRecording(mimeType) {
-            if (!this._audioChunks.length) {
-                this.state.statusLabel = "Hold to talk";
-                return;
-            }
+            if (!this._audioChunks.length) { this.state.statusLabel = "Hold to talk"; return; }
+
             const blob = new Blob(this._audioChunks, { type: mimeType || "audio/webm" });
             this._audioChunks = [];
-
             this.state.isProcessing = true;
             this.state.statusLabel = "Thinking…";
 
@@ -349,17 +424,14 @@
                 formData.append("audio", blob, "walkie.webm");
                 formData.append("pin", this.props.pin);
                 formData.append("conversation_history", JSON.stringify(this.state.contextWindow));
+                formData.append("channel", this.state.activeChannel);
 
                 const resp = await fetch(`/walkie/${window.WT_TOKEN}/voice`, {
-                    method: "POST",
-                    body: formData,
-                    credentials: "same-origin",
+                    method: "POST", body: formData, credentials: "same-origin",
                 });
                 let result;
                 try { result = await resp.json(); } catch (_) {}
-                if (!resp.ok || !result) {
-                    throw new Error((result && result.error) || `Server error ${resp.status}`);
-                }
+                if (!resp.ok || !result) throw new Error((result && result.error) || `Server error ${resp.status}`);
                 this._handleResult(result);
             } catch (e) {
                 this._pushError(e.message || "Failed to process audio — please try again.");
@@ -368,7 +440,31 @@
             }
         }
 
-        // ── Result handling ──────────────────────────────────────────────────
+        // ── Text input (channel-aware) ────────────────────────────────────────
+
+        async sendText(text) {
+            text = (text || "").trim();
+            if (!text || this.state.isProcessing) return;
+            this.state.isProcessing = true;
+            this.state.statusLabel = "Thinking…";
+            this._pushMsg("user", text);
+
+            try {
+                const result = await jsonRpc(`/walkie/${window.WT_TOKEN}/text`, {
+                    pin: this.props.pin,
+                    text,
+                    conversation_history: this.state.contextWindow,
+                    channel: this.state.activeChannel,
+                });
+                this._handleResult(result);
+            } catch (e) {
+                this._pushError(e.message || "Request failed.");
+            } finally {
+                this.state.isProcessing = false;
+            }
+        }
+
+        // ── Result handling ───────────────────────────────────────────────────
 
         _handleResult(result) {
             if (!result || !result.success) {
@@ -392,7 +488,6 @@
                 const prompt = result.confirmation_prompt || result.response || "Please confirm.";
                 this.state.awaitingConfirmation = true;
                 this.state.sessionKey = result.session_key || null;
-                this.state.confirmationPrompt = prompt;
                 this._pushMsg("ai", prompt, { confirm: true });
                 this._speakResponse(prompt);
                 this.state.statusLabel = "Say Yes or No";
@@ -412,7 +507,7 @@
             }
         }
 
-        // ── Confirmation ─────────────────────────────────────────────────────
+        // ── Confirmation ──────────────────────────────────────────────────────
 
         async confirmAction() { await this._doConfirm(true); }
         async cancelAction()  { await this._doConfirm(false); }
@@ -427,14 +522,10 @@
 
             try {
                 const result = await jsonRpc(`/walkie/${window.WT_TOKEN}/confirm`, {
-                    pin: this.props.pin,
-                    session_key: key,
-                    confirmed,
+                    pin: this.props.pin, session_key: key, confirmed,
                 });
                 if (!result || !result.success) {
-                    const err = (result && result.error) || "Action failed.";
-                    this._pushMsg("ai", "⚠️ " + err);
-                    this._speakResponse("Something went wrong. " + err);
+                    this._pushMsg("ai", "⚠️ " + ((result && result.error) || "Action failed."));
                 } else if (!confirmed) {
                     this._pushMsg("ai", "Action cancelled.");
                     this._speakResponse("Action cancelled.");
@@ -445,7 +536,7 @@
                     this._speakResponse(msg);
                     this._updateContextWindow("(confirmed action)", msg);
                 }
-            } catch (e) {
+            } catch (_) {
                 this._pushError("Confirm request failed.");
             } finally {
                 this.state.isProcessing = false;
@@ -453,7 +544,7 @@
             }
         }
 
-        // ── TTS ──────────────────────────────────────────────────────────────
+        // ── TTS ───────────────────────────────────────────────────────────────
 
         async _speakResponse(text) {
             if (!text) return;
@@ -461,13 +552,10 @@
             this.state.statusLabel = "Speaking…";
             try {
                 const result = await jsonRpc(`/walkie/${window.WT_TOKEN}/speak`, {
-                    pin: this.props.pin,
-                    text,
+                    pin: this.props.pin, text,
                 });
                 if (!result || !result.success) {
-                    this.state.isSpeaking = false;
-                    this.state.statusLabel = "Hold to talk";
-                    return;
+                    this.state.isSpeaking = false; this.state.statusLabel = "Hold to talk"; return;
                 }
                 const audio = new Audio("data:" + result.mime + ";base64," + result.audio_b64);
                 if (this._currentAudio) this._currentAudio.pause();
@@ -477,16 +565,14 @@
                     this.state.statusLabel = "Hold to talk";
                     this._currentAudio = null;
                 };
-                audio.onended = done;
-                audio.onerror = done;
+                audio.onended = done; audio.onerror = done;
                 await audio.play().catch(done);
             } catch (_) {
-                this.state.isSpeaking = false;
-                this.state.statusLabel = "Hold to talk";
+                this.state.isSpeaking = false; this.state.statusLabel = "Hold to talk";
             }
         }
 
-        // ── Helpers ──────────────────────────────────────────────────────────
+        // ── Helpers ───────────────────────────────────────────────────────────
 
         _pushMsg(role, text, meta) {
             this.state.messages.push(Object.assign({ role, text, time: nowLabel() }, meta || {}));
@@ -507,7 +593,7 @@
             const cw = this.state.contextWindow;
             if (userText) cw.push({ role: "user", text: userText });
             if (aiText)   cw.push({ role: "assistant", text: aiText });
-            const maxItems = this._contextWindowMax * 2;  // each turn = user + assistant
+            const maxItems = this._contextWindowMax * 2;
             if (cw.length > maxItems) cw.splice(0, cw.length - maxItems);
         }
 
@@ -524,22 +610,22 @@
         }
     }
 
-    StandaloneWalkie.props = ["name", "pin"];
+    StandaloneWalkieChannel.props = ["name", "pin"];
 
     // ── Root App ─────────────────────────────────────────────────────────────
 
-    class WalkieApp extends Component {
+    class WalkieChannelApp extends Component {
         static template = xml`
             <div class="wt-app">
                 <PinScreen t-if="!state.authed"
                            name="state.name"
                            onAuth.bind="onAuth"/>
-                <StandaloneWalkie t-else=""
-                                  name="state.name"
-                                  pin="state.pin"/>
+                <StandaloneWalkieChannel t-else=""
+                                         name="state.name"
+                                         pin="state.pin"/>
             </div>`;
 
-        static components = { PinScreen, StandaloneWalkie };
+        static components = { PinScreen, StandaloneWalkieChannel };
 
         setup() {
             this.state = useState({
@@ -549,14 +635,11 @@
             });
         }
 
-        onAuth(pin) {
-            this.state.pin = pin;
-            this.state.authed = true;
-        }
+        onAuth(pin) { this.state.pin = pin; this.state.authed = true; }
     }
 
     // ── Mount ─────────────────────────────────────────────────────────────────
 
-    mount(WalkieApp, document.getElementById("wt-root"));
+    mount(WalkieChannelApp, document.getElementById("wt-root"));
 
 })();

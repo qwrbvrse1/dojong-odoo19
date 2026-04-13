@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    Dojo AI Walkie-Talkie — styles
-   Industrial dark UI — matches Kiosk design language.
-   Palette: true black + dojo red (#b41e16)
+   Refined dark UI — premium mobile-first.
+   Palette: #0f1117 base + dojo red (#b41e16)
    All selectors scoped to .dojo-wt-* to avoid collisions.
 ═══════════════════════════════════════════════════════════ */
 
@@ -12,7 +12,7 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    background: #000000;
+    background: #0f1117;
     color: #e8eaed;
     font-family: inherit;
     overflow: hidden;
@@ -26,7 +26,7 @@
     gap: 10px;
     padding: 12px 20px;
     background: #b41e16;
-    border-bottom: 1px solid #8a1510;
+    border-bottom: 1px solid rgba(0,0,0,0.3);
     flex-shrink: 0;
 }
 
@@ -43,19 +43,30 @@
     letter-spacing: -0.01em;
 }
 
-.dojo-wt-header__status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: rgba(255,255,255,0.7);
+/* Pill-style status indicator */
+.dojo-wt-status-pill {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.25);
+    color: rgba(255,255,255,0.75);
+    border: 1px solid rgba(255,255,255,0.15);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
+.dojo-wt-status-pill--recording  { color: #fff; background: rgba(0,0,0,0.35); border-color: rgba(255,255,255,0.3); }
+.dojo-wt-status-pill--processing { color: #fbbf24; border-color: rgba(251,191,36,0.3); }
+.dojo-wt-status-pill--speaking   { color: #4ade80; border-color: rgba(74,222,128,0.3); }
 
 .dojo-wt-header__actions {
     display: flex;
     align-items: center;
     gap: 4px;
-    margin-right: 8px;
+    margin-right: 4px;
+    margin-left: auto;
 }
 
 .dojo-wt-icon-btn {
@@ -134,14 +145,15 @@
 /* ── Conversation thread ──────────────────────────────────── */
 
 .dojo-wt-thread {
-    flex: 1;
+    flex: 1 1 0;
+    min-height: 0;
     overflow-y: auto;
     padding: 16px 20px;
     display: flex;
     flex-direction: column;
     gap: 10px;
     scroll-behavior: smooth;
-    background: #000;
+    background: #0f1117;
 }
 
 /* Empty state */
@@ -187,9 +199,9 @@
     gap: 8px;
     align-items: flex-start;
     padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 14px;
-    line-height: 1.55;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.6;
     word-break: break-word;
     white-space: pre-wrap;
 }
@@ -198,16 +210,16 @@
 .dojo-wt-bubble--user .dojo-wt-bubble__body {
     background: #b41e16;
     color: #fff;
-    border-bottom-right-radius: 3px;
+    border-bottom-right-radius: 5px;
     flex-direction: row-reverse;
 }
 
-/* AI bubble — dark surface, matches kiosk surface-2 */
+/* AI bubble — dark surface */
 .dojo-wt-bubble--ai .dojo-wt-bubble__body {
-    background: #141414;
+    background: #1a1d27;
     color: #e8eaed;
-    border-bottom-left-radius: 3px;
-    border: 1px solid #272727;
+    border-bottom-left-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.10);
 }
 
 .dojo-wt-bubble__icon {
@@ -219,30 +231,47 @@
 
 .dojo-wt-bubble__time {
     font-size: 10px;
-    color: #383838;
+    color: #4b5563;
     margin: 3px 4px 0;
     letter-spacing: 0.03em;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.dojo-wt-bubble:hover .dojo-wt-bubble__time {
+    opacity: 1;
+}
+@media (pointer: coarse) {
+    /* Touch devices — always show timestamp */
+    .dojo-wt-bubble__time { opacity: 1; }
 }
 
 /* Confirmation buttons inside AI bubble */
 .dojo-wt-confirm-btns {
     display: flex;
+    flex-direction: column;
     gap: 8px;
-    margin-top: 8px;
+    margin-top: 10px;
     padding: 0 2px;
+    width: 100%;
 }
 
 .dojo-wt-btn {
-    padding: 7px 16px;
+    padding: 0 16px;
+    min-height: 48px;
     border: none;
-    border-radius: 4px;
-    font-size: 13px;
+    border-radius: 24px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: opacity 0.15s, transform 0.1s;
     letter-spacing: 0.02em;
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
-.dojo-wt-btn:active { transform: scale(0.96); }
+.dojo-wt-btn:active { transform: scale(0.97); }
 .dojo-wt-btn:disabled { opacity: 0.35; cursor: default; }
 
 .dojo-wt-btn--confirm {
@@ -254,9 +283,9 @@
 .dojo-wt-btn--cancel {
     background: #1c1c1c;
     color: #9aa0a6;
-    border: 1px solid #272727;
+    border: 1px solid rgba(255,255,255,0.12);
 }
-.dojo-wt-btn--cancel:hover:not(:disabled) { background: #272727; color: #e8eaed; }
+.dojo-wt-btn--cancel:hover:not(:disabled) { background: #252836; color: #e8eaed; }
 
 /* Thinking dots */
 .dojo-wt-thinking {
@@ -264,10 +293,10 @@
     gap: 5px;
     padding: 10px 14px;
     align-self: flex-start;
-    background: #141414;
-    border: 1px solid #272727;
-    border-radius: 12px;
-    border-bottom-left-radius: 3px;
+    background: #1a1d27;
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 18px;
+    border-bottom-left-radius: 5px;
 }
 .dojo-wt-thinking__dot {
     width: 7px;
@@ -282,13 +311,16 @@
 /* ── Controls / PTT area ─────────────────────────────────── */
 
 .dojo-wt-controls {
-    flex-shrink: 0;
+    flex: 0 0 auto;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 24px 24px 32px;
-    background: #0c0c0c;
-    border-top: 1px solid #1c1c1c;
+    padding: 24px 24px max(28px, env(safe-area-inset-bottom));
+    background: #13151e;
+    border-top: 1px solid rgba(255,255,255,0.07);
     gap: 12px;
 }
 
@@ -301,37 +333,39 @@
     font-weight: 600;
 }
 
-/* PTT button — industrial ring style matching kiosk */
+/* PTT button — refined dark, mobile-first */
 .dojo-wt-ptt {
-    width: 124px;
-    height: 124px;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
-    border: 3px solid #1c1c1c;
+    border: 3px solid rgba(255,255,255,0.08);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #141414;
-    box-shadow: 0 4px 28px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
-    transition: background 0.18s, border-color 0.18s, transform 0.1s, box-shadow 0.18s;
+    background: #1a1d27;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease, transform 0.1s;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     outline: none;
     position: relative;
+    min-width: 140px;
+    min-height: 140px;
 }
 .dojo-wt-ptt:hover:not(:disabled) {
-    background: #1c1c1c;
-    border-color: #272727;
-    box-shadow: 0 6px 32px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
+    background: #252836;
+    border-color: rgba(255,255,255,0.14);
+    box-shadow: 0 6px 36px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.07);
 }
 
-/* Recording — dojo red */
+/* Recording — dojo red with improved glow */
 .dojo-wt-ptt:active,
 .dojo-wt-ptt--recording {
     background: #b41e16 !important;
     border-color: #8a1510 !important;
     transform: scale(0.95);
-    box-shadow: 0 0 0 8px rgba(180,30,22,0.22), 0 4px 24px rgba(0,0,0,0.5);
+    box-shadow: 0 0 0 8px rgba(180,30,22,0.25), 0 0 32px rgba(180,30,22,0.3), 0 4px 24px rgba(0,0,0,0.5);
     animation: dojo-wt-ring-red 1.1s infinite;
 }
 
@@ -343,18 +377,19 @@
     animation: none;
 }
 
-/* Speaking — green */
+/* Speaking — green with improved glow */
 .dojo-wt-ptt--speaking {
     background: #14532d !important;
     border-color: #166534 !important;
     cursor: not-allowed;
+    box-shadow: 0 0 0 8px rgba(20,83,45,0.3), 0 0 32px rgba(34,197,94,0.2);
     animation: dojo-wt-ring-green 1.4s infinite;
 }
 
 .dojo-wt-ptt:disabled { opacity: 0.6; }
 
 .dojo-wt-ptt__icon {
-    font-size: 42px;
+    font-size: 44px;
     color: #e8eaed;
     pointer-events: none;
 }
@@ -378,14 +413,14 @@
     50%       { opacity: 0.25; }
 }
 @keyframes dojo-wt-ring-red {
-    0%   { box-shadow: 0 0 0  4px rgba(180,30,22,0.40); }
-    70%  { box-shadow: 0 0 0 22px rgba(180,30,22,0.00); }
-    100% { box-shadow: 0 0 0  4px rgba(180,30,22,0.00); }
+    0%   { box-shadow: 0 0 0  6px rgba(180,30,22,0.45), 0 0 32px rgba(180,30,22,0.3); }
+    70%  { box-shadow: 0 0 0 26px rgba(180,30,22,0.00), 0 0 32px rgba(180,30,22,0.15); }
+    100% { box-shadow: 0 0 0  6px rgba(180,30,22,0.00), 0 0 32px rgba(180,30,22,0.3); }
 }
 @keyframes dojo-wt-ring-green {
-    0%   { box-shadow: 0 0 0  4px rgba(24,128,56,0.40); }
-    70%  { box-shadow: 0 0 0 20px rgba(24,128,56,0.00); }
-    100% { box-shadow: 0 0 0  4px rgba(24,128,56,0.00); }
+    0%   { box-shadow: 0 0 0  6px rgba(20,83,45,0.40), 0 0 32px rgba(34,197,94,0.2); }
+    70%  { box-shadow: 0 0 0 24px rgba(20,83,45,0.00), 0 0 32px rgba(34,197,94,0.1); }
+    100% { box-shadow: 0 0 0  6px rgba(20,83,45,0.00), 0 0 32px rgba(34,197,94,0.2); }
 }
 @keyframes dojo-wt-thinking {
     0%, 60%, 100% { transform: translateY(0);    opacity: 0.35; }
