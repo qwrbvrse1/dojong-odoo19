@@ -137,11 +137,14 @@ class ConnectAiTools(models.AbstractModel):
         enriched = f"{prefix} {user_message}".strip() if prefix else user_message
 
         # ── Route through dojo_assistant ─────────────────────────────
+        # Map "caller" role → "kiosk" for the assistant engine, which only
+        # knows kiosk / instructor / admin.  Callers get kiosk-level perms.
+        assistant_role = role if role in ("instructor", "admin") else "kiosk"
         try:
             service = self.env["ai.assistant.service"].sudo()
             result = service.handle_command(
                 text=enriched,
-                role=role,
+                role=assistant_role,
                 input_type="text",
             )
         except Exception:
