@@ -337,6 +337,28 @@ class AiApiV1(http.Controller):
                 "list_tasks": "task_list",
             }
             intent_type = _ALIASES.get(intent_type, intent_type)
+
+            # Guard: reject intent types the system has no handler for
+            from odoo.addons.ai_assistant.models.ai_assistant_service import _KNOWN_INTENT_TYPES
+            if intent_type not in _KNOWN_INTENT_TYPES:
+                _logger.warning(
+                    "Rejecting unknown intent_type=%r (not in _KNOWN_INTENT_TYPES)",
+                    intent_type,
+                )
+                return _json_response({
+                    "success": False,
+                    "state": "unknown_intent",
+                    "intent_type": intent_type,
+                    "response": (
+                        f"I don't know how to handle '{intent_type}'. "
+                        "Please rephrase your request — for example: "
+                        "'check in Jordan', 'create a lead for Sarah', or 'show today's schedule'."
+                    ),
+                    "auto_executed": False,
+                    "result": None,
+                    "error": None,
+                })
+
             parameters = payload.get("parameters") or payload.get("resolved_data") or {}
             # n8n's $fromAI() may serialize parameters as a JSON string — parse it
             if isinstance(parameters, str):

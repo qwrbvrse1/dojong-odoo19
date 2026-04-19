@@ -41,7 +41,11 @@ Database Context (use this to resolve entity references):
 
 IMPORTANT RULES:
 - Return ONLY a JSON object in your response, nothing else
-- Use the exact intent_type from the available intents
+- **intent_type MUST be one of the exact string values listed in "Available Intents" above.**
+  🚫 NEVER invent, combine, abbreviate, or paraphrase intent type names.
+  🚫 NEVER use values like "create_lead", "schedule_class", "lead_delete", "list_leads", "check_in" —
+     these are INVALID. Use ONLY the exact name shown after "##" in each intent block.
+  ✅ If no listed intent fits, use intent_type "unknown" with confidence 0.0.
 - Extract parameters based on the intent's parameter schema
 - Set confidence based on how certain you are about the intent (0.7+ is confident)
 - If you cannot determine the intent, use intent_type "unknown" with confidence 0.0
