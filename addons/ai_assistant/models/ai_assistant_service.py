@@ -3111,10 +3111,14 @@ class AiAssistantService(models.AbstractModel):
             "check_in": "attendance_checkin",
             "checkout": "attendance_checkout",
             "check_out": "attendance_checkout",
-            # Classes
+            # Classes / schedule
             "create_class": "class_create",
             "schedule_class": "class_create",
             "cancel_class": "class_cancel",
+            "schedule_for_date": "schedule_today",
+            "schedule_for_tomorrow": "schedule_today",
+            "class_schedule": "schedule_today",
+            "get_schedule": "schedule_today",
             # Members
             "promote_belt": "belt_promote",
             "enroll_member": "member_enroll",
@@ -3358,12 +3362,32 @@ class AiAssistantService(models.AbstractModel):
     @api.model
     def _domain_schedule_today(self, intent_data, resolved_data):
         """
-        Build domain for today's schedule (same as class_list for today).
+        Build domain for schedule query. Uses today by default; respects
+        a 'date' parameter (ISO string or plain words like 'tomorrow').
         """
-        today = fields.Date.today().isoformat()
+        import datetime
+        raw_date = (intent_data.get("parameters") or {}).get("date") or ""
+        target_date = None
+        if raw_date:
+            raw_lower = raw_date.strip().lower()
+            today = fields.Date.today()
+            if raw_lower in ("tomorrow", "next day"):
+                target_date = today + datetime.timedelta(days=1)
+            elif raw_lower in ("yesterday",):
+                target_date = today - datetime.timedelta(days=1)
+            elif raw_lower in ("today", ""):
+                target_date = today
+            else:
+                try:
+                    target_date = datetime.date.fromisoformat(raw_date[:10])
+                except (ValueError, TypeError):
+                    target_date = today
+        if target_date is None:
+            target_date = fields.Date.today()
+        d = target_date.isoformat()
         return [
-            ("start_datetime", ">=", f"{today} 00:00:00"),
-            ("start_datetime", "<=", f"{today} 23:59:59"),
+            ("start_datetime", ">=", f"{d} 00:00:00"),
+            ("start_datetime", "<=", f"{d} 23:59:59"),
         ]
     
     @api.model

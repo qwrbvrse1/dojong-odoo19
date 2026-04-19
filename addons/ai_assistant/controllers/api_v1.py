@@ -330,6 +330,8 @@ class AiApiV1(http.Controller):
                 # Classes
                 "create_class": "class_create", "schedule_class": "class_create",
                 "cancel_class": "class_cancel",
+                "schedule_for_date": "schedule_today", "schedule_for_tomorrow": "schedule_today",
+                "class_schedule": "schedule_today", "get_schedule": "schedule_today",
                 # Members
                 "promote_belt": "belt_promote", "enroll_member": "member_enroll",
                 "unenroll_member": "member_unenroll", "create_member": "member_create",

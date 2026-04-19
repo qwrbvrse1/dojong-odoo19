@@ -56,6 +56,7 @@ IMPORTANT RULES:
     "subscriptions ending", "contracts expiring", "how many contracts are ending", "expiring memberships", "who has a contract ending", "up for renewal" → subscription_expiring (parameters: {{}})
     "members at risk", "who hasn't come in", "inactive members", "who hasn't attended" → at_risk_members (parameters: {{}})
     "students enrolled today", "today's attendance", "who checked in today", "show today's classes" → schedule_today (parameters: {{}})
+    "show tomorrow's schedule", "schedule for tomorrow", "what's on tomorrow", "classes tomorrow", "schedule for [date]" → schedule_today (parameters: {{"date": "tomorrow"}}) or {{"date": "YYYY-MM-DD"}}
     "show all members", "list all students" → member_lookup (parameters: {{}})
 - CRM / LEAD PIPELINE MAPPING:
     "show leads", "who are our prospects", "find lead [name]", "look up [name] lead" → lead_lookup (parameters: {{"lead_name": "..."}})
