@@ -23,3 +23,15 @@ class ResConfigSettings(models.TransientModel):
             "External callers (n8n, MCP) must send this in the X-Api-Key header."
         ),
     )
+
+    ai_n8n_webhook_url = fields.Char(
+        string="n8n Webhook URL",
+        config_parameter="ai_assistant.n8n_webhook_url",
+        help=(
+            "When set, all AI requests are routed through this n8n webhook "
+            "instead of calling OpenAI directly. n8n handles LLM orchestration "
+            "and calls back to /api/v1/ai/* for vector routing and execution.\n\n"
+            "Example: http://n8n:5678/webhook/ai-query\n"
+            "Leave blank to use direct OpenAI calls (legacy mode)."
+        ),
+    )

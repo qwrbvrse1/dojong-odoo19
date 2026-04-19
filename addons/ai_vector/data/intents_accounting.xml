@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <!-- ── Accounting / Invoicing Intents ───────────────────── -->
+    <!--
+        NOTE: intent_invoice_lookup and intent_invoice_list are already
+        defined in intents_subscriptions.xml. They are shared between
+        the Subscriptions and Accounting agents via intent_ids linkage.
+        Do NOT redefine them here.
+    -->
+
+    <record id="intent_invoice_create" model="ai.intent.schema">
+        <field name="intent_type">invoice_create</field>
+        <field name="name">Create Invoice</field>
+        <field name="description">Create a new customer invoice</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "partner_name": {"type": "string", "description": "Customer name"},
+        "partner_id": {"type": "integer", "description": "Customer partner ID"},
+        "product_name": {"type": "string", "description": "Product / service to invoice"},
+        "amount": {"type": "number", "description": "Amount to invoice"},
+        "description": {"type": "string", "description": "Invoice line description"},
+        "due_date": {"type": "string", "format": "date", "description": "Payment due date"}
+    },
+    "required": ["partner_name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create an invoice for John Smith
+Invoice Jane $150 for private lessons
+Generate invoice for the Pro membership
+Bill the guardian for this month</field>
+        <field name="confirmation_template">Create invoice for {partner_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_invoice_send" model="ai.intent.schema">
+        <field name="intent_type">invoice_send</field>
+        <field name="name">Send Invoice</field>
+        <field name="description">Send an invoice by email to the customer</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "invoice_ref": {"type": "string", "description": "Invoice reference (e.g. INV/2026/0001)"},
+        "invoice_id": {"type": "integer", "description": "Invoice ID"},
+        "partner_name": {"type": "string", "description": "Customer name"}
+    },
+    "required": ["invoice_ref"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Send invoice INV/2026/0001
+Email the invoice to John
+Send the latest invoice to Jane</field>
+        <field name="confirmation_template">Send invoice {invoice_ref} to customer?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_payment_list" model="ai.intent.schema">
+        <field name="intent_type">payment_list</field>
+        <field name="name">List Payments</field>
+        <field name="description">List payment records with optional filters</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "partner_name": {"type": "string", "description": "Customer / vendor name"},
+        "state": {"type": "string", "enum": ["draft", "posted", "cancelled"], "description": "Payment state filter"},
+        "payment_type": {"type": "string", "enum": ["inbound", "outbound"], "description": "inbound=received, outbound=sent"},
+        "date_from": {"type": "string", "format": "date", "description": "Payments from this date"},
+        "date_to": {"type": "string", "format": "date", "description": "Payments until this date"},
+        "limit": {"type": "integer", "description": "Max results (default 20)"}
+    }
+}</field>
+        <field name="example_phrases">Show recent payments
+List payments received today
+Who paid this week
+Show outgoing payments</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_payment_register" model="ai.intent.schema">
+        <field name="intent_type">payment_register</field>
+        <field name="name">Register Payment</field>
+        <field name="description">Register a payment against an invoice</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "invoice_ref": {"type": "string", "description": "Invoice reference to pay"},
+        "invoice_id": {"type": "integer", "description": "Invoice ID"},
+        "amount": {"type": "number", "description": "Payment amount (defaults to invoice balance)"},
+        "journal_name": {"type": "string", "description": "Payment journal (e.g. Bank, Cash)"},
+        "date": {"type": "string", "format": "date", "description": "Payment date (default today)"}
+    },
+    "required": ["invoice_ref"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Register payment for INV/2026/0001
+Mark invoice as paid
+Record cash payment for John's invoice
+Apply payment to the latest invoice</field>
+        <field name="confirmation_template">Register payment for invoice {invoice_ref}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_account_balance" model="ai.intent.schema">
+        <field name="intent_type">account_balance</field>
+        <field name="name">Account Balance</field>
+        <field name="description">Check account balance (bank, cash, receivable, payable)</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "account_type": {"type": "string", "description": "Account type: bank, cash, receivable, payable"},
+        "journal_name": {"type": "string", "description": "Journal name to check"}
+    }
+}</field>
+        <field name="example_phrases">What's the bank balance
+How much cash do we have
+Account receivable balance
+How much do customers owe us
+What's our payable balance</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_bill_list" model="ai.intent.schema">
+        <field name="intent_type">bill_list</field>
+        <field name="name">List Vendor Bills</field>
+        <field name="description">List vendor bills with optional filters</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "partner_name": {"type": "string", "description": "Vendor name"},
+        "state": {"type": "string", "enum": ["draft", "posted", "cancel"], "description": "Bill state"},
+        "payment_state": {"type": "string", "enum": ["not_paid", "in_payment", "paid", "partial"], "description": "Payment state"},
+        "limit": {"type": "integer", "description": "Max results (default 20)"}
+    }
+}</field>
+        <field name="example_phrases">Show vendor bills
+List unpaid bills
+What bills are due
+Show bills from this month</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_bill_create" model="ai.intent.schema">
+        <field name="intent_type">bill_create</field>
+        <field name="name">Create Vendor Bill</field>
+        <field name="description">Create a new vendor bill</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "partner_name": {"type": "string", "description": "Vendor name"},
+        "partner_id": {"type": "integer", "description": "Vendor partner ID"},
+        "amount": {"type": "number", "description": "Bill amount"},
+        "description": {"type": "string", "description": "Bill description / reference"},
+        "due_date": {"type": "string", "format": "date", "description": "Payment due date"}
+    },
+    "required": ["partner_name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a bill from Acme Supply Co
+Add vendor bill for $500 from Equipment Inc
+Record a bill for mat cleaning service</field>
+        <field name="confirmation_template">Create vendor bill from {partner_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+</odoo>

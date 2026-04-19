@@ -36,6 +36,12 @@
         'data/intents_marketing.xml',
         'data/intents_belt_rank.xml',
         'data/intents_calendar.xml',
+        'data/intents_sales.xml',
+        'data/intents_pos.xml',
+        'data/intents_accounting.xml',
+        'data/intents_hr.xml',
+        'data/intents_discuss.xml',
+        'data/intents_meta.xml',
         'data/ai_agent_data.xml',
     ],
 }

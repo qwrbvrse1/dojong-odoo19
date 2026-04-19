@@ -593,6 +593,31 @@
                         </div>
                     </div>
 
+                    <h2>n8n Orchestration</h2>
+
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <span class="fa fa-random fa-2x text-info"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="ai_n8n_webhook_url"
+                                       string="n8n Webhook URL"/>
+                                <div class="text-muted">
+                                    When set, all AI requests (kiosk, dashboard, walkie-talkie)
+                                    are routed through n8n for LLM orchestration instead of
+                                    calling OpenAI directly. n8n calls back to /api/v1/ai/*
+                                    for vector routing and execution.
+                                    Leave blank for direct OpenAI mode (legacy).
+                                </div>
+                                <div class="content-group mt8">
+                                    <field name="ai_n8n_webhook_url"
+                                           placeholder="http://n8n:5678/webhook/ai-query"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </xpath>
         </field>

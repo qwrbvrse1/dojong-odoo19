@@ -121,7 +121,10 @@ class AiVectorStore(models.Model):
                 """)
             _logger.info("Created vector similarity index on ai_vector_store")
 
-    # ─── Embedding API ────────────────────────────────────────────────────────
+    # ─── Embedding API (with retry + backoff for DNS/transient errors) ────────
+    _EMBED_MAX_RETRIES = 3
+    _EMBED_RETRY_BACKOFF = 1.0  # seconds, doubles each retry
+
     @api.model
     def _get_openai_api_key(self):
         """Retrieve the OpenAI API key from system parameters."""
@@ -137,6 +140,76 @@ class AiVectorStore(models.Model):
                 "Set it in Settings → AI → Configuration."
             )
         return key
+
+    @api.model
+    def _request_with_retry(self, url, headers, payload, timeout=30):
+        """
+        POST to an HTTP endpoint with retry + exponential backoff.
+
+        Retries on connection errors, DNS failures, and 5xx responses.
+        Does NOT retry on 4xx (client errors) — those are permanent.
+
+        Returns:
+            dict: Parsed JSON response.
+
+        Raises:
+            UserError: After all retries exhausted or on 4xx errors.
+        """
+        last_error = None
+        for attempt in range(self._EMBED_MAX_RETRIES):
+            try:
+                resp = requests.post(
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=timeout,
+                )
+                # Don't retry 4xx errors (bad request, auth, etc.)
+                if 400 <= resp.status_code < 500:
+                    resp.raise_for_status()
+
+                # Retry 5xx errors
+                if resp.status_code >= 500:
+                    last_error = f"HTTP {resp.status_code}: {resp.text[:200]}"
+                    _logger.warning(
+                        "OpenAI API attempt %d/%d got %d — retrying",
+                        attempt + 1,
+                        self._EMBED_MAX_RETRIES,
+                        resp.status_code,
+                    )
+                    if attempt < self._EMBED_MAX_RETRIES - 1:
+                        time.sleep(self._EMBED_RETRY_BACKOFF * (2 ** attempt))
+                    continue
+
+                return resp.json()
+
+            except requests.ConnectionError as e:
+                last_error = e
+                _logger.warning(
+                    "OpenAI API attempt %d/%d connection error (DNS/network): %s",
+                    attempt + 1,
+                    self._EMBED_MAX_RETRIES,
+                    e,
+                )
+            except requests.Timeout as e:
+                last_error = e
+                _logger.warning(
+                    "OpenAI API attempt %d/%d timed out: %s",
+                    attempt + 1,
+                    self._EMBED_MAX_RETRIES,
+                    e,
+                )
+            except requests.RequestException as e:
+                # Non-retryable request error
+                _logger.error("OpenAI API error (non-retryable): %s", e)
+                raise UserError(f"Embedding API error: {e}") from e
+
+            if attempt < self._EMBED_MAX_RETRIES - 1:
+                time.sleep(self._EMBED_RETRY_BACKOFF * (2 ** attempt))
+
+        raise UserError(
+            f"Embedding API unreachable after {self._EMBED_MAX_RETRIES} attempts: {last_error}"
+        )
 
     @api.model
     def embed_text(self, text):
@@ -158,19 +231,13 @@ class AiVectorStore(models.Model):
             "model": _EMBEDDING_MODEL,
             "input": text,
         }
-        try:
-            resp = requests.post(
-                "https://api.openai.com/v1/embeddings",
-                headers=headers,
-                json=payload,
-                timeout=30,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            return data["data"][0]["embedding"]
-        except requests.RequestException as e:
-            _logger.error("OpenAI embedding API error: %s", e)
-            raise UserError(f"Embedding API error: {e}") from e
+        data = self._request_with_retry(
+            "https://api.openai.com/v1/embeddings",
+            headers,
+            payload,
+            timeout=30,
+        )
+        return data["data"][0]["embedding"]
 
     @api.model
     def embed_batch(self, texts):
@@ -197,21 +264,15 @@ class AiVectorStore(models.Model):
                 "model": _EMBEDDING_MODEL,
                 "input": batch,
             }
-            try:
-                resp = requests.post(
-                    "https://api.openai.com/v1/embeddings",
-                    headers=headers,
-                    json=payload,
-                    timeout=60,
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                # Sort by index to preserve order
-                sorted_data = sorted(data["data"], key=lambda x: x["index"])
-                all_embeddings.extend([d["embedding"] for d in sorted_data])
-            except requests.RequestException as e:
-                _logger.error("OpenAI batch embedding error: %s", e)
-                raise UserError(f"Batch embedding API error: {e}") from e
+            data = self._request_with_retry(
+                "https://api.openai.com/v1/embeddings",
+                headers,
+                payload,
+                timeout=60,
+            )
+            # Sort by index to preserve order
+            sorted_data = sorted(data["data"], key=lambda x: x["index"])
+            all_embeddings.extend([d["embedding"] for d in sorted_data])
         return all_embeddings
 
     # ─── Similarity Search ────────────────────────────────────────────────────

@@ -316,7 +316,8 @@ class AiAssistantServiceCrm(models.AbstractModel):
         """Resolve a CRM lead from intent parameters (by ID or name)."""
         params = intent_data.get("parameters", {})
         lead_id = params.get("lead_id")
-        lead_name = params.get("lead_name")
+        # Accept 'lead_name', 'name', or 'contact_name' — n8n AI may use any of these
+        lead_name = params.get("lead_name") or params.get("name") or params.get("contact_name")
 
         if lead_id:
             lead = self.env["crm.lead"].browse(int(lead_id)).exists()
@@ -325,7 +326,12 @@ class AiAssistantServiceCrm(models.AbstractModel):
 
         if lead_name:
             lead = self.env["crm.lead"].search(
-                ["|", ("contact_name", "ilike", lead_name), ("partner_name", "ilike", lead_name)],
+                [
+                    "|", "|",
+                    ("contact_name", "ilike", lead_name),
+                    ("partner_name", "ilike", lead_name),
+                    ("name", "ilike", lead_name),
+                ],
                 limit=1,
             )
             if lead:

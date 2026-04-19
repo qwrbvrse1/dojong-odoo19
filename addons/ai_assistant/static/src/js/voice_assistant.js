@@ -71,6 +71,7 @@ export class DojoVoiceAssistant extends Component {
         this._silenceTimer = null;
         this._hasBeenOpened = false;  // tracks first open vs reopen
         this._contextWindowMax = 10;     // turns; overwritten by /dojo/ai/config on mount
+        this._chatSessionId = null;  // generated per chat session, sent to n8n for memory
 
         onMounted(() => {
             // Keyboard shortcut: Ctrl+Shift+A to toggle panel
@@ -116,10 +117,12 @@ export class DojoVoiceAssistant extends Component {
         if (this.state.open) {
             if (!this._hasBeenOpened) {
                 // Very first open — show welcome
+                this._chatSessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
                 this._pushMsg("assistant", "👋 Hi! I can help you look up students, check class schedules, or send messages to parents. What would you like to do?");
                 this._hasBeenOpened = true;
             } else {
                 // Reopen after close — start a new session in this window
+                this._chatSessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
                 this._pushDivider("── New Session ──");
                 this.state.contextWindow = [];
             }
@@ -170,6 +173,7 @@ export class DojoVoiceAssistant extends Component {
             const result = await rpc("/dojo/ai/text", {
                 text,
                 conversation_history: this.state.contextWindow,
+                chat_session_id: this._chatSessionId,
             });
             if (result.success) {
                 this._handleAiResult(result);

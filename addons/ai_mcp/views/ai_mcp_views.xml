@@ -9,7 +9,7 @@
         <field name="priority">99</field>
         <field name="arch" type="xml">
             <xpath expr="//form" position="inside">
-                <app data-string="MCP Server" string="MCP Server" data-key="ai_mcp">
+                <app string="MCP Server" name="ai_mcp">
                     <block title="MCP Server Configuration" name="mcp_server_settings">
                         <setting string="Server Status"
                                  help="The MCP endpoint is available at /mcp (POST).">

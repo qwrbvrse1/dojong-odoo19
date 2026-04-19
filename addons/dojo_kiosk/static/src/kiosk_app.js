@@ -2377,12 +2377,20 @@ class KioskVoiceAssistant extends Component {
         return this.props.instructorMode ? "instructor" : "kiosk";
     }
 
+    _newSessionId() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = Math.random() * 16 | 0;
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    }
+
     toggle() {
         this.state.open = !this.state.open;
-        // Reset conversation when switching between roles
+        // Reset conversation when switching between roles — also generate a fresh session ID
         if (this.state.open && (this.state.messages.length === 0 || this._lastRole !== this._role)) {
             this.state.messages = [];
             this._lastRole = this._role;
+            this._chatSessionId = this._newSessionId();
             const greeting = this.props.instructorMode
                 ? "👋 Instructor mode. I can help you manage attendance, check rosters, look up members, and more."
                 : "👋 Hi! I can help you look up members, check sessions, or answer questions about the dojo. What would you like to know?";
@@ -2423,7 +2431,7 @@ class KioskVoiceAssistant extends Component {
         }, 8000);
 
         try {
-            const result = await jsonPost("/kiosk/ai/text", { text, role: this._role }, { signal: this._abortCtrl.signal });
+            const result = await jsonPost("/kiosk/ai/text", { text, role: this._role, chat_session_id: this._chatSessionId }, { signal: this._abortCtrl.signal });
             if (result.success !== false) {
                 this._push("assistant", result.response || "Sorry, I couldn't find an answer for that. Try rephrasing your question.");
             } else {

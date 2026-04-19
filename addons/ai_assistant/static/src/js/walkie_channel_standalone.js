@@ -279,6 +279,7 @@
             });
 
             this._contextWindowMax = (window.WT_CONFIG && window.WT_CONFIG.context_window_turns) || 10;
+            this._chatSessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
             this._mediaRecorder = null;
             this._audioChunks    = [];
             this._stream         = null;
@@ -425,6 +426,7 @@
                 formData.append("pin", this.props.pin);
                 formData.append("conversation_history", JSON.stringify(this.state.contextWindow));
                 formData.append("channel", this.state.activeChannel);
+                formData.append("chat_session_id", this._chatSessionId);
 
                 const resp = await fetch(`/walkie/${window.WT_TOKEN}/voice`, {
                     method: "POST", body: formData, credentials: "same-origin",
@@ -455,6 +457,7 @@
                     text,
                     conversation_history: this.state.contextWindow,
                     channel: this.state.activeChannel,
+                    chat_session_id: this._chatSessionId,
                 });
                 this._handleResult(result);
             } catch (e) {

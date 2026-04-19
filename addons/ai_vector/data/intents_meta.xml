@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="0">
+
+    <!-- ── Meta / Help Intents ───────────────────────────────────────────── -->
+
+    <record id="intent_capability_list" model="ai.intent.schema">
+        <field name="intent_type">capability_list</field>
+        <field name="name">List Capabilities</field>
+        <field name="description">Show what actions and tools are available to you</field>
+        <field name="category">meta</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "category": {"type": "string", "description": "Filter by category (attendance, enrollment, belt, subscriptions, sales, etc.)"}
+    }
+}</field>
+        <field name="example_phrases">What can you do
+What tools are available
+What commands do you know
+Help
+Show me your capabilities
+What actions can you perform
+What can I ask you
+What do you support
+List available tools
+What functions do you have
+What are your features
+What can this AI do
+Tell me what you can do
+How can you help me
+What intents are available
+What are all the commands
+Show capabilities
+What can I do here</field>
+        <field name="allowed_roles">admin,instructor,kiosk</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+        <field name="sequence">1</field>
+    </record>
+
+    <record id="intent_help_request" model="ai.intent.schema">
+        <field name="intent_type">help_request</field>
+        <field name="name">Help Request</field>
+        <field name="description">Answer a question about how to use the AI assistant or a specific feature</field>
+        <field name="category">meta</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "topic": {"type": "string", "description": "The topic or feature the user needs help with"}
+    }
+}</field>
+        <field name="example_phrases">How do I check in a member
+How do I promote a belt
+How do I enroll a student
+How do I cancel a subscription
+How do I look up a member
+Explain how check-in works
+How do I add a new student
+How does belt promotion work
+How do I schedule a class
+Walk me through enrolling someone
+What's the best way to use this
+Help me understand how to check attendance</field>
+        <field name="allowed_roles">admin,instructor,kiosk</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+        <field name="sequence">2</field>
+    </record>
+
+    <!-- ── Meta Agent (defined here so intent refs resolve in the same file) ── -->
+
+    <record id="agent_meta" model="ai.agent">
+        <field name="name">Meta Agent</field>
+        <field name="domain">meta</field>
+        <field name="sequence">15</field>
+        <field name="color">6</field>
+        <field name="description">Handles meta questions about AI capabilities, available tools, and how-to guidance. Intercepts "what can you do?" questions before they leak raw tool schema to the user.</field>
+        <field name="intent_ids" eval="[
+            Command.link(ref('ai_vector.intent_capability_list')),
+            Command.link(ref('ai_vector.intent_help_request')),
+        ]"/>
+        <field name="system_prompt_template"><![CDATA[You are the Meta Agent — your only job is to explain what this AI assistant can do in clear, friendly, non-technical language.
+
+IMPORTANT: Never dump raw JSON, tool schemas, or function names at the user. Translate everything into plain English.
+
+When the user asks "what can you do?" or similar:
+- Group capabilities into readable categories
+- Use bullet points
+- Give one concrete example per category
+- Keep it concise (under 200 words total)
+
+When the user asks "how do I [X]?":
+- Give a 1-3 sentence plain-English answer
+- Mention the exact phrasing they can use
+
+Available intent definitions for reference:
+{intent_definitions}
+
+Database Context:
+{db_context}
+
+RULES:
+- Return ONLY a JSON object with intent_type, parameters, confidence, and a "message" field inside parameters
+- Use intent_type: "capability_list" for "what can you do" questions
+- Use intent_type: "help_request" for "how do I" questions
+- Set confidence 0.9+ for clear meta questions
+- The "message" in your parameters should be the friendly plain-English answer — NOT a schema dump
+- Never include function names, JSON structure descriptions, or technical implementation details in your response
+
+User input: {user_input}]]></field>
+    </record>
+
+</data>
+</odoo>

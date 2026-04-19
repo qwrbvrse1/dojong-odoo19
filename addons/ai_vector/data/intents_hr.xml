@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <!-- ── HR / Employee Intents ────────────────────────────── -->
+
+    <record id="intent_employee_list" model="ai.intent.schema">
+        <field name="intent_type">employee_list</field>
+        <field name="name">List Employees</field>
+        <field name="description">List employees with optional filters</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "department": {"type": "string", "description": "Department name filter"},
+        "job_title": {"type": "string", "description": "Job title filter"},
+        "active": {"type": "boolean", "description": "Filter by active status (default true)"},
+        "limit": {"type": "integer", "description": "Max results (default 20)"}
+    }
+}</field>
+        <field name="example_phrases">Show all employees
+List instructors
+Who works in the Front Desk department
+Show active employees
+List staff members</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_employee_lookup" model="ai.intent.schema">
+        <field name="intent_type">employee_lookup</field>
+        <field name="name">Employee Lookup</field>
+        <field name="description">Look up a specific employee by name or ID</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "employee_name": {"type": "string", "description": "Employee name"},
+        "employee_id": {"type": "integer", "description": "Employee ID"}
+    }
+}</field>
+        <field name="example_phrases">Find employee John
+Look up Sarah's employee record
+Who is Mike in the system
+Employee details for Jane</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_employee_create" model="ai.intent.schema">
+        <field name="intent_type">employee_create</field>
+        <field name="name">Create Employee</field>
+        <field name="description">Create a new employee record</field>
+        <field name="category">hr</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Employee name"},
+        "job_title": {"type": "string", "description": "Job title"},
+        "department_name": {"type": "string", "description": "Department name"},
+        "department_id": {"type": "integer", "description": "Department ID"},
+        "work_email": {"type": "string", "description": "Work email address"},
+        "work_phone": {"type": "string", "description": "Work phone number"},
+        "mobile_phone": {"type": "string", "description": "Mobile phone number"}
+    },
+    "required": ["name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Add new employee John Smith
+Create employee record for Jane as Instructor
+Hire Mike as Front Desk staff</field>
+        <field name="confirmation_template">Create employee record for {name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_employee_update" model="ai.intent.schema">
+        <field name="intent_type">employee_update</field>
+        <field name="name">Update Employee</field>
+        <field name="description">Update an existing employee's information</field>
+        <field name="category">hr</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "employee_name": {"type": "string", "description": "Employee name"},
+        "employee_id": {"type": "integer", "description": "Employee ID"},
+        "job_title": {"type": "string", "description": "New job title"},
+        "department_name": {"type": "string", "description": "New department"},
+        "work_email": {"type": "string", "description": "New work email"},
+        "work_phone": {"type": "string", "description": "New work phone"},
+        "mobile_phone": {"type": "string", "description": "New mobile phone"}
+    },
+    "required": ["employee_name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Update John's job title to Head Instructor
+Change Sarah's department to Training
+Update Mike's phone number</field>
+        <field name="confirmation_template">Update employee {employee_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_department_list" model="ai.intent.schema">
+        <field name="intent_type">department_list</field>
+        <field name="name">List Departments</field>
+        <field name="description">List all departments</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "limit": {"type": "integer", "description": "Max results (default 20)"}
+    }
+}</field>
+        <field name="example_phrases">Show departments
+List all departments
+What departments do we have
+How many departments exist</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_department_create" model="ai.intent.schema">
+        <field name="intent_type">department_create</field>
+        <field name="name">Create Department</field>
+        <field name="description">Create a new department</field>
+        <field name="category">hr</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Department name"},
+        "parent_department": {"type": "string", "description": "Parent department name (optional)"}
+    },
+    "required": ["name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a Training department
+Add new department called Front Desk
+Create the Maintenance department</field>
+        <field name="confirmation_template">Create department "{name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_employee_archive" model="ai.intent.schema">
+        <field name="intent_type">employee_archive</field>
+        <field name="name">Archive Employee</field>
+        <field name="description">Archive (deactivate) an employee record</field>
+        <field name="category">hr</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "employee_name": {"type": "string", "description": "Employee name"},
+        "employee_id": {"type": "integer", "description": "Employee ID"}
+    },
+    "required": ["employee_name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Archive employee John
+Deactivate Mike's employee record
+Remove Jane from active employees</field>
+        <field name="confirmation_template">Archive employee {employee_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+</odoo>

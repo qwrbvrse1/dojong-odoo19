@@ -16,6 +16,12 @@ from .communications_agent import AGENT_CONFIG as COMMUNICATIONS
 from .marketing_agent import AGENT_CONFIG as MARKETING
 from .belt_rank_agent import AGENT_CONFIG as BELT_RANK
 from .calendar_agent import AGENT_CONFIG as CALENDAR
+from .sales_agent import AGENT_CONFIG as SALES
+from .pos_agent import AGENT_CONFIG as POS
+from .accounting_agent import AGENT_CONFIG as ACCOUNTING
+from .hr_agent import AGENT_CONFIG as HR
+from .discuss_agent import AGENT_CONFIG as DISCUSS
+from .meta_agent import AGENT_CONFIG as META
 
 ALL_AGENTS = [
     CORE,
@@ -27,4 +33,10 @@ ALL_AGENTS = [
     MARKETING,
     BELT_RANK,
     CALENDAR,
+    SALES,
+    POS,
+    ACCOUNTING,
+    HR,
+    DISCUSS,
+    META,
 ]

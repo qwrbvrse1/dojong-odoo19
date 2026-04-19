@@ -897,7 +897,7 @@ class AIProcessorIntentExt(models.AbstractModel):
         try:
             VectorCache = self.env["ai.vector.cache"]
             results = VectorCache.find_similar_cached(
-                query_text, top_k=8, threshold=0.55
+                query_text, top_k=8, threshold=0.35
             )
 
             if not results:
@@ -933,16 +933,16 @@ class AIProcessorIntentExt(models.AbstractModel):
 
             # Build "did you mean?" suggestions for mid-confidence matches
             for r in results:
-                if 0.65 <= r["similarity"] < 0.90:
+                if 0.40 <= r["similarity"] < 0.70:
                     suggestions.append({
                         "intent_type": r["intent_type"],
                         "similarity": r["similarity"],
                         "domain_agent": r.get("domain_agent"),
                     })
 
-            # If top score is very high (>= 0.92), we can be very aggressive
+            # If top score is very high (>= 0.65), we can be very aggressive
             # and send only the top 3 intents
-            if top_score >= 0.92:
+            if top_score >= 0.65:
                 top_types_strict = {r["intent_type"] for r in results[:3]}
                 # Always include 'unknown' as an escape hatch
                 top_types_strict.add("unknown")

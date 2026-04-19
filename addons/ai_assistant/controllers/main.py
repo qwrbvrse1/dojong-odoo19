@@ -38,7 +38,7 @@ class AiAssistantController(http.Controller):
     # ═══════════════════════════════════════════════════════════════════════════
 
     @http.route("/dojo/ai/text", type="jsonrpc", auth="user", methods=["POST"])
-    def text_query(self, text="", role=None, conversation_history=None, **kwargs):
+    def text_query(self, text="", role=None, conversation_history=None, chat_session_id=None, **kwargs):
         """
         Process a plain-text query through the dojo AI assistant.
         
@@ -82,7 +82,7 @@ class AiAssistantController(http.Controller):
 
         try:
             assistant = request.env["ai.assistant.service"]
-            result = assistant.handle_command(text, role=role, input_type="text", conversation_history=conversation_history)
+            result = assistant.handle_command(text, role=role, input_type="text", conversation_history=conversation_history, chat_session_id=chat_session_id or None)
 
             # Surface vector routing suggestions at response top-level for UI
             intent = result.get("intent") or {}
@@ -242,6 +242,7 @@ class AiAssistantController(http.Controller):
                     pass
 
             # Step 2: Process through dojo AI assistant with confirmation flow
+            chat_session_id = kwargs.get("chat_session_id") or None
             assistant = request.env["ai.assistant.service"]
             result = assistant.handle_command(
                 transcribed,
@@ -249,6 +250,7 @@ class AiAssistantController(http.Controller):
                 input_type="voice",
                 audio_attachment_id=attachment.id if attachment else None,
                 conversation_history=conversation_history,
+                chat_session_id=chat_session_id,
             )
 
             result["transcribed"] = transcribed
@@ -646,7 +648,7 @@ class AiWalkieTalkieController(http.Controller):
     # ── Text query ─────────────────────────────────────────────────────────────
 
     @http.route("/walkie/<string:token>/text", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
-    def walkie_text(self, token, pin="", text="", conversation_history=None, channel=None, **kw):
+    def walkie_text(self, token, pin="", text="", conversation_history=None, channel=None, chat_session_id=None, **kw):
         try:
             record = self._require_walkie(token, pin)
         except ValueError as e:
@@ -669,6 +671,7 @@ class AiWalkieTalkieController(http.Controller):
                 text, role="instructor", input_type="text",
                 conversation_history=conversation_history,
                 channel=channel or None,
+                chat_session_id=chat_session_id or None,
             )
         except Exception as exc:
             _logger.error("Walkie /text failed: %s", exc, exc_info=True)
@@ -734,6 +737,7 @@ class AiWalkieTalkieController(http.Controller):
                     pass
 
             channel = request.httprequest.form.get("channel") or None
+            chat_session_id = request.httprequest.form.get("chat_session_id") or None
 
             record.sudo().write({"last_used": _dt.utcnow()})
             assistant = request.env["ai.assistant.service"].sudo()
@@ -744,6 +748,7 @@ class AiWalkieTalkieController(http.Controller):
                 audio_attachment_id=attachment.id if attachment else None,
                 conversation_history=conversation_history,
                 channel=channel,
+                chat_session_id=chat_session_id,
             )
             result["transcribed"] = transcribed
 

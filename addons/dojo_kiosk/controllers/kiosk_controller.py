@@ -575,7 +575,7 @@ class KioskController(http.Controller):
     _KIOSK_ALLOWED_ROLES = {"kiosk", "instructor"}
 
     @http.route("/kiosk/ai/text", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
-    def kiosk_ai_text(self, text="", token=None, role="kiosk", **kw):
+    def kiosk_ai_text(self, text="", token=None, role="kiosk", chat_session_id=None, **kw):
         """
         Process a plain-text query through the dojo AI assistant.
         Role is caller-supplied but restricted to 'kiosk' or 'instructor'.
@@ -594,7 +594,7 @@ class KioskController(http.Controller):
 
         try:
             assistant = request.env["ai.assistant.service"].sudo()
-            return assistant.handle_command(text, role=safe_role, input_type="text")
+            return assistant.handle_command(text, role=safe_role, input_type="text", chat_session_id=chat_session_id)
         except Exception as exc:
             _logger.error("Kiosk AI /kiosk/ai/text failed: %s", exc, exc_info=True)
             return {"success": False, "state": "error", "error": str(exc)}

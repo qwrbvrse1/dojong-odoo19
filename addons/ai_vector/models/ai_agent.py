@@ -24,6 +24,12 @@ AGENT_DOMAINS = [
     ("marketing", "Marketing"),
     ("belt_rank", "Belt / Rank"),
     ("calendar", "Calendar / Scheduling"),
+    ("sales", "Sales"),
+    ("pos", "Point of Sale"),
+    ("accounting", "Accounting / Invoicing"),
+    ("hr", "Employees / HR"),
+    ("discuss", "Discuss / Messaging"),
+    ("meta", "Meta / Help"),
 ]
 
 

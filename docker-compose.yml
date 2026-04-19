@@ -16,6 +16,9 @@ services:
       - db
     ports:
       - "8070:8069" # Changed: 8069 is occupied by a stale kernel socket
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     volumes:
       - odoo-web-data:/var/lib/odoo
       - ./enterprise:/mnt/enterprise-addons
@@ -33,6 +36,9 @@ services:
       - web
     ports:
       - "5678:5678"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     volumes:
       - n8n-data:/home/node/.n8n
     environment:

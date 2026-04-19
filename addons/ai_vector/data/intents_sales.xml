@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <!-- ── Sales / Quotation Intents ────────────────────────── -->
+
+    <record id="intent_sale_order_list" model="ai.intent.schema">
+        <field name="intent_type">sale_order_list</field>
+        <field name="name">List Sale Orders</field>
+        <field name="description">List sale orders / quotations with optional filters</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "state": {"type": "string", "enum": ["draft", "sent", "sale", "cancel"], "description": "Filter by state (draft=Quotation, sale=Confirmed)"},
+        "partner_name": {"type": "string", "description": "Filter by customer name"},
+        "date_from": {"type": "string", "format": "date", "description": "Orders from this date"},
+        "date_to": {"type": "string", "format": "date", "description": "Orders until this date"},
+        "limit": {"type": "integer", "description": "Max results (default 20)"}
+    }
+}</field>
+        <field name="example_phrases">Show recent orders
+List all quotations
+What orders came in today
+Show confirmed sales
+List orders for John</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_sale_order_lookup" model="ai.intent.schema">
+        <field name="intent_type">sale_order_lookup</field>
+        <field name="name">Sale Order Lookup</field>
+        <field name="description">Look up a specific sale order by reference or customer</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "order_ref": {"type": "string", "description": "Sale order reference (e.g. S00042)"},
+        "partner_name": {"type": "string", "description": "Customer name"},
+        "partner_id": {"type": "integer", "description": "Customer partner ID"}
+    }
+}</field>
+        <field name="example_phrases">Look up order S00042
+Find the order for John Smith
+Check quotation S00015
+What's the status of order S00023</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_sale_order_create" model="ai.intent.schema">
+        <field name="intent_type">sale_order_create</field>
+        <field name="name">Create Sale Order</field>
+        <field name="description">Create a new quotation / sale order</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "partner_name": {"type": "string", "description": "Customer name"},
+        "partner_id": {"type": "integer", "description": "Customer partner ID"},
+        "product_name": {"type": "string", "description": "Product to add"},
+        "product_id": {"type": "integer", "description": "Product ID"},
+        "quantity": {"type": "number", "description": "Quantity (default 1)"},
+        "note": {"type": "string", "description": "Order notes"}
+    },
+    "required": ["partner_name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a quotation for John Smith
+New order for Jane with 2x Training Gloves
+Make a sale order for the Dojo Pro membership</field>
+        <field name="confirmation_template">Create sale order for {partner_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_sale_order_confirm" model="ai.intent.schema">
+        <field name="intent_type">sale_order_confirm</field>
+        <field name="name">Confirm Sale Order</field>
+        <field name="description">Confirm a draft quotation into a sale order</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "order_ref": {"type": "string", "description": "Sale order reference (e.g. S00042)"},
+        "order_id": {"type": "integer", "description": "Sale order ID"}
+    },
+    "required": ["order_ref"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Confirm order S00042
+Approve quotation S00015
+Confirm the order for John</field>
+        <field name="confirmation_template">Confirm sale order {order_ref}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_sale_order_cancel" model="ai.intent.schema">
+        <field name="intent_type">sale_order_cancel</field>
+        <field name="name">Cancel Sale Order</field>
+        <field name="description">Cancel a sale order or quotation</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "order_ref": {"type": "string", "description": "Sale order reference (e.g. S00042)"},
+        "order_id": {"type": "integer", "description": "Sale order ID"}
+    },
+    "required": ["order_ref"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Cancel order S00042
+Cancel the quotation for John
+Void order S00015</field>
+        <field name="confirmation_template">Cancel sale order {order_ref}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_sale_order_send" model="ai.intent.schema">
+        <field name="intent_type">sale_order_send</field>
+        <field name="name">Send Sale Order</field>
+        <field name="description">Send a quotation / sale order by email to the customer</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "order_ref": {"type": "string", "description": "Sale order reference (e.g. S00042)"},
+        "order_id": {"type": "integer", "description": "Sale order ID"}
+    },
+    "required": ["order_ref"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Send order S00042 to the customer
+Email quotation S00015
+Send the quotation for John</field>
+        <field name="confirmation_template">Send sale order {order_ref} to customer?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_product_list" model="ai.intent.schema">
+        <field name="intent_type">product_list</field>
+        <field name="name">List Products</field>
+        <field name="description">List products from the catalog</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "category": {"type": "string", "description": "Product category filter"},
+        "type": {"type": "string", "enum": ["consu", "service", "product"], "description": "Product type filter"},
+        "search": {"type": "string", "description": "Name search term"},
+        "limit": {"type": "integer", "description": "Max results (default 20)"}
+    }
+}</field>
+        <field name="example_phrases">Show all products
+List merchandise
+What products do we sell
+Show services in the catalog</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_product_lookup" model="ai.intent.schema">
+        <field name="intent_type">product_lookup</field>
+        <field name="name">Product Lookup</field>
+        <field name="description">Look up a specific product by name or ID</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "product_name": {"type": "string", "description": "Product name to search"},
+        "product_id": {"type": "integer", "description": "Product ID"}
+    }
+}</field>
+        <field name="example_phrases">Find product Training Gloves
+Look up the price of uniforms
+What's the cost of the gi
+Details on the Pro membership product</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+</odoo>

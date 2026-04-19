@@ -76,6 +76,31 @@ _AUTO_EXECUTE_INTENTS = {
     "campaign_list",
     "kiosk_announcement_list",
     "birthday_upcoming",
+    # Sales read intents
+    "sale_order_list",
+    "sale_order_lookup",
+    "product_list",
+    "product_lookup",
+    # POS read intents
+    "pos_order_list",
+    "pos_order_lookup",
+    "pos_session_list",
+    "pos_daily_summary",
+    # Accounting read intents
+    "payment_list",
+    "account_balance",
+    "bill_list",
+    # HR read intents
+    "employee_list",
+    "employee_lookup",
+    "department_list",
+    # Discuss read intents
+    "channel_list",
+    "channel_lookup",
+    "message_list",
+    # Meta intents
+    "capability_list",
+    "help_request",
     "unknown",
 }
 
@@ -126,6 +151,24 @@ _KNOWN_INTENT_TYPES = {
     "invoice_lookup", "invoice_list",
     # Activities
     "activity_create", "activity_list",
+    # ── Sales intents ───────────────────────────────────────────────────────
+    "sale_order_list", "sale_order_lookup", "sale_order_create",
+    "sale_order_confirm", "sale_order_cancel", "sale_order_send",
+    "product_list", "product_lookup",
+    # ── POS intents ─────────────────────────────────────────────────────────
+    "pos_order_list", "pos_order_lookup", "pos_session_list",
+    "pos_session_open", "pos_session_close", "pos_daily_summary",
+    # ── Accounting intents ──────────────────────────────────────────────────
+    "invoice_create", "invoice_send", "payment_list",
+    "payment_register", "account_balance", "bill_list", "bill_create",
+    # ── HR intents ──────────────────────────────────────────────────────────
+    "employee_list", "employee_lookup", "employee_create",
+    "employee_update", "department_list", "department_create", "employee_archive",
+    # ── Discuss intents ─────────────────────────────────────────────────────
+    "channel_list", "channel_lookup", "channel_create",
+    "channel_message_send", "channel_add_member", "message_list",
+    # ── Meta intents ────────────────────────────────────────────────────────
+    "capability_list", "help_request",
 }
 
 # ─── Intent Handler Configuration (for generic read handler) ──────────────────
@@ -288,6 +331,129 @@ _INTENT_HANDLER_CONFIG = {
         "model": "dojo.kiosk.announcement",
         "domain_builder": "_domain_kiosk_announcement_list",
         "fields": ["id", "title", "body", "active", "config_id", "sequence"],
+        "limit": 20,
+    },
+    # ── Sales read intents ─────────────────────────────────────────────────
+    "sale_order_list": {
+        "model": "sale.order",
+        "domain_builder": "_domain_sale_order_list",
+        "fields": ["id", "name", "partner_id", "state", "date_order",
+                   "amount_total", "currency_id"],
+        "limit": 20,
+        "use_sudo": True,
+    },
+    "sale_order_lookup": {
+        "model": "sale.order",
+        "domain_builder": "_domain_sale_order_lookup",
+        "fields": ["id", "name", "partner_id", "state", "date_order",
+                   "amount_total", "amount_untaxed", "amount_tax",
+                   "currency_id", "note", "order_line"],
+        "limit": 5,
+        "use_sudo": True,
+    },
+    "product_list": {
+        "model": "product.product",
+        "domain_builder": "_domain_product_list",
+        "fields": ["id", "name", "list_price", "type", "categ_id",
+                   "default_code", "qty_available"],
+        "limit": 20,
+    },
+    "product_lookup": {
+        "model": "product.product",
+        "domain_builder": "_domain_product_lookup",
+        "fields": ["id", "name", "list_price", "type", "categ_id",
+                   "default_code", "qty_available", "description_sale"],
+        "limit": 5,
+    },
+    # ── POS read intents ───────────────────────────────────────────────────
+    "pos_order_list": {
+        "model": "pos.order",
+        "domain_builder": "_domain_pos_order_list",
+        "fields": ["id", "name", "partner_id", "state", "date_order",
+                   "amount_total", "session_id", "pos_reference"],
+        "limit": 20,
+        "use_sudo": True,
+    },
+    "pos_order_lookup": {
+        "model": "pos.order",
+        "domain_builder": "_domain_pos_order_lookup",
+        "fields": ["id", "name", "partner_id", "state", "date_order",
+                   "amount_total", "amount_tax", "amount_paid",
+                   "session_id", "pos_reference", "lines"],
+        "limit": 5,
+        "use_sudo": True,
+    },
+    "pos_session_list": {
+        "model": "pos.session",
+        "domain_builder": "_domain_pos_session_list",
+        "fields": ["id", "name", "state", "config_id", "user_id",
+                   "start_at", "stop_at", "order_count", "total_payments_amount"],
+        "limit": 10,
+        "use_sudo": True,
+    },
+    # ── Accounting read intents ────────────────────────────────────────────
+    "payment_list": {
+        "model": "account.payment",
+        "domain_builder": "_domain_payment_list",
+        "fields": ["id", "name", "partner_id", "amount", "payment_type",
+                   "state", "date", "journal_id", "ref"],
+        "limit": 20,
+        "use_sudo": True,
+    },
+    "bill_list": {
+        "model": "account.move",
+        "domain_builder": "_domain_bill_list",
+        "fields": ["id", "name", "partner_id", "state", "amount_total",
+                   "amount_residual", "invoice_date", "invoice_date_due",
+                   "payment_state"],
+        "limit": 20,
+        "use_sudo": True,
+    },
+    # ── HR read intents ────────────────────────────────────────────────────
+    "employee_list": {
+        "model": "hr.employee",
+        "domain_builder": "_domain_employee_list",
+        "fields": ["id", "name", "job_title", "department_id",
+                   "work_email", "work_phone", "mobile_phone"],
+        "limit": 20,
+        "use_sudo": True,
+    },
+    "employee_lookup": {
+        "model": "hr.employee",
+        "domain_builder": "_domain_employee_lookup",
+        "fields": ["id", "name", "job_title", "department_id",
+                   "work_email", "work_phone", "mobile_phone",
+                   "coach_id", "parent_id"],
+        "limit": 5,
+        "use_sudo": True,
+    },
+    "department_list": {
+        "model": "hr.department",
+        "domain_builder": "_domain_department_list",
+        "fields": ["id", "name", "manager_id", "parent_id",
+                   "total_employee"],
+        "limit": 20,
+    },
+    # ── Discuss read intents ───────────────────────────────────────────────
+    "channel_list": {
+        "model": "discuss.channel",
+        "domain_builder": "_domain_channel_list",
+        "fields": ["id", "name", "channel_type", "description",
+                   "channel_member_ids"],
+        "limit": 20,
+    },
+    "channel_lookup": {
+        "model": "discuss.channel",
+        "domain_builder": "_domain_channel_lookup",
+        "fields": ["id", "name", "channel_type", "description",
+                   "channel_member_ids"],
+        "limit": 5,
+    },
+    "message_list": {
+        "model": "mail.message",
+        "domain_builder": "_domain_message_list",
+        "fields": ["id", "body", "author_id", "date", "model",
+                   "res_id", "subtype_id"],
         "limit": 20,
     },
 }
@@ -613,6 +779,89 @@ _CRUD_HANDLER_CONFIG = {
         },
         "allow_undo": True,
     },
+    # ── Sales CRUD intents ─────────────────────────────────────────────────
+    "sale_order_create": {
+        "model": "sale.order",
+        "operation": "create",
+        "fields": {
+            "partner_id": {"required": True, "type": "many2one", "resolver": "_resolve_partner"},
+            "note": {"required": False, "type": "text"},
+        },
+        "allow_undo": True,
+        "use_sudo": True,
+    },
+    # ── Accounting CRUD intents ────────────────────────────────────────────
+    "invoice_create": {
+        "model": "account.move",
+        "operation": "create",
+        "fields": {
+            "partner_id": {"required": True, "type": "many2one", "resolver": "_resolve_partner"},
+            "move_type": {"required": False, "type": "selection", "default": "out_invoice"},
+            "invoice_date": {"required": False, "type": "date", "default_builder": "_default_today"},
+        },
+        "allow_undo": True,
+        "use_sudo": True,
+    },
+    "bill_create": {
+        "model": "account.move",
+        "operation": "create",
+        "fields": {
+            "partner_id": {"required": True, "type": "many2one", "resolver": "_resolve_partner"},
+            "move_type": {"required": False, "type": "selection", "default": "in_invoice"},
+            "invoice_date": {"required": False, "type": "date", "default_builder": "_default_today"},
+        },
+        "allow_undo": True,
+        "use_sudo": True,
+    },
+    # ── HR CRUD intents ────────────────────────────────────────────────────
+    "employee_create": {
+        "model": "hr.employee",
+        "operation": "create",
+        "fields": {
+            "name": {"required": True, "type": "char"},
+            "job_title": {"required": False, "type": "char"},
+            "department_id": {"required": False, "type": "many2one", "resolver": "_resolve_department"},
+            "work_email": {"required": False, "type": "char"},
+            "work_phone": {"required": False, "type": "char"},
+            "mobile_phone": {"required": False, "type": "char"},
+        },
+        "allow_undo": True,
+        "use_sudo": True,
+    },
+    "employee_update": {
+        "model": "hr.employee",
+        "operation": "update",
+        "target_domain_builder": "_domain_crud_employee",
+        "fields": {
+            "job_title": {"required": False, "type": "char"},
+            "department_id": {"required": False, "type": "many2one", "resolver": "_resolve_department"},
+            "work_email": {"required": False, "type": "char"},
+            "work_phone": {"required": False, "type": "char"},
+            "mobile_phone": {"required": False, "type": "char"},
+        },
+        "allow_undo": True,
+        "use_sudo": True,
+    },
+    "department_create": {
+        "model": "hr.department",
+        "operation": "create",
+        "fields": {
+            "name": {"required": True, "type": "char"},
+            "parent_id": {"required": False, "type": "many2one"},
+        },
+        "allow_undo": True,
+    },
+    # ── Discuss CRUD intents ───────────────────────────────────────────────
+    "channel_create": {
+        "model": "discuss.channel",
+        "operation": "create",
+        "fields": {
+            "name": {"required": True, "type": "char"},
+            "description": {"required": False, "type": "text"},
+            "channel_type": {"required": False, "type": "selection", "default": "channel"},
+        },
+        "allow_undo": True,
+    },
 }
 
 
@@ -646,12 +895,16 @@ class AiAssistantService(models.AbstractModel):
     # ═══════════════════════════════════════════════════════════════════════════
 
     @api.model
-    def handle_command(self, text, role="instructor", input_type="text", audio_attachment_id=None, context=None, conversation_history=None, channel=None):
+    def handle_command(self, text, role="instructor", input_type="text", audio_attachment_id=None, context=None, conversation_history=None, channel=None, chat_session_id=None):
         """
         Main entry point for the AI assistant.
 
         This is the primary method that should be called by consuming modules.
         Aliases: parse_and_confirm (for backward compatibility)
+
+        When ``ai_assistant.n8n_webhook_url`` is configured, routes through
+        n8n for LLM orchestration.  Falls back to direct processing on
+        timeout or if n8n is unreachable.
 
         Args:
             text: User's natural language input
@@ -677,7 +930,303 @@ class AiAssistantService(models.AbstractModel):
                 "error": str | None
             }
         """
+        # ── n8n orchestration ────────────────────────────────────────────
+        # ── Meta intents: short-circuit before n8n ──────────────────────
+        # Detect meta questions ("what can you do?", "help", etc.) and handle
+        # them directly in Odoo. Sending them to n8n causes the LLM to describe
+        # its own internal tool schema instead of our capabilities.
+        _META_TRIGGERS = (
+            "what can you do", "what tools", "what commands", "capabilities",
+            "help", "how do i", "how do you", "what can i ask", "what do you",
+            "what are your", "what intents", "list tools", "show tools",
+            "available commands", "available tools", "what actions",
+        )
+        _text_lower = text.lower().strip()
+        if any(_text_lower.startswith(t) or t in _text_lower for t in _META_TRIGGERS):
+            _logger.info("Meta intent detected — handling directly (bypassing n8n)")
+            return self.parse_and_confirm(
+                text, role, input_type, None,
+                conversation_history=conversation_history, channel=channel,
+            )
+
+        # ── Pending confirmation short-circuit ───────────────────────────
+        # When a pending confirmation exists, a "yes/no" reply should ALWAYS
+        # bypass n8n — otherwise n8n re-interprets "yes" and calls Execute_Intent
+        # again, creating an infinite loop.
+        #
+        # Two lookup strategies (both checked):
+        # 1. In-memory cache keyed by chat_session_id → session_key (fast)
+        # 2. DB fallback: most recent 'pending' action log within 10 min (for n8n direct calls)
+        cls = type(self)
+        # Strip punctuation so "yes." and "yes!" match the same as "yes"
+        import re as _re
+        _stripped = _re.sub(r"[^\w\s]", "", _text_lower).strip()
+        _is_pure_yes = _stripped in cls._YES_WORDS
+        _is_pure_no = _stripped in cls._NO_WORDS
+
+        if _is_pure_yes or _is_pure_no:
+            # Strategy 1: in-memory cache
+            session_key_to_confirm = None
+            if chat_session_id:
+                cached = cls._pending_confirm_cache.get(chat_session_id)
+                if cached:
+                    s_key, expires_at = cached
+                    if time.time() < expires_at:
+                        session_key_to_confirm = s_key
+                        del cls._pending_confirm_cache[chat_session_id]
+                    else:
+                        del cls._pending_confirm_cache[chat_session_id]
+
+            # Strategy 2: DB fallback — find most recent pending action log
+            if not session_key_to_confirm:
+                import datetime as _dt_mod
+                cutoff = _dt_mod.datetime.utcnow() - _dt_mod.timedelta(minutes=10)
+                pending_log = self.env["ai.action.log"].sudo().search([
+                    ("requires_confirmation", "=", True),
+                    ("confirmation_status", "=", "pending"),
+                    ("session_key", "!=", False),
+                    ("create_date", ">=", cutoff.strftime("%Y-%m-%d %H:%M:%S")),
+                ], order="create_date desc", limit=1)
+                if pending_log:
+                    session_key_to_confirm = pending_log.session_key
+
+            if session_key_to_confirm:
+                _logger.info(
+                    "%s pending action via %s (session_key=%s)",
+                    "Confirming" if _is_pure_yes else "Cancelling",
+                    "cache" if chat_session_id else "DB fallback",
+                    session_key_to_confirm,
+                )
+                return self.execute_confirmed(session_key_to_confirm, confirmed=_is_pure_yes)
+
+        # ── n8n orchestration ────────────────────────────────────────────
+        n8n_url = (
+            self.env["ir.config_parameter"]
+            .sudo()
+            .get_str("ai_assistant.n8n_webhook_url", "")
+        )
+        if n8n_url:
+            result = self._handle_via_n8n(
+                n8n_url, text, role, input_type,
+                conversation_history=conversation_history,
+                channel=channel,
+                chat_session_id=chat_session_id,
+            )
+            if result is not None:
+                # If n8n returned a pending confirmation, cache the session_key
+                if (chat_session_id
+                        and isinstance(result, dict)
+                        and result.get("state") == "pending_confirmation"
+                        and result.get("session_key")):
+                    cls = type(self)
+                    cls._pending_confirm_cache[chat_session_id] = (
+                        result["session_key"],
+                        time.time() + cls._PENDING_CONFIRM_TTL,
+                    )
+                    _logger.info(
+                        "Cached pending confirmation session_key=%s for chat_session_id=%s",
+                        result["session_key"], chat_session_id,
+                    )
+                return result
+            # n8n unreachable — fall through to direct processing
+            _logger.warning("n8n unreachable, falling back to direct processing")
+
         return self.parse_and_confirm(text, role, input_type, audio_attachment_id, conversation_history=conversation_history, channel=channel)
+
+    # ─────────────────────────────────────────────────────────────────────
+    # n8n proxy — with retry + circuit breaker
+    # ─────────────────────────────────────────────────────────────────────
+
+    # Circuit breaker state (module-level singleton, reset on worker restart)
+    _n8n_failure_count = 0
+    _n8n_circuit_open_until = 0.0  # epoch timestamp
+    _N8N_CIRCUIT_THRESHOLD = 3     # consecutive failures to trip
+    _N8N_CIRCUIT_COOLDOWN = 300    # seconds to keep circuit open (5 min)
+    _N8N_MAX_RETRIES = 2
+    _N8N_RETRY_BACKOFF = 1.0      # seconds, doubles each retry
+
+    # Pending confirmation cache: chat_session_id → (session_key, expires_epoch)
+    # Allows "yes/no" replies via n8n to confirm actions without n8n knowing the session_key.
+    _pending_confirm_cache = {}   # {chat_session_id: (session_key, expires_at)}
+    _PENDING_CONFIRM_TTL = 600    # 10 minutes
+
+    _YES_WORDS = frozenset([
+        "yes", "yeah", "yep", "yup", "sure", "ok", "okay", "confirm",
+        "confirmed", "do it", "go ahead", "proceed", "affirmative", "correct",
+        "sounds good", "looks good", "that's right", "right", "definitely",
+    ])
+    _NO_WORDS = frozenset([
+        "no", "nope", "nah", "cancel", "stop", "abort", "don't", "do not",
+        "skip", "nevermind", "never mind", "forget it", "discard",
+    ])
+
+    @api.model
+    def _handle_via_n8n(self, webhook_url, text, role, input_type,
+                        conversation_history=None, channel=None, chat_session_id=None):
+        """
+        Proxy an AI request through an n8n webhook.
+
+        Includes retry with exponential backoff and a circuit breaker:
+        - Retries up to 2 times on transient errors (connection, timeout).
+        - After 3 consecutive failures, opens the circuit for 5 minutes
+          (all calls short-circuit to ``None`` → fallback to direct processing).
+        - A single success resets the failure counter.
+
+        Returns:
+            dict | None: Standard handle_command response dict, or None if
+                         n8n is unreachable (triggers fallback).
+        """
+        import urllib.request
+        import urllib.error
+
+        cls = type(self)
+
+        # ── Circuit breaker check ────────────────────────────────────
+        if cls._n8n_failure_count >= cls._N8N_CIRCUIT_THRESHOLD:
+            if time.time() < cls._n8n_circuit_open_until:
+                _logger.info(
+                    "n8n circuit breaker OPEN — skipping webhook (resets in %ds)",
+                    int(cls._n8n_circuit_open_until - time.time()),
+                )
+                return None
+            # Cooldown expired — allow one probe request (half-open)
+            _logger.info("n8n circuit breaker half-open — probing webhook")
+
+        # ── Build request ────────────────────────────────────────────
+        payload = {
+            "text": text,
+            "role": role,
+            "input_type": input_type,
+        }
+        if conversation_history:
+            payload["conversation_history"] = conversation_history
+        if channel:
+            payload["channel"] = channel
+        if chat_session_id:
+            payload["session_id"] = chat_session_id
+        # Send the same context_window_turns setting used by the direct path,
+        # so n8n memory node stays in sync with Settings → AI Assistant
+        context_window = self.env["ir.config_parameter"].sudo().get_int(
+            "ai_assistant.context_window_turns", 10
+        )
+        payload["context_window"] = max(1, min(50, context_window))
+
+        body = json.dumps(payload).encode("utf-8")
+
+        timeout = int(
+            self.env["ir.config_parameter"]
+            .sudo()
+            .get_str("ai_assistant.n8n_timeout", "30")
+        )
+
+        # ── Retry loop ───────────────────────────────────────────────
+        last_error = None
+        for attempt in range(1 + cls._N8N_MAX_RETRIES):
+            req = urllib.request.Request(
+                webhook_url,
+                data=body,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    raw = resp.read().decode("utf-8")
+                    data = json.loads(raw)
+
+                # ── Success — reset circuit breaker ──────────────────
+                cls._n8n_failure_count = 0
+                cls._n8n_circuit_open_until = 0.0
+
+                return self._normalise_n8n_response(data)
+
+            except urllib.error.URLError as e:
+                last_error = e
+                _logger.warning(
+                    "n8n attempt %d/%d failed (URLError): %s",
+                    attempt + 1,
+                    1 + cls._N8N_MAX_RETRIES,
+                    e,
+                )
+            except (json.JSONDecodeError, TypeError) as e:
+                # Bad JSON is not transient — don't retry
+                _logger.error("n8n returned invalid JSON: %s", e)
+                cls._n8n_failure_count += 1
+                if cls._n8n_failure_count >= cls._N8N_CIRCUIT_THRESHOLD:
+                    cls._n8n_circuit_open_until = time.time() + cls._N8N_CIRCUIT_COOLDOWN
+                return self._error_response("AI orchestration returned an invalid response.")
+            except Exception as e:
+                last_error = e
+                _logger.warning(
+                    "n8n attempt %d/%d failed: %s",
+                    attempt + 1,
+                    1 + cls._N8N_MAX_RETRIES,
+                    e,
+                )
+
+            # Backoff before next retry (skip on last attempt)
+            if attempt < cls._N8N_MAX_RETRIES:
+                backoff = cls._N8N_RETRY_BACKOFF * (2 ** attempt)
+                time.sleep(backoff)
+
+        # ── All retries exhausted — trip circuit breaker ─────────────
+        cls._n8n_failure_count += 1
+        if cls._n8n_failure_count >= cls._N8N_CIRCUIT_THRESHOLD:
+            cls._n8n_circuit_open_until = time.time() + cls._N8N_CIRCUIT_COOLDOWN
+            _logger.error(
+                "n8n circuit breaker TRIPPED after %d consecutive failures "
+                "(cooldown %ds). Last error: %s",
+                cls._n8n_failure_count,
+                cls._N8N_CIRCUIT_COOLDOWN,
+                last_error,
+            )
+        else:
+            _logger.error(
+                "n8n webhook unreachable after %d attempts (%s): %s",
+                1 + cls._N8N_MAX_RETRIES,
+                webhook_url,
+                last_error,
+            )
+        return None
+
+    @api.model
+    def _normalise_n8n_response(self, data):
+        """Normalise an n8n response dict to handle_command() format."""
+        if isinstance(data, dict):
+            # Standard format — pass through
+            if "success" in data and "state" in data:
+                return data
+            # n8n AI Agent node default output key
+            if "output" in data and "success" not in data:
+                return {
+                    "success": True,
+                    "state": "executed",
+                    "session_key": None,
+                    "intent": data.get("intent"),
+                    "confirmation_prompt": data.get("confirmation_prompt"),
+                    "resolved_data": data.get("resolved_data"),
+                    "auto_executed": True,
+                    "result": data.get("result"),
+                    "response": data["output"],
+                    "error": None,
+                }
+            # Simpler {response: "..."} wrapper
+            if "response" in data and "success" not in data:
+                return {
+                    "success": True,
+                    "state": "executed",
+                    "session_key": None,
+                    "intent": data.get("intent"),
+                    "confirmation_prompt": data.get("confirmation_prompt"),
+                    "resolved_data": data.get("resolved_data"),
+                    "auto_executed": True,
+                    "result": data.get("result"),
+                    "response": data["response"],
+                    "error": None,
+                }
+
+        # Unknown shape — wrap as error
+        _logger.warning("n8n returned unexpected response shape: %s | data: %s", type(data), str(data)[:200])
+        return self._error_response("AI orchestration returned an unexpected response.")
 
     @api.model
     def handle_compound_command(self, compound_data, role="instructor"):
@@ -1766,15 +2315,36 @@ class AiAssistantService(models.AbstractModel):
                 resolved_data.get("new_rank_name", params.get("target_belt", "next rank"))
             ),
             "undo_action": lambda: "Undo the previous action?",
+            "lead_create": lambda: "Create new lead for {}?".format(
+                params.get("contact_name") or params.get("name", "prospect")
+            ),
+            "lead_qualify": lambda: "Move lead '{}' to Qualified and generate booking link?".format(
+                params.get("lead_name") or params.get("name", "lead")
+            ),
+            "lead_mark_attended": lambda: "Mark '{}' as Trial Attended?".format(
+                params.get("lead_name") or params.get("name", "lead")
+            ),
+            "lead_convert": lambda: "Convert '{}' to a member?".format(
+                params.get("lead_name") or params.get("name", "lead")
+            ),
+            "lead_mark_lost": lambda: "Mark '{}' as lost?".format(
+                params.get("lead_name") or params.get("name", "lead")
+            ),
+            "lead_mark_won": lambda: "Mark '{}' as won?".format(
+                params.get("lead_name") or params.get("name", "lead")
+            ),
         }
+
+        def _fmt(action_text):
+            return f"{action_text}\n\nReply **Yes** to confirm or **No** to cancel."
 
         if intent_type in prompts:
             try:
-                return prompts[intent_type]()
+                return _fmt(prompts[intent_type]())
             except Exception as e:
                 _logger.warning("Error building confirmation prompt: %s", e)
 
-        return f"Confirm {intent_type.replace('_', ' ')}?"
+        return _fmt(f"Confirm {intent_type.replace('_', ' ')}?")
 
     @api.model
     def _validate_before_execute(self, intent_type, intent_data, resolved_data):
@@ -1839,6 +2409,36 @@ class AiAssistantService(models.AbstractModel):
                         }
                 except Exception:
                     pass
+
+        # ── Check 2b: CRM lead intent validation ────────────────────────────────
+        _CRM_LEAD_LOOKUP_INTENTS = {
+            "lead_qualify", "lead_mark_attended", "lead_convert",
+            "lead_mark_lost", "lead_mark_won",
+        }
+        if intent_type in _CRM_LEAD_LOOKUP_INTENTS:
+            lead_name = (params.get("lead_name") or params.get("name")
+                         or params.get("contact_name"))
+            if not lead_name and not params.get("lead_id"):
+                return {
+                    "valid": False,
+                    "clarification": (
+                        f"To {intent_type.replace('_', ' ')}, which lead are you referring to? "
+                        "Please provide the prospect's name."
+                    ),
+                }
+
+        if intent_type == "lead_create":
+            contact_name = (params.get("contact_name") or params.get("name")
+                            or params.get("lead_name"))
+            # batch mode with contacts list is OK
+            if not contact_name and not params.get("contacts"):
+                return {
+                    "valid": False,
+                    "clarification": (
+                        "To create a new lead, what is the prospect's name? "
+                        "(You can also add their phone or email.)"
+                    ),
+                }
 
         # ── Check 3: Logical sanity for common action intents ─────────────────
         member_id = resolved_data.get("member_id")
@@ -2491,6 +3091,40 @@ class AiAssistantService(models.AbstractModel):
         Supports config-driven generic handlers (read & CRUD) and custom handler fallbacks.
         For undoable actions, creates snapshots before execution.
         """
+        # Normalise intent_type aliases — LLMs sometimes use slightly different names
+        _INTENT_ALIASES = {
+            # CRM lead
+            "create_lead": "lead_create",
+            "create_lead_confirm": "lead_create",
+            "crm_lead_create": "lead_create",
+            "lead_delete": "lead_mark_lost",
+            "delete_lead": "lead_mark_lost",
+            "crm_lead_delete": "lead_mark_lost",
+            "qualify_lead": "lead_qualify",
+            "convert_lead": "lead_convert",
+            "mark_lead_won": "lead_mark_won",
+            "mark_lead_lost": "lead_mark_lost",
+            "lead_list": "lead_lookup",
+            "list_leads": "lead_lookup",
+            # Attendance
+            "checkin": "attendance_checkin",
+            "check_in": "attendance_checkin",
+            "checkout": "attendance_checkout",
+            "check_out": "attendance_checkout",
+            # Classes
+            "create_class": "class_create",
+            "schedule_class": "class_create",
+            "cancel_class": "class_cancel",
+            # Members
+            "promote_belt": "belt_promote",
+            "enroll_member": "member_enroll",
+            "unenroll_member": "member_unenroll",
+            "create_member": "member_create",
+            # Tasks
+            "list_tasks": "task_list",
+        }
+        intent_type = _INTENT_ALIASES.get(intent_type, intent_type)
+
         # Priority 1: Check if this intent uses the generic read handler
         read_config = _INTENT_HANDLER_CONFIG.get(intent_type)
         if read_config:
@@ -2564,6 +3198,9 @@ class AiAssistantService(models.AbstractModel):
             # Household lookup (traverses res.partner hierarchy)
             "household_lookup": self._handle_household_lookup,
             "birthday_upcoming": self._handle_birthday_upcoming,
+            # Meta intents
+            "capability_list": self._handle_capability_list,
+            "help_request": self._handle_help_request,
         }
 
         handler = handlers.get(intent_type, self._handle_unknown)
@@ -3583,6 +4220,100 @@ class AiAssistantService(models.AbstractModel):
             "data": None,
         }
 
+    @api.model
+    def _handle_capability_list(self, intent_data, resolved_data, action_log):
+        """Return a friendly, grouped summary of what the AI assistant can do."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        category_filter = params.get("category", "").lower().strip()
+
+        # If the LLM already produced a friendly message, use it directly
+        msg = params.get("message", "").strip()
+        if msg and len(msg) > 20:
+            return {"success": True, "message": msg, "data": None}
+
+        # Otherwise build a capability summary from registered intent schemas
+        role = action_log.role if action_log and hasattr(action_log, "role") else "instructor"
+        IntentSchema = self.env["ai.intent.schema"].sudo()
+        domain = [("active", "=", True)]
+        if category_filter:
+            domain.append(("category", "=", category_filter))
+        schemas = IntentSchema.search(domain, order="category, sequence, intent_type")
+
+        # Group by category
+        by_category = {}
+        category_labels = {
+            "read": "Looking up information",
+            "member": "Member management",
+            "class": "Classes & sessions",
+            "enrollment": "Student enrollment",
+            "belt": "Belt & rank promotions",
+            "attendance": "Attendance tracking",
+            "subscription": "Subscriptions & billing",
+            "communication": "Messages & notifications",
+            "marketing": "Marketing & campaigns",
+            "social": "Social media",
+            "sales": "Sales & quotations",
+            "pos": "Point of sale",
+            "accounting": "Invoices & payments",
+            "hr": "Employee management",
+            "discuss": "Internal messaging",
+            "system": "System operations",
+            "meta": "Help & guidance",
+        }
+        for schema in schemas:
+            if not schema.check_role_permission(role):
+                continue
+            cat = schema.category or "system"
+            label = category_labels.get(cat, cat.title())
+            if label not in by_category:
+                by_category[label] = []
+            # Pick the first example phrase as a concrete example
+            examples = schema.get_example_phrases_list()
+            example = f' (e.g. "{examples[0]}")' if examples else ""
+            by_category[label].append(f"{schema.name}{example}")
+
+        if not by_category:
+            summary = "No capabilities found for your role."
+        else:
+            lines = ["Here's what I can help you with:\n"]
+            for cat_label, actions in sorted(by_category.items()):
+                lines.append(f"**{cat_label}**")
+                # Show up to 3 actions per category to keep it readable
+                for action in actions[:3]:
+                    lines.append(f"  • {action}")
+                if len(actions) > 3:
+                    lines.append(f"  • … and {len(actions) - 3} more")
+                lines.append("")
+            lines.append("Just describe what you want in plain English and I'll handle it.")
+            summary = "\n".join(lines)
+
+        return {"success": True, "message": summary, "data": None}
+
+    @api.model
+    def _handle_help_request(self, intent_data, resolved_data, action_log):
+        """Answer a how-to question about using the AI assistant."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+
+        # If the LLM already produced a friendly message, use it directly
+        msg = params.get("message", "").strip()
+        if msg and len(msg) > 10:
+            return {"success": True, "message": msg, "data": None}
+
+        topic = params.get("topic", "").strip()
+        if topic:
+            fallback = (
+                f"To {topic}, just describe what you want in plain English — "
+                f"for example: \"{topic}\". I'll figure out the rest."
+            )
+        else:
+            fallback = (
+                "Just describe what you want in plain English. "
+                "For example: \"Check in Jordan\", \"Show today's schedule\", "
+                "\"Promote Alex to blue belt\", or \"What can you do?\"."
+            )
+
+        return {"success": True, "message": fallback, "data": None}
+
     # ═══════════════════════════════════════════════════════════════════════════
     # Extended Intent Handlers
     # ═══════════════════════════════════════════════════════════════════════════
@@ -4275,6 +5006,263 @@ class AiAssistantService(models.AbstractModel):
         return domain
 
     # ═══════════════════════════════════════════════════════════════════════════
+    # Sales Agent — Domain Builders
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _domain_sale_order_list(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        state = params.get("state")
+        if state:
+            domain.append(("state", "=", state))
+        partner_name = params.get("partner_name")
+        if partner_name:
+            domain.append(("partner_id.name", "ilike", partner_name))
+        date_from = params.get("date_from")
+        if date_from:
+            domain.append(("date_order", ">=", date_from))
+        date_to = params.get("date_to")
+        if date_to:
+            domain.append(("date_order", "<=", date_to))
+        return domain
+
+    @api.model
+    def _domain_sale_order_lookup(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        order_ref = params.get("order_ref")
+        if order_ref:
+            domain.append(("name", "ilike", order_ref))
+        partner_name = params.get("partner_name")
+        if partner_name:
+            domain.append(("partner_id.name", "ilike", partner_name))
+        partner_id = params.get("partner_id")
+        if partner_id:
+            domain.append(("partner_id", "=", int(partner_id)))
+        return domain or [("id", ">", 0)]
+
+    @api.model
+    def _domain_product_list(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = [("sale_ok", "=", True)]
+        search_term = params.get("search") or params.get("category")
+        if search_term:
+            domain.append(("name", "ilike", search_term))
+        prod_type = params.get("type")
+        if prod_type:
+            domain.append(("type", "=", prod_type))
+        return domain
+
+    @api.model
+    def _domain_product_lookup(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        product_name = params.get("product_name") or params.get("name")
+        if product_name:
+            domain.append(("name", "ilike", product_name))
+        product_id = params.get("product_id")
+        if product_id:
+            domain = [("id", "=", int(product_id))]
+        return domain or [("sale_ok", "=", True)]
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # POS Agent — Domain Builders
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _domain_pos_order_list(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        state = params.get("state")
+        if state:
+            domain.append(("state", "=", state))
+        session_id = params.get("session_id")
+        if session_id:
+            domain.append(("session_id", "=", int(session_id)))
+        partner_name = params.get("partner_name")
+        if partner_name:
+            domain.append(("partner_id.name", "ilike", partner_name))
+        date_from = params.get("date_from")
+        if date_from:
+            domain.append(("date_order", ">=", date_from))
+        date_to = params.get("date_to")
+        if date_to:
+            domain.append(("date_order", "<=", date_to))
+        if not date_from and not date_to and not session_id:
+            domain.append(("date_order", ">=", str(fields.Date.today())))
+        return domain
+
+    @api.model
+    def _domain_pos_order_lookup(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        order_ref = params.get("order_ref") or params.get("pos_reference")
+        if order_ref:
+            domain.append(("pos_reference", "ilike", order_ref))
+        order_id = params.get("order_id")
+        if order_id:
+            domain = [("id", "=", int(order_id))]
+        partner_name = params.get("partner_name")
+        if partner_name:
+            domain.append(("partner_id.name", "ilike", partner_name))
+        return domain or [("id", ">", 0)]
+
+    @api.model
+    def _domain_pos_session_list(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        state = params.get("state")
+        if state:
+            domain.append(("state", "=", state))
+        else:
+            domain.append(("state", "in", ["opened", "closing_control"]))
+        config_name = params.get("config_name")
+        if config_name:
+            domain.append(("config_id.name", "ilike", config_name))
+        return domain
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Accounting Agent — Domain Builders
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _domain_payment_list(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = [("state", "!=", "cancel")]
+        partner_name = params.get("partner_name")
+        if partner_name:
+            domain.append(("partner_id.name", "ilike", partner_name))
+        state = params.get("state")
+        if state:
+            domain = [("state", "=", state)]
+        payment_type = params.get("payment_type")
+        if payment_type:
+            domain.append(("payment_type", "=", payment_type))
+        date_from = params.get("date_from")
+        if date_from:
+            domain.append(("date", ">=", date_from))
+        date_to = params.get("date_to")
+        if date_to:
+            domain.append(("date", "<=", date_to))
+        return domain
+
+    @api.model
+    def _domain_bill_list(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = [("move_type", "=", "in_invoice"), ("state", "!=", "cancel")]
+        partner_name = params.get("partner_name")
+        if partner_name:
+            domain.append(("partner_id.name", "ilike", partner_name))
+        state = params.get("state")
+        if state:
+            domain.append(("state", "=", state))
+        payment_state = params.get("payment_state")
+        if payment_state:
+            domain.append(("payment_state", "=", payment_state))
+        else:
+            domain.append(("payment_state", "!=", "paid"))
+        return domain
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # HR Agent — Domain Builders
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _domain_employee_list(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        department = params.get("department")
+        if department:
+            domain.append(("department_id.name", "ilike", department))
+        job_title = params.get("job_title")
+        if job_title:
+            domain.append(("job_title", "ilike", job_title))
+        active = params.get("active", True)
+        domain.append(("active", "=", active))
+        return domain
+
+    @api.model
+    def _domain_employee_lookup(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        emp_name = params.get("employee_name") or params.get("name")
+        if emp_name:
+            domain.append(("name", "ilike", emp_name))
+        emp_id = params.get("employee_id")
+        if emp_id:
+            domain = [("id", "=", int(emp_id))]
+        return domain or [("active", "=", True)]
+
+    @api.model
+    def _domain_department_list(self, intent_data, resolved_data):
+        return []
+
+    @api.model
+    def _domain_crud_employee(self, intent_data, resolved_data):
+        """Target domain for employee update operations."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        emp_id = params.get("employee_id")
+        if emp_id:
+            return [("id", "=", int(emp_id))]
+        emp_name = params.get("employee_name") or params.get("name")
+        if emp_name:
+            return [("name", "ilike", emp_name)]
+        return [("id", "=", -1)]
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Discuss Agent — Domain Builders
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _domain_channel_list(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        channel_type = params.get("channel_type")
+        if channel_type:
+            domain.append(("channel_type", "=", channel_type))
+        else:
+            domain.append(("channel_type", "=", "channel"))
+        search_term = params.get("search")
+        if search_term:
+            domain.append(("name", "ilike", search_term))
+        return domain
+
+    @api.model
+    def _domain_channel_lookup(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = []
+        channel_name = params.get("channel_name")
+        if channel_name:
+            domain.append(("name", "ilike", channel_name))
+        channel_id = params.get("channel_id")
+        if channel_id:
+            domain = [("id", "=", int(channel_id))]
+        return domain or [("channel_type", "=", "channel")]
+
+    @api.model
+    def _domain_message_list(self, intent_data, resolved_data):
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        domain = [("message_type", "=", "comment")]
+        channel_name = params.get("channel_name")
+        channel_id = params.get("channel_id")
+        if channel_id:
+            domain.append(("res_id", "=", int(channel_id)))
+            domain.append(("model", "=", "discuss.channel"))
+        elif channel_name:
+            channels = self.env["discuss.channel"].search([("name", "ilike", channel_name)], limit=1)
+            if channels:
+                domain.append(("res_id", "=", channels.id))
+                domain.append(("model", "=", "discuss.channel"))
+        author = params.get("author_name")
+        if author:
+            domain.append(("author_id.name", "ilike", author))
+        search_text = params.get("search")
+        if search_text:
+            domain.append(("body", "ilike", search_text))
+        return domain
+
+    # ═══════════════════════════════════════════════════════════════════════════
     # Core Odoo Module — Resolvers (Task, Activity)
     # ═══════════════════════════════════════════════════════════════════════════
 
@@ -4405,4 +5393,445 @@ class AiAssistantService(models.AbstractModel):
             "success": True,
             "message": f"Updated task '{task.name}'.",
             "data": {"task_id": task.id, "task_name": task.name, "updated_fields": updated},
+        }
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # New Agent Resolvers (Sales, Accounting, HR)
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _resolve_partner(self, value, model=None):
+        """Resolve a res.partner by name or ID."""
+        if isinstance(value, int):
+            return value
+        if not value:
+            return None
+        partner = self.env["res.partner"].search(
+            [("name", "ilike", value), ("active", "=", True)], limit=1
+        )
+        return partner.id if partner else None
+
+    @api.model
+    def _resolve_department(self, value, model=None):
+        """Resolve an hr.department by name or ID."""
+        if isinstance(value, int):
+            return value
+        if not value:
+            return None
+        dept = self.env["hr.department"].search([("name", "ilike", value)], limit=1)
+        return dept.id if dept else None
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Sales Agent — Custom Handlers
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _handle_sale_order_confirm(self, intent_data, resolved_data, action_log):
+        """Confirm a draft quotation into a confirmed sale order."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        order_ref = params.get("order_ref") or params.get("name")
+        order_id = params.get("order_id")
+
+        Order = self.env["sale.order"].sudo()
+        if order_id:
+            order = Order.browse(int(order_id))
+        elif order_ref:
+            order = Order.search([("name", "ilike", order_ref)], limit=1)
+        else:
+            return {"success": False, "error": "Please specify an order reference."}
+
+        if not order.exists():
+            return {"success": False, "error": f"Order '{order_ref}' not found."}
+        if order.state != "draft":
+            return {"success": False, "error": f"Order {order.name} is in state '{order.state}', not draft."}
+
+        order.action_confirm()
+        return {
+            "success": True,
+            "message": f"Confirmed sale order {order.name}.",
+            "data": {"order_id": order.id, "order_name": order.name, "state": order.state},
+        }
+
+    @api.model
+    def _handle_sale_order_cancel(self, intent_data, resolved_data, action_log):
+        """Cancel a sale order."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        order_ref = params.get("order_ref") or params.get("name")
+        order_id = params.get("order_id")
+
+        Order = self.env["sale.order"].sudo()
+        if order_id:
+            order = Order.browse(int(order_id))
+        elif order_ref:
+            order = Order.search([("name", "ilike", order_ref)], limit=1)
+        else:
+            return {"success": False, "error": "Please specify an order reference."}
+
+        if not order.exists():
+            return {"success": False, "error": f"Order '{order_ref}' not found."}
+
+        order._action_cancel()
+        return {
+            "success": True,
+            "message": f"Cancelled sale order {order.name}.",
+            "data": {"order_id": order.id, "order_name": order.name},
+        }
+
+    @api.model
+    def _handle_sale_order_send(self, intent_data, resolved_data, action_log):
+        """Send a quotation / sale order by email."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        order_ref = params.get("order_ref") or params.get("name")
+        order_id = params.get("order_id")
+
+        Order = self.env["sale.order"].sudo()
+        if order_id:
+            order = Order.browse(int(order_id))
+        elif order_ref:
+            order = Order.search([("name", "ilike", order_ref)], limit=1)
+        else:
+            return {"success": False, "error": "Please specify an order reference."}
+
+        if not order.exists():
+            return {"success": False, "error": f"Order '{order_ref}' not found."}
+
+        try:
+            order.action_quotation_sent()
+        except Exception as e:
+            _logger.warning("sale_order_send failed for %s: %s", order.name, e)
+            return {"success": False, "error": f"Failed to send order: {e}"}
+
+        return {
+            "success": True,
+            "message": f"Sent sale order {order.name} to {order.partner_id.name}.",
+            "data": {"order_id": order.id, "order_name": order.name},
+        }
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # POS Agent — Custom Handlers
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _handle_pos_session_open(self, intent_data, resolved_data, action_log):
+        """Open a new POS session."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        config_name = params.get("config_name")
+        config_id = params.get("config_id")
+
+        PosConfig = self.env["pos.config"].sudo()
+        if config_id:
+            config = PosConfig.browse(int(config_id))
+        elif config_name:
+            config = PosConfig.search([("name", "ilike", config_name)], limit=1)
+        else:
+            config = PosConfig.search([], limit=1)
+
+        if not config.exists():
+            return {"success": False, "error": "No POS configuration found."}
+
+        # Check if a session is already open
+        existing = self.env["pos.session"].sudo().search([
+            ("config_id", "=", config.id),
+            ("state", "=", "opened"),
+        ], limit=1)
+        if existing:
+            return {
+                "success": False,
+                "error": f"POS '{config.name}' already has an open session: {existing.name}.",
+            }
+
+        session = self.env["pos.session"].sudo().create({
+            "config_id": config.id,
+            "user_id": self.env.uid,
+        })
+        return {
+            "success": True,
+            "message": f"Opened POS session {session.name} for {config.name}.",
+            "data": {"session_id": session.id, "session_name": session.name},
+        }
+
+    @api.model
+    def _handle_pos_session_close(self, intent_data, resolved_data, action_log):
+        """Close an open POS session."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        session_id = params.get("session_id")
+        config_name = params.get("config_name")
+
+        Session = self.env["pos.session"].sudo()
+        if session_id:
+            session = Session.browse(int(session_id))
+        elif config_name:
+            session = Session.search([
+                ("config_id.name", "ilike", config_name),
+                ("state", "=", "opened"),
+            ], limit=1)
+        else:
+            session = Session.search([("state", "=", "opened")], limit=1)
+
+        if not session.exists():
+            return {"success": False, "error": "No open POS session found."}
+
+        session.action_pos_session_closing_control()
+        return {
+            "success": True,
+            "message": f"Closed POS session {session.name}.",
+            "data": {"session_id": session.id, "session_name": session.name},
+        }
+
+    @api.model
+    def _handle_pos_daily_summary(self, intent_data, resolved_data, action_log):
+        """Generate a daily sales summary for POS."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        target_date = params.get("date") or str(fields.Date.today())
+
+        domain = [("date_order", ">=", target_date + " 00:00:00"),
+                  ("date_order", "<=", target_date + " 23:59:59"),
+                  ("state", "in", ["paid", "done", "invoiced"])]
+        config_name = params.get("config_name")
+        if config_name:
+            domain.append(("session_id.config_id.name", "ilike", config_name))
+
+        orders = self.env["pos.order"].sudo().search(domain)
+        total = sum(orders.mapped("amount_total"))
+        count = len(orders)
+
+        return {
+            "success": True,
+            "message": f"POS summary for {target_date}: {count} orders, total ${total:,.2f}.",
+            "data": {
+                "date": target_date,
+                "order_count": count,
+                "total_amount": total,
+                "avg_order": round(total / count, 2) if count else 0,
+            },
+        }
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Accounting Agent — Custom Handlers
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _handle_invoice_send(self, intent_data, resolved_data, action_log):
+        """Send an invoice by email."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        invoice_ref = params.get("invoice_ref") or params.get("name")
+        invoice_id = params.get("invoice_id")
+
+        Move = self.env["account.move"].sudo()
+        if invoice_id:
+            invoice = Move.browse(int(invoice_id))
+        elif invoice_ref:
+            invoice = Move.search([("name", "ilike", invoice_ref), ("move_type", "=", "out_invoice")], limit=1)
+        else:
+            return {"success": False, "error": "Please specify an invoice reference."}
+
+        if not invoice.exists():
+            return {"success": False, "error": f"Invoice '{invoice_ref}' not found."}
+        if invoice.state != "posted":
+            return {"success": False, "error": f"Invoice {invoice.name} must be posted before sending."}
+
+        try:
+            invoice.action_invoice_sent()
+        except Exception as e:
+            _logger.warning("invoice_send failed for %s: %s", invoice.name, e)
+            return {"success": False, "error": f"Failed to send invoice: {e}"}
+
+        return {
+            "success": True,
+            "message": f"Sent invoice {invoice.name} to {invoice.partner_id.name}.",
+            "data": {"invoice_id": invoice.id, "invoice_name": invoice.name},
+        }
+
+    @api.model
+    def _handle_payment_register(self, intent_data, resolved_data, action_log):
+        """Register a payment against an invoice."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        invoice_ref = params.get("invoice_ref") or params.get("name")
+        invoice_id = params.get("invoice_id")
+
+        Move = self.env["account.move"].sudo()
+        if invoice_id:
+            invoice = Move.browse(int(invoice_id))
+        elif invoice_ref:
+            invoice = Move.search([("name", "ilike", invoice_ref), ("move_type", "in", ["out_invoice", "in_invoice"])], limit=1)
+        else:
+            return {"success": False, "error": "Please specify an invoice reference."}
+
+        if not invoice.exists():
+            return {"success": False, "error": f"Invoice '{invoice_ref}' not found."}
+        if invoice.payment_state == "paid":
+            return {"success": False, "error": f"Invoice {invoice.name} is already paid."}
+
+        try:
+            payment_wizard = self.env["account.payment.register"].sudo().with_context(
+                active_model="account.move",
+                active_ids=invoice.ids,
+            ).create({})
+            amount = params.get("amount")
+            if amount:
+                payment_wizard.amount = float(amount)
+            journal_name = params.get("journal_name")
+            if journal_name:
+                journal = self.env["account.journal"].sudo().search([("name", "ilike", journal_name)], limit=1)
+                if journal:
+                    payment_wizard.journal_id = journal.id
+            payment_wizard.action_create_payments()
+        except Exception as e:
+            _logger.warning("payment_register failed for %s: %s", invoice.name, e)
+            return {"success": False, "error": f"Failed to register payment: {e}"}
+
+        return {
+            "success": True,
+            "message": f"Payment registered for invoice {invoice.name}.",
+            "data": {"invoice_id": invoice.id, "invoice_name": invoice.name},
+        }
+
+    @api.model
+    def _handle_account_balance(self, intent_data, resolved_data, action_log):
+        """Get account balance summary."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        account_type = params.get("account_type", "bank")
+        journal_name = params.get("journal_name")
+
+        type_map = {
+            "bank": "bank",
+            "cash": "cash",
+            "receivable": "sale",
+            "payable": "purchase",
+        }
+        journal_type = type_map.get(account_type, "bank")
+
+        domain = [("type", "=", journal_type)]
+        if journal_name:
+            domain.append(("name", "ilike", journal_name))
+
+        journals = self.env["account.journal"].sudo().search(domain)
+        results = []
+        for j in journals:
+            # Get the balance from the last bank statement or default account
+            balance = 0
+            if j.default_account_id:
+                self.env.cr.execute(
+                    """SELECT COALESCE(SUM(balance), 0) FROM account_move_line
+                       WHERE account_id = %s AND parent_state = 'posted'""",
+                    (j.default_account_id.id,),
+                )
+                balance = self.env.cr.fetchone()[0]
+            results.append({
+                "journal": j.name,
+                "type": j.type,
+                "balance": float(balance),
+                "currency": j.currency_id.name or j.company_id.currency_id.name,
+            })
+
+        total = sum(r["balance"] for r in results)
+        return {
+            "success": True,
+            "message": f"Total {account_type} balance: ${total:,.2f} across {len(results)} journal(s).",
+            "data": {"balances": results, "total": total},
+        }
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # HR Agent — Custom Handlers
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _handle_employee_archive(self, intent_data, resolved_data, action_log):
+        """Archive (deactivate) an employee."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        emp_name = params.get("employee_name") or params.get("name")
+        emp_id = params.get("employee_id")
+
+        Employee = self.env["hr.employee"].sudo()
+        if emp_id:
+            employee = Employee.browse(int(emp_id))
+        elif emp_name:
+            employee = Employee.search([("name", "ilike", emp_name), ("active", "=", True)], limit=1)
+        else:
+            return {"success": False, "error": "Please specify an employee name."}
+
+        if not employee.exists():
+            return {"success": False, "error": f"Employee '{emp_name}' not found."}
+
+        Snapshot = self.env["ai.undo.snapshot"]
+        Snapshot.create_snapshot(action_log.id, "hr.employee", employee.id, "write", snapshot_data={"active": True})
+        employee.write({"active": False})
+
+        return {
+            "success": True,
+            "message": f"Archived employee '{employee.name}'.",
+            "data": {"employee_id": employee.id, "employee_name": employee.name},
+        }
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Discuss Agent — Custom Handlers
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def _handle_channel_message_send(self, intent_data, resolved_data, action_log):
+        """Send a message to a Discuss channel."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        channel_name = params.get("channel_name")
+        channel_id = params.get("channel_id")
+        message = params.get("message")
+
+        if not message:
+            return {"success": False, "error": "Please provide a message to send."}
+
+        Channel = self.env["discuss.channel"]
+        if channel_id:
+            channel = Channel.browse(int(channel_id))
+        elif channel_name:
+            channel = Channel.search([("name", "ilike", channel_name)], limit=1)
+        else:
+            return {"success": False, "error": "Please specify a channel name."}
+
+        if not channel.exists():
+            return {"success": False, "error": f"Channel '{channel_name}' not found."}
+
+        channel.message_post(body=message, message_type="comment", subtype_xmlid="mail.mt_comment")
+
+        return {
+            "success": True,
+            "message": f"Message sent to #{channel.name}.",
+            "data": {"channel_id": channel.id, "channel_name": channel.name},
+        }
+
+    @api.model
+    def _handle_channel_add_member(self, intent_data, resolved_data, action_log):
+        """Add a user to a Discuss channel."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        channel_name = params.get("channel_name")
+        channel_id = params.get("channel_id")
+        user_name = params.get("user_name")
+        partner_id = params.get("partner_id")
+
+        Channel = self.env["discuss.channel"]
+        if channel_id:
+            channel = Channel.browse(int(channel_id))
+        elif channel_name:
+            channel = Channel.search([("name", "ilike", channel_name)], limit=1)
+        else:
+            return {"success": False, "error": "Please specify a channel name."}
+
+        if not channel.exists():
+            return {"success": False, "error": f"Channel '{channel_name}' not found."}
+
+        Partner = self.env["res.partner"]
+        if partner_id:
+            partner = Partner.browse(int(partner_id))
+        elif user_name:
+            partner = Partner.search([("name", "ilike", user_name), ("active", "=", True)], limit=1)
+        else:
+            return {"success": False, "error": "Please specify a user to add."}
+
+        if not partner.exists():
+            return {"success": False, "error": f"User '{user_name}' not found."}
+
+        channel.add_members(partner_ids=partner.ids)
+
+        return {
+            "success": True,
+            "message": f"Added {partner.name} to #{channel.name}.",
+            "data": {"channel_id": channel.id, "partner_id": partner.id, "partner_name": partner.name},
         }

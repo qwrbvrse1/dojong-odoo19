@@ -4,7 +4,7 @@
     
     <record id="ir_cron_ai_action_log_cleanup" model="ir.cron">
         <field name="name">Dojo AI: Clean up old action logs</field>
-        <field name="model_id" ref="model_dojo_ai_action_log"/>
+        <field name="model_id" ref="model_ai_action_log"/>
         <field name="state">code</field>
         <field name="code">model._cron_cleanup_old_logs()</field>
         <field name="interval_number">1</field>
@@ -14,7 +14,7 @@
 
     <record id="ir_cron_ai_undo_snapshot_cleanup" model="ir.cron">
         <field name="name">Dojo AI: Clean up expired undo snapshots</field>
-        <field name="model_id" ref="model_dojo_ai_undo_snapshot"/>
+        <field name="model_id" ref="model_ai_undo_snapshot"/>
         <field name="state">code</field>
         <field name="code">model._cron_cleanup_expired_snapshots()</field>
         <field name="interval_number">1</field>

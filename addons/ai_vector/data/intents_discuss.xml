@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <!-- ── Discuss / Messaging Intents ──────────────────────── -->
+
+    <record id="intent_channel_list" model="ai.intent.schema">
+        <field name="intent_type">channel_list</field>
+        <field name="name">List Channels</field>
+        <field name="description">List Discuss channels</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "channel_type": {"type": "string", "enum": ["channel", "group", "chat"], "description": "Filter by channel type"},
+        "search": {"type": "string", "description": "Name search term"},
+        "limit": {"type": "integer", "description": "Max results (default 20)"}
+    }
+}</field>
+        <field name="example_phrases">Show all channels
+List discuss channels
+What channels exist
+Show group chats</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_channel_lookup" model="ai.intent.schema">
+        <field name="intent_type">channel_lookup</field>
+        <field name="name">Channel Lookup</field>
+        <field name="description">Look up a specific Discuss channel by name</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "channel_name": {"type": "string", "description": "Channel name to find"},
+        "channel_id": {"type": "integer", "description": "Channel ID"}
+    }
+}</field>
+        <field name="example_phrases">Find channel General
+Look up the Instructors channel
+Details on the Staff channel
+Is there a Parents channel</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_channel_create" model="ai.intent.schema">
+        <field name="intent_type">channel_create</field>
+        <field name="name">Create Channel</field>
+        <field name="description">Create a new Discuss channel</field>
+        <field name="category">discuss</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Channel name"},
+        "description": {"type": "string", "description": "Channel description"},
+        "channel_type": {"type": "string", "enum": ["channel", "group"], "description": "Type (default channel)"}
+    },
+    "required": ["name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a channel called Announcements
+Make a new Staff channel
+Add a discuss channel for Parents</field>
+        <field name="confirmation_template">Create channel "{name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_channel_message_send" model="ai.intent.schema">
+        <field name="intent_type">channel_message_send</field>
+        <field name="name">Send Channel Message</field>
+        <field name="description">Send a message to a Discuss channel</field>
+        <field name="category">discuss</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "channel_name": {"type": "string", "description": "Channel name"},
+        "channel_id": {"type": "integer", "description": "Channel ID"},
+        "message": {"type": "string", "description": "Message body text"}
+    },
+    "required": ["channel_name", "message"]
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Post in General: Class cancelled tomorrow
+Send a message to the Staff channel saying meeting at 3pm
+Say "Welcome!" in the Parents channel</field>
+        <field name="confirmation_template">Send message to channel "{channel_name}"?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_channel_add_member" model="ai.intent.schema">
+        <field name="intent_type">channel_add_member</field>
+        <field name="name">Add Channel Member</field>
+        <field name="description">Add a user to a Discuss channel</field>
+        <field name="category">discuss</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "channel_name": {"type": "string", "description": "Channel name"},
+        "channel_id": {"type": "integer", "description": "Channel ID"},
+        "user_name": {"type": "string", "description": "User name to add"},
+        "partner_id": {"type": "integer", "description": "Partner ID of the user"}
+    },
+    "required": ["channel_name", "user_name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Add John to the Staff channel
+Invite Sarah to General
+Add Mike to the Instructors channel</field>
+        <field name="confirmation_template">Add {user_name} to channel "{channel_name}"?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_message_list" model="ai.intent.schema">
+        <field name="intent_type">message_list</field>
+        <field name="name">List Messages</field>
+        <field name="description">List recent messages in a channel or across all channels</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "channel_name": {"type": "string", "description": "Channel name to search"},
+        "channel_id": {"type": "integer", "description": "Channel ID"},
+        "author_name": {"type": "string", "description": "Message author filter"},
+        "search": {"type": "string", "description": "Search text in messages"},
+        "limit": {"type": "integer", "description": "Max results (default 20)"}
+    }
+}</field>
+        <field name="example_phrases">Show recent messages in General
+What's been posted in Staff
+Search messages for "meeting"
+Recent discuss messages</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+</odoo>
