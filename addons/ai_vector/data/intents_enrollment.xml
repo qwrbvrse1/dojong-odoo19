@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <record id="intent_member_enroll" model="ai.intent.schema">
+        <field name="intent_type">member_enroll</field>
+        <field name="name">Enroll Member</field>
+        <field name="description">Enroll a member in a class session</field>
+        <field name="category">enrollment</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to enroll"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "class_name": {"type": "string", "description": "Name of the class"},
+        "session_id": {"type": "integer", "description": "ID of the session"}
+    },
+    "required": ["member_name", "class_name"]
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Enroll John in today's Advanced Sparring
+Sign Sarah up for the 6pm Fundamentals session
+Add Test8 to this morning's class
+Book Mike into the Kids Karate session today
+Enroll Jane in the next available class</field>
+        <field name="confirmation_template">Enroll {member_name} in {class_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_member_unenroll" model="ai.intent.schema">
+        <field name="intent_type">member_unenroll</field>
+        <field name="name">Unenroll Member</field>
+        <field name="description">Remove a member from a class session</field>
+        <field name="category">enrollment</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to unenroll"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "class_name": {"type": "string", "description": "Name of the class"},
+        "session_id": {"type": "integer", "description": "ID of the session"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Remove John from today's class
+Unenroll Sarah from Advanced Sparring
+Take Test8 off the session
+Cancel Mike's enrollment
+Drop Jane from this morning's class</field>
+        <field name="confirmation_template">Remove {member_name} from {class_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_course_enroll" model="ai.intent.schema">
+        <field name="intent_type">course_enroll</field>
+        <field name="name">Enroll in Course Roster</field>
+        <field name="description">Add a member to a course's permanent roster, allowing them to join any session of that class. This is different from member_enroll which reserves a single session spot.</field>
+        <field name="category">enrollment</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "class_name": {"type": "string", "description": "Name of the class/course template to join the roster of"}
+    },
+    "required": ["member_name", "class_name"]
+}</field>
+        <field name="example_phrases">Add Test8 to the Advanced Sparring roster
+Add John to the Adult Fundamentals course
+Enroll Sarah in the Kids Karate course roster
+Put Mike on the course roster for Intermediate BJJ</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Add {member_name} to the {class_name} course roster?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_class_enrollment_create" model="ai.intent.schema">
+        <field name="intent_type">class_enrollment_create</field>
+        <field name="name">Enroll in Class Session</field>
+        <field name="description">Enroll a member in a specific class session</field>
+        <field name="category">enrollment</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "session_id": {"type": "integer", "description": "ID of the class session"},
+        "status": {"type": "string", "description": "Status of the enrollment", "default": "registered"}
+    },
+    "required": ["member_name", "session_id"]
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Enroll John in today's class
+Add Sarah to the 6pm session
+Sign up Test8 for this morning's class
+Put Mike in the Friday evening session</field>
+        <field name="confirmation_template">Enroll {member_name} in the session?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_class_enrollment_cancel" model="ai.intent.schema">
+        <field name="intent_type">class_enrollment_cancel</field>
+        <field name="name">Cancel Class Enrollment</field>
+        <field name="description">Remove a member from a specific class session</field>
+        <field name="category">enrollment</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "session_id": {"type": "integer", "description": "ID of the class session"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Remove John from today's class
+Cancel Sarah's enrollment in the 6pm session
+Drop Test8 from this morning's class
+Unenroll Mike from Friday's session</field>
+        <field name="confirmation_template">Cancel {member_name}'s enrollment?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_program_enrollment_create" model="ai.intent.schema">
+        <field name="intent_type">program_enrollment_create</field>
+        <field name="name">Enroll Member in Program</field>
+        <field name="description">Enroll a member into a martial arts program</field>
+        <field name="category">enrollment</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "program_name": {"type": "string", "description": "Name of the program"},
+        "enrolled_date": {"type": "string", "format": "date", "description": "Enrollment date (YYYY-MM-DD, defaults to today)"},
+        "notes": {"type": "string", "description": "Optional enrollment notes"}
+    },
+    "required": ["member_name", "program_name"]
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Enroll John in the Kids BJJ program
+Add Sarah to the Adult Karate program
+Sign up Test8 for Fundamentals starting today</field>
+        <field name="confirmation_template">Enroll {member_name} in {program_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_course_auto_enroll_create" model="ai.intent.schema">
+        <field name="intent_type">course_auto_enroll_create</field>
+        <field name="name">Set Up Auto-Enrollment</field>
+        <field name="description">Create an auto-enrollment rule for a member in a class template</field>
+        <field name="category">enrollment</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "class_name": {"type": "string", "description": "Name of the class template"},
+        "mode": {"type": "string", "enum": ["all", "next_only"], "description": "Auto-enroll in all future sessions or just the next one", "default": "all"}
+    },
+    "required": ["member_name", "class_name"]
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Auto-enroll John in all Fundamentals classes
+Set up Sarah for automatic enrollment in Kids BJJ
+Enable auto-enrollment for Test8 in Advanced Sparring</field>
+        <field name="confirmation_template">Set up auto-enrollment for {member_name} in {class_name} ({mode})?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+</odoo>

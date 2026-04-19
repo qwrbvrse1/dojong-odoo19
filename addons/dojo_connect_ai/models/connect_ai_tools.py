@@ -3,7 +3,7 @@
 """
 Single service method backing the ElevenLabs agent tool endpoint.
 
-Routes the caller's natural-language request through the dojo_assistant
+Routes the caller's natural-language request through the ai_assistant
 AI intent engine, which handles 57+ intents (schedule lookups, member
 queries, trial bookings, enrollment, etc.).
 
@@ -35,7 +35,7 @@ class ConnectAiTools(models.AbstractModel):
 
     @api.model
     def ask_assistant(self, user_message, caller_phone="", call_sid="", agent_id=False):
-        """Route the caller's request through dojo_assistant.
+        """Route the caller's request through ai_assistant.
 
         1. Resolve caller identity: instructor → role='instructor'; member/guardian → role='kiosk' + context
         2. Check if the message is a transfer request → handle via Twilio API
@@ -136,7 +136,7 @@ class ConnectAiTools(models.AbstractModel):
         prefix = " ".join(f"[{tag}]" for tag in context_tags)
         enriched = f"{prefix} {user_message}".strip() if prefix else user_message
 
-        # ── Route through dojo_assistant ─────────────────────────────
+        # ── Route through ai_assistant ─────────────────────────────
         try:
             service = self.env["ai.assistant.service"].sudo()
             result = service.handle_command(

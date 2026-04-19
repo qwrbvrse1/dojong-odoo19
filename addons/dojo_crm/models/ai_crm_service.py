@@ -159,7 +159,7 @@ class AiAssistantServiceCrm(models.AbstractModel):
         lead.write({"stage_id": qualified_stage.id})
 
         if action_log:
-            self.env["dojo.ai.undo.snapshot"].create_snapshot(
+            self.env["ai.undo.snapshot"].create_snapshot(
                 action_log.id, "crm.lead", lead.id, "write"
             )
 
@@ -185,7 +185,7 @@ class AiAssistantServiceCrm(models.AbstractModel):
         })
 
         if action_log:
-            self.env["dojo.ai.undo.snapshot"].create_snapshot(
+            self.env["ai.undo.snapshot"].create_snapshot(
                 action_log.id, "crm.lead", lead.id, "write"
             )
 
@@ -241,7 +241,7 @@ class AiAssistantServiceCrm(models.AbstractModel):
                     vals["stage_id"] = first_stage.id
                 lead = self.env["crm.lead"].create(vals)
                 if action_log:
-                    self.env["dojo.ai.undo.snapshot"].create_snapshot(
+                    self.env["ai.undo.snapshot"].create_snapshot(
                         action_log.id, "crm.lead", lead.id, "create"
                     )
                 results.append({"name": name, "success": True, "id": lead.id})
@@ -274,7 +274,7 @@ class AiAssistantServiceCrm(models.AbstractModel):
         lead = self.env["crm.lead"].create(vals)
 
         if action_log:
-            self.env["dojo.ai.undo.snapshot"].create_snapshot(
+            self.env["ai.undo.snapshot"].create_snapshot(
                 action_log.id, "crm.lead", lead.id, "create"
             )
 

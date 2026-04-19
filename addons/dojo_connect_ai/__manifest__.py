@@ -15,7 +15,7 @@
     "depends": [
         "connect",
         "dojo_crm",
-        "dojo_assistant",
+        "ai_assistant",
         "dojo_ai_caller",
     ],
     "data": [

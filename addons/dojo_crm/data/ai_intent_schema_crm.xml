@@ -10,7 +10,7 @@
     <!-- Read-Only Intents (Auto-Execute)                                     -->
     <!-- ════════════════════════════════════════════════════════════════════ -->
 
-    <record id="intent_lead_lookup" model="dojo.ai.intent.schema">
+    <record id="intent_lead_lookup" model="ai.intent.schema">
         <field name="intent_type">lead_lookup</field>
         <field name="name">Lead Lookup</field>
         <field name="description">Look up CRM lead/prospect information by name, email, or phone</field>
@@ -35,7 +35,7 @@ Search leads for 555-1234</field>
         <field name="active">True</field>
     </record>
 
-    <record id="intent_pipeline_summary" model="dojo.ai.intent.schema">
+    <record id="intent_pipeline_summary" model="ai.intent.schema">
         <field name="intent_type">pipeline_summary</field>
         <field name="name">Pipeline Summary</field>
         <field name="description">Get a summary of the CRM pipeline — counts by stage</field>
@@ -53,7 +53,7 @@ Pipeline overview</field>
         <field name="active">True</field>
     </record>
 
-    <record id="intent_trial_schedule" model="dojo.ai.intent.schema">
+    <record id="intent_trial_schedule" model="ai.intent.schema">
         <field name="intent_type">trial_schedule</field>
         <field name="name">Upcoming Trials</field>
         <field name="description">List upcoming trial sessions that leads are booked into</field>
@@ -80,7 +80,7 @@ List today's trial sessions</field>
     <!-- Write Intents (Require Confirmation)                                 -->
     <!-- ════════════════════════════════════════════════════════════════════ -->
 
-    <record id="intent_lead_qualify" model="dojo.ai.intent.schema">
+    <record id="intent_lead_qualify" model="ai.intent.schema">
         <field name="intent_type">lead_qualify</field>
         <field name="name">Qualify Lead</field>
         <field name="description">Move a lead to the Qualified stage and generate a booking link</field>
@@ -103,7 +103,7 @@ Qualify the new lead</field>
         <field name="active">True</field>
     </record>
 
-    <record id="intent_lead_mark_attended" model="dojo.ai.intent.schema">
+    <record id="intent_lead_mark_attended" model="ai.intent.schema">
         <field name="intent_type">lead_mark_attended</field>
         <field name="name">Mark Trial Attended</field>
         <field name="description">Mark a lead's trial as attended and move to Trial Attended stage</field>
@@ -126,7 +126,7 @@ Mark trial complete for Mike</field>
         <field name="active">True</field>
     </record>
 
-    <record id="intent_lead_convert" model="dojo.ai.intent.schema">
+    <record id="intent_lead_convert" model="ai.intent.schema">
         <field name="intent_type">lead_convert</field>
         <field name="name">Convert Lead to Member</field>
         <field name="description">Convert a CRM lead into a dojo member</field>
@@ -155,7 +155,7 @@ Sign up Mike as a member</field>
     <!-- New Write Intents (no noupdate — created/updated on every -u)        -->
     <!-- ════════════════════════════════════════════════════════════════════ -->
 
-    <record id="intent_lead_create" model="dojo.ai.intent.schema">
+    <record id="intent_lead_create" model="ai.intent.schema">
         <field name="intent_type">lead_create</field>
         <field name="name">Create Lead</field>
         <field name="description">Add a new prospect/lead to the CRM pipeline</field>
@@ -184,7 +184,7 @@ Walk-in prospect just arrived, name is Kevin</field>
         <field name="active">True</field>
     </record>
 
-    <record id="intent_lead_mark_lost" model="dojo.ai.intent.schema">
+    <record id="intent_lead_mark_lost" model="ai.intent.schema">
         <field name="intent_type">lead_mark_lost</field>
         <field name="name">Mark Lead as Lost</field>
         <field name="description">Mark a CRM lead as lost/not interested</field>
@@ -210,7 +210,7 @@ John decided not to join</field>
         <field name="active">True</field>
     </record>
 
-    <record id="intent_lead_mark_won" model="dojo.ai.intent.schema">
+    <record id="intent_lead_mark_won" model="ai.intent.schema">
         <field name="intent_type">lead_mark_won</field>
         <field name="name">Mark Lead as Won</field>
         <field name="description">Mark a CRM lead as won (prospect joined)</field>

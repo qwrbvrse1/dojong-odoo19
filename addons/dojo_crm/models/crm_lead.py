@@ -143,7 +143,7 @@ class CrmLead(models.Model):
         help="Composite score 0–100 based on contact completeness, source, tags and engagement.",
     )
 
-    # ── AI insights (populated when dojo_assistant is installed) ─────────
+    # ── AI insights (populated when ai_assistant is installed) ─────────
     ai_summary = fields.Text(
         string="AI Summary",
         readonly=True,

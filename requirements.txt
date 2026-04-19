@@ -29,3 +29,6 @@ qrcode[pil]
 # Standard Odoo dependencies (if not already handled by the platform) 
 Pillow
 babel
+
+# pgvector — Python client for PostgreSQL vector similarity search
+pgvector>=0.3.0

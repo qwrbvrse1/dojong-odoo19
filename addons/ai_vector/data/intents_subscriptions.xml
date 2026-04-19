@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <record id="intent_subscription_lookup" model="ai.intent.schema">
+        <field name="intent_type">subscription_lookup</field>
+        <field name="name">Subscription Lookup</field>
+        <field name="description">Look up a member's subscription status</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "member_id": {"type": "integer", "description": "ID of the member"}
+    }
+}</field>
+        <field name="example_phrases">What's John's subscription status?
+Is Sarah's membership active?
+Check Test8's plan
+Does Mike have an active subscription?
+What plan is Jane on?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_subscription_create" model="ai.intent.schema">
+        <field name="intent_type">subscription_create</field>
+        <field name="name">Create Subscription</field>
+        <field name="description">Create a new subscription for a member</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "plan_name": {"type": "string", "description": "Name of the subscription plan"},
+        "plan_id": {"type": "integer", "description": "ID of the subscription plan"},
+        "start_date": {"type": "string", "format": "date", "description": "Start date (YYYY-MM-DD)"},
+        "end_date": {"type": "string", "format": "date", "description": "End date (YYYY-MM-DD, optional)"},
+        "note": {"type": "string", "description": "Optional notes"}
+    },
+    "required": ["member_name", "plan_name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a monthly subscription for John
+Sign Sarah up for the unlimited plan
+Add Test8 to the family membership
+Set up a yearly plan for Mike
+Start a new subscription for Jane</field>
+        <field name="confirmation_template">Create {plan_name} subscription for {member_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_subscription_cancel" model="ai.intent.schema">
+        <field name="intent_type">subscription_cancel</field>
+        <field name="name">Cancel Subscription</field>
+        <field name="description">Cancel a member's subscription</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "member_id": {"type": "integer", "description": "ID of the member"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Cancel John's subscription
+End Sarah's membership
+Stop Test8's plan
+Terminate Mike's subscription
+Cancel Jane's membership plan</field>
+        <field name="confirmation_template">Cancel subscription for {member_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_subscription_expiring" model="ai.intent.schema">
+        <field name="intent_type">subscription_expiring</field>
+        <field name="name">Expiring Subscriptions</field>
+        <field name="description">List active subscriptions whose end_date falls within the next N days (default 30)</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "days": {"type": "integer", "description": "Number of days to look ahead (default 30)"}
+    },
+    "required": []
+}</field>
+        <field name="example_phrases">What subscriptions are ending?
+Which contracts are expiring soon?
+How many contracts are ending this month?
+Show me expiring memberships
+Who has a contract ending soon?
+List subscriptions expiring in the next 30 days
+Any contracts about to expire?
+Which members are up for renewal?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_subscription_pause" model="ai.intent.schema">
+        <field name="intent_type">subscription_pause</field>
+        <field name="name">Pause Subscription</field>
+        <field name="description">Pause a member's active subscription</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "member_id": {"type": "integer", "description": "ID of the member"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="example_phrases">Pause Alex's membership
+Put Sarah's subscription on hold
+Suspend John's membership temporarily</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Pause {member_name}'s active subscription?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_subscription_resume" model="ai.intent.schema">
+        <field name="intent_type">subscription_resume</field>
+        <field name="name">Resume Subscription</field>
+        <field name="description">Resume a member's paused subscription</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "member_id": {"type": "integer", "description": "ID of the member"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="example_phrases">Resume Alex's membership
+Reactivate Sarah's subscription
+Unpause John's membership</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Resume {member_name}'s paused subscription?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_credit_transaction_create" model="ai.intent.schema">
+        <field name="intent_type">credit_transaction_create</field>
+        <field name="name">Create Credit Transaction</field>
+        <field name="description">Record a credit transaction (grant, hold, or adjust credits)</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "subscription_id": {"type": "integer", "description": "ID of the member subscription"},
+        "amount": {"type": "integer", "description": "Number of credits (positive = add, negative = deduct)"},
+        "transaction_type": {"type": "string", "enum": ["grant", "hold", "expiry", "adjustment"], "description": "Type of transaction"}
+    },
+    "required": ["member_name", "amount", "transaction_type"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Add 5 credits to John's account
+Deduct 2 credits from Sarah
+Adjust Test8's credits for makeup class</field>
+        <field name="confirmation_template">{transaction_type} {amount} credits for {member_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_subscription_plan_create" model="ai.intent.schema">
+        <field name="intent_type">subscription_plan_create</field>
+        <field name="name">Create Subscription Plan</field>
+        <field name="description">Create a new subscription plan</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Plan name (e.g., Monthly Unlimited)"},
+        "plan_type": {"type": "string", "enum": ["credits", "unlimited", "limited"], "description": "Type of plan"},
+        "program_name": {"type": "string", "description": "Program this plan is for"},
+        "price": {"type": "number", "description": "Monthly price"},
+        "billing_period": {"type": "string", "enum": ["monthly", "quarterly", "biannual", "annual"], "description": "Billing cycle"},
+        "description": {"type": "string", "description": "Plan description"}
+    },
+    "required": ["name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a monthly unlimited plan for $150
+Add a new credits-based plan called 10-Pack
+Set up an annual subscription plan for kids BJJ</field>
+        <field name="confirmation_template">Create subscription plan "{name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_invoice_lookup" model="ai.intent.schema">
+        <field name="intent_type">invoice_lookup</field>
+        <field name="name">Invoice Lookup</field>
+        <field name="description">Look up billing/payment status for a specific member or family</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Member or household name to look up"},
+        "name": {"type": "string", "description": "Alternative name field"}
+    }
+}</field>
+        <field name="example_phrases">Has the Smith family paid?
+Check if John's invoice is paid
+Is Sarah's account up to date?
+What's the payment status for the Johnson family?
+Has Mike paid this month?
+Is there an outstanding balance for the Garcias?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_invoice_list" model="ai.intent.schema">
+        <field name="intent_type">invoice_list</field>
+        <field name="name">Invoice List</field>
+        <field name="description">List invoices filtered by payment status</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "filter": {"type": "string", "enum": ["overdue", "unpaid", "paid"], "description": "Invoice filter (default: overdue)"}
+    }
+}</field>
+        <field name="example_phrases">Show overdue invoices
+Which families haven't paid?
+List all unpaid invoices
+Show me who is behind on payments
+Who has overdue bills?
+Show unpaid accounts
+List paid invoices this month</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+</odoo>

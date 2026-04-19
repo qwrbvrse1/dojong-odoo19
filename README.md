@@ -3,10 +3,10 @@
 This repo contains the custom addons, Docker setup, and configuration for running
 Odoo `saas-19.2`. Two installation paths are supported:
 
-| Path | Best for |
-|---|---|
-| [Docker](#docker-installation) | Local dev, staging, quick spin-up |
-| [Direct (VM / bare-metal)](#direct-installation-vm--bare-metal) | Production on a Linux server |
+| Path                                                            | Best for                          |
+| --------------------------------------------------------------- | --------------------------------- |
+| [Docker](#docker-installation)                                  | Local dev, staging, quick spin-up |
+| [Direct (VM / bare-metal)](#direct-installation-vm--bare-metal) | Production on a Linux server      |
 
 ---
 
@@ -29,6 +29,7 @@ repo-root/
 ## Docker Installation
 
 ### Prerequisites
+
 - [Docker](https://docs.docker.com/engine/install/) with the Compose plugin
 - Git
 
@@ -166,7 +167,7 @@ sudo -u odoo19 git clone --depth=1 --branch saas-19.2 \
 
 ```bash
 sudo cp /opt/odoo19/custom-addons/config/odoo.conf.example /etc/odoo19.conf
-sudo nano /etc/odoo19.conf   
+sudo nano /etc/odoo19.conf
 # fill in db credentials, admin_passwd, addons_path
 ```
 
@@ -252,15 +253,15 @@ After adding a module, update the app list from **Settings → Apps → Update A
 
 Key options in `config/odoo.conf.example`:
 
-| Option | Description |
-|---|---|
-| `addons_path` | Comma-separated list of addon directories |
-| `admin_passwd` | Master password for database management |
-| `db_name` | Default database name |
-| `dbfilter` | Regex filter — restrict which DBs are accessible |
-| `list_db` | Set `False` in production to hide the DB list |
-| `proxy_mode` | Set `True` when behind nginx/reverse proxy |
-| `workers` | `0` = single-threaded (dev); set `4`+ for production |
+| Option         | Description                                          |
+| -------------- | ---------------------------------------------------- |
+| `addons_path`  | Comma-separated list of addon directories            |
+| `admin_passwd` | Master password for database management              |
+| `db_name`      | Default database name                                |
+| `dbfilter`     | Regex filter — restrict which DBs are accessible     |
+| `list_db`      | Set `False` in production to hide the DB list        |
+| `proxy_mode`   | Set `True` when behind nginx/reverse proxy           |
+| `workers`      | `0` = single-threaded (dev); set `4`+ for production |
 
 ---
 
@@ -282,6 +283,92 @@ docker compose down
 
 # Stop and delete volumes (destroys database)
 docker compose down -v
+```
+
+---
+
+## n8n Setup (AI Workflow Orchestration)
+
+n8n is included in `docker-compose.yml` and handles AI intent routing and execution
+via the Odoo API endpoints.
+
+### 1. Start the stack
+
+n8n starts automatically with `docker compose up -d`. It runs on port **5678**.
+
+### 2. Open n8n
+
+Go to [http://localhost:5678](http://localhost:5678) and create your owner account on first launch.
+
+> Default basic-auth credentials (set in `docker-compose.yml`):
+> **User:** `admin` / **Password:** `dojo-n8n-dev`
+
+### 3. Set the API key in Odoo
+
+n8n authenticates to Odoo via `X-Api-Key` header. Set the key in Odoo:
+
+1. Log in to Odoo at [http://localhost:8069](http://localhost:8069)
+2. Go to **Settings → Technical → Parameters → System Parameters**
+3. Create or update the key `ai_assistant.api_key` with a secret value (e.g. `dojo-dev-key-2026`)
+
+### 4. Configure n8n credentials
+
+In n8n, create an **HTTP Header Auth** credential:
+
+| Field        | Value                            |
+| ------------ | -------------------------------- |
+| Name         | `Odoo AI API`                    |
+| Header Name  | `X-Api-Key`                      |
+| Header Value | _(same value you set in step 3)_ |
+
+### 5. Odoo API endpoints available to n8n
+
+All endpoints accept JSON bodies and return JSON responses.
+
+| Method | Endpoint              | Auth    | Description                                                                                                                               |
+| ------ | --------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/v1/ai/health`   | None    | Health check — returns `{"status":"ok", "agent_count": 9}`                                                                                |
+| `POST` | `/api/v1/ai/discover` | API Key | Vector similarity routing — takes `{"text":"...","role":"instructor"}`, returns matched agent + scored intents                            |
+| `POST` | `/api/v1/ai/execute`  | API Key | Intent execution — three modes: full parse (`text`), direct execute (`intent_type` + `resolved_data`), or confirm pending (`session_key`) |
+
+**Important:** From inside n8n's Docker container, Odoo is reachable at `http://web:8069` (not `localhost`). The environment variable `ODOO_BASE_URL` is pre-set to this value.
+
+### 6. Example: test the connection
+
+From your host machine:
+
+```bash
+# Health check (no auth needed)
+curl http://localhost:8070/api/v1/ai/health
+
+# Discover intent routing
+curl -X POST http://localhost:8070/api/v1/ai/discover \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: dojo-dev-key-2026" \
+  -d '{"text": "check in Jordan", "role": "instructor"}'
+
+# Direct execute
+curl -X POST http://localhost:8070/api/v1/ai/execute \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: dojo-dev-key-2026" \
+  -d '{"intent_type": "schedule_today", "resolved_data": {}, "role": "instructor"}'
+```
+
+### 7. Building a workflow in n8n
+
+A typical AI workflow follows this pattern:
+
+1. **Webhook trigger** — receives user text input
+2. **HTTP Request → Discover** — `POST http://web:8069/api/v1/ai/discover` with the user's text; returns the matched agent and intents
+3. **OpenAI node** — sends the user text + system prompt + filtered intents to GPT for structured JSON parsing
+4. **HTTP Request → Execute** — `POST http://web:8069/api/v1/ai/execute` with the parsed `intent_type` and `resolved_data`
+5. **Response** — return the execution result to the caller
+
+### n8n day-to-day commands
+
+```bash
+docker compose restart n8n          # restart n8n
+docker compose logs -f n8n          # tail n8n logs
 ```
 
 ---

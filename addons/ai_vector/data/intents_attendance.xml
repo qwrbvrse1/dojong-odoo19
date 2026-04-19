@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <record id="intent_class_list" model="ai.intent.schema">
+        <field name="intent_type">class_list</field>
+        <field name="name">Class List</field>
+        <field name="description">List classes/sessions for a given date</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "date": {"type": "string", "format": "date", "description": "Date to list classes for (YYYY-MM-DD)"}
+    }
+}</field>
+        <field name="example_phrases">What classes are on today?
+List all classes for Friday
+Show me Monday's classes
+What sessions do we have this week?</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_schedule_today" model="ai.intent.schema">
+        <field name="intent_type">schedule_today</field>
+        <field name="name">Today's Schedule</field>
+        <field name="description">Get today's class schedule</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{}</field>
+        <field name="example_phrases">What's the schedule today?
+Show today's classes
+What classes are happening now?
+What's on the schedule?
+What do we have today?</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_attendance_history" model="ai.intent.schema">
+        <field name="intent_type">attendance_history</field>
+        <field name="name">Attendance History</field>
+        <field name="description">Get attendance history for a member</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "limit": {"type": "integer", "description": "Max records to return", "default": 10}
+    }
+}</field>
+        <field name="example_phrases">Show John's attendance history
+How often has Sarah been coming in?
+When did Test8 last attend?
+Show me Mike's recent classes
+What's Jane's attendance like?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_attendance_checkin" model="ai.intent.schema">
+        <field name="intent_type">attendance_checkin</field>
+        <field name="name">Check In Member</field>
+        <field name="description">Check in a member for attendance</field>
+        <field name="category">attendance</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to check in"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "session_id": {"type": "integer", "description": "Optional session ID"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Check in John
+Mark Sarah as present
+Test8 just arrived
+Sign in Mike for class
+Check in Jane Doe</field>
+        <field name="confirmation_template">Check in {member_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_attendance_checkout" model="ai.intent.schema">
+        <field name="intent_type">attendance_checkout</field>
+        <field name="name">Check Out Member</field>
+        <field name="description">Check out a member from attendance</field>
+        <field name="category">attendance</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to check out"},
+        "member_id": {"type": "integer", "description": "ID of the member"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Check out John
+Mark Sarah as done for today
+Test8 is leaving
+Sign out Mike
+Jane is heading home</field>
+        <field name="confirmation_template">Check out {member_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_attendance_log_create" model="ai.intent.schema">
+        <field name="intent_type">attendance_log_create</field>
+        <field name="name">Create Attendance Entry</field>
+        <field name="description">Manually create an attendance log entry</field>
+        <field name="category">attendance</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "session_id": {"type": "integer", "description": "ID of the class session"},
+        "checkin_datetime": {"type": "string", "format": "date-time", "description": "Check-in time (defaults to now)"},
+        "note": {"type": "string", "description": "Optional note"}
+    },
+    "required": ["member_name", "session_id"]
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Log attendance for John at 5pm
+Create an attendance entry for Sarah
+Record Test8's check-in at 3:30pm</field>
+        <field name="confirmation_template">Create attendance entry for {member_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+</odoo>

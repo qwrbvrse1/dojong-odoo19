@@ -8,7 +8,7 @@
     "depends": [
         "dojo_core",
         "dojo_subscriptions",
-        "dojo_assistant",
+        "ai_assistant",
         "dojo_crm",
     ],
     "data": [

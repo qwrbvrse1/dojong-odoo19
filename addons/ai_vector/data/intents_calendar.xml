@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <record id="intent_class_create" model="ai.intent.schema">
+        <field name="intent_type">class_create</field>
+        <field name="name">Create Class Session</field>
+        <field name="description">Create a new class session</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "class_name": {"type": "string", "description": "Name of the class template"},
+        "template_id": {"type": "integer", "description": "ID of the class template"},
+        "start_datetime": {"type": "string", "format": "date-time", "description": "Start date/time (ISO 8601)"}
+    },
+    "required": ["class_name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a new Advanced Sparring session
+Add a class session for Kids Karate tomorrow
+Schedule a new Fundamentals class for 6pm
+Create an extra session for Adult BJJ on Friday</field>
+        <field name="confirmation_template">Create new "{class_name}" session?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_class_cancel" model="ai.intent.schema">
+        <field name="intent_type">class_cancel</field>
+        <field name="name">Cancel Class Session</field>
+        <field name="description">Cancel a scheduled class session</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "class_name": {"type": "string", "description": "Name of the class"},
+        "session_id": {"type": "integer", "description": "ID of the session to cancel"}
+    }
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Cancel today's Advanced Sparring
+Cancel the 6pm Fundamentals class
+Call off the Kids Karate session
+Cancel this morning's class
+Take the Adult BJJ session off the schedule</field>
+        <field name="confirmation_template">Cancel the "{class_name}" session?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_class_template_create" model="ai.intent.schema">
+        <field name="intent_type">class_template_create</field>
+        <field name="name">Create Class Template</field>
+        <field name="description">Create a new class template (e.g., Fundamentals, Advanced Sparring)</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Name of the class template"},
+        "program_name": {"type": "string", "description": "Name of the program this class belongs to"},
+        "max_capacity": {"type": "integer", "description": "Max students per session", "default": 20},
+        "level": {"type": "string", "description": "Class difficulty level"},
+        "duration_minutes": {"type": "integer", "description": "Duration in minutes", "default": 60},
+        "active": {"type": "boolean", "description": "Whether the template is active", "default": true}
+    },
+    "required": ["name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a class template called Fundamentals for the Kids Program
+Add a new Sparring class to Adult BJJ
+Create the Advanced Forms class template</field>
+        <field name="confirmation_template">Create class template "{name}" under {program_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_task_list" model="ai.intent.schema">
+        <field name="intent_type">task_list</field>
+        <field name="name">Task List</field>
+        <field name="description">List my project tasks and instructor todos</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "overdue": {"type": "boolean", "description": "Only show overdue tasks"},
+        "project_name": {"type": "string", "description": "Filter by project name"},
+        "member_name": {"type": "string", "description": "Filter tasks related to a specific member"},
+        "include_done": {"type": "boolean", "description": "Include completed tasks"}
+    }
+}</field>
+        <field name="example_phrases">Show my tasks
+What tasks do I have?
+What's on my to-do list?
+Show overdue tasks
+What tasks are due this week?
+Show my instructor todos
+What do I need to follow up on?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_task_create" model="ai.intent.schema">
+        <field name="intent_type">task_create</field>
+        <field name="name">Create Task</field>
+        <field name="description">Create a new project task or instructor todo</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["name"],
+    "properties": {
+        "name": {"type": "string", "description": "Task title"},
+        "description": {"type": "string", "description": "Task description or notes"},
+        "date_deadline": {"type": "string", "format": "date", "description": "Deadline date (YYYY-MM-DD)"},
+        "priority": {"type": "string", "enum": ["0", "1"], "description": "Priority: 0=Normal, 1=High"},
+        "project_name": {"type": "string", "description": "Project to add task to (default: Instructor Alerts)"}
+    }
+}</field>
+        <field name="example_phrases">Create a task: follow up with John's parents
+Add a to-do: call Mike about missed classes, due Friday
+Create high priority task: prepare belt test roster for Saturday
+Make a task to review Sarah's attendance this week
+Add reminder to send tournament info to parents</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Create task "{name}" due {date_deadline}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_task_complete" model="ai.intent.schema">
+        <field name="intent_type">task_complete</field>
+        <field name="name">Complete Task</field>
+        <field name="description">Mark a task as done/completed</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "task_name": {"type": "string", "description": "Name or partial name of the task to complete"},
+        "task_id": {"type": "integer", "description": "ID of the task"}
+    }
+}</field>
+        <field name="example_phrases">Mark task "follow up with John" as done
+Complete the task about Mike's attendance
+I finished the belt test roster task
+Mark done: call parents about tournament
+Check off the task about Sarah</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Mark "{task_name}" as done?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_task_update" model="ai.intent.schema">
+        <field name="intent_type">task_update</field>
+        <field name="name">Update Task</field>
+        <field name="description">Update a task's deadline, priority, or add a note</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "task_name": {"type": "string", "description": "Name of the task to update"},
+        "task_id": {"type": "integer", "description": "ID of the task"},
+        "date_deadline": {"type": "string", "format": "date", "description": "New deadline (YYYY-MM-DD)"},
+        "note": {"type": "string", "description": "Note to add to the task"}
+    }
+}</field>
+        <field name="example_phrases">Move the belt test task deadline to next Friday
+Update task "call parents" with a note: left voicemail
+Change the deadline on the roster task to Saturday
+Add a note to the John follow-up task: meeting confirmed</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Update task "{task_name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_calendar_event_list" model="ai.intent.schema">
+        <field name="intent_type">calendar_event_list</field>
+        <field name="name">Calendar Event List</field>
+        <field name="description">Show upcoming calendar events</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "date_filter": {"type": "string", "enum": ["today", "tomorrow", "this_week", "next_week"], "description": "Time range filter"},
+        "event_name": {"type": "string", "description": "Filter by event name"}
+    }
+}</field>
+        <field name="example_phrases">What's on my calendar today?
+What's on my calendar this week?
+Show calendar events for tomorrow
+Do I have any meetings this week?
+What events are scheduled for next week?
+Show my schedule for today</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_calendar_event_create" model="ai.intent.schema">
+        <field name="intent_type">calendar_event_create</field>
+        <field name="name">Create Calendar Event</field>
+        <field name="description">Create a new calendar event</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["name", "start"],
+    "properties": {
+        "name": {"type": "string", "description": "Event title"},
+        "start": {"type": "string", "description": "Start date/time (YYYY-MM-DD HH:MM)"},
+        "stop": {"type": "string", "description": "End date/time (YYYY-MM-DD HH:MM)"},
+        "duration_minutes": {"type": "integer", "description": "Duration in minutes (default: 60)"},
+        "description": {"type": "string", "description": "Event description"},
+        "location": {"type": "string", "description": "Event location"}
+    }
+}</field>
+        <field name="example_phrases">Create a calendar event tomorrow at 3pm: instructor meeting
+Add a meeting on Friday at 2pm: parent conference
+Schedule an event next Monday at 10am called belt test prep
+Put a staff meeting on the calendar for Thursday 4pm
+Create event: tournament sign-up deadline on April 20th</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Create calendar event "{name}" on {start}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_calendar_event_cancel" model="ai.intent.schema">
+        <field name="intent_type">calendar_event_cancel</field>
+        <field name="name">Cancel Calendar Event</field>
+        <field name="description">Cancel and remove a calendar event</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "event_name": {"type": "string", "description": "Name or partial name of the event"},
+        "event_id": {"type": "integer", "description": "ID of the event"},
+        "start": {"type": "string", "description": "Start date to disambiguate events with same name"}
+    }
+}</field>
+        <field name="example_phrases">Cancel the instructor meeting on Friday
+Remove the belt test prep event
+Delete the Thursday 4pm staff meeting
+Cancel the event called parent conference</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Cancel calendar event "{event_name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+</odoo>

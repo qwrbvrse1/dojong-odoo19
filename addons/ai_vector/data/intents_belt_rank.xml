@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <record id="intent_belt_lookup" model="ai.intent.schema">
+        <field name="intent_type">belt_lookup</field>
+        <field name="name">Belt Lookup</field>
+        <field name="description">Look up a member's current belt rank. Use member_name to get a specific member's rank; omit it to list all belt ranks.</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member whose belt rank to look up"},
+        "member_id": {"type": "integer", "description": "ID of the member whose belt rank to look up"},
+        "belt_name": {"type": "string", "description": "Name of a specific belt rank to look up (omit to get member's rank)"}
+    }
+}</field>
+        <field name="example_phrases">What belt is John on?
+Show me Sarah's belt rank
+What rank is Test8?
+What color belt does Mike have?
+What belt does john smith have?
+Show all belt ranks</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_promote" model="ai.intent.schema">
+        <field name="intent_type">belt_promote</field>
+        <field name="name">Promote Belt Rank</field>
+        <field name="description">Promote a member to a new belt rank</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to promote"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "new_belt": {"type": "string", "description": "Name of the new belt rank"}
+    },
+    "required": ["member_name", "new_belt"]
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Promote John to blue belt
+Advance Sarah to the next rank
+Test8 earned their green stripe
+Move Mike up to purple belt
+Promote Jane to her next belt level</field>
+        <field name="confirmation_template">Promote {member_name} to {new_belt}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_test_register" model="ai.intent.schema">
+        <field name="intent_type">belt_test_register</field>
+        <field name="name">Register for Belt Test</field>
+        <field name="description">Register a member for an upcoming belt test event, specifying the target belt rank they are testing for</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "target_belt": {"type": "string", "description": "Belt rank they are testing for (e.g. blue belt, green stripe)"},
+        "test_date": {"type": "string", "format": "date", "description": "Date of the belt test (YYYY-MM-DD), optional — defaults to the next scheduled test"},
+        "test_name": {"type": "string", "description": "Name of the belt test event, optional"}
+    },
+    "required": ["member_name", "target_belt"]
+}</field>
+        <field name="example_phrases">Register Test8 for a blue belt test
+Schedule a belt test for John testing for green belt
+Add Sarah to the next belt test for purple belt
+Sign Mike up for his yellow stripe belt test</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Register {member_name} for a belt test (testing for {target_belt})?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_test_register_crud" model="ai.intent.schema">
+        <field name="intent_type">belt_test_register_crud</field>
+        <field name="name">Register for Belt Test (CRUD)</field>
+        <field name="description">Register a member for a belt test by creating a member.rank record</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member testing"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "rank_name": {"type": "string", "description": "Name of the belt rank being tested for"},
+        "program_name": {"type": "string", "description": "Name of the program"},
+        "date_awarded": {"type": "string", "format": "date", "description": "Date awarded (YYYY-MM-DD)"},
+        "notes": {"type": "string", "description": "Optional notes"}
+    },
+    "required": ["member_name", "rank_name"]
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Register John for a blue belt test
+Sign Sarah up to test for green stripe
+Add Test8 to the purple belt test</field>
+        <field name="confirmation_template">Register {member_name} for belt test?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_test_create" model="ai.intent.schema">
+        <field name="intent_type">belt_test_create</field>
+        <field name="name">Create Belt Test Event</field>
+        <field name="description">Create a new belt test event/session</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Name of the test event"},
+        "test_date": {"type": "string", "format": "date", "description": "Date of the test (YYYY-MM-DD)"},
+        "location": {"type": "string", "description": "Location of the test"},
+        "program_name": {"type": "string", "description": "Program this test is for"},
+        "max_participants": {"type": "integer", "description": "Maximum number of participants", "default": 20}
+    },
+    "required": ["name", "test_date"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a belt test for March 30th
+Schedule a test event for Saturday
+Create a new belt test called Spring Grading</field>
+        <field name="confirmation_template">Create new belt test "{name}" on {test_date}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_test_registration_create" model="ai.intent.schema">
+        <field name="intent_type">belt_test_registration_create</field>
+        <field name="name">Register for Belt Test Event</field>
+        <field name="description">Register a member for a specific belt test event</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "test_id": {"type": "integer", "description": "ID of the belt test event"},
+        "rank_name": {"type": "string", "description": "Target belt rank"},
+        "program_name": {"type": "string", "description": "Name of the program"},
+        "notes": {"type": "string", "description": "Optional notes"}
+    },
+    "required": ["member_name", "test_id"]
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Register John for the Spring belt test
+Sign up Sarah for the upcoming grading event
+Add Test8 to belt test #5</field>
+        <field name="confirmation_template">Register {member_name} for belt test event?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+</odoo>

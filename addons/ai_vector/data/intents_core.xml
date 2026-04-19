@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <record id="intent_member_lookup" model="ai.intent.schema">
+        <field name="intent_type">member_lookup</field>
+        <field name="name">Member Lookup</field>
+        <field name="description">Look up member information by name or ID</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to look up"},
+        "member_id": {"type": "integer", "description": "ID of the member to look up"}
+    }
+}</field>
+        <field name="example_phrases">Look up John Smith
+Find member Sarah
+What's Test8's information?
+Show me details for Mike
+Who is Jane Doe?</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_member_create" model="ai.intent.schema">
+        <field name="intent_type">member_create</field>
+        <field name="name">Create Member</field>
+        <field name="description">Create a new member record</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Full name of the new member"},
+        "email": {"type": "string", "format": "email", "description": "Email address"},
+        "phone": {"type": "string", "description": "Phone number"}
+    },
+    "required": ["name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a new member named John Smith
+Add a new student Sarah Jones
+Register new member Test8
+Create a profile for Mike Williams
+Add a new student Jane Doe with email jane@example.com</field>
+        <field name="confirmation_template">Create new member "{name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_member_update" model="ai.intent.schema">
+        <field name="intent_type">member_update</field>
+        <field name="name">Update Member</field>
+        <field name="description">Update an existing member's information</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to update"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "name": {"type": "string", "description": "New name"},
+        "email": {"type": "string", "format": "email", "description": "New email"},
+        "phone": {"type": "string", "description": "New phone"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Update John's email to john@example.com
+Change Sarah's phone number
+Update Test8's name
+Edit Mike's contact information
+Update Jane's profile details</field>
+        <field name="confirmation_template">Update {member_name}'s profile?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_undo_action" model="ai.intent.schema">
+        <field name="intent_type">undo_action</field>
+        <field name="name">Undo Action</field>
+        <field name="description">Undo the most recent undoable action</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "original_action_log_id": {"type": "integer", "description": "ID of the action to undo"}
+    }
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Undo that
+Undo the last action
+Revert what I just did
+Go back on that
+That was a mistake, undo it</field>
+        <field name="confirmation_template">Undo the previous action?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_unknown" model="ai.intent.schema">
+        <field name="intent_type">unknown</field>
+        <field name="name">Unknown Intent</field>
+        <field name="description">Unrecognized or conversational query</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{}</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_at_risk_members" model="ai.intent.schema">
+        <field name="intent_type">at_risk_members</field>
+        <field name="name">At-Risk Members</field>
+        <field name="description">Find active members who have not attended in a given number of days</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "days": {"type": "integer", "description": "Number of days of inactivity threshold (default 14)"}
+    },
+    "required": []
+}</field>
+        <field name="example_phrases">Who hasn't been in for 2 weeks?
+Show me at-risk members
+Which members are inactive?
+Who hasn't come in lately?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_program_create" model="ai.intent.schema">
+        <field name="intent_type">program_create</field>
+        <field name="name">Create Program</field>
+        <field name="description">Create a new dojo program (e.g., Kids Karate Gold, Adult BJJ)</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Name of the new program"},
+        "description": {"type": "string", "description": "Program description (optional)"},
+        "active": {"type": "boolean", "description": "Whether the program is active", "default": true}
+    },
+    "required": ["name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a new program called Adult Kickboxing
+Add a program for Competition Team
+Create the Tiny Titans program for toddlers</field>
+        <field name="confirmation_template">Create new program "{name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_instructor_profile_update" model="ai.intent.schema">
+        <field name="intent_type">instructor_profile_update</field>
+        <field name="name">Update Instructor Profile</field>
+        <field name="description">Update an instructor's profile information</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "instructor_name": {"type": "string", "description": "Name of the instructor"},
+        "name": {"type": "string", "description": "New display name"},
+        "bio": {"type": "string", "description": "Short biography"},
+        "active": {"type": "boolean", "description": "Whether the profile is active"}
+    },
+    "required": ["instructor_name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Update John's instructor profile
+Set Sarah's speciality to karate
+Update Mike's bio to highlight his BJJ experience</field>
+        <field name="confirmation_template">Update profile for instructor {instructor_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_emergency_contact_create" model="ai.intent.schema">
+        <field name="intent_type">emergency_contact_create</field>
+        <field name="name">Add Emergency Contact</field>
+        <field name="description">Add an emergency contact for a member</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "name": {"type": "string", "description": "Name of the emergency contact"},
+        "phone": {"type": "string", "description": "Phone number"},
+        "relationship": {"type": "string", "description": "Relationship (parent, sibling, etc.)"},
+        "email": {"type": "string", "format": "email", "description": "Email address (optional)"},
+        "is_primary": {"type": "boolean", "description": "Set as primary contact", "default": false}
+    },
+    "required": ["member_name", "name", "phone", "relationship"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Add Jane Smith as emergency contact for John
+Record his mother's phone number as backup contact
+Add Sarah's guardian contact information</field>
+        <field name="confirmation_template">Add {name} as emergency contact for {member_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_martial_art_style_create" model="ai.intent.schema">
+        <field name="intent_type">martial_art_style_create</field>
+        <field name="name">Create Martial Art Style</field>
+        <field name="description">Add a new martial art style to the system</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Name of the martial art style (e.g., Brazilian Jiu-Jitsu, Karate)"},
+        "code": {"type": "string", "description": "Short code (e.g., BJJ, KAR)"},
+        "description": {"type": "string", "description": "Description of the style"}
+    },
+    "required": ["name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Add Brazilian Jiu-Jitsu as a martial art style
+Create a new style called Muay Thai
+Add Taekwondo with code TKD</field>
+        <field name="confirmation_template">Create martial art style "{name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+</odoo>

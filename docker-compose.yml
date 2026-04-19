@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:17
+    image: pgvector/pgvector:pg17
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_PASSWORD=odoo
@@ -15,7 +15,7 @@ services:
     depends_on:
       - db
     ports:
-      - "8069:8069" # Change the port if needed.
+      - "8070:8069" # Changed: 8069 is occupied by a stale kernel socket
     volumes:
       - odoo-web-data:/var/lib/odoo
       - ./enterprise:/mnt/enterprise-addons
@@ -27,6 +27,26 @@ services:
       - PASSWORD=odoo
     restart: unless-stopped
 
+  n8n:
+    image: n8nio/n8n:latest
+    depends_on:
+      - web
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n-data:/home/node/.n8n
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=dojo-n8n-dev
+      - N8N_HOST=0.0.0.0
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      # Odoo connection (used in workflow HTTP nodes)
+      - ODOO_BASE_URL=http://web:8069
+    restart: unless-stopped
+
 volumes:
   odoo-db-data-19-2:
   odoo-web-data:
+  n8n-data:

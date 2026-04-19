@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Cron: Rebuild intent embeddings weekly -->
+    <record id="ir_cron_rebuild_vector_embeddings" model="ir.cron">
+        <field name="name">AI: Rebuild Intent Vector Embeddings</field>
+        <field name="model_id" ref="base.model_res_users"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_rebuild_embeddings()</field>
+        <field name="interval_number">7</field>
+        <field name="interval_type">days</field>
+        <field name="active">True</field>
+    </record>
+
+</odoo>

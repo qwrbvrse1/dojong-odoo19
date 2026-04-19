@@ -1,0 +1,593 @@
+/** @odoo-module **/
+/**
+ * Dojo AI Voice Assistant — floating chat panel for the instructor and admin
+ * dashboards.
+ *
+ * Features
+ * --------
+ *  • Text input — type and send a message
+ *  • Voice input — click the mic button to record, click again to submit
+ *  • AI responses via the dojo-scoped /dojo/ai/* endpoints
+ *  • Contact-parent action card — AI can propose a draft message; the user
+ *    can edit subject / body, toggle email/SMS, and confirm the send
+ *  • Optional text-to-speech — browser SpeechSynthesis reads AI responses aloud
+ */
+
+import { Component, useState, useRef, onMounted, onWillUnmount } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
+import { rpc } from "@web/core/network/rpc";
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+function nowLabel() {
+    return new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+
+function htmlToPlain(html) {
+    if (!html) return "";
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+}
+
+
+// ─── component ──────────────────────────────────────────────────────────────
+
+export class DojoVoiceAssistant extends Component {
+    static template = "ai_assistant.VoiceAssistant";
+
+    setup() {
+        this.notification = useService("notification");
+        this.inputRef = useRef("msgInput");
+        this.endRef = useRef("msgEnd");
+
+        this.state = useState({
+            open: false,
+            messages: [],          // [{role, text, time}] — grows forever, never cleared
+            contextWindow: [],     // [{role, text}] — rolling window sent to LLM; resets on new session
+            input: "",
+            recording: false,
+            processing: false,
+            thinkingHint: false,
+            ttsEnabled: false,     // auto-speak AI responses
+            pendingAction: null,   // contact_parent action dict from AI
+            actionSubject: "",
+            actionBody: "",
+            actionEmail: true,
+            actionSms: true,
+            // Two-phase confirmation flow
+            pendingConfirm: null,  // {session_key, prompt, intent_type}
+            liveTranscript: "",
+        });
+
+        this._mediaRecorder = null;
+        this._audioChunks = [];
+        this._stream = null;
+        this._currentAudio = null;
+        this._recordTimeout = null;
+        this._speechSupported = ('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window);
+        this._recognition = null;
+        this._pendingTranscript = "";
+        this._silenceTimer = null;
+        this._hasBeenOpened = false;  // tracks first open vs reopen
+        this._contextWindowMax = 10;     // turns; overwritten by /dojo/ai/config on mount
+
+        onMounted(() => {
+            // Keyboard shortcut: Ctrl+Shift+A to toggle panel
+            document.addEventListener("keydown", (e) => {
+                if (e.ctrlKey && e.shiftKey && e.key === "A") this.toggle();
+            });
+            // Fetch configurable context window size
+            rpc("/dojo/ai/config", {}).then((cfg) => {
+                if (cfg && cfg.context_window_turns) {
+                    this._contextWindowMax = cfg.context_window_turns;
+                }
+            }).catch(() => { /* keep default */ });
+        });
+
+        onWillUnmount(() => {
+            if (this._currentAudio) { this._currentAudio.pause(); this._currentAudio = null; }
+            if (this._recognition) {
+                this._recognition.abort();
+                this._recognition = null;
+            }
+            if (this._mediaRecorder && this._mediaRecorder.state !== "inactive") {
+                this._mediaRecorder.stop();
+            }
+            if (this._stream) {
+                this._stream.getTracks().forEach(t => t.stop());
+                this._stream = null;
+            }
+            if (this._recordTimeout) {
+                clearTimeout(this._recordTimeout);
+                this._recordTimeout = null;
+            }
+            if (this._silenceTimer) {
+                clearTimeout(this._silenceTimer);
+                this._silenceTimer = null;
+            }
+        });
+    }
+
+    // ── panel open / close ───────────────────────────────────────────────────
+
+    toggle() {
+        this.state.open = !this.state.open;
+        if (this.state.open) {
+            if (!this._hasBeenOpened) {
+                // Very first open — show welcome
+                this._pushMsg("assistant", "👋 Hi! I can help you look up students, check class schedules, or send messages to parents. What would you like to do?");
+                this._hasBeenOpened = true;
+            } else {
+                // Reopen after close — start a new session in this window
+                this._pushDivider("── New Session ──");
+                this.state.contextWindow = [];
+            }
+            setTimeout(() => this._scrollToBottom(), 60);
+            setTimeout(() => this.inputRef.el && this.inputRef.el.focus(), 80);
+        }
+    }
+
+    close() { this.state.open = false; }
+
+    // ── messaging ────────────────────────────────────────────────────────────
+
+    onInputKeydown(ev) {
+        if (ev.key === "Enter" && !ev.shiftKey) {
+            ev.preventDefault();
+            this.send();
+        }
+    }
+
+    onInputChange(ev) {
+        this.state.input = ev.target.value;
+    }
+
+    async send() {
+        const text = (this.state.input || "").trim();
+        if (!text || this.state.processing) return;
+        this.state.input = "";
+        await this._submitText(text);
+    }
+
+    async _submitText(text) {
+        this._pushMsg("user", text);
+        this.state.processing = true;
+        this._scrollToBottom();
+
+        // Abort controller for timeout + cancel
+        this._abortCtrl = new AbortController();
+        const timeoutId = setTimeout(() => this._abortCtrl.abort(), 45000);
+
+        // "Still thinking" hint after 8s
+        const thinkId = setTimeout(() => {
+            if (this.state.processing) {
+                this.state.thinkingHint = true;
+            }
+        }, 8000);
+
+        try {
+            const result = await rpc("/dojo/ai/text", {
+                text,
+                conversation_history: this.state.contextWindow,
+            });
+            if (result.success) {
+                this._handleAiResult(result);
+                this._updateContextWindow(text, result.response || "");
+            } else {
+                this._pushMsg("assistant", "⚠️ " + (result.error || "Unknown error."));
+            }
+        } catch (err) {
+            if (this._abortCtrl && this._abortCtrl.signal.aborted) {
+                this._pushMsg("assistant", "⚠️ That query took too long. Try a simpler question or break it into parts.");
+            } else {
+                this._pushMsg("assistant", "⚠️ Network error — please try again.");
+            }
+        } finally {
+            clearTimeout(timeoutId);
+            clearTimeout(thinkId);
+            this.state.processing = false;
+            this.state.thinkingHint = false;
+            this._abortCtrl = null;
+            this._scrollToBottom();
+        }
+    }
+
+    cancelAiRequest() {
+        if (this._abortCtrl) this._abortCtrl.abort();
+    }
+
+    // ── voice recording ──────────────────────────────────────────────────────
+
+    async toggleRecording() {
+        if (this.state.recording) {
+            this._stopVoiceInput();
+        } else {
+            await this._startVoiceInput();
+        }
+    }
+
+    async _startVoiceInput() {
+        if (this._speechSupported) {
+            // ── Chrome / Edge path ──
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            this._recognition = new SR();
+            this._recognition.continuous = true;
+            this._recognition.interimResults = true;
+            this._recognition.lang = "en-US";
+            this._pendingTranscript = "";
+            this.state.liveTranscript = "";
+            this.state.recording = true;
+
+            const resetSilenceTimer = () => {
+                if (this._silenceTimer) clearTimeout(this._silenceTimer);
+                this._silenceTimer = setTimeout(() => {
+                    this._silenceTimer = null;
+                    if (this._recognition) this._recognition.stop();
+                }, 2500);
+            };
+
+            this._recognition.onresult = (event) => {
+                let full = "";
+                for (let i = 0; i < event.results.length; i++) {
+                    full += event.results[i][0].transcript;
+                }
+                this._pendingTranscript = full;
+                this.state.liveTranscript = full;
+                resetSilenceTimer();
+            };
+
+            this._recognition.onerror = (event) => {
+                if (this._silenceTimer) { clearTimeout(this._silenceTimer); this._silenceTimer = null; }
+                this._pendingTranscript = "";
+                this.state.liveTranscript = "";
+                this.state.recording = false;
+                if (event.error === "not-allowed") {
+                    this.notification.add("Microphone access denied.", { type: "warning" });
+                } else {
+                    this._pushMsg("assistant", "⚠️ Voice recognition failed, please try again.");
+                }
+                // onend fires after onerror — _pendingTranscript is '' so it will no-op
+            };
+
+            this._recognition.onend = () => {
+                if (this._silenceTimer) { clearTimeout(this._silenceTimer); this._silenceTimer = null; }
+                this.state.recording = false;
+                this.state.liveTranscript = "";
+                const text = this._pendingTranscript.trim();
+                this._pendingTranscript = "";
+                if (text) {
+                    this._submitVoiceTranscript(text);
+                }
+            };
+
+            this._recognition.start();
+        } else {
+            // ── Fallback: MediaRecorder ──
+            await this._startRecording();
+            this.state.liveTranscript = "Listening…";
+        }
+    }
+
+    _stopVoiceInput() {
+        if (this._speechSupported && this._recognition) {
+            this._recognition.stop();
+            // onend fires automatically → submits or no-ops
+        } else {
+            this._stopRecording();
+            this.state.liveTranscript = "";
+        }
+    }
+
+    _submitVoiceTranscript(text) {
+        if (this.state.processing) {
+            // AI is still responding — put transcript in input so user can submit manually
+            this.state.input = text;
+            this.state.liveTranscript = "";
+            return;
+        }
+        this.state.liveTranscript = "";
+        this._submitText(text);
+    }
+
+    async _startRecording() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            this.notification.add("Microphone not available in this browser.", { type: "warning" });
+            return;
+        }
+        try {
+            this._stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (err) {
+            this.notification.add("Microphone access denied. Please allow it in your browser.", { type: "warning" });
+            return;
+        }
+
+        this._audioChunks = [];
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+            ? "audio/webm;codecs=opus"
+            : "audio/webm";
+        this._mediaRecorder = new MediaRecorder(this._stream, { mimeType });
+
+        this._mediaRecorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) this._audioChunks.push(e.data);
+        };
+        this._mediaRecorder.onstop = () => this._processRecording();
+
+        this._mediaRecorder.start(250); // collect in 250 ms slices
+        this.state.recording = true;
+
+        // Auto-stop after 60 seconds
+        this._recordTimeout = setTimeout(() => {
+            if (this.state.recording) this._stopRecording();
+        }, 60000);
+    }
+
+    _stopRecording() {
+        if (this._recordTimeout) {
+            clearTimeout(this._recordTimeout);
+            this._recordTimeout = null;
+        }
+        if (this._mediaRecorder && this._mediaRecorder.state !== "inactive") {
+            this._mediaRecorder.stop();
+        }
+        if (this._stream) {
+            this._stream.getTracks().forEach((t) => t.stop());
+            this._stream = null;
+        }
+        this.state.recording = false;
+    }
+
+    async _processRecording() {
+        this.state.liveTranscript = "";
+        if (!this._audioChunks.length) return;
+        const blob = new Blob(this._audioChunks, { type: "audio/webm" });
+        this._audioChunks = [];
+
+        this._pushMsg("user", "🎙️ [voice message]");
+        this.state.processing = true;
+        this._scrollToBottom();
+
+        const formData = new FormData();
+        formData.append("audio", blob, "recording.webm");
+        formData.append("conversation_history", JSON.stringify(this.state.contextWindow));
+
+        try {
+            const resp = await fetch("/dojo/ai/voice", {
+                method: "POST",
+                body: formData,
+                // Odoo session cookie is sent automatically via the browser
+            });
+            const result = await resp.json();
+
+            if (result.success) {
+                // Replace placeholder with actual transcription
+                const msgs = this.state.messages;
+                const lastUser = [...msgs].reverse().find((m) => m.role === "user");
+                if (lastUser && lastUser.text === "🎙️ [voice message]") {
+                    lastUser.text = "🎙️ " + result.transcribed;
+                }
+                this._handleAiResult(result);
+                this._updateContextWindow(result.transcribed || "", result.response || "");
+            } else {
+                this._pushMsg("assistant", "⚠️ " + (result.error || "Voice processing failed."));
+            }
+        } catch (err) {
+            this._pushMsg("assistant", "⚠️ Could not process voice recording.");
+        } finally {
+            this.state.processing = false;
+            this._scrollToBottom();
+        }
+    }
+
+    // ── AI result handling ────────────────────────────────────────────────────
+
+    _handleAiResult(result) {
+        const text = result.response || "";
+        if (text) {
+            this._pushMsg("assistant", text);
+        } else if (result.state !== "pending_confirmation") {
+            this._pushMsg("assistant", "Sorry, I couldn't find an answer for that. Try rephrasing your question.");
+        }
+
+        // Speak response if TTS is enabled (ElevenLabs)
+        if (this.state.ttsEnabled && text) {
+            this._speakResponse(text);
+        }
+
+        // ── Two-phase confirmation (enroll, belt, etc.) ──────────────────────
+        if (result.state === "pending_confirmation" && result.session_key && result.confirmation_prompt) {
+            this.state.pendingConfirm = {
+                session_key: result.session_key,
+                prompt: result.confirmation_prompt,
+                intent_type: result.intent && result.intent.intent_type,
+            };
+            if (!text) {
+                this._pushMsg("assistant", result.confirmation_prompt);
+            }
+            return;
+        }
+
+        // Handle contact_parent action (legacy)
+        const action = result.action;
+        if (action && action.type === "contact_parent" && !action.error) {
+            this.state.pendingAction = action;
+            this.state.actionSubject = action.suggested_subject || "Message from Dojo";
+            this.state.actionBody = action.suggested_body || "";
+            this.state.actionEmail = true;
+            this.state.actionSms = true;
+        } else if (action && action.error) {
+            this._pushMsg("assistant", "⚠️ " + action.error);
+        }
+    }
+
+    // ── contact-parent confirmation card ─────────────────────────────────────
+
+    onActionSubjectChange(ev) { this.state.actionSubject = ev.target.value; }
+    onActionBodyChange(ev) { this.state.actionBody = ev.target.value; }
+    onActionEmailChange(ev) { this.state.actionEmail = ev.target.checked; }
+    onActionSmsChange(ev) { this.state.actionSms = ev.target.checked; }
+
+    cancelAction() {
+        this.state.pendingAction = null;
+        this._pushMsg("assistant", "Message cancelled. Let me know if you need anything else.");
+    }
+
+    // ── Two-phase confirmation (enroll / belt / etc.) ─────────────────────────
+
+    async confirmIntent() {
+        const pending = this.state.pendingConfirm;
+        if (!pending) return;
+        this.state.pendingConfirm = null;
+        this.state.processing = true;
+        try {
+            const result = await rpc("/dojo/ai/confirm", {
+                session_key: pending.session_key,
+                confirmed: true,
+            });
+            if (result.success) {
+                if (result.compound && result.steps && result.steps.length) {
+                    const lines = result.steps.map(s => {
+                        if (s.skipped) return null;
+                        if (s.success) return s.summary || null;
+                        return `⚠️ ${s.error || "Step failed"}`;
+                    }).filter(Boolean);
+                    this._pushMsg("assistant", lines.join("\n\n"));
+                } else {
+                    const msg = result.result && result.result.message
+                        ? "✅ " + result.result.message
+                        : "✅ Done!";
+                    this._pushMsg("assistant", msg);
+                }
+                if (result.undo_available) {
+                    this._pushMsg("assistant", "You can say \"undo\" to reverse this action.");
+                }
+            } else {
+                if (result.compound && result.steps && result.steps.length) {
+                    const lines = result.steps.map(s => {
+                        if (s.success) return `✅ ${s.summary || "Completed"}`;
+                        return `❌ ${s.error || "Failed"}`;
+                    });
+                    this._pushMsg("assistant", lines.join("\n\n"));
+                } else {
+                    this._pushMsg("assistant", "⚠️ " + (result.error || "Action failed."));
+                }
+            }
+        } catch (err) {
+            const errMsg = err?.data?.message || err?.message || "Network error during confirmation.";
+            this._pushMsg("assistant", "⚠️ " + errMsg);
+        } finally {
+            this.state.processing = false;
+            this._scrollToBottom();
+        }
+    }
+
+    async cancelIntent() {
+        const pending = this.state.pendingConfirm;
+        if (!pending) return;
+        this.state.pendingConfirm = null;
+        try {
+            await rpc("/dojo/ai/confirm", {
+                session_key: pending.session_key,
+                confirmed: false,
+            });
+        } catch (_) { }
+        this._pushMsg("assistant", "Action cancelled. Let me know if you need anything else.");
+    }
+
+    async confirmAction() {
+        const action = this.state.pendingAction;
+        if (!action) return;
+
+        this.state.processing = true;
+        try {
+            const result = await rpc("/dojo/ai/send_message", {
+                member_id: action.member_id,
+                subject: this.state.actionSubject,
+                body: this.state.actionBody,
+                send_email: this.state.actionEmail,
+                send_sms: this.state.actionSms,
+            });
+            this.state.pendingAction = null;
+            if (result.success) {
+                this._pushMsg("assistant", "✅ " + (result.message || "Message sent successfully."));
+                this.notification.add(result.message || "Message sent.", { type: "success" });
+            } else {
+                this._pushMsg("assistant", "⚠️ Failed to send: " + (result.error || "Unknown error."));
+            }
+        } catch (err) {
+            this._pushMsg("assistant", "⚠️ Network error while sending message.");
+        } finally {
+            this.state.processing = false;
+            this._scrollToBottom();
+        }
+    }
+
+    // ── TTS toggle ────────────────────────────────────────────────────────────
+
+    toggleTts() {
+        this.state.ttsEnabled = !this.state.ttsEnabled;
+        if (!this.state.ttsEnabled && this._currentAudio) {
+            this._currentAudio.pause();
+            this._currentAudio = null;
+        }
+        this.notification.add(
+            this.state.ttsEnabled ? "🔊 Voice responses ON" : "🔇 Voice responses OFF",
+            { type: "info", sticky: false }
+        );
+    }
+
+    async _speakResponse(text) {
+        if (!text) return;
+        try {
+            const result = await rpc("/dojo/ai/speak", { text });
+            if (!result || !result.success) {
+                this.state.ttsEnabled = false;
+                this.notification.add(
+                    "🔇 Voice playback unavailable — " + (result && result.error ? result.error : "ElevenLabs TTS failed."),
+                    { type: "warning", sticky: true }
+                );
+                return;
+            }
+            const audio = new Audio("data:" + result.mime + ";base64," + result.audio_b64);
+            if (this._currentAudio) this._currentAudio.pause();
+            this._currentAudio = audio;
+            audio.onended = () => { this._currentAudio = null; };
+            audio.onerror = () => { this._currentAudio = null; };
+            audio.play().catch(() => { this._currentAudio = null; });
+        } catch (err) {
+            this.state.ttsEnabled = false;
+            this.notification.add(
+                "🔇 Voice playback failed — " + (err.message || "unexpected error"),
+                { type: "warning", sticky: true }
+            );
+        }
+    }
+
+    // ── utils ─────────────────────────────────────────────────────────────────
+
+    _pushMsg(role, text) {
+        this.state.messages.push({ role, text, time: nowLabel() });
+    }
+    _pushDivider(text) {
+        this.state.messages.push({ role: "divider", text });
+    }
+
+    clearContext() {
+        this.state.contextWindow = [];
+        this._pushDivider("── Context Cleared ──");
+        this._scrollToBottom();
+    }
+
+    _updateContextWindow(userText, aiText) {
+        const cw = this.state.contextWindow;
+        if (userText) cw.push({ role: "user", text: userText });
+        if (aiText) cw.push({ role: "assistant", text: aiText });
+        const maxItems = this._contextWindowMax * 2;  // each turn = user + assistant
+        if (cw.length > maxItems) cw.splice(0, cw.length - maxItems);
+    }
+    _scrollToBottom() {
+        if (this.endRef.el) {
+            this.endRef.el.scrollIntoView({ behavior: "smooth" });
+        }
+    }
+}

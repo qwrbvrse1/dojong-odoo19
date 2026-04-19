@@ -252,7 +252,7 @@ class ConnectAiAgent(models.Model):
         if call and lead:
             call.sudo().write({"ai_lead_id": lead.id})
 
-        # Log to dojo.ai.action.log if available
+        # Log to ai.action.log if available
         self._log_ai_action(conversation_id, transcript_plain, lead)
 
         return {"success": True, "lead_id": lead.id if lead else False}
@@ -339,8 +339,8 @@ class ConnectAiAgent(models.Model):
         return lead
 
     def _log_ai_action(self, conversation_id, transcript_plain, lead):
-        """Log to dojo.ai.action.log for audit trail."""
-        ActionLog = self.env.get("dojo.ai.action.log")
+        """Log to ai.action.log for audit trail."""
+        ActionLog = self.env.get("ai.action.log")
         if ActionLog is None:
             return
         try:

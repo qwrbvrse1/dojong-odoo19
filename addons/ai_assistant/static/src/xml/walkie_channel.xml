@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PROTOTYPE — Channel Beta Walkie-Talkie backend OWL template -->
+<templates xml:space="preserve">
+    <t t-name="ai_assistant.WalkieChannel" owl="1">
+        <div class="dojo-wt-root">
+
+            <!-- ── Header ──────────────────────────────────────────────── -->
+            <div class="dojo-wt-header">
+                <div class="dojo-wt-header__logo">
+                    <i class="fa fa-podcast"/>
+                </div>
+                <div class="dojo-wt-header__title" t-out="state.walkieName"/>
+                <div class="dojo-wt-header__actions">
+                    <button class="dojo-wt-icon-btn" t-on-click="clearContext" title="Clear conversation context">
+                        <i class="fa fa-eraser"/>
+                    </button>
+                </div>
+                <span t-attf-class="dojo-wt-status-pill dojo-wt-status-pill--#{state.isSpeaking ? 'speaking' : state.isHolding ? 'recording' : state.isProcessing ? 'processing' : 'idle'}">
+                    ●&#160;<t t-if="state.isHolding">Listening</t><t t-elif="state.isProcessing">Processing</t><t t-elif="state.isSpeaking">Speaking</t><t t-else="">Ready</t>
+                </span>
+            </div>
+
+            <!-- ── Channel dial bar ─────────────────────────────────────── -->
+            <div class="dojo-wt-dial">
+                <button class="dojo-wt-dial__nav" t-on-click="prevChannel" aria-label="Previous channel">
+                    <i class="fa fa-chevron-left"/>
+                </button>
+                <div class="dojo-wt-dial__track">
+                    <span class="dojo-wt-dial__neighbor dojo-wt-dial__neighbor--prev"
+                          t-out="prevChannelLabel"/>
+                    <button class="dojo-wt-dial__active" t-on-click="toggleDialOverlay"
+                            title="Show all channels">
+                        <i t-attf-class="fa #{activeChannelIcon} dojo-wt-dial__active-icon"/>
+                        <span class="dojo-wt-dial__active-label" t-out="state.activeChannelLabel"/>
+                        <i class="fa fa-chevron-down dojo-wt-dial__caret"/>
+                    </button>
+                    <span class="dojo-wt-dial__neighbor dojo-wt-dial__neighbor--next"
+                          t-out="nextChannelLabel"/>
+                </div>
+                <button class="dojo-wt-dial__nav" t-on-click="nextChannel" aria-label="Next channel">
+                    <i class="fa fa-chevron-right"/>
+                </button>
+            </div>
+
+            <!-- ── Channel picker overlay ──────────────────────────────── -->
+            <div t-if="state.showDialOverlay" class="dojo-wt-dial-overlay" t-on-click="toggleDialOverlay">
+                <div class="dojo-wt-dial-overlay__panel" t-on-click.stop="">
+                    <div class="dojo-wt-dial-overlay__title">Select Channel</div>
+                    <div class="dojo-wt-dial-overlay__grid">
+                        <t t-foreach="channels" t-as="ch" t-key="ch.id">
+                            <button t-attf-class="dojo-wt-dial-tile #{state.activeChannel === ch.id ? 'active' : ''}"
+                                    t-on-click="() => this.switchChannel(ch.id)">
+                                <i t-attf-class="fa #{ch.icon} dojo-wt-dial-tile__icon"/>
+                                <span class="dojo-wt-dial-tile__label" t-out="ch.label"/>
+                            </button>
+                        </t>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Error banner ────────────────────────────────────────── -->
+            <div t-if="state.error" class="dojo-wt-error">
+                <i class="fa fa-exclamation-triangle me-2"/>
+                <t t-out="state.error"/>
+            </div>
+
+            <!-- ── Conversation thread ─────────────────────────────────── -->
+            <div class="dojo-wt-thread" t-ref="thread">
+
+                <div t-if="state.messages.length === 0" class="dojo-wt-empty">
+                    <i class="fa fa-microphone dojo-wt-empty__icon"/>
+                    <p class="dojo-wt-empty__hint">Hold the button and speak to the AI</p>
+                    <p class="dojo-wt-empty__tips">Channel: <strong t-out="state.activeChannelLabel"/></p>
+                </div>
+
+                <t t-foreach="state.messages" t-as="msg" t-key="msg_index">
+                    <!-- Channel-switch divider -->
+                    <div t-if="msg.role === 'divider'" class="dojo-wt-ch-divider">
+                        <span t-out="msg.text"/>
+                    </div>
+
+                    <!-- User bubble -->
+                    <div t-elif="msg.role === 'user'" class="dojo-wt-bubble dojo-wt-bubble--user">
+                        <div class="dojo-wt-bubble__body">
+                            <i class="fa fa-microphone dojo-wt-bubble__icon"/>
+                            <span t-out="msg.text"/>
+                        </div>
+                        <div class="dojo-wt-bubble__time" t-out="msg.time"/>
+                    </div>
+
+                    <!-- AI bubble -->
+                    <div t-if="msg.role === 'ai'" class="dojo-wt-bubble dojo-wt-bubble--ai">
+                        <div class="dojo-wt-bubble__body">
+                            <i class="fa fa-android dojo-wt-bubble__icon"/>
+                            <span t-out="msg.text"/>
+                        </div>
+                        <t t-if="msg.confirm and state.awaitingConfirmation and msg_index === state.messages.length - 1">
+                            <div class="dojo-wt-confirm-btns">
+                                <button class="dojo-wt-btn dojo-wt-btn--confirm"
+                                        t-on-click="confirmAction"
+                                        t-att-disabled="state.isProcessing">
+                                    <i class="fa fa-check me-1"/> Yes, do it
+                                </button>
+                                <button class="dojo-wt-btn dojo-wt-btn--cancel"
+                                        t-on-click="cancelAction"
+                                        t-att-disabled="state.isProcessing">
+                                    <i class="fa fa-times me-1"/> Cancel
+                                </button>
+                            </div>
+                        </t>
+                        <div class="dojo-wt-bubble__time" t-out="msg.time"/>
+                    </div>
+                </t>
+
+                <!-- Thinking spinner -->
+                <div t-if="state.isProcessing" class="dojo-wt-thinking">
+                    <span class="dojo-wt-thinking__dot"/>
+                    <span class="dojo-wt-thinking__dot"/>
+                    <span class="dojo-wt-thinking__dot"/>
+                </div>
+
+            </div>
+
+            <!-- ── PTT Button area ─────────────────────────────────────── -->
+            <div class="dojo-wt-controls">
+                <p class="dojo-wt-status-label" t-out="state.statusLabel"/>
+
+                <button
+                    t-attf-class="dojo-wt-ptt
+                        #{state.isHolding    ? 'dojo-wt-ptt--recording' : ''}
+                        #{state.isProcessing ? 'dojo-wt-ptt--processing' : ''}
+                        #{state.isSpeaking   ? 'dojo-wt-ptt--speaking'   : ''}"
+                    t-att-disabled="state.isProcessing or state.isSpeaking"
+                    t-on-mousedown="onPttDown"
+                    t-on-mouseup="onPttUp"
+                    t-on-mouseleave="onPttLeave"
+                    t-on-touchstart="onPttDown"
+                    t-on-touchend="onPttUp"
+                    t-on-touchcancel="onPttLeave"
+                    aria-label="Push to talk">
+                    <i t-attf-class="fa #{state.isSpeaking ? 'fa-volume-up' : state.isProcessing ? 'fa-spinner fa-spin' : 'fa-microphone'} dojo-wt-ptt__icon"/>
+                </button>
+
+                <p class="dojo-wt-hint">
+                    <t t-if="state.awaitingConfirmation">
+                        Say <strong>"Yes"</strong> or <strong>"No"</strong>, or use the buttons above
+                    </t>
+                    <t t-else="">
+                        Hold to speak · Release to send
+                    </t>
+                </p>
+            </div>
+
+        </div>
+    </t>
+</templates>

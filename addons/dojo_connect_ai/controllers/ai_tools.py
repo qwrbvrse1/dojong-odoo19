@@ -4,7 +4,7 @@
 Single tool endpoint called by the ElevenLabs AI agent (Kai) during live calls.
 
 The ElevenLabs agent sends the caller's natural-language request here and
-gets back a text response. Odoo routes it through the dojo_assistant AI
+gets back a text response. Odoo routes it through the ai_assistant AI
 intent engine, which handles 57+ intents (schedule lookups, member queries,
 trial bookings, enrollment, etc.).
 
@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
 class AiToolsController(Controller):
 
     # ------------------------------------------------------------------
-    # Single unified tool — routes everything through dojo_assistant
+    # Single unified tool — routes everything through ai_assistant
     # ------------------------------------------------------------------
 
     @route(
@@ -34,7 +34,7 @@ class AiToolsController(Controller):
         csrf=False,
     )
     def tool_ask(self, **kw):
-        """Handle any caller request via the dojo_assistant AI engine.
+        """Handle any caller request via the ai_assistant AI engine.
 
         Auth: X-Api-Key header must match an AI agent's webhook_secret.
 

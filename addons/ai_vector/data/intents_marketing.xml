@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <record id="intent_campaign_lookup" model="ai.intent.schema">
+        <field name="intent_type">campaign_lookup</field>
+        <field name="name">Campaign Stats Lookup</field>
+        <field name="description">Look up recent marketing campaign statistics including how many people were reached</field>
+        <field name="category">marketing</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "campaign_name": {"type": "string", "description": "Name of a specific campaign to look up, optional"}
+    },
+    "required": []
+}</field>
+        <field name="example_phrases">How many people did we reach last campaign?
+Show me campaign stats
+How many emails went out this week?
+What's the status of our campaigns?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_marketing_card_lookup" model="ai.intent.schema">
+        <field name="intent_type">marketing_card_lookup</field>
+        <field name="name">Marketing Card Lookup</field>
+        <field name="description">List marketing cards currently published on the kiosk</field>
+        <field name="category">marketing</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {},
+    "required": []
+}</field>
+        <field name="example_phrases">What marketing cards are on the kiosk?
+Show me active marketing cards
+What's being shown on the kiosk right now?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_campaign_create" model="ai.intent.schema">
+        <field name="intent_type">campaign_create</field>
+        <field name="name">Create Campaign</field>
+        <field name="description">Create a new marketing campaign targeting members</field>
+        <field name="category">marketing</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "campaign_name": {"type": "string", "description": "Name of the campaign"},
+        "send_email": {"type": "boolean", "description": "Whether to send emails (default true)"},
+        "send_sms": {"type": "boolean", "description": "Whether to send SMS (default false)"}
+    },
+    "required": ["campaign_name"]
+}</field>
+        <field name="example_phrases">Create a campaign for all active members
+Set up a summer camp email blast
+Create a new SMS campaign called Back to School</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Create a new campaign called '{campaign_name}'?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_campaign_activate" model="ai.intent.schema">
+        <field name="intent_type">campaign_activate</field>
+        <field name="name">Activate Campaign</field>
+        <field name="description">Activate a draft marketing campaign so it will send on the next scheduled run</field>
+        <field name="category">marketing</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "campaign_name": {"type": "string", "description": "Name of the campaign to activate"}
+    },
+    "required": []
+}</field>
+        <field name="example_phrases">Send the summer camp campaign now
+Activate the welcome campaign
+Launch our back to school campaign</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Activate campaign '{campaign_name}' and queue it for sending?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_social_post_schedule" model="ai.intent.schema">
+        <field name="intent_type">social_post_schedule</field>
+        <field name="name">Schedule Social Post</field>
+        <field name="description">Schedule a social media post to be published at a future date and time</field>
+        <field name="category">social</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "message": {"type": "string", "description": "The post message text"},
+        "scheduled_date": {"type": "string", "format": "date-time", "description": "When to publish (ISO 8601)"},
+        "platform": {"type": "string", "enum": ["facebook", "instagram"], "description": "Platform to post to"}
+    },
+    "required": ["message", "scheduled_date"]
+}</field>
+        <field name="example_phrases">Schedule a post for next Monday about belt testing
+Queue a Facebook post for Friday about summer camp
+Schedule our promotion post for Saturday morning</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Schedule post '{message}' for {scheduled_date}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_marketing_campaign_create" model="ai.intent.schema">
+        <field name="intent_type">marketing_campaign_create</field>
+        <field name="name">Create Marketing Campaign</field>
+        <field name="description">Create a new marketing campaign</field>
+        <field name="category">marketing</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Campaign name"},
+        "subject": {"type": "string", "description": "Email subject line"},
+        "schedule_type": {"type": "string", "enum": ["one_time", "recurring"], "description": "One-time or recurring campaign"},
+        "scheduled_date": {"type": "string", "format": "date", "description": "When to send (YYYY-MM-DD)"},
+        "send_email": {"type": "boolean", "description": "Send via email", "default": true},
+        "send_sms": {"type": "boolean", "description": "Send via SMS", "default": false}
+    },
+    "required": ["name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create an email campaign for summer camp
+Start a recurring campaign called Monthly Newsletter
+Create an SMS blast for active members</field>
+        <field name="confirmation_template">Create campaign "{name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_social_post_create" model="ai.intent.schema">
+        <field name="intent_type">social_post_create</field>
+        <field name="name">Create Social Media Post</field>
+        <field name="description">Create a post for social media</field>
+        <field name="category">social</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "message": {"type": "string", "description": "Post message text"},
+        "platform": {"type": "string", "enum": ["facebook", "instagram", "both"], "description": "Platform to post on"},
+        "scheduled_date": {"type": "string", "format": "date-time", "description": "When to post (optional - draft if not specified)"}
+    },
+    "required": ["message"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Post about our new program on Facebook
+Create an Instagram post about belt testing
+Draft a social media post about our schedule</field>
+        <field name="confirmation_template">Create social post: "{message}"?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_marketing_card_create" model="ai.intent.schema">
+        <field name="intent_type">marketing_card_create</field>
+        <field name="name">Create Marketing Card</field>
+        <field name="description">Create a marketing card for kiosk or portal display</field>
+        <field name="category">marketing</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Card name/title"},
+        "card_type": {"type": "string", "description": "Type of card"},
+        "subtitle": {"type": "string", "description": "Card subtitle"},
+        "body": {"type": "string", "description": "Card body content"},
+        "publish_kiosk": {"type": "boolean", "description": "Show on kiosk", "default": true},
+        "publish_portal": {"type": "boolean", "description": "Show on member portal", "default": false}
+    },
+    "required": ["name"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a marketing card for summer camp
+Add a promo card for the kiosk about new classes
+Create a portal card about our belt testing schedule</field>
+        <field name="confirmation_template">Create marketing card "{name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_kiosk_announcement_create" model="ai.intent.schema">
+        <field name="intent_type">kiosk_announcement_create</field>
+        <field name="name">Create Kiosk Announcement</field>
+        <field name="description">Create an announcement to display on the kiosk</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "title": {"type": "string", "description": "Announcement title"},
+        "body": {"type": "string", "description": "Announcement content"},
+        "active": {"type": "boolean", "description": "Whether announcement is active", "default": true}
+    },
+    "required": ["title", "body"]
+}</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Create a kiosk announcement about holiday hours
+Post a notice about the upcoming tournament
+Add an announcement about schedule changes</field>
+        <field name="confirmation_template">Create kiosk announcement "{title}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+</odoo>

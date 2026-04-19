@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <record id="intent_contact_parent" model="ai.intent.schema">
+        <field name="intent_type">contact_parent</field>
+        <field name="name">Contact Parent/Guardian</field>
+        <field name="description">Send a message to a member's guardian</field>
+        <field name="category">communication</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"},
+        "member_id": {"type": "integer", "description": "ID of the member"},
+        "subject": {"type": "string", "description": "Email subject line"},
+        "body": {"type": "string", "description": "Message body text"},
+        "message": {"type": "string", "description": "Alternative for body"},
+        "send_email": {"type": "boolean", "description": "Send via email", "default": true},
+        "send_sms": {"type": "boolean", "description": "Send via SMS", "default": true}
+    },
+    "required": ["member_name", "body"]
+}</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="example_phrases">Message John's parent about his progress
+Email Sarah's guardian about the upcoming test
+Send a note to Test8's mom
+Contact Mike's parents about his attendance
+Let Jane's guardian know about the schedule change</field>
+        <field name="confirmation_template">Send message to {member_name}'s guardian about "{subject}"?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_send_email" model="ai.intent.schema">
+        <field name="intent_type">send_email</field>
+        <field name="name">Send Email</field>
+        <field name="description">Send a direct email to a member, guardian, or contact</field>
+        <field name="category">communication</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member or contact to email"},
+        "contact_name": {"type": "string", "description": "Alternative: contact/guardian name"},
+        "email": {"type": "string", "description": "Email address (if not using member name)"},
+        "subject": {"type": "string", "description": "Email subject line"},
+        "body": {"type": "string", "description": "Email message content"}
+    }
+}</field>
+        <field name="example_phrases">Email John's mom: class is cancelled tomorrow
+Send an email to Sarah's guardian about the belt test
+Email Mike: great job at the tournament this weekend
+Send Sarah an email saying she needs to wear her gi next class
+Write an email to John: your attendance is excellent this month</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Send email to {member_name}: "{subject}"?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_send_sms" model="ai.intent.schema">
+        <field name="intent_type">send_sms</field>
+        <field name="name">Send SMS</field>
+        <field name="description">Send a direct SMS text message to a member or guardian</field>
+        <field name="category">communication</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member or contact to text"},
+        "contact_name": {"type": "string", "description": "Alternative: contact/guardian name"},
+        "body": {"type": "string", "description": "SMS message text (keep under 160 characters)"},
+        "message": {"type": "string", "description": "Alternative: message field"}
+    }
+}</field>
+        <field name="example_phrases">Text John: don't forget belt test is Saturday
+Send SMS to Mike's mom: class is starting 30 minutes late today
+Text Sarah: great performance this week
+SMS Mike: your uniform needs to be washed before next class
+Send a text to John: come in early on Friday for sparring prep</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Send SMS to {member_name}: "{body}"?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_email_blast" model="ai.intent.schema">
+        <field name="intent_type">email_blast</field>
+        <field name="name">Email Blast</field>
+        <field name="description">Send a mass email to all members (or filtered group)</field>
+        <field name="category">communication</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["subject", "body"],
+    "properties": {
+        "subject": {"type": "string", "description": "Email subject"},
+        "body": {"type": "string", "description": "Email body text"},
+        "membership_state": {"type": "string", "enum": ["active", "trial", "paused", "cancelled"], "description": "Filter audience by membership state (default: active)"},
+        "send_now": {"type": "boolean", "description": "Send immediately (true) or save as draft (false, default)"}
+    }
+}</field>
+        <field name="example_phrases">Email all active members about the tournament next weekend
+Send a blast email to members: dojo will be closed Monday
+Email all trial members: sign up by Friday to get the first month free
+Send an announcement email to everyone about the belt ceremony
+Create an email campaign for all active students about the new schedule</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Send email blast to all {membership_state} members: "{subject}"?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_sms_blast" model="ai.intent.schema">
+        <field name="intent_type">sms_blast</field>
+        <field name="name">SMS Blast</field>
+        <field name="description">Send a mass SMS text message to all members (or filtered group)</field>
+        <field name="category">communication</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["body"],
+    "properties": {
+        "body": {"type": "string", "description": "SMS text (keep under 160 chars for single message)"},
+        "message": {"type": "string", "description": "Alternative: message field"},
+        "membership_state": {"type": "string", "enum": ["active", "trial", "paused", "cancelled"], "description": "Filter audience (default: active)"},
+        "send_now": {"type": "boolean", "description": "Send immediately or save as draft"}
+    }
+}</field>
+        <field name="example_phrases">SMS all members: dojo is closed this Saturday
+Text everyone: belt test is moved to Sunday at noon
+Send a text blast to active members about the new class schedule
+SMS all trial members: free week ends Friday, sign up now
+Text everyone about the tornado drill cancellation</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Send SMS blast to all {membership_state} members?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_activity_list" model="ai.intent.schema">
+        <field name="intent_type">activity_list</field>
+        <field name="name">Activity List</field>
+        <field name="description">List my scheduled follow-up activities</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "overdue": {"type": "boolean", "description": "Only show overdue activities"},
+        "res_model": {"type": "string", "description": "Filter by model (e.g. dojo.member)"}
+    }
+}</field>
+        <field name="example_phrases">What follow-ups do I have?
+Show my scheduled activities
+What calls do I need to make?
+Show overdue activities
+What reminders do I have this week?
+List my pending follow-ups</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_activity_create" model="ai.intent.schema">
+        <field name="intent_type">activity_create</field>
+        <field name="name">Create Activity</field>
+        <field name="description">Schedule a follow-up activity (call, email reminder, meeting, etc.)</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["summary"],
+    "properties": {
+        "summary": {"type": "string", "description": "Activity description/summary"},
+        "date_deadline": {"type": "string", "format": "date", "description": "Due date (YYYY-MM-DD)"},
+        "activity_type": {"type": "string", "description": "Activity type: Todo, Call, Email, Meeting (default: Todo)"},
+        "note": {"type": "string", "description": "Additional notes for the activity"},
+        "member_name": {"type": "string", "description": "Link activity to a specific member"}
+    }
+}</field>
+        <field name="example_phrases">Schedule a follow-up call with John's parents next Tuesday
+Remind me to check Sarah's attendance on Friday
+Create an activity: send welcome email to new trial students by Monday
+Set a reminder to prepare belt test certificates for Saturday
+Add a follow-up activity for Mike: discuss attendance issues</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Schedule activity "{summary}" due {date_deadline}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+</data>
+</odoo>

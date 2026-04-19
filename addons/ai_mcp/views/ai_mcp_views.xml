@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- MCP Settings group in Settings → AI -->
+    <record id="res_config_settings_view_ai_mcp" model="ir.ui.view">
+        <field name="name">res.config.settings.view.ai.mcp</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="MCP Server" string="MCP Server" data-key="ai_mcp">
+                    <block title="MCP Server Configuration" name="mcp_server_settings">
+                        <setting string="Server Status"
+                                 help="The MCP endpoint is available at /mcp (POST).">
+                            <div class="text-muted">
+                                <p><strong>Endpoint:</strong> <code>POST /mcp</code></p>
+                                <p><strong>Protocol:</strong> JSON-RPC 2.0 (MCP 2025-03-26)</p>
+                                <p><strong>Auth:</strong> X-Api-Key header (same key as AI Assistant)</p>
+                            </div>
+                        </setting>
+                        <setting string="Available Tools"
+                                 help="Tools are auto-generated from AI Intent Schemas. Manage intents in AI Assistant settings.">
+                            <div class="text-muted">
+                                <p>Each active intent becomes an MCP tool. Role-based permissions are enforced.</p>
+                            </div>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

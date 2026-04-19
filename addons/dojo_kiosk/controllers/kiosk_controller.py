@@ -569,7 +569,7 @@ class KioskController(http.Controller):
         )
 
     # ------------------------------------------------------------------
-    # AI assistant (dojo_assistant integration)  
+    # AI assistant (ai_assistant integration)  
     # ------------------------------------------------------------------
 
     _KIOSK_ALLOWED_ROLES = {"kiosk", "instructor"}
@@ -638,7 +638,7 @@ class KioskController(http.Controller):
                     "name": f"kiosk_voice_{audio_file.filename or 'audio.webm'}",
                     "datas": _b64.b64encode(audio_bytes),
                     "mimetype": audio_file.content_type or "audio/webm",
-                    "res_model": "dojo.ai.action.log",
+                    "res_model": "ai.action.log",
                 })
             except Exception as e:
                 _logger.warning("Kiosk AI: could not save audio attachment: %s", e)
