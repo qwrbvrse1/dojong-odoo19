@@ -28,8 +28,8 @@
         'data/instructor_todos_data.xml',
         # Views
         'views/res_partner_views.xml',
-        'views/member_views.xml',
         'views/household_views.xml',
+        'views/member_views.xml',
         'views/instructor_profile_views.xml',
         'views/martial_art_style_views.xml',
         'views/emergency_contact_views.xml',

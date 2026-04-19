@@ -101,5 +101,16 @@ class AiWebhookController(Controller):
         agent_with_user = agent.with_user(
             request.env.ref("connect.user_connect_webhook")
         )
-        result = agent_with_user.process_conversation_end(payload)
+        try:
+            result = agent_with_user.process_conversation_end(payload)
+        except Exception:
+            _logger.exception(
+                "conversation_end: error processing conversation %s",
+                payload.get("conversation_id", "?"),
+            )
+            # Return 200 to prevent ElevenLabs from retrying and creating
+            # duplicate call records.  The error is logged for debugging.
+            return request.make_json_response(
+                {"success": False, "error": "Internal processing error"}, status=200
+            )
         return request.make_json_response(result)

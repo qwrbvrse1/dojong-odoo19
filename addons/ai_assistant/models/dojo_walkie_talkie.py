@@ -278,9 +278,7 @@ class AiWalkieTalkie(models.Model):
     def _resolve_discuss_channel(self, channel_type=None):
         """Return the ``discuss.channel`` record for the given AI channel, or False."""
         self.ensure_one()
-        if self.mode == "elder_beta":
-            return self.elder_discuss_channel_id or self.env["discuss.channel"]
-        if self.mode == "channel_beta":
+        if self.mode in ("channel_beta", "elder_beta"):
             mapping = self.channel_mapping_ids.filtered(
                 lambda m: m.channel_type == (channel_type or "all")
             )

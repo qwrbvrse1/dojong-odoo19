@@ -153,6 +153,21 @@ class ConnectAiAgent(models.Model):
         transcript_data = data.get("transcript", [])
         analysis = data.get("analysis", {})
 
+        # ── Idempotency guard ───────────────────────────────────────
+        # ElevenLabs retries on non-200 responses.  Use an advisory lock
+        # keyed on conversation_id to prevent two concurrent requests
+        # from both creating a call record.
+        if conversation_id:
+            lock_key = hash(conversation_id) & 0x7FFFFFFF  # positive int32
+            self.env.cr.execute("SELECT pg_try_advisory_xact_lock(%s)", [lock_key])
+            got_lock = self.env.cr.fetchone()[0]
+            if not got_lock:
+                _logger.info(
+                    "process_conversation_end: concurrent request for %s, skipping",
+                    conversation_id,
+                )
+                return {"success": True, "duplicate": True}
+
         # Format transcript
         transcript_lines = []
         for turn in transcript_data:
@@ -226,18 +241,12 @@ class ConnectAiAgent(models.Model):
             })
             call = Call.create(call_vals)
 
-        # Skip CRM lead creation for instructor callers — they're issuing
-        # commands, not leads. Check by dojo.instructor.profile.
-        is_instructor_caller = False
-        if partner and partner.exists():
-            is_instructor_caller = bool(
-                self.env["dojo.instructor.profile"].sudo().search(
-                    [("partner_id", "=", partner.id), ("active", "=", True)],
-                    limit=1,
-                )
-            )
+        # Skip CRM lead creation for known callers — existing members,
+        # instructors, or any recognised contact.  Leads are only for
+        # unknown callers (potential new students).
+        skip_lead = bool(partner and partner.exists())
 
-        if is_instructor_caller:
+        if skip_lead:
             lead = False
         else:
             lead = self._find_or_create_lead(
