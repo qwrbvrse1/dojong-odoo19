@@ -279,6 +279,12 @@ class DojoWalkieChannel extends Component {
             this._pushMsg("ai", prompt, { confirm: true });
             this._speakResponse(prompt);
             this.state.statusLabel = "Say Yes or No";
+        } else if (result.state === "needs_clarification") {
+            const response = result.response || "Could you clarify?";
+            this._pushMsg("ai", response);
+            this._speakResponse(response);
+            this._updateContextWindow(this._lastTranscribed, response);
+            this.state.statusLabel = "Hold to talk";
         } else if (result.state === "executed") {
             this.state.awaitingConfirmation = false;
             this.state.sessionKey = null;

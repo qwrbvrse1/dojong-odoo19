@@ -895,7 +895,7 @@ class AiAssistantService(models.AbstractModel):
     # ═══════════════════════════════════════════════════════════════════════════
 
     @api.model
-    def handle_command(self, text, role="instructor", input_type="text", audio_attachment_id=None, context=None, conversation_history=None, channel=None, chat_session_id=None):
+    def handle_command(self, text, role="instructor", input_type="text", audio_attachment_id=None, context=None, conversation_history=None, channel=None, chat_session_id=None, clarification_session_key=None):
         """
         Main entry point for the AI assistant.
 
@@ -999,6 +999,25 @@ class AiAssistantService(models.AbstractModel):
                 )
                 return self.execute_confirmed(session_key_to_confirm, confirmed=_is_pure_yes)
 
+        # ── Clarification follow-up detection ────────────────────────────
+        # If the previous turn returned needs_clarification with a session_key,
+        # the frontend sends it back so we can resume the original intent.
+        if clarification_session_key:
+            cached = cls._pending_clarification_cache.pop(clarification_session_key, None)
+            if cached and time.time() < cached["expires_at"]:
+                _logger.info(
+                    "Resuming clarification for %s (key=%s)",
+                    cached["intent_type"], clarification_session_key,
+                )
+                return self._handle_clarification_followup(
+                    text, cached, role, conversation_history,
+                )
+            else:
+                _logger.info(
+                    "Clarification key %s expired or missing — processing as new command",
+                    clarification_session_key,
+                )
+
         # ── n8n orchestration ────────────────────────────────────────────
         n8n_url = (
             self.env["ir.config_parameter"]
@@ -1027,11 +1046,80 @@ class AiAssistantService(models.AbstractModel):
                         "Cached pending confirmation session_key=%s for chat_session_id=%s",
                         result["session_key"], chat_session_id,
                     )
+
+                # ── Audit log for n8n-handled requests ───────────────
+                # When n8n calls /api/v1/ai/execute, that endpoint already
+                # creates an ai.action.log (with a session_key in the result).
+                # Only create a NEW log when no session_key exists — i.e. n8n
+                # answered conversationally without calling Execute_Intent.
+                if isinstance(result, dict) and not result.get("session_key"):
+                    try:
+                        intent = result.get("intent") or {}
+                        n8n_intent_type = intent.get("intent_type", "") if isinstance(intent, dict) else ""
+                        n8n_confidence = intent.get("confidence", 0) if isinstance(intent, dict) else 0
+                        n8n_state = result.get("state", "executed")
+                        n8n_requires_confirm = n8n_state == "pending_confirmation"
+
+                        ActionLog = self.env["ai.action.log"].sudo()
+                        log = ActionLog.log_parse(
+                            input_text=text,
+                            role=role,
+                            intent_type=n8n_intent_type or "conversation",
+                            parsed_intent=intent if isinstance(intent, dict) else None,
+                            confidence=round(float(n8n_confidence) * 100, 1) if n8n_confidence else 0,
+                            resolved_data=result.get("resolved_data"),
+                            confirmation_prompt=result.get("confirmation_prompt"),
+                            requires_confirmation=n8n_requires_confirm,
+                            input_type=input_type,
+                            audio_attachment_id=None,
+                        )
+                        # For already-executed results, record execution outcome
+                        if n8n_state == "executed":
+                            log.log_execution(
+                                success=result.get("success", True),
+                                result=result.get("result"),
+                            )
+                        # Attach the session_key to the result so the frontend
+                        # can reference this log entry.
+                        result["session_key"] = log.session_key
+                        _logger.info(
+                            "Created audit log for n8n conversational response: %s (session_key=%s)",
+                            log.intent_type, log.session_key,
+                        )
+                    except Exception:
+                        _logger.warning("Failed to create n8n audit log", exc_info=True)
+
                 return result
             # n8n unreachable — fall through to direct processing
             _logger.warning("n8n unreachable, falling back to direct processing")
 
         return self.parse_and_confirm(text, role, input_type, audio_attachment_id, conversation_history=conversation_history, channel=channel)
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Clarification follow-up handler
+    # ─────────────────────────────────────────────────────────────────────
+
+    @api.model
+    def _handle_clarification_followup(self, text, cached_context, role, conversation_history):
+        """Resume a partially-parsed intent after the user answered a clarifying question.
+
+        Builds synthetic context that explicitly tells the LLM which intent was
+        in progress and what information the user is supplying, then re-runs
+        through ``parse_and_confirm`` so normal entity resolution and execution
+        proceed as expected.
+        """
+        intent_type = cached_context["intent_type"]
+        clarification_q = cached_context["clarification_question"]
+
+        resume_text = (
+            f"[RESUMING {intent_type.upper()}: The assistant previously asked "
+            f"'{clarification_q}' and the user replied:] {text}"
+        )
+        _logger.info("Clarification follow-up resume_text: %s", resume_text)
+        return self.parse_and_confirm(
+            resume_text, role, "text", None,
+            conversation_history=conversation_history,
+        )
 
     # ─────────────────────────────────────────────────────────────────────
     # n8n proxy — with retry + circuit breaker
@@ -1049,6 +1137,12 @@ class AiAssistantService(models.AbstractModel):
     # Allows "yes/no" replies via n8n to confirm actions without n8n knowing the session_key.
     _pending_confirm_cache = {}   # {chat_session_id: (session_key, expires_at)}
     _PENDING_CONFIRM_TTL = 600    # 10 minutes
+
+    # Pending clarification cache: stores partial intent when AI asks a follow-up question.
+    # Keyed by clarification_session_key → dict of {intent_type, intent_data, resolved_data,
+    # clarification_question, role, expires_at}.  Mirrors _pending_confirm_cache pattern.
+    _pending_clarification_cache = {}   # {clarify-<uuid>: {...}}
+    _CLARIFICATION_TTL = 600            # 10 minutes
 
     _YES_WORDS = frozenset([
         "yes", "yeah", "yep", "yup", "sure", "ok", "okay", "confirm",
@@ -1710,10 +1804,26 @@ class AiAssistantService(models.AbstractModel):
             # before they silently execute on the wrong record.
             validation = self._validate_before_execute(intent_type, intent_data, resolved_data)
             if not validation.get("valid", True):
+                # Store partial intent so follow-up reply can resume it
+                import uuid as _uuid
+                clarify_key = f"clarify-{_uuid.uuid4().hex[:12]}"
+                cls = type(self)
+                cls._pending_clarification_cache[clarify_key] = {
+                    "intent_type": intent_type,
+                    "intent_data": intent_data,
+                    "resolved_data": resolved_data,
+                    "clarification_question": validation["clarification"],
+                    "role": role,
+                    "expires_at": time.time() + cls._CLARIFICATION_TTL,
+                }
+                _logger.info(
+                    "Stored clarification context for %s (key=%s)",
+                    intent_type, clarify_key,
+                )
                 return {
                     "success": True,
                     "state": "needs_clarification",
-                    "session_key": None,
+                    "session_key": clarify_key,
                     "intent": intent_data,
                     "confirmation_prompt": None,
                     "resolved_data": resolved_data,

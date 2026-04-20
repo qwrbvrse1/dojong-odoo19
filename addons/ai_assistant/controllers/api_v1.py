@@ -169,6 +169,10 @@ class AiApiV1(http.Controller):
                 "suggestions": [s.get("label") or s.get("intent_type") for s in (suggestions or [])],
                 "intent_count": len(intent_defs),
                 "system_prompt_available": system_prompt_available,
+                # Flat list of canonical type strings — inject into n8n AI node
+                # system prompt as a hard enum constraint:
+                # "intent_type MUST be one of: " + ", ".join(valid_intent_types)
+                "valid_intent_types": [d["intent_type"] for d in intent_defs],
             }
 
             # When include_prompt=true, return the full system prompt and
@@ -405,8 +409,11 @@ class AiApiV1(http.Controller):
                 # Audit log
                 ActionLog = request.env["ai.action.log"].sudo()
                 requires_confirmation = service._requires_confirmation(intent_type)
+                # Prefer original user text from n8n, fall back to tagged intent
+                original_text = (payload.get("text") or "").strip()
+                log_input = original_text if original_text else f"[n8n] {intent_type}"
                 log = ActionLog.log_parse(
-                    input_text=f"[n8n] {intent_type}",
+                    input_text=log_input,
                     role=role,
                     intent_type=intent_type,
                     parsed_intent=intent_data,
@@ -777,3 +784,205 @@ class AiApiV1(http.Controller):
             return _json_response(
                 {"error": f"Failed to generate tools: {e}"}, status=500
             )
+
+    # ── Intents (canonical enum list for n8n system-prompt injection) ────────
+
+    @http.route(
+        "/api/v1/ai/intents",
+        type="http",
+        auth="public",
+        methods=["GET", "OPTIONS"],
+        csrf=False,
+    )
+    def intents(self, **kw):
+        """
+        Return the canonical list of valid intent_type strings for a role.
+
+        Use this in n8n's AI node system prompt to enforce enum constraints:
+
+            GET /api/v1/ai/intents?role=instructor
+            {"valid_intent_types": ["attendance_checkin", "schedule_today", ...]}
+
+        Inject into the AI node system prompt:
+            "intent_type MUST be one of: " + valid_intent_types.join(", ")
+        """
+        if request.httprequest.method == "OPTIONS":
+            return _json_response({})
+
+        err = self._verify_api_key()
+        if err:
+            return _json_response({"error": err}, status=401)
+
+        role = request.params.get("role", "instructor")
+        if role not in ("admin", "instructor", "kiosk"):
+            role = "instructor"
+
+        try:
+            IntentSchema = request.env["ai.intent.schema"].sudo()
+            intent_defs = IntentSchema.get_intent_definitions_for_llm(role)
+            types = sorted(d["intent_type"] for d in intent_defs)
+
+            return _json_response({
+                "valid_intent_types": types,
+                "count": len(types),
+                "role": role,
+                "usage": (
+                    "Inject into your AI node system prompt: "
+                    '"intent_type MUST be one of: " + valid_intent_types.join(", ")'
+                ),
+            })
+
+        except Exception as e:
+            _logger.error("Intents endpoint failed: %s", e, exc_info=True)
+            return _json_response({"error": f"Failed: {e}"}, status=500)
+
+    # ── Chat History (conversation memory for n8n) ───────────────────────────
+
+    @http.route(
+        "/api/v1/ai/chat/history",
+        type="http",
+        auth="public",
+        methods=["GET", "POST", "OPTIONS"],
+        csrf=False,
+    )
+    def chat_history(self, **kw):
+        """
+        Retrieve recent conversation messages for a chat session.
+
+        n8n calls this at the start of each turn so the AI agent
+        receives prior context.
+
+        Query / JSON body:
+            session_id (str): required — chat session identifier
+            limit (int): max messages to return (default 20, max 100)
+
+        Returns:
+            {
+                "success": true,
+                "messages": [
+                    {"role": "user", "content": "Create a new lead"},
+                    {"role": "assistant", "content": "Sure, what's the name?"},
+                    ...
+                ],
+                "count": 2
+            }
+        """
+        if request.httprequest.method == "OPTIONS":
+            return _json_response({})
+
+        err = self._verify_api_key()
+        if err:
+            return _json_response({"error": err}, status=401)
+
+        # Accept from query string or JSON body
+        session_id = None
+        limit = 20
+        if request.httprequest.method == "POST":
+            try:
+                payload = json.loads(
+                    request.httprequest.get_data(as_text=True) or "{}"
+                )
+                session_id = (payload.get("session_id") or "").strip()
+                limit = int(payload.get("limit", 20))
+            except (json.JSONDecodeError, TypeError, ValueError):
+                pass
+        else:
+            session_id = (request.params.get("session_id") or "").strip()
+            try:
+                limit = int(request.params.get("limit", 20))
+            except (ValueError, TypeError):
+                limit = 20
+
+        if not session_id:
+            return _json_response(
+                {"error": "Missing required parameter: session_id"}, status=400
+            )
+
+        limit = max(1, min(limit, 100))
+
+        try:
+            ChatMsg = request.env["ai.chat.message"].sudo()
+            msgs = ChatMsg.search(
+                [("chat_session_id", "=", session_id)],
+                order="timestamp asc, id asc",
+                limit=limit,
+            )
+            messages = [
+                {"role": m.role, "content": m.content}
+                for m in msgs
+            ]
+            return _json_response({
+                "success": True,
+                "messages": messages,
+                "count": len(messages),
+            })
+        except Exception as e:
+            _logger.error("Chat history endpoint failed: %s", e, exc_info=True)
+            return _json_response({"error": f"Failed: {e}"}, status=500)
+
+    @http.route(
+        "/api/v1/ai/chat/save",
+        type="http",
+        auth="public",
+        methods=["POST", "OPTIONS"],
+        csrf=False,
+    )
+    def chat_save(self, **kw):
+        """
+        Save one conversation turn (user message + assistant response).
+
+        n8n calls this after the sub-agent returns a response so the
+        next turn can retrieve the full conversation.
+
+        JSON body:
+            session_id (str): required
+            user_message (str): the user's input text
+            assistant_message (str): the AI's response text
+
+        Returns:
+            {"success": true, "saved": 2}
+        """
+        if request.httprequest.method == "OPTIONS":
+            return _json_response({})
+
+        err = self._verify_api_key()
+        if err:
+            return _json_response({"error": err}, status=401)
+
+        try:
+            payload = json.loads(
+                request.httprequest.get_data(as_text=True) or "{}"
+            )
+        except (json.JSONDecodeError, TypeError):
+            return _json_response({"error": "Invalid JSON body"}, status=400)
+
+        session_id = (payload.get("session_id") or "").strip()
+        user_msg = (payload.get("user_message") or "").strip()
+        assistant_msg = (payload.get("assistant_message") or "").strip()
+
+        if not session_id:
+            return _json_response(
+                {"error": "Missing required field: session_id"}, status=400
+            )
+
+        try:
+            ChatMsg = request.env["ai.chat.message"].sudo()
+            saved = 0
+            if user_msg:
+                ChatMsg.create({
+                    "chat_session_id": session_id,
+                    "role": "user",
+                    "content": user_msg,
+                })
+                saved += 1
+            if assistant_msg:
+                ChatMsg.create({
+                    "chat_session_id": session_id,
+                    "role": "assistant",
+                    "content": assistant_msg,
+                })
+                saved += 1
+            return _json_response({"success": True, "saved": saved})
+        except Exception as e:
+            _logger.error("Chat save endpoint failed: %s", e, exc_info=True)
+            return _json_response({"error": f"Failed: {e}"}, status=500)

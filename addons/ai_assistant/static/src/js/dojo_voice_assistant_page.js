@@ -44,11 +44,14 @@ class DojoVoiceAssistantPage extends Component {
             historyPerPage: 10,
             // Rolling context window sent to LLM; reset when user clicks Clear Context
             contextWindow: [],
+            // Clarification follow-up
+            pendingClarificationKey: null,
         });
 
         this._mediaRecorder = null;
         this._audioChunks = [];
         this._currentAudio = null;
+        this._chatSessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 
         onWillStart(async () => {
             await this.loadHistory();
@@ -170,6 +173,7 @@ class DojoVoiceAssistantPage extends Component {
             const formData = new FormData();
             formData.append("audio", blob, "voice.webm");
             formData.append("conversation_history", JSON.stringify(this.state.contextWindow));
+            formData.append("chat_session_id", this._chatSessionId);
 
             const resp = await fetch("/dojo/ai/voice", {
                 method: "POST",
@@ -209,6 +213,8 @@ class DojoVoiceAssistantPage extends Component {
             const result = await rpc("/dojo/ai/text", {
                 text: entered,
                 conversation_history: this.state.contextWindow,
+                chat_session_id: this._chatSessionId,
+                clarification_session_key: this.state.pendingClarificationKey || null,
             });
             this._handleResult(result, entered);
         } catch (e) {
@@ -241,7 +247,21 @@ class DojoVoiceAssistantPage extends Component {
             this.state.sessionKey = result.session_key || null;
             this.state.confirmationPrompt = result.confirmation_prompt || result.response || "Please confirm this action.";
             this.state.aiResponse = "";
+            this.state.pendingClarificationKey = null;
             this._speakResponse(this.state.confirmationPrompt);
+        } else if (result.state === "needs_clarification") {
+            this.state.awaitingConfirmation = false;
+            this.state.sessionKey = null;
+            this.state.aiResponse = result.response || "Could you clarify?";
+            if (result.session_key) {
+                this.state.pendingClarificationKey = result.session_key;
+            }
+            this._speakResponse(this.state.aiResponse);
+            // Update context so follow-up has history
+            const userText = this.state.transcribedText || fallbackText || "";
+            if (userText) this.state.contextWindow.push({ role: "user", text: userText });
+            if (this.state.aiResponse) this.state.contextWindow.push({ role: "assistant", text: this.state.aiResponse });
+            if (this.state.contextWindow.length > 20) this.state.contextWindow.splice(0, this.state.contextWindow.length - 20);
         } else if (result.state === "executed") {
             this.state.awaitingConfirmation = false;
             this.state.sessionKey = null;

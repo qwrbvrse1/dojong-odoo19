@@ -57,6 +57,7 @@ export class DojoVoiceAssistant extends Component {
             actionSms: true,
             // Two-phase confirmation flow
             pendingConfirm: null,  // {session_key, prompt, intent_type}
+            pendingClarificationKey: null,  // clarification session key for multi-turn follow-ups
             liveTranscript: "",
         });
 
@@ -72,6 +73,7 @@ export class DojoVoiceAssistant extends Component {
         this._hasBeenOpened = false;  // tracks first open vs reopen
         this._contextWindowMax = 10;     // turns; overwritten by /dojo/ai/config on mount
         this._chatSessionId = null;  // generated per chat session, sent to n8n for memory
+        this._userName = "";  // populated from /dojo/ai/config
 
         onMounted(() => {
             // Keyboard shortcut: Ctrl+Shift+A to toggle panel
@@ -82,6 +84,9 @@ export class DojoVoiceAssistant extends Component {
             rpc("/dojo/ai/config", {}).then((cfg) => {
                 if (cfg && cfg.context_window_turns) {
                     this._contextWindowMax = cfg.context_window_turns;
+                }
+                if (cfg && cfg.user_first_name) {
+                    this._userName = cfg.user_first_name;
                 }
             }).catch(() => { /* keep default */ });
         });
@@ -118,13 +123,15 @@ export class DojoVoiceAssistant extends Component {
             if (!this._hasBeenOpened) {
                 // Very first open — show welcome
                 this._chatSessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
-                this._pushMsg("assistant", "👋 Hi! I can help you look up students, check class schedules, or send messages to parents. What would you like to do?");
+                const name = this._userName || "there";
+                this._pushMsg("assistant", `👋 Hi ${name}! I can help you with scheduling, student lookups, or messaging parents. What would you like to do?`);
                 this._hasBeenOpened = true;
             } else {
                 // Reopen after close — start a new session in this window
                 this._chatSessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
                 this._pushDivider("── New Session ──");
                 this.state.contextWindow = [];
+                this.state.pendingClarificationKey = null;
             }
             setTimeout(() => this._scrollToBottom(), 60);
             setTimeout(() => this.inputRef.el && this.inputRef.el.focus(), 80);
@@ -174,10 +181,15 @@ export class DojoVoiceAssistant extends Component {
                 text,
                 conversation_history: this.state.contextWindow,
                 chat_session_id: this._chatSessionId,
+                clarification_session_key: this.state.pendingClarificationKey || null,
             });
             if (result.success) {
                 this._handleAiResult(result);
                 this._updateContextWindow(text, result.response || "");
+                // Clear clarification key after any non-clarification response
+                if (result.state !== "needs_clarification") {
+                    this.state.pendingClarificationKey = null;
+                }
             } else {
                 this._pushMsg("assistant", "⚠️ " + (result.error || "Unknown error."));
             }
@@ -396,6 +408,12 @@ export class DojoVoiceAssistant extends Component {
         // Speak response if TTS is enabled (ElevenLabs)
         if (this.state.ttsEnabled && text) {
             this._speakResponse(text);
+        }
+
+        // ── Clarification follow-up (multi-turn) ─────────────────────────────
+        if (result.state === "needs_clarification" && result.session_key) {
+            this.state.pendingClarificationKey = result.session_key;
+            return;
         }
 
         // ── Two-phase confirmation (enroll, belt, etc.) ──────────────────────

@@ -21,6 +21,7 @@
     'installable': True,
     'auto_install': False,
     'post_init_hook': 'post_init_hook',
+    'post_migrate': 'post_migrate',
     'depends': [
         'ai_assistant',
     ],

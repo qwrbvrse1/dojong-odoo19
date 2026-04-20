@@ -38,7 +38,7 @@ class AiAssistantController(http.Controller):
     # ═══════════════════════════════════════════════════════════════════════════
 
     @http.route("/dojo/ai/text", type="jsonrpc", auth="user", methods=["POST"])
-    def text_query(self, text="", role=None, conversation_history=None, chat_session_id=None, **kwargs):
+    def text_query(self, text="", role=None, conversation_history=None, chat_session_id=None, clarification_session_key=None, **kwargs):
         """
         Process a plain-text query through the dojo AI assistant.
         
@@ -82,7 +82,7 @@ class AiAssistantController(http.Controller):
 
         try:
             assistant = request.env["ai.assistant.service"]
-            result = assistant.handle_command(text, role=role, input_type="text", conversation_history=conversation_history, chat_session_id=chat_session_id or None)
+            result = assistant.handle_command(text, role=role, input_type="text", conversation_history=conversation_history, chat_session_id=chat_session_id or None, clarification_session_key=clarification_session_key or None)
 
             # Surface vector routing suggestions at response top-level for UI
             intent = result.get("intent") or {}
@@ -405,10 +405,18 @@ class AiAssistantController(http.Controller):
                 "ai_assistant.context_window_turns", 10
             )
             turns = max(1, min(50, turns))
-            return {"success": True, "context_window_turns": turns, "error": None}
+            # First name for personalized greetings
+            full_name = request.env.user.name or ""
+            first_name = full_name.split()[0] if full_name.strip() else ""
+            return {
+                "success": True,
+                "context_window_turns": turns,
+                "user_first_name": first_name,
+                "error": None,
+            }
         except Exception as exc:
             _logger.error("Dojo AI /dojo/ai/config failed: %s", exc, exc_info=True)
-            return {"success": True, "context_window_turns": 10, "error": str(exc)}
+            return {"success": True, "context_window_turns": 10, "user_first_name": "", "error": str(exc)}
 
     # ═══════════════════════════════════════════════════════════════════════════
     # Legacy Endpoints (Backward Compatibility)
@@ -640,8 +648,12 @@ class AiWalkieTalkieController(http.Controller):
     def walkie_auth(self, token, pin="", **kw):
         """Validate token + PIN. Returns {success: true} or {success: false, error: str}."""
         try:
-            self._require_walkie(token, pin)
-            return {"success": True}
+            record = self._require_walkie(token, pin)
+            # Use the "Post As" contact's first name for the personalized greeting
+            user_first_name = ""
+            if record.discuss_post_as_id and record.discuss_post_as_id.name:
+                user_first_name = record.discuss_post_as_id.name.split()[0]
+            return {"success": True, "user_first_name": user_first_name}
         except ValueError as e:
             return {"success": False, "error": str(e)}
 

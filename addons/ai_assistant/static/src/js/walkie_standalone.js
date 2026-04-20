@@ -106,7 +106,7 @@
                     { pin: this.state.pin }
                 );
                 if (result && result.success) {
-                    this.props.onAuth(this.state.pin);
+                    this.props.onAuth(this.state.pin, result.user_first_name || "");
                 } else {
                     this.state.error = (result && result.error) || "Incorrect PIN.";
                 }
@@ -152,7 +152,10 @@
 
                     <div t-if="state.messages.length === 0" class="dojo-wt-empty">
                         <i class="fa fa-microphone dojo-wt-empty__icon"/>
-                        <p class="dojo-wt-empty__hint">Hold the button below and speak to the AI</p>
+                        <p class="dojo-wt-empty__hint">
+                            <t t-if="state.userName">Hi <t t-out="state.userName"/>! Hold the button and start talking</t>
+                            <t t-else="">Hold the button below and speak to the AI</t>
+                        </p>
                         <p class="dojo-wt-empty__tips">Try: "Who checked in today?" or "Enroll Jordan in BJJ"</p>
                     </div>
 
@@ -221,6 +224,11 @@
                         <t t-if="state.awaitingConfirmation">
                             Say <strong>"Yes"</strong> or <strong>"No"</strong>, or use the buttons above
                         </t>
+                        <t t-elif="state.isSpeaking">
+                            <button class="dojo-wt-skip-btn" t-on-click="skipSpeaking">
+                                <i class="fa fa-forward"/> Skip
+                            </button>
+                        </t>
                         <t t-else="">Hold to speak · Release to send</t>
                     </p>
                 </div>
@@ -240,6 +248,7 @@
                 sessionKey: null,
                 statusLabel: "Hold to talk",
                 error: null,
+                userName: this.props.userName || "",
             });
             this._contextWindowMax  = (window.WT_CONFIG && window.WT_CONFIG.context_window_turns) || 10;
             this._chatSessionId = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
@@ -249,6 +258,13 @@
             this._stream        = null;
             this._currentAudio  = null;
             this._lastTranscribed = "";
+
+            // Push a personalized greeting bubble on mount
+            const uName = this.state.userName || "";
+            const greeting = uName
+                ? `👋 Hi ${uName}! I can help with scheduling, attendance, enrollment, and more. Hold the button and ask me anything.`
+                : "👋 Hi! I can help with scheduling, attendance, enrollment, and more. Hold the button and ask me anything.";
+            this._pushMsg("ai", greeting);
 
             onWillUnmount(() => {
                 this._cleanupRecording();
@@ -399,6 +415,12 @@
                 this._pushMsg("ai", prompt, { confirm: true });
                 this._speakResponse(prompt);
                 this.state.statusLabel = "Say Yes or No";
+            } else if (result.state === "needs_clarification") {
+                const response = result.response || "Could you clarify?";
+                this._pushMsg("ai", response);
+                this._speakResponse(response);
+                this._updateContextWindow(this._lastTranscribed, response);
+                this.state.statusLabel = "Hold to talk";
             } else if (result.state === "executed") {
                 this.state.awaitingConfirmation = false;
                 this.state.sessionKey = null;
@@ -457,6 +479,15 @@
         }
 
         // ── TTS ──────────────────────────────────────────────────────────────
+
+        skipSpeaking() {
+            if (this._currentAudio) {
+                this._currentAudio.pause();
+                this._currentAudio = null;
+            }
+            this.state.isSpeaking = false;
+            this.state.statusLabel = "Hold to talk";
+        }
 
         async _speakResponse(text) {
             if (!text) return;
@@ -527,7 +558,7 @@
         }
     }
 
-    StandaloneWalkie.props = ["name", "pin"];
+    StandaloneWalkie.props = ["name", "pin", "userName"];
 
     // ── Root App ─────────────────────────────────────────────────────────────
 
@@ -539,7 +570,8 @@
                            onAuth.bind="onAuth"/>
                 <StandaloneWalkie t-else=""
                                   name="state.name"
-                                  pin="state.pin"/>
+                                  pin="state.pin"
+                                  userName="state.userName"/>
             </div>`;
 
         static components = { PinScreen, StandaloneWalkie };
@@ -549,11 +581,13 @@
                 authed: false,
                 pin: "",
                 name: window.WT_NAME || "AI Walkie-Talkie",
+                userName: "",
             });
         }
 
-        onAuth(pin) {
+        onAuth(pin, userName) {
             this.state.pin = pin;
+            this.state.userName = userName || "";
             this.state.authed = true;
         }
     }

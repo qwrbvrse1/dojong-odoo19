@@ -99,7 +99,7 @@
             try {
                 const result = await jsonRpc(`/walkie/${window.WT_TOKEN}/auth`, { pin: this.state.pin });
                 if (result && result.success) {
-                    this.props.onAuth(this.state.pin);
+                    this.props.onAuth(this.state.pin, result.user_first_name || "");
                 } else {
                     this.state.error = (result && result.error) || "Incorrect PIN.";
                 }
@@ -252,6 +252,11 @@
                         <t t-if="state.awaitingConfirmation">
                             Say <strong>"Yes"</strong> or <strong>"No"</strong>, or use the buttons above
                         </t>
+                        <t t-elif="state.isSpeaking">
+                            <button class="dojo-wt-skip-btn" t-on-click="skipSpeaking">
+                                <i class="fa fa-forward"/> Skip
+                            </button>
+                        </t>
                         <t t-else="">Hold to speak · Release to send</t>
                     </p>
                 </div>
@@ -285,6 +290,13 @@
             this._stream         = null;
             this._currentAudio   = null;
             this._lastTranscribed = "";
+
+            // Push a personalized greeting bubble on mount
+            const userName = this.props.userName || "";
+            const greeting = userName
+                ? `👋 Hi ${userName}! I can help with scheduling, attendance, enrollment, and more. Hold the button and ask me anything.`
+                : "👋 Hi! I can help with scheduling, attendance, enrollment, and more. Hold the button and ask me anything.";
+            this._pushMsg("ai", greeting);
 
             onWillUnmount(() => {
                 this._cleanupRecording();
@@ -494,6 +506,12 @@
                 this._pushMsg("ai", prompt, { confirm: true });
                 this._speakResponse(prompt);
                 this.state.statusLabel = "Say Yes or No";
+            } else if (result.state === "needs_clarification") {
+                const response = result.response || "Could you clarify?";
+                this._pushMsg("ai", response);
+                this._speakResponse(response);
+                this._updateContextWindow(this._lastTranscribed, response);
+                this.state.statusLabel = "Hold to talk";
             } else if (result.state === "executed") {
                 this.state.awaitingConfirmation = false;
                 this.state.sessionKey = null;
@@ -548,6 +566,15 @@
         }
 
         // ── TTS ───────────────────────────────────────────────────────────────
+
+        skipSpeaking() {
+            if (this._currentAudio) {
+                this._currentAudio.pause();
+                this._currentAudio = null;
+            }
+            this.state.isSpeaking = false;
+            this.state.statusLabel = "Hold to talk";
+        }
 
         async _speakResponse(text) {
             if (!text) return;
@@ -613,7 +640,7 @@
         }
     }
 
-    StandaloneWalkieChannel.props = ["name", "pin"];
+    StandaloneWalkieChannel.props = ["name", "pin", "userName"];
 
     // ── Root App ─────────────────────────────────────────────────────────────
 
@@ -625,7 +652,8 @@
                            onAuth.bind="onAuth"/>
                 <StandaloneWalkieChannel t-else=""
                                          name="state.name"
-                                         pin="state.pin"/>
+                                         pin="state.pin"
+                                         userName="state.userName"/>
             </div>`;
 
         static components = { PinScreen, StandaloneWalkieChannel };
@@ -635,10 +663,15 @@
                 authed: false,
                 pin: "",
                 name: window.WT_NAME || "AI Walkie-Talkie",
+                userName: "",
             });
         }
 
-        onAuth(pin) { this.state.pin = pin; this.state.authed = true; }
+        onAuth(pin, userName) {
+            this.state.pin = pin;
+            this.state.userName = userName || "";
+            this.state.authed = true;
+        }
     }
 
     // ── Mount ─────────────────────────────────────────────────────────────────

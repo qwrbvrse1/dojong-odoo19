@@ -241,7 +241,7 @@ CRM / LEAD PIPELINE MAPPING:
   "convert [name] to member", "make [name] a member"
       → {{"intent_type": "lead_convert", "parameters": {{"lead_name": "..."}}, "confidence": 0.92}}
   "add new prospect [name]", "new lead for [name]", "create lead [name]", "walk-in [name]"
-      → {{"intent_type": "lead_create", "parameters": {{"contact_name": "..."}}, "confidence": 0.90}}
+      → {{"intent_type": "lead_create", "parameters": {{"contact_name": "...", "phone": "...", "email": "..."}}, "confidence": 0.90}}
   "mark [name] as lost", "[name] not interested", "[name] dropped out"
       → {{"intent_type": "lead_mark_lost", "parameters": {{"lead_name": "..."}}, "confidence": 0.90}}
   "mark [name] as won", "[name] officially joined", "[name] is now a member"

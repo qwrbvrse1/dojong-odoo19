@@ -55,6 +55,8 @@ export class DojoVoiceAssistant extends Component {
             actionSms: true,
             // Two-phase confirmation flow
             pendingConfirm: null,  // {session_key, prompt, intent_type}
+            pendingClarificationKey: null,  // clarification session key for multi-turn follow-ups
+            contextWindow: [],     // [{role, text}] — rolling window sent to LLM
             liveTranscript: "",
         });
 
@@ -66,12 +68,21 @@ export class DojoVoiceAssistant extends Component {
         this._recognition       = null;
         this._pendingTranscript = "";
         this._silenceTimer      = null;
+        this._userName          = "";
+        this._chatSessionId     = null;
+        this._contextWindowMax  = 10;
 
         onMounted(() => {
             // Keyboard shortcut: Ctrl+Shift+A to toggle panel
             document.addEventListener("keydown", (e) => {
                 if (e.ctrlKey && e.shiftKey && e.key === "A") this.toggle();
             });
+            // Fetch config (context window size + user name)
+            rpc("/dojo/ai/config", {}).then((cfg) => {
+                if (cfg && cfg.user_first_name) {
+                    this._userName = cfg.user_first_name;
+                }
+            }).catch(() => { /* keep default */ });
         });
 
         onWillUnmount(() => {
@@ -102,7 +113,13 @@ export class DojoVoiceAssistant extends Component {
     toggle() {
         this.state.open = !this.state.open;
         if (this.state.open && this.state.messages.length === 0) {
-            this._pushMsg("assistant", "👋 Hi! I can help you look up students, check class schedules, or send messages to parents. What would you like to do?");
+            this._chatSessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+            const name = this._userName || "there";
+            this._pushMsg("assistant", `👋 Hi ${name}! I can help you with scheduling, student lookups, or messaging parents. What would you like to do?`);
+        } else if (this.state.open) {
+            this._chatSessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+            this.state.contextWindow = [];
+            this.state.pendingClarificationKey = null;
         }
         if (this.state.open) {
             setTimeout(() => this._scrollToBottom(), 60);
@@ -138,9 +155,18 @@ export class DojoVoiceAssistant extends Component {
         this._scrollToBottom();
 
         try {
-            const result = await rpc("/dojo/ai/text", { text });
+            const result = await rpc("/dojo/ai/text", {
+                text,
+                conversation_history: this.state.contextWindow,
+                chat_session_id: this._chatSessionId,
+                clarification_session_key: this.state.pendingClarificationKey || null,
+            });
             if (result.success) {
                 this._handleAiResult(result);
+                this._updateContextWindow(text, result.response || "");
+                if (result.state !== "needs_clarification") {
+                    this.state.pendingClarificationKey = null;
+                }
             } else {
                 this._pushMsg("assistant", "⚠️ " + (result.error || "Unknown error."));
             }
@@ -342,8 +368,14 @@ export class DojoVoiceAssistant extends Component {
         if (this.state.ttsEnabled && text && "speechSynthesis" in window) {
             const utter = new SpeechSynthesisUtterance(text);
             utter.rate = 1.05;
-            window.speechSynthesis.cancel(); // stop any in-progress speech
+            window.speechSynthesis.cancel();
             window.speechSynthesis.speak(utter);
+        }
+
+        // ── Clarification follow-up (multi-turn) ─────────────────────────────
+        if (result.state === "needs_clarification" && result.session_key) {
+            this.state.pendingClarificationKey = result.session_key;
+            return;
         }
 
         // ── Two-phase confirmation (enroll, belt, etc.) ──────────────────────
@@ -485,6 +517,14 @@ export class DojoVoiceAssistant extends Component {
 
     _pushMsg(role, text) {
         this.state.messages.push({ role, text, time: nowLabel() });
+    }
+
+    _updateContextWindow(userText, aiText) {
+        const cw = this.state.contextWindow;
+        if (userText) cw.push({ role: "user", text: userText });
+        if (aiText)   cw.push({ role: "assistant", text: aiText });
+        const maxItems = this._contextWindowMax * 2;
+        if (cw.length > maxItems) cw.splice(0, cw.length - maxItems);
     }
 
     _scrollToBottom() {

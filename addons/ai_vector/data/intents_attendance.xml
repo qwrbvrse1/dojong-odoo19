@@ -24,17 +24,33 @@ What sessions do we have this week?</field>
         <field name="active">True</field>
     </record>
 
-    <record id="intent_schedule_today" model="ai.intent.schema">
+    <record id="intent_schedule_today" model="ai.intent.schema" forcecreate="0">
         <field name="intent_type">schedule_today</field>
-        <field name="name">Today's Schedule</field>
-        <field name="description">Get today's class schedule</field>
+        <field name="name">Today's / Date Schedule</field>
+        <field name="description">Get the class schedule for today or a specific date (tomorrow, yesterday, or YYYY-MM-DD)</field>
         <field name="category">read</field>
-        <field name="parameters_schema">{}</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "date": {
+            "type": "string",
+            "description": "Date to get schedule for. Use 'today' (default), 'tomorrow', 'yesterday', or ISO date YYYY-MM-DD"
+        }
+    }
+}</field>
         <field name="example_phrases">What's the schedule today?
 Show today's classes
 What classes are happening now?
 What's on the schedule?
-What do we have today?</field>
+What do we have today?
+Show tomorrow's schedule
+What's on tomorrow?
+Classes for tomorrow
+Schedule for tomorrow
+What classes are tomorrow?
+What's the schedule for Monday?
+Show schedule for 2026-04-20
+Classes this week</field>
         <field name="allowed_roles">kiosk,instructor,admin</field>
         <field name="requires_confirmation">False</field>
         <field name="is_undoable">False</field>

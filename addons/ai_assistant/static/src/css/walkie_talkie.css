@@ -406,6 +406,33 @@
     color: #6b7280;
 }
 
+/* Skip button — shown in hint area during TTS playback */
+.dojo-wt-skip-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 20px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    background: #1c1c1c;
+    color: #9aa0a6;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+.dojo-wt-skip-btn:hover {
+    background: #252836;
+    color: #e8eaed;
+    border-color: rgba(255,255,255,0.2);
+}
+.dojo-wt-skip-btn:active {
+    transform: scale(0.95);
+}
+
 /* ── Keyframe animations ─────────────────────────────────── */
 
 @keyframes dojo-wt-pulse {

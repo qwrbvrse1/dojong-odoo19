@@ -56,6 +56,8 @@ class DojoWalkieTalkie extends Component {
             // Status label shown under button
             statusLabel: "Hold to talk",
             error: null,
+            // User name for personalized empty state
+            userName: "",
         });
 
         this._mediaRecorder = null;
@@ -63,6 +65,13 @@ class DojoWalkieTalkie extends Component {
         this._stream        = null;
         this._currentAudio  = null;
         this._lastTranscribed = "";
+
+        // Fetch user name for personalized greeting
+        rpc("/dojo/ai/config", {}).then((cfg) => {
+            if (cfg && cfg.user_first_name) {
+                this.state.userName = cfg.user_first_name;
+            }
+        }).catch(() => { /* keep default */ });
 
         onWillUnmount(() => {
             this._cleanupRecording();
@@ -225,6 +234,12 @@ class DojoWalkieTalkie extends Component {
             this._pushMsg("ai", prompt, { confirm: true });
             this._speakResponse(prompt);
             this.state.statusLabel = "Say Yes or No";
+        } else if (result.state === "needs_clarification") {
+            const response = result.response || "Could you clarify?";
+            this._pushMsg("ai", response);
+            this._speakResponse(response);
+            this._updateContextWindow(this._lastTranscribed, response);
+            this.state.statusLabel = "Hold to talk";
         } else if (result.state === "executed") {
             this.state.awaitingConfirmation = false;
             this.state.sessionKey = null;
@@ -284,6 +299,15 @@ class DojoWalkieTalkie extends Component {
     }
 
     // ── ElevenLabs TTS ───────────────────────────────────────────────────────
+
+    skipSpeaking() {
+        if (this._currentAudio) {
+            this._currentAudio.pause();
+            this._currentAudio = null;
+        }
+        this.state.isSpeaking = false;
+        this.state.statusLabel = "Hold to talk";
+    }
 
     async _speakResponse(text) {
         if (!text) return;

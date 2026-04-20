@@ -30,7 +30,10 @@
 
                 <div t-if="state.messages.length === 0" class="dojo-wt-empty">
                     <i class="fa fa-microphone dojo-wt-empty__icon"/>
-                    <p class="dojo-wt-empty__hint">Hold the button below and speak to the AI</p>
+                    <p class="dojo-wt-empty__hint">
+                        <t t-if="state.userName">Hi <t t-out="state.userName"/>! Hold the button and start talking</t>
+                        <t t-else="">Hold the button below and speak to the AI</t>
+                    </p>
                     <p class="dojo-wt-empty__tips">Try: "Who checked in today?" or "Enroll Jordan in BJJ"</p>
                 </div>
 
@@ -105,6 +108,11 @@
                 <p class="dojo-wt-hint">
                     <t t-if="state.awaitingConfirmation">
                         Say <strong>"Yes"</strong> or <strong>"No"</strong>, or use the buttons above
+                    </t>
+                    <t t-elif="state.isSpeaking">
+                        <button class="dojo-wt-skip-btn" t-on-click="skipSpeaking">
+                            <i class="fa fa-forward me-1"/>Skip
+                        </button>
                     </t>
                     <t t-else="">
                         Hold to speak · Release to send

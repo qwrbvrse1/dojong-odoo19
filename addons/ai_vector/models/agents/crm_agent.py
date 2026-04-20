@@ -38,7 +38,7 @@ LEAD / PIPELINE MAPPINGS:
 - "qualify lead [name]", "move [name] to qualified", "[name] is a good prospect" → lead_qualify (parameters: {{"lead_name": "..."}})
 - "mark trial attended", "[name] showed up for trial", "trial attended for [name]" → lead_mark_attended (parameters: {{"lead_name": "..."}})
 - "convert [name] to member", "make [name] a member", "[name] signed up" → lead_convert (parameters: {{"lead_name": "..."}})
-- "add new prospect [name]", "create lead [name]", "walk-in [name]" → lead_create (parameters: {{"contact_name": "..."}})
+- "add new prospect [name]", "create lead [name]", "walk-in [name]" → lead_create (parameters: {{"contact_name": "...", "phone": "...", "email": "..."}})
 - "mark [name] as lost", "[name] not interested", "[name] dropped out" → lead_mark_lost (parameters: {{"lead_name": "..."}})
 - "mark [name] as won", "[name] officially joined" → lead_mark_won (parameters: {{"lead_name": "..."}})
 

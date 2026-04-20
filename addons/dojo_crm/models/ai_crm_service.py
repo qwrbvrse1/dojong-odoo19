@@ -231,11 +231,15 @@ class AiAssistantServiceCrm(models.AbstractModel):
                 if not name:
                     results.append({"name": "Unknown", "success": False, "error": "No name provided"})
                     continue
+                c_phone = (contact.get("phone") or contact.get("contact_number")
+                           or contact.get("phone_number") or contact.get("mobile") or "")
+                c_email = (contact.get("email") or contact.get("email_from")
+                           or contact.get("contact_email") or "")
                 vals = {
                     "name": f"Trial - {name}",
                     "contact_name": name,
-                    "phone": contact.get("phone", ""),
-                    "email_from": contact.get("email", ""),
+                    "phone": c_phone,
+                    "email_from": c_email,
                 }
                 if first_stage:
                     vals["stage_id"] = first_stage.id
@@ -258,8 +262,10 @@ class AiAssistantServiceCrm(models.AbstractModel):
         if not contact_name:
             return {"success": False, "message": "Please provide the prospect's name."}
 
-        phone = params.get("phone", "")
-        email = params.get("email", "")
+        phone = (params.get("phone") or params.get("contact_number")
+                 or params.get("phone_number") or params.get("mobile") or "")
+        email = (params.get("email") or params.get("email_from")
+                 or params.get("contact_email") or "")
 
         first_stage = self.env["crm.stage"].search([], order="sequence asc", limit=1)
         vals = {
