@@ -1767,4 +1767,1221 @@ Add a follow-up activity for Mike: discuss attendance issues</field>
         <field name="active">True</field>
     </record>
 
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Additional Dojo Read Intents                                         -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_belt_test_list" model="ai.intent.schema">
+        <field name="intent_type">belt_test_list</field>
+        <field name="name">Belt Test List</field>
+        <field name="description">List upcoming or past belt tests, optionally filtered by program</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "program_name": {"type": "string", "description": "Filter by program name (e.g. BJJ, Taekwondo)"},
+        "upcoming": {"type": "boolean", "description": "Show only future tests (default true)"}
+    }
+}</field>
+        <field name="example_phrases">When is the next belt test?
+Show upcoming belt tests
+List all belt tests
+What belt tests do we have for BJJ?
+TKD belt test schedule</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_test_registration_list" model="ai.intent.schema">
+        <field name="intent_type">belt_test_registration_list</field>
+        <field name="name">Belt Test Registrations</field>
+        <field name="description">List who is registered for an upcoming belt test</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Check if a specific member is registered"},
+        "program_name": {"type": "string", "description": "Filter by program"}
+    }
+}</field>
+        <field name="example_phrases">Who is registered for the belt test?
+Who signed up for belt testing?
+Belt test registrations
+Is John registered for the next test?
+Who's testing next?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_program_list" model="ai.intent.schema">
+        <field name="intent_type">program_list</field>
+        <field name="name">Program List</field>
+        <field name="description">List all active programs offered at the dojo</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "include_inactive": {"type": "boolean", "description": "Include inactive programs"}
+    }
+}</field>
+        <field name="example_phrases">What programs do we offer?
+List all programs
+Show me our programs
+What martial arts programs are available?
+What can students enroll in?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_class_template_list" model="ai.intent.schema">
+        <field name="intent_type">class_template_list</field>
+        <field name="name">Class Template List</field>
+        <field name="description">List class templates (recurring course types), optionally filtered by program</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "program_name": {"type": "string", "description": "Filter by program name"}
+    }
+}</field>
+        <field name="example_phrases">Show all courses
+List class types
+What courses are available?
+Show BJJ courses
+Karate class templates</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_program_enrollment_lookup" model="ai.intent.schema">
+        <field name="intent_type">program_enrollment_lookup</field>
+        <field name="name">Program Enrollment Lookup</field>
+        <field name="description">Look up who is enrolled in a program or which programs a member is enrolled in</field>
+        <field name="category">enrollment</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Member to look up enrollments for"},
+        "program_name": {"type": "string", "description": "Program to look up enrollments for"}
+    }
+}</field>
+        <field name="example_phrases">Who is enrolled in BJJ?
+Show John's program enrollments
+What programs is Sarah enrolled in?
+List enrollments for Taekwondo
+Show active enrollments</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_onboarding_status" model="ai.intent.schema">
+        <field name="intent_type">onboarding_status</field>
+        <field name="name">Onboarding Status</field>
+        <field name="description">Check the onboarding progress of a member or list members who have not completed onboarding</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Check a specific member's onboarding progress"}
+    }
+}</field>
+        <field name="example_phrases">What is John's onboarding status?
+Who hasn't finished onboarding?
+Show onboarding progress for Sarah
+Is Mike fully onboarded?
+List incomplete onboardings</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_points_lookup" model="ai.intent.schema">
+        <field name="intent_type">points_lookup</field>
+        <field name="name">Points Lookup</field>
+        <field name="description">Check a member's points balance and transaction history</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Member to check points for"}
+    }
+}</field>
+        <field name="example_phrases">How many points does John have?
+What's Sarah's points balance?
+Show Maria's points history
+How many reward points does Mike have?
+Points for John Smith</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_credit_lookup" model="ai.intent.schema">
+        <field name="intent_type">credit_lookup</field>
+        <field name="name">Credit Lookup</field>
+        <field name="description">Check a member's credit balance and credit transaction history</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Member to check credits for"}
+    }
+}</field>
+        <field name="example_phrases">How many credits does John have?
+What's Sarah's credit balance?
+Show Mike's credits
+Credit history for Maria
+Does John have any credits on account?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_household_lookup" model="ai.intent.schema">
+        <field name="intent_type">household_lookup</field>
+        <field name="name">Household Lookup</field>
+        <field name="description">Look up the household and family members linked to a contact</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Member or guardian name to look up household for"}
+    }
+}</field>
+        <field name="example_phrases">Who's in John's household?
+Show me Sarah's family
+What family members are linked to Mike?
+Show the Smith household
+Who is the guardian for this student?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_course_auto_enroll_list" model="ai.intent.schema">
+        <field name="intent_type">course_auto_enroll_list</field>
+        <field name="name">Auto-Enroll Rules</field>
+        <field name="description">List auto-enrollment rules for members or courses</field>
+        <field name="category">enrollment</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Filter by member name"}
+    }
+}</field>
+        <field name="example_phrases">Show auto-enroll rules
+Who has auto-enrollment set up?
+What is John auto-enrolled in?
+List all auto-enrollment schedules
+Show John's auto-enroll preferences</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_campaign_list" model="ai.intent.schema">
+        <field name="intent_type">campaign_list</field>
+        <field name="name">Campaign List</field>
+        <field name="description">List AI calling campaigns and their status</field>
+        <field name="category">marketing</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "state": {"type": "string", "description": "Filter by campaign state: draft, running, paused, completed"}
+    }
+}</field>
+        <field name="example_phrases">Show all campaigns
+What campaigns are running?
+List active calling campaigns
+Show me our campaigns
+What outreach campaigns do we have?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_kiosk_announcement_list" model="ai.intent.schema">
+        <field name="intent_type">kiosk_announcement_list</field>
+        <field name="name">Kiosk Announcement List</field>
+        <field name="description">List announcements currently displayed on the kiosk</field>
+        <field name="category">system</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {}
+}</field>
+        <field name="example_phrases">Show kiosk announcements
+What's displayed on the kiosk?
+List current announcements
+What announcements are active?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_social_post_list" model="ai.intent.schema">
+        <field name="intent_type">social_post_list</field>
+        <field name="name">Social Post List</field>
+        <field name="description">List recent or scheduled social media posts</field>
+        <field name="category">social</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "state": {"type": "string", "description": "Filter by post state: draft, scheduled, posted, error"}
+    }
+}</field>
+        <field name="example_phrases">Show recent social media posts
+What have we posted lately?
+List scheduled posts
+Are there any failed social posts?
+Show social media errors</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_birthday_upcoming" model="ai.intent.schema">
+        <field name="intent_type">birthday_upcoming</field>
+        <field name="name">Upcoming Birthdays</field>
+        <field name="description">List members with birthdays coming up in the next N days</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "days": {"type": "integer", "description": "How many days ahead to look (default 7)"}
+    }
+}</field>
+        <field name="example_phrases">Who has a birthday coming up?
+Any birthdays this week?
+Show upcoming birthdays
+Birthdays in the next 30 days
+Who has a birthday today?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Meta / Help Intents                                                  -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_capability_list" model="ai.intent.schema">
+        <field name="intent_type">capability_list</field>
+        <field name="name">Capability List</field>
+        <field name="description">Show a summary of all things the AI assistant can help with</field>
+        <field name="category">meta</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "category": {"type": "string", "description": "Filter to a specific category (e.g. belt, attendance, billing)"}
+    }
+}</field>
+        <field name="example_phrases">What can you do?
+What tools are connected?
+What commands are available?
+Show me your capabilities
+What can I ask you?
+List available actions
+What do you support?
+Help</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_help_request" model="ai.intent.schema">
+        <field name="intent_type">help_request</field>
+        <field name="name">Help Request</field>
+        <field name="description">Answer a question about how to use the AI assistant or a specific feature</field>
+        <field name="category">meta</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "topic": {"type": "string", "description": "The feature or topic to get help with"}
+    }
+}</field>
+        <field name="example_phrases">How do I enroll a student?
+How do I check someone in?
+How does belt promotion work?
+How do I create a class?
+Explain the subscription system
+How do I send a blast email?</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Sales Intents                                                        -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_sale_order_list" model="ai.intent.schema">
+        <field name="intent_type">sale_order_list</field>
+        <field name="name">Sale Order List</field>
+        <field name="description">List sale orders, optionally filtered by state or partner</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "state": {"type": "string", "description": "Filter by state: draft, sent, sale, done, cancel"},
+        "partner_name": {"type": "string", "description": "Filter by customer name"}
+    }
+}</field>
+        <field name="example_phrases">Show all sales orders
+List open quotes
+What orders do we have?
+Show confirmed orders
+Sales orders this month</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_sale_order_lookup" model="ai.intent.schema">
+        <field name="intent_type">sale_order_lookup</field>
+        <field name="name">Sale Order Lookup</field>
+        <field name="description">Look up details of a specific sale order</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "order_name": {"type": "string", "description": "Order reference number (e.g. S00042)"},
+        "partner_name": {"type": "string", "description": "Customer name to search by"}
+    }
+}</field>
+        <field name="example_phrases">Show details for order S00042
+Look up sale order for John Smith
+What's in order S00010?
+Show me the latest order for ABC Corp
+Find order by customer name</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_sale_order_create" model="ai.intent.schema">
+        <field name="intent_type">sale_order_create</field>
+        <field name="name">Create Sale Order</field>
+        <field name="description">Create a new sale order for a customer</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["partner_name"],
+    "properties": {
+        "partner_name": {"type": "string", "description": "Customer name"},
+        "note": {"type": "string", "description": "Internal notes for the order"}
+    }
+}</field>
+        <field name="example_phrases">Create a sale order for John Smith
+New order for ABC Corp
+Make a quote for Sarah
+Start a new sales order for Mike</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Create sale order for {partner_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_sale_order_confirm" model="ai.intent.schema">
+        <field name="intent_type">sale_order_confirm</field>
+        <field name="name">Confirm Sale Order</field>
+        <field name="description">Confirm (activate) a draft sale order</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["order_name"],
+    "properties": {
+        "order_name": {"type": "string", "description": "Order reference to confirm (e.g. S00042)"}
+    }
+}</field>
+        <field name="example_phrases">Confirm order S00042
+Activate the quote for John
+Confirm the sale order
+Mark S00010 as confirmed</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Confirm and activate order {order_name}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_sale_order_cancel" model="ai.intent.schema">
+        <field name="intent_type">sale_order_cancel</field>
+        <field name="name">Cancel Sale Order</field>
+        <field name="description">Cancel an existing sale order</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["order_name"],
+    "properties": {
+        "order_name": {"type": "string", "description": "Order reference to cancel"},
+        "reason": {"type": "string", "description": "Reason for cancellation"}
+    }
+}</field>
+        <field name="example_phrases">Cancel order S00042
+Cancel the quote for John
+Cancel sale order S00010</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Cancel order {order_name}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_sale_order_send" model="ai.intent.schema">
+        <field name="intent_type">sale_order_send</field>
+        <field name="name">Send Sale Order</field>
+        <field name="description">Send a sale order/quote by email to the customer</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["order_name"],
+    "properties": {
+        "order_name": {"type": "string", "description": "Order reference to send"}
+    }
+}</field>
+        <field name="example_phrases">Send order S00042 to the customer
+Email the quote to John
+Send sale order by email
+Dispatch order S00010</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Send order {order_name} by email?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_product_list" model="ai.intent.schema">
+        <field name="intent_type">product_list</field>
+        <field name="name">Product List</field>
+        <field name="description">List products available in the catalog</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "category_name": {"type": "string", "description": "Filter by product category"}
+    }
+}</field>
+        <field name="example_phrases">Show all products
+List our products
+What do we sell?
+Show products in the merchandise category
+What's in our catalog?</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_product_lookup" model="ai.intent.schema">
+        <field name="intent_type">product_lookup</field>
+        <field name="name">Product Lookup</field>
+        <field name="description">Look up details for a specific product</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["product_name"],
+    "properties": {
+        "product_name": {"type": "string", "description": "Name or code of the product"}
+    }
+}</field>
+        <field name="example_phrases">What's the price of the gi?
+Look up the BJJ belt product
+Show me details for the uniform
+How much does the rashguard cost?</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Point of Sale Intents                                                -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_pos_order_list" model="ai.intent.schema">
+        <field name="intent_type">pos_order_list</field>
+        <field name="name">POS Order List</field>
+        <field name="description">List point-of-sale orders for today or a given date</field>
+        <field name="category">pos</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "date_filter": {"type": "string", "description": "Date filter: today, this_week, this_month"},
+        "state": {"type": "string", "description": "Filter by state: draft, paid, done, invoiced"}
+    }
+}</field>
+        <field name="example_phrases">Show today's POS orders
+List point of sale transactions
+What were today's sales?
+Show POS orders for this week
+How many POS orders today?</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_pos_order_lookup" model="ai.intent.schema">
+        <field name="intent_type">pos_order_lookup</field>
+        <field name="name">POS Order Lookup</field>
+        <field name="description">Look up details of a specific POS order by reference or customer</field>
+        <field name="category">pos</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "order_ref": {"type": "string", "description": "POS order reference number"},
+        "partner_name": {"type": "string", "description": "Customer name"}
+    }
+}</field>
+        <field name="example_phrases">Look up POS order 00042
+Find the receipt for John Smith
+Show details for POS transaction
+Look up today's order for Sarah</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_pos_session_list" model="ai.intent.schema">
+        <field name="intent_type">pos_session_list</field>
+        <field name="name">POS Session List</field>
+        <field name="description">List POS sessions and their status</field>
+        <field name="category">pos</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "state": {"type": "string", "description": "Filter by state: new_session, opening_control, opened, closing_control, closed"}
+    }
+}</field>
+        <field name="example_phrases">Show POS sessions
+Is the register open?
+What POS sessions are active?
+List open POS sessions
+Show closed sessions today</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_pos_session_open" model="ai.intent.schema">
+        <field name="intent_type">pos_session_open</field>
+        <field name="name">Open POS Session</field>
+        <field name="description">Open a new POS session for a register</field>
+        <field name="category">pos</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "config_name": {"type": "string", "description": "Name of the POS configuration/register to open"}
+    }
+}</field>
+        <field name="example_phrases">Open the register
+Start a POS session
+Open the front desk POS
+Open point of sale</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Open a new POS session for {config_name}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_pos_session_close" model="ai.intent.schema">
+        <field name="intent_type">pos_session_close</field>
+        <field name="name">Close POS Session</field>
+        <field name="description">Close the active POS session</field>
+        <field name="category">pos</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "config_name": {"type": "string", "description": "Name of the POS configuration/register to close"}
+    }
+}</field>
+        <field name="example_phrases">Close the register
+End the POS session
+Close point of sale for today
+Close the front desk session</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Close the active POS session?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_pos_daily_summary" model="ai.intent.schema">
+        <field name="intent_type">pos_daily_summary</field>
+        <field name="name">POS Daily Summary</field>
+        <field name="description">Get a daily revenue and transaction summary from POS</field>
+        <field name="category">pos</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "date": {"type": "string", "format": "date", "description": "Date for summary (YYYY-MM-DD, default today)"}
+    }
+}</field>
+        <field name="example_phrases">How much did we make today?
+Show today's POS summary
+What's the daily total?
+POS revenue for today
+How many transactions did we do today?</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Accounting Intents                                                   -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_invoice_create" model="ai.intent.schema">
+        <field name="intent_type">invoice_create</field>
+        <field name="name">Create Invoice</field>
+        <field name="description">Create a new customer invoice</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["partner_name"],
+    "properties": {
+        "partner_name": {"type": "string", "description": "Customer name to invoice"},
+        "invoice_date": {"type": "string", "format": "date", "description": "Invoice date (YYYY-MM-DD)"}
+    }
+}</field>
+        <field name="example_phrases">Create an invoice for John Smith
+Make a new invoice for ABC Corp
+Invoice Sarah for this month
+Generate a bill for Mike</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Create invoice for {partner_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_invoice_send" model="ai.intent.schema">
+        <field name="intent_type">invoice_send</field>
+        <field name="name">Send Invoice</field>
+        <field name="description">Send a posted invoice by email to the customer</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "invoice_name": {"type": "string", "description": "Invoice reference number (e.g. INV/2026/00042)"},
+        "partner_name": {"type": "string", "description": "Customer name if no invoice reference"}
+    }
+}</field>
+        <field name="example_phrases">Send invoice INV/2026/00042 to the customer
+Email the invoice to John
+Send the latest invoice for Sarah
+Dispatch invoice to ABC Corp</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Send invoice {invoice_name} by email?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_payment_list" model="ai.intent.schema">
+        <field name="intent_type">payment_list</field>
+        <field name="name">Payment List</field>
+        <field name="description">List recent payments received or sent</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "partner_name": {"type": "string", "description": "Filter by customer/vendor name"},
+        "date_filter": {"type": "string", "description": "Date range: today, this_week, this_month"}
+    }
+}</field>
+        <field name="example_phrases">Show recent payments
+List payments received today
+What payments came in this week?
+Show payments for John Smith
+Recent member payments</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_payment_register" model="ai.intent.schema">
+        <field name="intent_type">payment_register</field>
+        <field name="name">Register Payment</field>
+        <field name="description">Register a payment against an invoice</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["invoice_name"],
+    "properties": {
+        "invoice_name": {"type": "string", "description": "Invoice reference to pay"},
+        "amount": {"type": "number", "description": "Payment amount (defaults to invoice balance)"},
+        "payment_date": {"type": "string", "format": "date", "description": "Payment date (YYYY-MM-DD)"}
+    }
+}</field>
+        <field name="example_phrases">Mark invoice INV/2026/00042 as paid
+Register payment for John's invoice
+Record payment of $150 against invoice
+Pay off invoice for Sarah</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Register payment for invoice {invoice_name}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_account_balance" model="ai.intent.schema">
+        <field name="intent_type">account_balance</field>
+        <field name="name">Account Balance</field>
+        <field name="description">Show the balance for a specific ledger account or overall cash position</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "account_name": {"type": "string", "description": "Account name or code to check balance for"}
+    }
+}</field>
+        <field name="example_phrases">What's our cash balance?
+Show account balance
+How much is in the bank account?
+What's the balance on account 1010?
+Current balance</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_bill_list" model="ai.intent.schema">
+        <field name="intent_type">bill_list</field>
+        <field name="name">Bill List</field>
+        <field name="description">List vendor bills, optionally filtered by payment status</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "filter": {"type": "string", "description": "Filter: unpaid, overdue, draft, all"},
+        "partner_name": {"type": "string", "description": "Filter by vendor name"}
+    }
+}</field>
+        <field name="example_phrases">Show unpaid bills
+List all vendor bills
+What bills are overdue?
+Show bills from this month
+Any outstanding bills?</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_bill_create" model="ai.intent.schema">
+        <field name="intent_type">bill_create</field>
+        <field name="name">Create Bill</field>
+        <field name="description">Create a new vendor bill</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["partner_name"],
+    "properties": {
+        "partner_name": {"type": "string", "description": "Vendor name"},
+        "invoice_date": {"type": "string", "format": "date", "description": "Bill date (YYYY-MM-DD)"}
+    }
+}</field>
+        <field name="example_phrases">Create a bill for ABC Supplies
+New vendor bill for the gym equipment company
+Add a bill from our supplier
+Record a bill from XYZ Corp</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Create vendor bill for {partner_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- HR / Employee Intents                                                -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_employee_list" model="ai.intent.schema">
+        <field name="intent_type">employee_list</field>
+        <field name="name">Employee List</field>
+        <field name="description">List employees, optionally filtered by department</field>
+        <field name="category">hr</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "department_name": {"type": "string", "description": "Filter by department name"}
+    }
+}</field>
+        <field name="example_phrases">Show all employees
+List our staff
+Who works here?
+Show employees in the instructor department
+List instructors</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_employee_lookup" model="ai.intent.schema">
+        <field name="intent_type">employee_lookup</field>
+        <field name="name">Employee Lookup</field>
+        <field name="description">Look up details for a specific employee</field>
+        <field name="category">hr</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["employee_name"],
+    "properties": {
+        "employee_name": {"type": "string", "description": "Employee name to look up"}
+    }
+}</field>
+        <field name="example_phrases">Show me John's employee record
+Look up instructor Sarah
+What department is Mike in?
+Employee info for Carlos</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_employee_create" model="ai.intent.schema">
+        <field name="intent_type">employee_create</field>
+        <field name="name">Create Employee</field>
+        <field name="description">Create a new employee record</field>
+        <field name="category">hr</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["name"],
+    "properties": {
+        "name": {"type": "string", "description": "Employee full name"},
+        "job_title": {"type": "string", "description": "Job title"},
+        "department_name": {"type": "string", "description": "Department name"},
+        "work_email": {"type": "string", "description": "Work email address"},
+        "work_phone": {"type": "string", "description": "Work phone number"}
+    }
+}</field>
+        <field name="example_phrases">Add new employee John Smith
+Create employee record for Sarah
+New hire: Carlos Rivera, head instructor
+Add staff member with email</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Create employee record for {name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_employee_update" model="ai.intent.schema">
+        <field name="intent_type">employee_update</field>
+        <field name="name">Update Employee</field>
+        <field name="description">Update an employee's information such as title, department, or contact details</field>
+        <field name="category">hr</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["employee_name"],
+    "properties": {
+        "employee_name": {"type": "string", "description": "Employee to update"},
+        "job_title": {"type": "string", "description": "New job title"},
+        "department_name": {"type": "string", "description": "New department"},
+        "work_email": {"type": "string", "description": "New work email"},
+        "work_phone": {"type": "string", "description": "New work phone"}
+    }
+}</field>
+        <field name="example_phrases">Update Sarah's title to Head Instructor
+Change John's department to management
+Update Mike's work email
+Set Carlos's phone number</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Update employee {employee_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_employee_archive" model="ai.intent.schema">
+        <field name="intent_type">employee_archive</field>
+        <field name="name">Archive Employee</field>
+        <field name="description">Archive (deactivate) an employee who is no longer with the organization</field>
+        <field name="category">hr</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["employee_name"],
+    "properties": {
+        "employee_name": {"type": "string", "description": "Employee name to archive"}
+    }
+}</field>
+        <field name="example_phrases">Archive employee John
+Deactivate Sarah's employee record
+Mark Mike as no longer employed
+Remove Carlos from active staff</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Archive employee {employee_name}? This will deactivate their record.</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_department_list" model="ai.intent.schema">
+        <field name="intent_type">department_list</field>
+        <field name="name">Department List</field>
+        <field name="description">List all departments in the organization</field>
+        <field name="category">hr</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {}
+}</field>
+        <field name="example_phrases">Show all departments
+List departments
+What departments do we have?
+Show organizational departments</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_department_create" model="ai.intent.schema">
+        <field name="intent_type">department_create</field>
+        <field name="name">Create Department</field>
+        <field name="description">Create a new department</field>
+        <field name="category">hr</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["name"],
+    "properties": {
+        "name": {"type": "string", "description": "Department name"},
+        "manager_name": {"type": "string", "description": "Manager of the department"}
+    }
+}</field>
+        <field name="example_phrases">Create a new department called Operations
+Add a Youth Programs department
+New department: Competition Team</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Create department "{name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Discuss / Messaging Intents                                          -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_channel_list" model="ai.intent.schema">
+        <field name="intent_type">channel_list</field>
+        <field name="name">Channel List</field>
+        <field name="description">List messaging channels in Discuss</field>
+        <field name="category">discuss</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "channel_type": {"type": "string", "description": "Filter by type: channel, group, dm"}
+    }
+}</field>
+        <field name="example_phrases">Show all channels
+List messaging channels
+What channels exist?
+Show Discuss channels
+List group chats</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_channel_lookup" model="ai.intent.schema">
+        <field name="intent_type">channel_lookup</field>
+        <field name="name">Channel Lookup</field>
+        <field name="description">Look up details and members of a specific channel</field>
+        <field name="category">discuss</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["channel_name"],
+    "properties": {
+        "channel_name": {"type": "string", "description": "Name of the channel to look up"}
+    }
+}</field>
+        <field name="example_phrases">Show me the instructors channel
+Who's in the general channel?
+Look up the #announcements channel
+Show members of the staff chat</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_channel_create" model="ai.intent.schema">
+        <field name="intent_type">channel_create</field>
+        <field name="name">Create Channel</field>
+        <field name="description">Create a new messaging channel in Discuss</field>
+        <field name="category">discuss</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["name"],
+    "properties": {
+        "name": {"type": "string", "description": "Channel name"},
+        "description": {"type": "string", "description": "Channel description"},
+        "channel_type": {"type": "string", "description": "Type: channel or group (default: channel)"}
+    }
+}</field>
+        <field name="example_phrases">Create a channel called Competition Team
+New group chat for instructors
+Create a Discuss channel for events
+Make a new channel: Parent Updates</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Create channel "{name}"?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_channel_message_send" model="ai.intent.schema">
+        <field name="intent_type">channel_message_send</field>
+        <field name="name">Send Channel Message</field>
+        <field name="description">Post a message to a Discuss channel</field>
+        <field name="category">discuss</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["channel_name", "message"],
+    "properties": {
+        "channel_name": {"type": "string", "description": "Channel to post to"},
+        "message": {"type": "string", "description": "Message body"}
+    }
+}</field>
+        <field name="example_phrases">Post to the instructors channel: class is cancelled
+Send a message to general: dojo closed tomorrow
+Message the staff channel about the schedule change
+Post announcement to #general</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Post "{message}" to channel #{channel_name}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_channel_add_member" model="ai.intent.schema">
+        <field name="intent_type">channel_add_member</field>
+        <field name="name">Add Channel Member</field>
+        <field name="description">Add a user to a Discuss channel</field>
+        <field name="category">discuss</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "required": ["channel_name", "user_name"],
+    "properties": {
+        "channel_name": {"type": "string", "description": "Channel name to add the user to"},
+        "user_name": {"type": "string", "description": "User or employee name to add"}
+    }
+}</field>
+        <field name="example_phrases">Add John to the instructors channel
+Add Sarah to the #staff channel
+Invite Mike to the competition team chat
+Add Carlos to the announcements channel</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Add {user_name} to channel #{channel_name}?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_message_list" model="ai.intent.schema">
+        <field name="intent_type">message_list</field>
+        <field name="name">Message List</field>
+        <field name="description">List recent messages from a channel or the inbox</field>
+        <field name="category">discuss</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "channel_name": {"type": "string", "description": "Channel name to fetch messages from"},
+        "limit": {"type": "integer", "description": "Number of messages to return (default 20)"}
+    }
+}</field>
+        <field name="example_phrases">Show recent messages in #general
+What was said in the instructors channel?
+Last messages in staff chat
+Read the latest from #announcements
+Show my inbox messages</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
 </odoo>
