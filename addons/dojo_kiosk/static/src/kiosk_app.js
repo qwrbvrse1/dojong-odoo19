@@ -25,8 +25,12 @@ async function jsonPost(url, params = {}, { signal } = {}) {
     return data.result;
 }
 
+// Cache-bust map: memberId → timestamp, set after a photo upload so roster tiles & profile modal reload fresh
+const _photoBust = {};
+
 function avatarUrl(memberId) {
-    return `/web/image/dojo.member/${memberId}/image_128`;
+    const bust = _photoBust[memberId];
+    return `/web/image/dojo.member/${memberId}/image_128${bust ? '?t=' + bust : ''}`;
 }
 
 function partnerAvatarUrl(partnerId) {
@@ -814,14 +818,14 @@ class MemberProfileCard extends Component {
         </t>
     `;
 
-    static props = ["member", "sessionId", "instructorMode", "onClose", "onCheckin", "onMarkAttendance", "onRosterAdd", "onRosterRemove", "onCheckout", "onRosterRemoveBySession", "onRefreshProfile"];
+    static props = ["member", "sessionId", "instructorMode", "initialTab", "onClose", "onCheckin", "onMarkAttendance", "onRosterAdd", "onRosterRemove", "onCheckout", "onRosterRemoveBySession", "onRefreshProfile"];
 
     setup() {
         this.state = useState({
-            tab: "profile",
+            tab: (this.props.initialTab && this.props.initialTab !== "photo") ? this.props.initialTab : "profile",
             rosterAddError: "",
             // Photo update
-            showPhotoSheet: false,
+            showPhotoSheet: this.props.initialTab === "photo",
             photoUploading: false,
             photoError: "",
             photoSuccess: "",
@@ -1404,8 +1408,12 @@ class StudentCheckinModal extends Component {
 
 class InstructorRosterTile extends Component {
     static template = xml`
-        <div t-attf-class="k-roster-tile k-roster-tile--#{props.entry.attendance_state || 'pending'}"
+        <div t-attf-class="k-roster-tile k-roster-tile--#{props.entry.attendance_state || 'pending'} #{state.pressing ? 'k-roster-tile--pressing' : ''}"
              t-on-click="onTileTap"
+             t-on-pointerdown="onPointerDown"
+             t-on-pointerup="onPointerUp"
+             t-on-pointerleave="onPointerUp"
+             t-on-pointercancel="onPointerUp"
              t-on-contextmenu.prevent="">
 
             <!-- Warning badge: top-right — membership issue or known flags -->
@@ -1418,20 +1426,6 @@ class InstructorRosterTile extends Component {
                 <div class="k-roster-tile__trial-badge">TRIAL</div>
             </t>
 
-            <!-- Remove button: top-left (when present or late, non-trial) -->
-            <t t-elif="props.entry.attendance_state === 'present' or props.entry.attendance_state === 'late'">
-                <button class="k-roster-tile__remove"
-                    t-on-click.stop="onRemove"
-                    title="Remove attendance">✕</button>
-            </t>
-
-            <!-- Mark present button: bottom-right (when pending/absent) -->
-            <t t-if="props.entry.attendance_state === 'pending' or props.entry.attendance_state === 'absent' or !props.entry.attendance_state">
-                <button class="k-roster-tile__check"
-                    t-on-click.stop="onCheck"
-                    title="Mark present">✓</button>
-            </t>
-
             <div class="k-roster-tile__photo-wrap">
                 <img class="k-roster-tile__photo"
                     t-att-src="rosterAvatarUrl(props.entry)"
@@ -1440,14 +1434,16 @@ class InstructorRosterTile extends Component {
             </div>
 
             <div class="k-roster-tile__name" t-esc="props.entry.name"/>
-            <!-- Manage indicator (non-trial only) -->
-            <t t-if="!props.entry.is_trial">
-                <div class="k-roster-tile__info-hint">👤</div>
-            </t>
         </div>
     `;
 
-    static props = ["entry", "sessionId", "onMark", "onProfile", "onRemoveAttendance"];
+    static props = ["entry", "sessionId", "onMark", "onRemoveAttendance", "onManage"];
+
+    setup() {
+        this.state = owl.useState({ pressing: false });
+        this._lpTimer = null;
+        this._lpFired = false;
+    }
 
     rosterAvatarUrl(entry) {
         if (entry.is_trial && entry.partner_id) return partnerAvatarUrl(entry.partner_id);
@@ -1462,19 +1458,39 @@ class InstructorRosterTile extends Component {
     }
 
     onTileTap(ev) {
-        if (ev.target.closest(".k-roster-tile__check, .k-roster-tile__remove")) return;
-        if (this.props.entry.is_trial) return;  // no profile for trial leads
-        this.props.onProfile(this.props.entry.member_id);
-    }
+        // If long-press just fired, absorb the synthetic click
+        if (this._lpFired) { this._lpFired = false; return; }
+        // Trials: no toggle
+        if (this.props.entry.is_trial) return;
 
-    onCheck() {
-        if (this.props.entry.is_trial) {
-            this.props.onMark("trial:" + this.props.entry.lead_id, "present");
+        const st = this.props.entry.attendance_state;
+        if (st === "present" || st === "late") {
+            // Toggle off — remove attendance immediately
+            this.props.onRemoveAttendance(this.props.entry.member_id);
         } else {
+            // Toggle on — mark present
             this.props.onMark(this.props.entry.member_id, "present");
         }
     }
-    onRemove() { this.props.onRemoveAttendance(this.props.entry.member_id); }
+
+    onPointerDown(ev) {
+        if (this.props.entry.is_trial) return;
+        this.state.pressing = true;
+        this._lpTimer = setTimeout(() => {
+            this._lpFired = true;
+            this.state.pressing = false;
+            this._lpTimer = null;
+            this.props.onManage(this.props.entry.member_id);
+        }, 600);
+    }
+
+    onPointerUp(ev) {
+        this.state.pressing = false;
+        if (this._lpTimer) {
+            clearTimeout(this._lpTimer);
+            this._lpTimer = null;
+        }
+    }
 
     onImgError(ev) {
         const img = ev.target;
@@ -1525,8 +1541,8 @@ class InstructorSessionCard extends Component {
                             entry="entry"
                             sessionId="props.session.id"
                             onMark="(memberId, status) => props.onMark(memberId, props.session.id, status)"
-                            onProfile="(memberId) => props.onProfile(memberId, props.session.id)"
-                            onRemoveAttendance="(memberId) => props.onRemoveAttendance(memberId, props.session.id)"/>
+                            onRemoveAttendance="(memberId) => props.onRemoveAttendance(memberId, props.session.id)"
+                            onManage="(memberId) => props.onManage(memberId, props.session.id)"/>
                     </t>
                 </div>
             </t>
@@ -1570,7 +1586,7 @@ class InstructorSessionCard extends Component {
         </div>
     `;
 
-    static props = ["session", "roster", "loading", "onMark", "onProfile", "onRemoveAttendance", "onClose", "onReopen", "onDelete", "onEdit", "onAssignRoster"];
+    static props = ["session", "roster", "loading", "onMark", "onProfile", "onRemoveAttendance", "onManage", "onClose", "onReopen", "onDelete", "onEdit", "onAssignRoster"];
     static components = { InstructorRosterTile };
     formatTime(dt) { return formatTime(dt); }
 
@@ -2757,7 +2773,8 @@ class KioskApp extends Component {
                                     loading="!!state.loadingRosters[session.id]"
                                     onMark="(memberId, sessionId, status) => this.markAttendance(memberId, sessionId, status)"
                                     onProfile="(memberId, sessionId) => this.openProfile(memberId, sessionId)"
-                                    onRemoveAttendance="(memberId, sessionId) => this.promptRemoveAttendance(memberId, sessionId)"
+                                    onRemoveAttendance="(memberId, sessionId) => this.directRemoveAttendance(memberId, sessionId)"
+                                    onManage="(memberId, sessionId) => this.openProfile(memberId, sessionId, 'manage')"
                                     onClose="(sessionId) => this.closeSessionById(sessionId)"
                                     onReopen="(sessionId) => this.reopenSessionById(sessionId)"
                                     onDelete="(sessionId) => this.deleteSessionById(sessionId)"
@@ -2794,6 +2811,7 @@ class KioskApp extends Component {
                     member="state.profileMember"
                     sessionId="state.profileSessionId"
                     instructorMode="state.instructorMode"
+                    initialTab="state.profileInitialTab"
                     onClose="() => this.closeProfile()"
                     onCheckin="(member, sessionId) => this.doCheckinFromProfile(member, sessionId)"
                     onCheckout="(member, sessionId) => this.doCheckout(member, sessionId)"
@@ -2923,6 +2941,7 @@ class KioskApp extends Component {
             reloading: false,
             profileMember: null,
             profileSessionId: null,
+            profileInitialTab: "profile",
             removeAttendancePending: null,
             deleteSessionPending: null,
 
@@ -3235,7 +3254,7 @@ class KioskApp extends Component {
 
     // ── Instructor — profile ───────────────────────────────────
 
-    async openProfile(memberId, sessionId = null) {
+    async openProfile(memberId, sessionId = null, initialTab = "profile") {
         try {
             const profile = await jsonPost("/kiosk/member/profile", {
                 member_id: memberId,
@@ -3243,6 +3262,7 @@ class KioskApp extends Component {
             });
             this.state.profileMember = profile;
             this.state.profileSessionId = sessionId;
+            this.state.profileInitialTab = initialTab;
         } catch (e) {
             console.error("Kiosk: failed to load profile", e);
         }
@@ -3251,6 +3271,11 @@ class KioskApp extends Component {
     closeProfile() {
         this.state.profileMember = null;
         this.state.profileSessionId = null;
+        this.state.profileInitialTab = "profile";
+    }
+
+    async directRemoveAttendance(memberId, sessionId) {
+        await this.markAttendance(memberId, sessionId, "pending");
     }
 
     // ── Instructor — check-in from profile ────────────────────
@@ -3371,11 +3396,25 @@ class KioskApp extends Component {
 
     async refreshProfile(member) {
         try {
+            // Bust image cache so roster tiles and the profile modal show the new photo
+            _photoBust[member.member_id] = Date.now();
             const profile = await jsonPost("/kiosk/member/profile", {
                 member_id: member.member_id,
                 session_id: this.state.profileSessionId,
             });
             if (profile && this.state.profileMember) this.state.profileMember = profile;
+            // Reload session roster so tile avatars re-render with the busted URL
+            if (this.state.profileSessionId) {
+                await this._loadSessionRoster(this.state.profileSessionId);
+            } else {
+                // Refresh all loaded rosters that contain this member
+                for (const sessionId of Object.keys(this.state.sessionRosters)) {
+                    const roster = this.state.sessionRosters[sessionId];
+                    if (roster && roster.some(e => e.member_id === member.member_id)) {
+                        this._loadSessionRoster(parseInt(sessionId, 10));
+                    }
+                }
+            }
         } catch (e) {
             console.error("Kiosk: refresh profile failed", e);
         }

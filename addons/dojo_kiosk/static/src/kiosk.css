@@ -1116,41 +1116,6 @@ select {
 }
 
 /* Overlay buttons */
-.k-roster-tile__remove {
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: var(--k-danger);
-    color: #fff;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-    box-shadow: var(--k-shadow-sm);
-}
-
-.k-roster-tile__check {
-    position: absolute;
-    bottom: 4px;
-    right: 4px;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: var(--k-success);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-    box-shadow: var(--k-shadow-sm);
-}
-
 .k-roster-tile__warn {
     position: absolute;
     top: 4px;
@@ -2903,19 +2868,7 @@ body.kiosk-theme-dark .k-roster-tile--pending {
     border-bottom-color: var(--k-border-2);
 }
 
-/* Make check/remove overlays square-ish */
-body.kiosk-theme-dark .k-roster-tile__check {
-    border-radius: var(--k-radius-sm);
-    width: 22px;
-    height: 22px;
-}
-
-body.kiosk-theme-dark .k-roster-tile__remove {
-    border-radius: var(--k-radius-sm);
-    width: 20px;
-    height: 20px;
-}
-
+/* Make manage overlay square-ish */
 body.kiosk-theme-dark .k-roster-tile__warn {
     border-radius: var(--k-radius-sm);
     background: transparent;
@@ -3486,18 +3439,6 @@ body.kiosk-theme-light .k-roster-tile--pending {
     background: var(--k-surface);
     border-color: var(--k-border);
     border-bottom-color: var(--k-border-2);
-}
-
-body.kiosk-theme-light .k-roster-tile__check {
-    border-radius: var(--k-radius-sm);
-    width: 22px;
-    height: 22px;
-}
-
-body.kiosk-theme-light .k-roster-tile__remove {
-    border-radius: var(--k-radius-sm);
-    width: 20px;
-    height: 20px;
 }
 
 body.kiosk-theme-light .k-roster-tile__warn {
