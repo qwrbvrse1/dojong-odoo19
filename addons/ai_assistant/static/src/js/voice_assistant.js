@@ -30,6 +30,24 @@ function htmlToPlain(html) {
     return tmp.textContent || tmp.innerText || "";
 }
 
+function formatConfidence(val) {
+    if (val === null || val === undefined) return null;
+    return Math.round(val * 100) + "%";
+}
+
+function formatMs(ms) {
+    if (!ms) return null;
+    return ms < 1000 ? ms + "ms" : (ms / 1000).toFixed(1) + "s";
+}
+
+// Minimal fallback steps shown while waiting when n8n has no step nodes configured.
+const FALLBACK_STEPS = [
+    { name: "Analyzing request",  detail: "Understanding what you're asking for..." },
+    { name: "Routing to agent",   detail: "Finding the right specialist to handle this..." },
+    { name: "Querying database",  detail: "Looking up the relevant records..." },
+    { name: "Formatting results", detail: "Putting together your response..." },
+];
+
 
 // ─── component ──────────────────────────────────────────────────────────────
 
@@ -59,6 +77,9 @@ export class DojoVoiceAssistant extends Component {
             pendingConfirm: null,  // {session_key, prompt, intent_type}
             pendingClarificationKey: null,  // clarification session key for multi-turn follow-ups
             liveTranscript: "",
+            // n8n pipeline steps (shown while processing)
+            liveSteps: [],
+            liveStepIdx: 0,
         });
 
         this._mediaRecorder = null;
@@ -74,6 +95,11 @@ export class DojoVoiceAssistant extends Component {
         this._contextWindowMax = 10;     // turns; overwritten by /dojo/ai/config on mount
         this._chatSessionId = null;  // generated per chat session, sent to n8n for memory
         this._userName = "";  // populated from /dojo/ai/config
+        // Pipeline step polling (n8n)
+        this._pollInterval = null;
+        this._fallbackInterval = null;
+        this._fallbackTimer = null;
+        this._pollHadResults = false;
 
         onMounted(() => {
             // Keyboard shortcut: Ctrl+Shift+A to toggle panel
@@ -165,6 +191,16 @@ export class DojoVoiceAssistant extends Component {
         this.state.processing = true;
         this._scrollToBottom();
 
+        // ── n8n pipeline step tracking ─────────────────────────────────
+        const pipelineKey = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2))
+            .replace(/-/g, "").slice(0, 12);
+        this.state.liveSteps = [{ name: "Processing your request...", detail: "Connecting to AI pipeline..." }];
+        this.state.liveStepIdx = 0;
+        this._startPoll(pipelineKey);
+        this._fallbackTimer = setTimeout(() => {
+            if (!this._pollHadResults) this._startFallback();
+        }, 12500);
+
         // Abort controller for timeout + cancel
         this._abortCtrl = new AbortController();
         const timeoutId = setTimeout(() => this._abortCtrl.abort(), 45000);
@@ -182,8 +218,13 @@ export class DojoVoiceAssistant extends Component {
                 conversation_history: this.state.contextWindow,
                 chat_session_id: this._chatSessionId,
                 clarification_session_key: this.state.pendingClarificationKey || null,
+                pipeline_key: pipelineKey,
             });
             if (result.success) {
+                if (result.pipeline_steps && result.pipeline_steps.length > 0) {
+                    this.state.liveSteps = result.pipeline_steps;
+                    this.state.liveStepIdx = result.pipeline_steps.length - 1;
+                }
                 this._handleAiResult(result);
                 this._updateContextWindow(text, result.response || "");
                 // Clear clarification key after any non-clarification response
@@ -202,8 +243,11 @@ export class DojoVoiceAssistant extends Component {
         } finally {
             clearTimeout(timeoutId);
             clearTimeout(thinkId);
+            this._stopPoll();
+            this._stopFallback();
             this.state.processing = false;
             this.state.thinkingHint = false;
+            this.state.liveSteps = [];
             this._abortCtrl = null;
             this._scrollToBottom();
         }
@@ -211,6 +255,56 @@ export class DojoVoiceAssistant extends Component {
 
     cancelAiRequest() {
         if (this._abortCtrl) this._abortCtrl.abort();
+    }
+
+    // ── n8n pipeline step polling ────────────────────────────────────────────
+
+    stepClass(idx) {
+        if (idx < this.state.liveStepIdx) return "o-done";
+        if (idx === this.state.liveStepIdx) return "o-active";
+        return "o-pending";
+    }
+
+    _startPoll(pipelineKey) {
+        this._stopPoll();
+        this._pollHadResults = false;
+        this._pollInterval = setInterval(async () => {
+            try {
+                const r = await rpc("/dojo/ai/steps", { pipeline_key: pipelineKey });
+                if (r && r.steps && r.steps.length > 0) {
+                    this._pollHadResults = true;
+                    this.state.liveSteps = r.steps;
+                    this.state.liveStepIdx = r.steps.length - 1;
+                    this._stopFallback();
+                }
+                if (r && r.done) this._stopPoll();
+            } catch (_e) { /* ignore poll errors */ }
+        }, 400);
+    }
+
+    _startFallback() {
+        if (this._fallbackInterval) return;
+        this._stopFallbackTimer();
+        this.state.liveSteps = [...FALLBACK_STEPS];
+        this.state.liveStepIdx = 0;
+        let idx = 0;
+        const max = FALLBACK_STEPS.length - 1;
+        this._fallbackInterval = setInterval(() => {
+            if (idx < max) { idx++; this.state.liveStepIdx = idx; }
+        }, 900);
+    }
+
+    _stopPoll() {
+        if (this._pollInterval) { clearInterval(this._pollInterval); this._pollInterval = null; }
+    }
+
+    _stopFallback() {
+        this._stopFallbackTimer();
+        if (this._fallbackInterval) { clearInterval(this._fallbackInterval); this._fallbackInterval = null; }
+    }
+
+    _stopFallbackTimer() {
+        if (this._fallbackTimer) { clearTimeout(this._fallbackTimer); this._fallbackTimer = null; }
     }
 
     // ── voice recording ──────────────────────────────────────────────────────
@@ -363,9 +457,19 @@ export class DojoVoiceAssistant extends Component {
         this.state.processing = true;
         this._scrollToBottom();
 
+        const pipelineKey = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2))
+            .replace(/-/g, "").slice(0, 12);
+        this.state.liveSteps = [{ name: "Processing your request...", detail: "Transcribing audio and calling AI pipeline..." }];
+        this.state.liveStepIdx = 0;
+        this._startPoll(pipelineKey);
+        this._fallbackTimer = setTimeout(() => {
+            if (!this._pollHadResults) this._startFallback();
+        }, 12500);
+
         const formData = new FormData();
         formData.append("audio", blob, "recording.webm");
         formData.append("conversation_history", JSON.stringify(this.state.contextWindow));
+        formData.append("pipeline_key", pipelineKey);
 
         try {
             const resp = await fetch("/dojo/ai/voice", {
@@ -382,6 +486,10 @@ export class DojoVoiceAssistant extends Component {
                 if (lastUser && lastUser.text === "🎙️ [voice message]") {
                     lastUser.text = "🎙️ " + result.transcribed;
                 }
+                if (result.pipeline_steps && result.pipeline_steps.length > 0) {
+                    this.state.liveSteps = result.pipeline_steps;
+                    this.state.liveStepIdx = result.pipeline_steps.length - 1;
+                }
                 this._handleAiResult(result);
                 this._updateContextWindow(result.transcribed || "", result.response || "");
             } else {
@@ -390,7 +498,10 @@ export class DojoVoiceAssistant extends Component {
         } catch (err) {
             this._pushMsg("assistant", "⚠️ Could not process voice recording.");
         } finally {
+            this._stopPoll();
+            this._stopFallback();
             this.state.processing = false;
+            this.state.liveSteps = [];
             this._scrollToBottom();
         }
     }

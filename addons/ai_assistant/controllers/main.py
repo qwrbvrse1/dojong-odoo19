@@ -243,6 +243,7 @@ class AiAssistantController(http.Controller):
 
             # Step 2: Process through dojo AI assistant with confirmation flow
             chat_session_id = kwargs.get("chat_session_id") or None
+            pipeline_key = (kwargs.get("pipeline_key") or "").strip() or None
             assistant = request.env["ai.assistant.service"]
             result = assistant.handle_command(
                 transcribed,
@@ -251,6 +252,7 @@ class AiAssistantController(http.Controller):
                 audio_attachment_id=attachment.id if attachment else None,
                 conversation_history=conversation_history,
                 chat_session_id=chat_session_id,
+                pipeline_key=pipeline_key,
             )
 
             result["transcribed"] = transcribed
@@ -770,7 +772,7 @@ class AiWalkieTalkieController(http.Controller):
     # ── Text query ─────────────────────────────────────────────────────────────
 
     @http.route("/walkie/<string:token>/text", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
-    def walkie_text(self, token, pin="", text="", conversation_history=None, channel=None, chat_session_id=None, **kw):
+    def walkie_text(self, token, pin="", text="", conversation_history=None, channel=None, chat_session_id=None, pipeline_key="", **kw):
         try:
             record = self._require_walkie(token, pin)
         except ValueError as e:
@@ -794,6 +796,7 @@ class AiWalkieTalkieController(http.Controller):
                 conversation_history=conversation_history,
                 channel=channel or None,
                 chat_session_id=chat_session_id or None,
+                pipeline_key=(pipeline_key or "").strip() or None,
             )
         except Exception as exc:
             _logger.error("Walkie /text failed: %s", exc, exc_info=True)
@@ -860,6 +863,7 @@ class AiWalkieTalkieController(http.Controller):
 
             channel = request.httprequest.form.get("channel") or None
             chat_session_id = request.httprequest.form.get("chat_session_id") or None
+            pipeline_key = (request.httprequest.form.get("pipeline_key") or "").strip() or None
 
             record.sudo().write({"last_used": _dt.utcnow()})
             assistant = request.env["ai.assistant.service"].sudo()
@@ -871,6 +875,7 @@ class AiWalkieTalkieController(http.Controller):
                 conversation_history=conversation_history,
                 channel=channel,
                 chat_session_id=chat_session_id,
+                pipeline_key=pipeline_key,
             )
             result["transcribed"] = transcribed
 
@@ -943,3 +948,21 @@ class AiWalkieTalkieController(http.Controller):
         except Exception as exc:
             _logger.warning("Walkie /speak failed: %s", exc)
             return {"success": False, "error": str(exc)}
+
+    # ── Pipeline step poll (public, token-gated) ───────────────────────────────
+
+    @http.route("/walkie/<string:token>/steps", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    def walkie_steps(self, token, pin="", pipeline_key="", **kw):
+        """Return n8n pipeline steps for the given key. Same cache as /dojo/ai/steps."""
+        try:
+            self._require_walkie(token, pin)
+        except ValueError as e:
+            return {"steps": [], "done": False, "error": str(e)}
+        pipeline_key = (pipeline_key or "").strip()
+        if not pipeline_key:
+            return {"steps": [], "done": False}
+        from odoo.addons.ai_assistant.models.ai_assistant_service import AiAssistantService
+        cache = AiAssistantService._pipeline_steps_cache.get(pipeline_key)
+        if not cache:
+            return {"steps": [], "done": False}
+        return {"steps": cache["steps"], "done": cache.get("done", False)}

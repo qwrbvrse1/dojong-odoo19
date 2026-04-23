@@ -262,3 +262,47 @@
 .wt-elder-root .wt-pin-input       { font-size: 22px; padding: 16px 20px; }
 .wt-elder-root .wt-pin-btn         { width: 60px; height: 60px; font-size: 22px; }
 .wt-elder-root .wt-pin-card__label { font-size: 16px; }
+
+/* ── Pipeline steps ──────────────────────────────────────── */
+
+.wt-elder-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    margin: 0 auto 12px;
+    max-width: 420px;
+    width: 100%;
+}
+
+.wt-elder-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 18px;
+    color: #6b7280;
+    transition: color 0.2s;
+}
+
+.wt-elder-step.o-active {
+    color: #fbbf24;
+}
+
+.wt-elder-step.o-done {
+    color: #4ade80;
+}
+
+.wt-elder-step__icon {
+    flex-shrink: 0;
+    width: 22px;
+    text-align: center;
+    font-size: 18px;
+}
+
+.wt-elder-step__name {
+    font-weight: 600;
+    line-height: 1.3;
+}

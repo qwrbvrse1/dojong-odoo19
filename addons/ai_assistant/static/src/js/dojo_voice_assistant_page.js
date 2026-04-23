@@ -18,6 +18,14 @@ import { registry } from "@web/core/registry";
 import { rpc } from "@web/core/network/rpc";
 import { useService } from "@web/core/utils/hooks";
 
+// Fallback steps shown while waiting when n8n has no step nodes configured.
+const FALLBACK_STEPS = [
+    { name: "Analyzing request",  detail: "Understanding what you're asking for..." },
+    { name: "Routing to agent",   detail: "Finding the right specialist to handle this..." },
+    { name: "Querying database",  detail: "Looking up the relevant records..." },
+    { name: "Formatting results", detail: "Putting together your response..." },
+];
+
 class DojoVoiceAssistantPage extends Component {
     static template = "ai_assistant.VoiceAssistantPage";
 
@@ -46,12 +54,20 @@ class DojoVoiceAssistantPage extends Component {
             contextWindow: [],
             // Clarification follow-up
             pendingClarificationKey: null,
+            // n8n pipeline step progress
+            liveSteps: [],
+            liveStepIdx: 0,
         });
 
         this._mediaRecorder = null;
         this._audioChunks = [];
         this._currentAudio = null;
         this._chatSessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+        // Pipeline step polling (n8n)
+        this._pollInterval = null;
+        this._fallbackInterval = null;
+        this._fallbackTimer = null;
+        this._pollHadResults = false;
 
         onWillStart(async () => {
             await this.loadHistory();
@@ -169,11 +185,21 @@ class DojoVoiceAssistantPage extends Component {
         this.state.transcribedText = "";
         this.state.aiResponse = "";
 
+        const pipelineKey = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2))
+            .replace(/-/g, "").slice(0, 12);
+        this.state.liveSteps = [{ name: "Processing audio...", detail: "Transcribing and routing to AI pipeline..." }];
+        this.state.liveStepIdx = 0;
+        this._startPoll(pipelineKey);
+        this._fallbackTimer = setTimeout(() => {
+            if (!this._pollHadResults) this._startFallback();
+        }, 12500);
+
         try {
             const formData = new FormData();
             formData.append("audio", blob, "voice.webm");
             formData.append("conversation_history", JSON.stringify(this.state.contextWindow));
             formData.append("chat_session_id", this._chatSessionId);
+            formData.append("pipeline_key", pipelineKey);
 
             const resp = await fetch("/dojo/ai/voice", {
                 method: "POST",
@@ -192,6 +218,9 @@ class DojoVoiceAssistantPage extends Component {
             this.state.error = e.message || "Failed to process audio. Please try again.";
             console.error("[DojoAI] Audio error:", e);
         } finally {
+            this._stopPoll();
+            this._stopFallback();
+            this.state.liveSteps = [];
             this.state.isProcessing = false;
         }
     }
@@ -209,18 +238,31 @@ class DojoVoiceAssistantPage extends Component {
         const entered = text;
         this.state.textInput = "";
 
+        const pipelineKey = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2))
+            .replace(/-/g, "").slice(0, 12);
+        this.state.liveSteps = [{ name: "Processing your request...", detail: "Connecting to AI pipeline..." }];
+        this.state.liveStepIdx = 0;
+        this._startPoll(pipelineKey);
+        this._fallbackTimer = setTimeout(() => {
+            if (!this._pollHadResults) this._startFallback();
+        }, 12500);
+
         try {
             const result = await rpc("/dojo/ai/text", {
                 text: entered,
                 conversation_history: this.state.contextWindow,
                 chat_session_id: this._chatSessionId,
                 clarification_session_key: this.state.pendingClarificationKey || null,
+                pipeline_key: pipelineKey,
             });
             this._handleResult(result, entered);
         } catch (e) {
             this.state.error = "Failed to process command. Please try again.";
             console.error("[DojoAI] Text error:", e);
         } finally {
+            this._stopPoll();
+            this._stopFallback();
+            this.state.liveSteps = [];
             this.state.isProcessing = false;
         }
     }
@@ -385,6 +427,54 @@ class DojoVoiceAssistantPage extends Component {
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
+
+    stepClass(idx) {
+        if (idx < this.state.liveStepIdx) return "o-done";
+        if (idx === this.state.liveStepIdx) return "o-active";
+        return "o-pending";
+    }
+
+    _startPoll(pipelineKey) {
+        this._stopPoll();
+        this._pollHadResults = false;
+        this._pollInterval = setInterval(async () => {
+            try {
+                const r = await rpc("/dojo/ai/steps", { pipeline_key: pipelineKey });
+                if (r && r.steps && r.steps.length > 0) {
+                    this._pollHadResults = true;
+                    this.state.liveSteps = r.steps;
+                    this.state.liveStepIdx = r.steps.length - 1;
+                    this._stopFallback();
+                }
+                if (r && r.done) this._stopPoll();
+            } catch (_e) { /* ignore */ }
+        }, 400);
+    }
+
+    _startFallback() {
+        if (this._fallbackInterval) return;
+        this._stopFallbackTimer();
+        this.state.liveSteps = [...FALLBACK_STEPS];
+        this.state.liveStepIdx = 0;
+        let idx = 0;
+        const max = FALLBACK_STEPS.length - 1;
+        this._fallbackInterval = setInterval(() => {
+            if (idx < max) { idx++; this.state.liveStepIdx = idx; }
+        }, 900);
+    }
+
+    _stopPoll() {
+        if (this._pollInterval) { clearInterval(this._pollInterval); this._pollInterval = null; }
+    }
+
+    _stopFallback() {
+        this._stopFallbackTimer();
+        if (this._fallbackInterval) { clearInterval(this._fallbackInterval); this._fallbackInterval = null; }
+    }
+
+    _stopFallbackTimer() {
+        if (this._fallbackTimer) { clearTimeout(this._fallbackTimer); this._fallbackTimer = null; }
+    }
 
     _clearResult() {
         this.state.aiResponse = "";

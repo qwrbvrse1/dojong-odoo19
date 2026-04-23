@@ -402,8 +402,9 @@ html .o_web_client>.o_action_manager {
 
 .o_di_table .o_di_table_fill_rate,
 .o_di_table .o_di_table_attendance {
-    width: 15%;
-    min-width: 120px;
+    width: 1%;
+    min-width: 100px;
+    white-space: nowrap;
 }
 
 .o_di_table td:nth-child(1) {
@@ -487,7 +488,7 @@ html .o_web_client>.o_action_manager {
 .o_ad_bar_wrap {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .o_ad_bar_bg {
@@ -496,7 +497,8 @@ html .o_web_client>.o_action_manager {
     border-radius: 4px;
     background: #f1f3f4;
     overflow: hidden;
-    min-width: 60px;
+    min-width: 40px;
+    max-width: 60px;
 }
 
 .o_ad_bar_fill {
@@ -508,7 +510,8 @@ html .o_web_client>.o_action_manager {
 .o_ad_bar_label {
     font-size: 0.78rem;
     font-weight: 600;
-    text-align: center;
+    min-width: 36px;
+    text-align: right;
     white-space: nowrap;
 }
 
@@ -1920,6 +1923,73 @@ html .o_web_client>.o_action_manager {
     gap: 5px;
     align-items: center;
     padding: 10px 16px !important;
+}
+
+/* ── Pipeline step progress bubble (replaces typing dots when steps arrive) ── */
+.dojo-va-steps-bubble {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #f1f3f4;
+    border-radius: 14px;
+    border-bottom-left-radius: 4px;
+    padding: 10px 14px;
+    font-size: 0.875rem;
+}
+
+.dojo-va-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.dojo-va-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #9aa0a6;
+    transition: color .2s ease;
+}
+
+.dojo-va-step__icon {
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.dojo-va-step__label {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.dojo-va-step__name { font-weight: 500; }
+
+.dojo-va-step__detail {
+    font-size: 11px;
+    opacity: .75;
+    word-break: break-word;
+}
+
+.dojo-va-step.o-done    { color: #2d9e50; }
+.dojo-va-step.o-active  { color: #202124; }
+.dojo-va-step.o-pending { color: #bdc1c6; }
+
+.dojo-va-step.o-active .dojo-va-step__icon {
+    animation: dojo-va-step-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes dojo-va-step-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: .35; }
 }
 
 .dojo-va-typing span {

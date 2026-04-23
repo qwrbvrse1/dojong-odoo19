@@ -72,15 +72,56 @@
                                 </button>
                             </div>
                         </t>
+                        <!-- Agent log (collapsible) -->
+                        <div t-if="msg.agent_name or msg.intent_type" class="dojo-wt-log">
+                            <button class="dojo-wt-log-toggle" t-on-click="() => toggleLog(msg)">
+                                <i t-att-class="msg.logOpen ? 'fa fa-chevron-up' : 'fa fa-chevron-down'"/>
+                                <span class="dojo-wt-log-agent"><t t-esc="msg.agent_name or 'AI'"/></span>
+                            </button>
+                            <div t-if="msg.logOpen" class="dojo-wt-log-body">
+                                <div t-if="msg.agent_name" class="dojo-wt-log-row">
+                                    <span class="dojo-wt-log-key">Agent</span>
+                                    <span class="dojo-wt-log-val"><t t-esc="msg.agent_name"/></span>
+                                </div>
+                                <div t-if="msg.intent_type" class="dojo-wt-log-row">
+                                    <span class="dojo-wt-log-key">Intent</span>
+                                    <span class="dojo-wt-log-val dojo-wt-log-mono"><t t-esc="msg.intent_type"/></span>
+                                </div>
+                                <div t-if="msg.confidence" class="dojo-wt-log-row">
+                                    <span class="dojo-wt-log-key">Confidence</span>
+                                    <span class="dojo-wt-log-val"><t t-esc="msg.confidence"/></span>
+                                </div>
+                                <div t-if="msg.execution_time_ms" class="dojo-wt-log-row">
+                                    <span class="dojo-wt-log-key">Time</span>
+                                    <span class="dojo-wt-log-val"><t t-esc="msg.execution_time_ms"/></span>
+                                </div>
+                            </div>
+                        </div>
                         <div class="dojo-wt-bubble__time" t-out="msg.time"/>
                     </div>
                 </t>
 
-                <!-- Thinking spinner inside thread -->
-                <div t-if="state.isProcessing" class="dojo-wt-thinking">
-                    <span class="dojo-wt-thinking__dot"/>
-                    <span class="dojo-wt-thinking__dot"/>
-                    <span class="dojo-wt-thinking__dot"/>
+                <!-- Pipeline step progress (while processing) -->
+                <div t-if="state.isProcessing" class="dojo-wt-steps">
+                    <t t-foreach="state.liveSteps" t-as="step" t-key="step_index">
+                        <div class="dojo-wt-step" t-att-class="stepClass(step_index)">
+                            <span class="dojo-wt-step__icon">
+                                <i t-if="stepClass(step_index) === 'o-done'" class="fa fa-check-circle"/>
+                                <i t-elif="stepClass(step_index) === 'o-active'" class="fa fa-circle-o-notch fa-spin"/>
+                                <i t-else="" class="fa fa-circle-o"/>
+                            </span>
+                            <span class="dojo-wt-step__label">
+                                <span class="dojo-wt-step__name"><t t-esc="step.name or step"/></span>
+                                <span t-if="step.detail" class="dojo-wt-step__detail"><t t-esc="step.detail"/></span>
+                            </span>
+                        </div>
+                    </t>
+                    <!-- Animated dots shown until first step appears -->
+                    <div t-if="!state.liveSteps.length" class="dojo-wt-thinking">
+                        <span class="dojo-wt-thinking__dot"/>
+                        <span class="dojo-wt-thinking__dot"/>
+                        <span class="dojo-wt-thinking__dot"/>
+                    </div>
                 </div>
 
             </div>

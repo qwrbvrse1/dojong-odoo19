@@ -1,0 +1,364 @@
+{
+  "name": "Dojo AI Router",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-query",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a0000001-0001-4001-8001-000000000001",
+      "name": "Webhook",
+      "webhookId": "ed853e5d-4fa7-48b1-aba8-f793b62cfe92"
+    },
+    {
+      "parameters": {
+        "jsCode": "// \u2500\u2500 Validate & normalise incoming request \u2500\u2500\nconst body = $input.first().json.body || $input.first().json;\n\nconst text = (body.text || '').trim();\nif (!text) {\n  return [{ json: { success: false, state: 'error', response: 'Missing required field: text', error: 'validation_error' } }];\n}\n\nconst VALID_ROLES = ['admin', 'instructor', 'kiosk'];\nconst role = VALID_ROLES.includes(body.role) ? body.role : 'instructor';\n\nconst session_id = body.session_id || ('auto_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));\n\nlet context_window = parseInt(body.context_window, 10);\nif (isNaN(context_window) || context_window < 1) context_window = 10;\nif (context_window > 50) context_window = 50;\n\nconst channel = body.channel || null;\nconst pipeline_key = body.pipeline_key || '';\n\nreturn [{ json: { text, role, session_id, context_window, channel, pipeline_key, _valid: true } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "a0000001-0001-4001-8001-000000000002",
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "id": "cond-valid",
+              "leftValue": "={{ $json._valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "a0000001-0001-4001-8001-000000000003",
+      "name": "Is Valid?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://web:8069/api/v1/ai/chat/history",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ session_id: $('Validate Input').item.json.session_id, limit: $('Validate Input').item.json.context_window || 20 }) }}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        0
+      ],
+      "id": "a0000001-0001-4001-8001-000000000030",
+      "name": "Fetch History",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "MGTS1e0OnNIkltBl",
+          "name": "Odoo API Key"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// \u2500\u2500 Format conversation history into a prompt-friendly string \u2500\u2500\nconst histResp = $input.first().json;\nconst messages = (histResp && histResp.messages) || [];\n\nlet conversation_history = '';\nif (messages.length > 0) {\n  const lines = messages.map(m => {\n    const label = m.role === 'user' ? 'User' : 'Assistant';\n    return label + ': ' + m.content;\n  });\n  conversation_history = lines.join('\\n');\n}\n\n// Pass through all Validate Input fields plus the new history\nconst vi = $('Validate Input').item.json;\nreturn [{ json: { ...vi, conversation_history } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "id": "a0000001-0001-4001-8001-000000000031",
+      "name": "Build History"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://web:8069/api/v1/ai/discover",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $('Build History').item.json.text, role: $('Build History').item.json.role, include_prompt: true, conversation_history: $('Build History').item.json.conversation_history || '' }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1104,
+        -80
+      ],
+      "id": "a0000001-0001-4001-8001-000000000004",
+      "name": "Discovery",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "MGTS1e0OnNIkltBl",
+          "name": "Odoo API Key"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge Build History (user request context) with Discovery (agent routing).\n// After the Switch node, $('Build History') is no longer accessible,\n// so we unify everything into one item here.\nconst bh = $('Build History').item.json;\nconst disc = $input.first().json;\nreturn [{ json: {\n  text: bh.text,\n  role: bh.role,\n  session_id: bh.session_id,\n  context_window: bh.context_window,\n  conversation_history: bh.conversation_history || '',\n  pipeline_key: bh.pipeline_key || '',\n  agent: disc.agent || null,\n  agent_name: disc.agent_name || null,\n  system_prompt: disc.system_prompt || '',\n  valid_intent_types: disc.valid_intent_types || [],\n  db_context: disc.db_context || '',\n  intents: disc.intents || [],\n  intent_count: disc.intent_count || 0,\n  system_prompt_available: disc.system_prompt_available || false\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        -80
+      ],
+      "id": "a0000001-0001-4001-8001-000000000032",
+      "name": "Merge Context"
+    },
+    {
+      "parameters": {
+        "jsCode": "// \u2500\u2500 Format response for Odoo normalisation \u2500\u2500\nconst raw = $input.first().json;\nconst agent = $('Merge Context').item.json.agent || 'unknown';\n\nreturn [{\n  json: {\n    success: raw.success !== false,\n    state: raw.state || 'executed',\n    response: raw.response || raw.output || raw.text || '',\n    intent: raw.intent || null,\n    result: raw.result || null,\n    session_key: raw.session_key || null,\n    agent: agent,\n    agent_name: $('Merge Context').item.json.agent_name || null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        80
+      ],
+      "id": "a0000001-0001-4001-8001-000000000020",
+      "name": "Format Response"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://web:8069/api/v1/ai/chat/save",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ session_id: $('Merge Context').item.json.session_id, user_message: $('Merge Context').item.json.text, assistant_message: $('Format Response').item.json.response || '' }) }}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2304,
+        80
+      ],
+      "id": "a0000001-0001-4001-8001-000000000034",
+      "name": "Save Turn",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "MGTS1e0OnNIkltBl",
+          "name": "Odoo API Key"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// \u2500\u2500 Return the formatted response (Save Turn result is discarded) \u2500\u2500\nconst resp = $('Format Response').item.json;\nreturn [{ json: resp }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2528,
+        80
+      ],
+      "id": "a0000001-0001-4001-8001-000000000033",
+      "name": "Return Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "// \u2500\u2500 Return validation or discovery error \u2500\u2500\nconst input = $input.first().json;\nreturn [{\n  json: {\n    success: false,\n    state: 'error',\n    response: input.response || input.error || 'An error occurred during processing.',\n    error: input.error || 'processing_error',\n    intent: null,\n    result: null,\n    session_key: null,\n    agent: null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        208
+      ],
+      "id": "a0000001-0001-4001-8001-000000000021",
+      "name": "Error Response"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "EgxK4leeuX9Nurop"
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        -80
+      ],
+      "id": "a0000001-0001-4001-8001-000000000042",
+      "name": "Call Supervisor"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Is Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid?": {
+      "main": [
+        [
+          {
+            "node": "Fetch History",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch History": {
+      "main": [
+        [
+          {
+            "node": "Build History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build History": {
+      "main": [
+        [
+          {
+            "node": "Discovery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discovery": {
+      "main": [
+        [
+          {
+            "node": "Merge Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Context": {
+      "main": [
+        [
+          {
+            "node": "Call Supervisor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Supervisor": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Save Turn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Turn": {
+      "main": [
+        [
+          {
+            "node": "Return Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "binaryMode": "separate"
+  },
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

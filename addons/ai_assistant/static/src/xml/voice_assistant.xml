@@ -81,18 +81,41 @@
                 </div>
             </t>
 
-            <!-- Typing indicator -->
+            <!-- Typing indicator / pipeline step progress -->
             <t t-if="state.processing">
                 <div class="dojo-va-msg dojo-va-msg--assistant">
                     <div class="dojo-va-msg-avatar">
                         <img src="/ai_assistant/static/src/img/uft-logo.png" alt="AI"/>
                     </div>
-                    <div class="dojo-va-msg-bubble dojo-va-typing">
-                        <span/><span/><span/>
-                        <t t-if="state.thinkingHint">
-                            <div class="dojo-va-thinking-hint">Still thinking… complex queries take a moment</div>
-                        </t>
-                    </div>
+                    <t t-if="state.liveSteps.length">
+                        <!-- Steps get their own full-width container, not squeezed into typing bubble -->
+                        <div class="dojo-va-steps-bubble">
+                            <t t-foreach="state.liveSteps" t-as="step" t-key="step_index">
+                                <div t-attf-class="dojo-va-step {{ stepClass(step_index) }}">
+                                    <span class="dojo-va-step__icon">
+                                        <t t-if="step_index &lt; state.liveStepIdx">✓</t>
+                                        <t t-elif="step_index === state.liveStepIdx">●</t>
+                                        <t t-else="">○</t>
+                                    </span>
+                                    <span class="dojo-va-step__label">
+                                        <span class="dojo-va-step__name" t-esc="step.name"/>
+                                        <span t-if="step.detail" class="dojo-va-step__detail" t-esc="step.detail"/>
+                                    </span>
+                                </div>
+                            </t>
+                            <t t-if="state.thinkingHint">
+                                <div class="dojo-va-thinking-hint">Still thinking… complex queries take a moment</div>
+                            </t>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <div class="dojo-va-msg-bubble dojo-va-typing">
+                            <span/><span/><span/>
+                            <t t-if="state.thinkingHint">
+                                <div class="dojo-va-thinking-hint">Still thinking… complex queries take a moment</div>
+                            </t>
+                        </div>
+                    </t>
                 </div>
                 <button class="dojo-va-cancel-btn" t-on-click="cancelAiRequest">Cancel</button>
             </t>

@@ -22,8 +22,26 @@ function nowLabel() {
     return new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
+function formatConfidence(val) {
+    if (val === null || val === undefined) return null;
+    return Math.round(val * 100) + "%";
+}
+
+function formatMs(ms) {
+    if (!ms) return null;
+    return ms < 1000 ? ms + "ms" : (ms / 1000).toFixed(1) + "s";
+}
+
 const YES_RE = /\b(yes|confirm|yeah|yep|sure|correct|ok|okay|affirmative|do it)\b/i;
 const NO_RE  = /\b(no|cancel|nope|stop|abort|never mind|nevermind|don'?t)\b/i;
+
+// Minimal fallback steps shown while waiting when n8n has no step nodes configured.
+const FALLBACK_STEPS = [
+    { name: "Analyzing request",  detail: "Understanding what you're asking for..." },
+    { name: "Routing to agent",   detail: "Finding the right specialist to handle this..." },
+    { name: "Querying database",  detail: "Looking up the relevant records..." },
+    { name: "Formatting results", detail: "Putting together your response..." },
+];
 
 // ─── component ──────────────────────────────────────────────────────────────
 
@@ -58,6 +76,9 @@ class DojoWalkieTalkie extends Component {
             error: null,
             // User name for personalized empty state
             userName: "",
+            // n8n pipeline steps
+            liveSteps: [],
+            liveStepIdx: 0,
         });
 
         this._mediaRecorder = null;
@@ -65,6 +86,10 @@ class DojoWalkieTalkie extends Component {
         this._stream        = null;
         this._currentAudio  = null;
         this._lastTranscribed = "";
+        this._pollInterval    = null;
+        this._fallbackInterval = null;
+        this._fallbackTimer   = null;
+        this._pollHadResults  = false;
 
         // Fetch user name for personalized greeting
         rpc("/dojo/ai/config", {}).then((cfg) => {
@@ -76,6 +101,8 @@ class DojoWalkieTalkie extends Component {
         onWillUnmount(() => {
             this._cleanupRecording();
             if (this._currentAudio) { this._currentAudio.pause(); this._currentAudio = null; }
+            this._stopPoll();
+            this._stopFallback();
         });
     }
 
@@ -171,11 +198,26 @@ class DojoWalkieTalkie extends Component {
 
         this.state.isProcessing = true;
         this.state.statusLabel = "Thinking…";
+        this.state.liveSteps = [];
+        this.state.liveStepIdx = 0;
+
+        const pipelineKey = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+
+        // Show placeholder step immediately; fall back to fake animation if n8n
+        // doesn't push real steps within 12.5s.
+        this.state.liveSteps = [{ name: "Processing your request...", detail: "Connecting to AI pipeline..." }];
+        this.state.liveStepIdx = 0;
+        this._scrollThread();
+        this._startPoll(pipelineKey);
+        this._fallbackTimer = setTimeout(() => {
+            if (!this._pollHadResults) this._startFallback();
+        }, 12500);
 
         try {
             const formData = new FormData();
             formData.append("audio", blob, "walkie.webm");
             formData.append("conversation_history", JSON.stringify(this.state.contextWindow));
+            formData.append("pipeline_key", pipelineKey);
 
             const resp = await fetch("/dojo/ai/voice", {
                 method: "POST",
@@ -188,12 +230,22 @@ class DojoWalkieTalkie extends Component {
                 const msg = result && result.error ? result.error : `Server error ${resp.status}`;
                 throw new Error(msg);
             }
+
+            // Use accumulated pipeline steps from n8n response if available
+            if (result.pipeline_steps && result.pipeline_steps.length > 0) {
+                this.state.liveSteps = result.pipeline_steps;
+                this.state.liveStepIdx = result.pipeline_steps.length - 1;
+            }
+
             this._handleResult(result);
         } catch (e) {
             this._pushError(e.message || "Failed to process audio — please try again.");
             console.error("[walkie-talkie]", e);
         } finally {
+            this._stopPoll();
+            this._stopFallback();
             this.state.isProcessing = false;
+            this.state.liveSteps = [];
         }
     }
 
@@ -226,17 +278,25 @@ class DojoWalkieTalkie extends Component {
             this.state.sessionKey = null;
         }
 
+        const agentMeta = {
+            agent_name: result.agent_name || null,
+            intent_type: (result.intent || {}).intent_type || null,
+            confidence: formatConfidence((result.intent || {}).confidence),
+            execution_time_ms: formatMs(result.execution_time_ms),
+            logOpen: false,
+        };
+
         if (result.state === "pending_confirmation") {
             const prompt = result.confirmation_prompt || result.response || "Please confirm.";
             this.state.awaitingConfirmation = true;
             this.state.sessionKey = result.session_key || null;
             this.state.confirmationPrompt = prompt;
-            this._pushMsg("ai", prompt, { confirm: true });
+            this._pushMsg("ai", prompt, { confirm: true, ...agentMeta });
             this._speakResponse(prompt);
             this.state.statusLabel = "Say Yes or No";
         } else if (result.state === "needs_clarification") {
             const response = result.response || "Could you clarify?";
-            this._pushMsg("ai", response);
+            this._pushMsg("ai", response, agentMeta);
             this._speakResponse(response);
             this._updateContextWindow(this._lastTranscribed, response);
             this.state.statusLabel = "Hold to talk";
@@ -244,7 +304,7 @@ class DojoWalkieTalkie extends Component {
             this.state.awaitingConfirmation = false;
             this.state.sessionKey = null;
             const response = result.response || "Done!";
-            this._pushMsg("ai", response);
+            this._pushMsg("ai", response, agentMeta);
             this._speakResponse(response);
             this._updateContextWindow(this._lastTranscribed, response);
             this.state.statusLabel = "Hold to talk";
@@ -286,7 +346,13 @@ class DojoWalkieTalkie extends Component {
             } else {
                 const r = result.result || {};
                 const msg = result.response || r.response || r.message || "Done!";
-                this._pushMsg("ai", msg);
+                this._pushMsg("ai", msg, {
+                    agent_name: result.agent_name || null,
+                    intent_type: (result.intent || {}).intent_type || null,
+                    confidence: formatConfidence((result.intent || {}).confidence),
+                    execution_time_ms: formatMs(result.execution_time_ms),
+                    logOpen: false,
+                });
                 this._speakResponse(msg);
                 this._updateContextWindow("(confirmed action)", msg);
             }
@@ -296,6 +362,63 @@ class DojoWalkieTalkie extends Component {
             this.state.isProcessing = false;
             this.state.statusLabel = "Hold to talk";
         }
+    }
+
+    // ── Agent log ─────────────────────────────────────────────────────────────
+
+    toggleLog(msg) {
+        msg.logOpen = !msg.logOpen;
+    }
+
+    // ── n8n pipeline step polling ─────────────────────────────────────────────
+
+    stepClass(idx) {
+        if (idx < this.state.liveStepIdx) return "o-done";
+        if (idx === this.state.liveStepIdx) return "o-active";
+        return "o-pending";
+    }
+
+    _startPoll(pipelineKey) {
+        this._stopPoll();
+        this._pollHadResults = false;
+        this._pollInterval = setInterval(async () => {
+            try {
+                const r = await rpc("/dojo/ai/steps", { pipeline_key: pipelineKey });
+                if (r && r.steps && r.steps.length > 0) {
+                    this._pollHadResults = true;
+                    this.state.liveSteps = r.steps;
+                    this.state.liveStepIdx = r.steps.length - 1;
+                    this._stopFallback();
+                    this._scrollThread();
+                }
+                if (r && r.done) this._stopPoll();
+            } catch (_e) { /* ignore poll errors */ }
+        }, 400);
+    }
+
+    _startFallback() {
+        if (this._fallbackInterval) return;
+        this._stopFallbackTimer();
+        this.state.liveSteps = [...FALLBACK_STEPS];
+        this.state.liveStepIdx = 0;
+        let idx = 0;
+        const max = FALLBACK_STEPS.length - 1;
+        this._fallbackInterval = setInterval(() => {
+            if (idx < max) { idx++; this.state.liveStepIdx = idx; }
+        }, 900);
+    }
+
+    _stopPoll() {
+        if (this._pollInterval) { clearInterval(this._pollInterval); this._pollInterval = null; }
+    }
+
+    _stopFallback() {
+        this._stopFallbackTimer();
+        if (this._fallbackInterval) { clearInterval(this._fallbackInterval); this._fallbackInterval = null; }
+    }
+
+    _stopFallbackTimer() {
+        if (this._fallbackTimer) { clearTimeout(this._fallbackTimer); this._fallbackTimer = null; }
     }
 
     // ── ElevenLabs TTS ───────────────────────────────────────────────────────

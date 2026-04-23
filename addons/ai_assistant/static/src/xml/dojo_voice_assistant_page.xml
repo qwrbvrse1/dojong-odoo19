@@ -79,6 +79,32 @@
                 <button type="button" class="btn-close float-end" t-on-click="() => { this.state.error = null; }"/>
             </div>
 
+            <!-- ── Pipeline step progress (visible while processing) ──── -->
+            <div t-if="state.isProcessing" class="mt-4 mx-auto" style="max-width: 560px;">
+                <t t-if="state.liveSteps.length">
+                    <div class="dojo-vap-steps card shadow-sm border-primary p-3">
+                        <t t-foreach="state.liveSteps" t-as="step" t-key="step_index">
+                            <div t-attf-class="dojo-vap-step {{ stepClass(step_index) }}">
+                                <span class="dojo-vap-step__icon">
+                                    <i t-if="stepClass(step_index) === 'o-done'" class="fa fa-check-circle"/>
+                                    <i t-elif="stepClass(step_index) === 'o-active'" class="fa fa-circle-o-notch fa-spin"/>
+                                    <i t-else="" class="fa fa-circle-o"/>
+                                </span>
+                                <span class="dojo-vap-step__label">
+                                    <span class="dojo-vap-step__name"><t t-esc="step.name or step"/></span>
+                                    <span t-if="step.detail" class="dojo-vap-step__detail"><t t-esc="step.detail"/></span>
+                                </span>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="text-center py-3">
+                        <i class="fa fa-spinner fa-spin fa-2x text-primary"/>
+                    </div>
+                </t>
+            </div>
+
             <!-- ── Current result card ────────────────────────────────── -->
             <div t-if="state.transcribedText or state.aiResponse or state.awaitingConfirmation" class="mt-4" id="current-conversation-result">
                 <div t-attf-class="card shadow-sm #{state.awaitingConfirmation ? 'border-warning' : 'border-primary'}">
@@ -109,11 +135,6 @@
                                     <i class="fa fa-times me-1"/> Cancel
                                 </button>
                             </div>
-                        </div>
-
-                        <!-- Processing indicator -->
-                        <div t-if="state.isProcessing" class="text-center py-3">
-                            <i class="fa fa-spinner fa-spin fa-2x text-primary"/>
                         </div>
 
                         <!-- AI Response -->

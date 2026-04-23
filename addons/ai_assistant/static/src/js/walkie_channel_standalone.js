@@ -34,6 +34,13 @@
     const YES_RE = /\b(yes|confirm|yeah|yep|sure|correct|ok|okay|affirmative|do it)\b/i;
     const NO_RE  = /\b(no|cancel|nope|stop|abort|never mind|nevermind|don'?t)\b/i;
 
+    const FALLBACK_STEPS = [
+        { name: "Analyzing request",  detail: "Understanding what you're asking for..." },
+        { name: "Routing to agent",   detail: "Finding the right specialist to handle this..." },
+        { name: "Querying database",  detail: "Looking up the relevant records..." },
+        { name: "Formatting results", detail: "Putting together your response..." },
+    ];
+
     function nowLabel() {
         return new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
     }
@@ -221,10 +228,25 @@
                         </div>
                     </t>
 
-                    <div t-if="state.isProcessing" class="dojo-wt-thinking">
-                        <span class="dojo-wt-thinking__dot"/>
-                        <span class="dojo-wt-thinking__dot"/>
-                        <span class="dojo-wt-thinking__dot"/>
+                    <div t-if="state.isProcessing" class="dojo-wt-steps">
+                        <t t-foreach="state.liveSteps" t-as="step" t-key="step_index">
+                            <div class="dojo-wt-step" t-att-class="stepClass(step_index)">
+                                <span class="dojo-wt-step__icon">
+                                    <i t-if="stepClass(step_index) === 'o-done'" class="fa fa-check-circle"/>
+                                    <i t-elif="stepClass(step_index) === 'o-active'" class="fa fa-circle-o-notch fa-spin"/>
+                                    <i t-else="" class="fa fa-circle-o"/>
+                                </span>
+                                <span class="dojo-wt-step__label">
+                                    <span class="dojo-wt-step__name" t-out="step.name or step"/>
+                                    <span t-if="step.detail" class="dojo-wt-step__detail" t-out="step.detail"/>
+                                </span>
+                            </div>
+                        </t>
+                        <div t-if="!state.liveSteps.length" class="dojo-wt-thinking">
+                            <span class="dojo-wt-thinking__dot"/>
+                            <span class="dojo-wt-thinking__dot"/>
+                            <span class="dojo-wt-thinking__dot"/>
+                        </div>
                     </div>
                 </div>
 
@@ -281,6 +303,8 @@
                 sessionKey: null,
                 statusLabel: "Hold to talk",
                 error: null,
+                liveSteps: [],
+                liveStepIdx: 0,
             });
 
             this._contextWindowMax = (window.WT_CONFIG && window.WT_CONFIG.context_window_turns) || 10;
@@ -290,6 +314,10 @@
             this._stream         = null;
             this._currentAudio   = null;
             this._lastTranscribed = "";
+            this._pollInterval    = null;
+            this._fallbackInterval = null;
+            this._fallbackTimer   = null;
+            this._pollHadResults  = false;
 
             // Push a personalized greeting bubble on mount
             const userName = this.props.userName || "";
@@ -301,6 +329,8 @@
             onWillUnmount(() => {
                 this._cleanupRecording();
                 if (this._currentAudio) { this._currentAudio.pause(); this._currentAudio = null; }
+                this._stopPoll();
+                this._stopFallback();
             });
         }
 
@@ -429,13 +459,21 @@
 
             const blob = new Blob(this._audioChunks, { type: mimeType || "audio/webm" });
             this._audioChunks = [];
+            const pipelineKey = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
             this.state.isProcessing = true;
             this.state.statusLabel = "Thinking…";
+            this.state.liveSteps = [];
+            this.state.liveStepIdx = 0;
+            this._startPoll(pipelineKey);
+            this._fallbackTimer = setTimeout(() => {
+                if (!this._pollHadResults) this._startFallback();
+            }, 12500);
 
             try {
                 const formData = new FormData();
                 formData.append("audio", blob, "walkie.webm");
                 formData.append("pin", this.props.pin);
+                formData.append("pipeline_key", pipelineKey);
                 formData.append("conversation_history", JSON.stringify(this.state.contextWindow));
                 formData.append("channel", this.state.activeChannel);
                 formData.append("chat_session_id", this._chatSessionId);
@@ -450,6 +488,9 @@
             } catch (e) {
                 this._pushError(e.message || "Failed to process audio — please try again.");
             } finally {
+                this._stopPoll();
+                this._stopFallback();
+                this.state.liveSteps = [];
                 this.state.isProcessing = false;
             }
         }
@@ -459,13 +500,21 @@
         async sendText(text) {
             text = (text || "").trim();
             if (!text || this.state.isProcessing) return;
+            const pipelineKey = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
             this.state.isProcessing = true;
             this.state.statusLabel = "Thinking…";
+            this.state.liveSteps = [];
+            this.state.liveStepIdx = 0;
             this._pushMsg("user", text);
+            this._startPoll(pipelineKey);
+            this._fallbackTimer = setTimeout(() => {
+                if (!this._pollHadResults) this._startFallback();
+            }, 12500);
 
             try {
                 const result = await jsonRpc(`/walkie/${window.WT_TOKEN}/text`, {
                     pin: this.props.pin,
+                    pipeline_key: pipelineKey,
                     text,
                     conversation_history: this.state.contextWindow,
                     channel: this.state.activeChannel,
@@ -475,6 +524,9 @@
             } catch (e) {
                 this._pushError(e.message || "Request failed.");
             } finally {
+                this._stopPoll();
+                this._stopFallback();
+                this.state.liveSteps = [];
                 this.state.isProcessing = false;
             }
         }
@@ -603,6 +655,54 @@
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
+
+        stepClass(idx) {
+            if (idx < this.state.liveStepIdx) return "o-done";
+            if (idx === this.state.liveStepIdx) return "o-active";
+            return "o-pending";
+        }
+
+        _startPoll(pipelineKey) {
+            this._pollHadResults = false;
+            this._pollInterval = setInterval(async () => {
+                try {
+                    const data = await jsonRpc(`/walkie/${window.WT_TOKEN}/steps`, {
+                        pin: this.props.pin,
+                        pipeline_key: pipelineKey,
+                    });
+                    if (!data || !data.steps || !data.steps.length) return;
+                    this._pollHadResults = true;
+                    this._stopFallback();
+                    this.state.liveSteps = data.steps;
+                    this.state.liveStepIdx = data.done ? data.steps.length : Math.max(0, data.steps.length - 1);
+                    this._scrollThread();
+                } catch (_) {}
+            }, 400);
+        }
+
+        _startFallback() {
+            let idx = 0;
+            this.state.liveSteps = [FALLBACK_STEPS[0]];
+            this.state.liveStepIdx = 0;
+            this._scrollThread();
+            this._fallbackInterval = setInterval(() => {
+                if (idx < FALLBACK_STEPS.length - 1) {
+                    idx++;
+                    this.state.liveSteps = FALLBACK_STEPS.slice(0, idx + 1);
+                    this.state.liveStepIdx = idx;
+                    this._scrollThread();
+                }
+            }, 2500);
+        }
+
+        _stopPoll() {
+            if (this._pollInterval) { clearInterval(this._pollInterval); this._pollInterval = null; }
+        }
+
+        _stopFallback() {
+            if (this._fallbackTimer) { clearTimeout(this._fallbackTimer); this._fallbackTimer = null; }
+            if (this._fallbackInterval) { clearInterval(this._fallbackInterval); this._fallbackInterval = null; }
+        }
 
         _pushMsg(role, text, meta) {
             this.state.messages.push(Object.assign({ role, text, time: nowLabel() }, meta || {}));
