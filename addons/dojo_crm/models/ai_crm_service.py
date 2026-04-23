@@ -314,6 +314,91 @@ class AiAssistantServiceCrm(models.AbstractModel):
             "message": f"Lead '{lead.contact_name or lead.name}' marked as won.",
         }
 
+    def _handle_lead_note_add(self, intent_data, resolved_data, action_log=None):
+        """Add an internal note to a CRM lead."""
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        lead = self._resolve_crm_lead(intent_data)
+        if not lead:
+            return {"success": False, "message": "Could not find the specified lead."}
+
+        note = params.get("note") or params.get("message") or params.get("text", "")
+        if not note:
+            return {"success": False, "message": "No note text provided."}
+
+        lead.message_post(
+            body=note,
+            message_type="comment",
+            subtype_xmlid="mail.mt_note",
+        )
+        return {
+            "success": True,
+            "message": f"Note added to lead '{lead.contact_name or lead.name}'.",
+        }
+
+    def _handle_trial_conversion_report(self, intent_data, resolved_data, action_log=None):
+        """
+        Report on trial-to-member conversion rates.
+
+        Counts leads tagged as trial/prospect that have been won (converted) vs
+        lost over the requested period, and lists recently won trials.
+        """
+        params = intent_data.get("parameters", {}) if intent_data else {}
+        from datetime import date, timedelta
+
+        period = params.get("period", "month").lower()
+        today = date.today()
+        if period in ("week", "7days"):
+            date_from = today - timedelta(days=7)
+        elif period in ("quarter", "90days"):
+            date_from = today - timedelta(days=90)
+        else:
+            date_from = today.replace(day=1)  # month-to-date
+
+        domain_base = [("create_date", ">=", str(date_from))]
+        Lead = self.env["crm.lead"]
+
+        total = Lead.search_count(domain_base)
+        won = Lead.search_count(domain_base + [("active", "=", False), ("probability", "=", 100)])
+        # Approximate won: use stage with is_won flag if available
+        try:
+            won_stages = self.env["crm.stage"].search([("is_won", "=", True)])
+            if won_stages:
+                won = Lead.search_count(domain_base + [("stage_id", "in", won_stages.ids)])
+        except Exception:
+            pass
+        lost = Lead.search_count(domain_base + [("active", "=", False), ("probability", "=", 0)])
+
+        conversion_rate = round((won / total * 100), 1) if total else 0.0
+
+        # Recent won trials
+        try:
+            won_stage_ids = self.env["crm.stage"].search([("is_won", "=", True)]).ids
+            recent_won = Lead.search(
+                domain_base + ([("stage_id", "in", won_stage_ids)] if won_stage_ids else []),
+                limit=5,
+                order="write_date desc",
+            )
+            recent_names = [l.contact_name or l.name for l in recent_won]
+        except Exception:
+            recent_names = []
+
+        return {
+            "success": True,
+            "period": period,
+            "date_from": str(date_from),
+            "total_leads": total,
+            "won": won,
+            "lost": lost,
+            "conversion_rate": conversion_rate,
+            "recent_won": recent_names,
+            "message": (
+                f"Trial conversion ({date_from} to {today}): "
+                f"{won}/{total} converted ({conversion_rate}%). "
+                f"{lost} marked lost."
+                + (f" Recent wins: {', '.join(recent_names)}." if recent_names else "")
+            ),
+        }
+
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------

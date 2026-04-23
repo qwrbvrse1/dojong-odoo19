@@ -1,0 +1,1345 @@
+{
+  "updatedAt": "2026-04-23T01:25:04.773Z",
+  "createdAt": "2026-04-23T00:08:02.691Z",
+  "id": "EgxK4leeuX9Nurop",
+  "name": "Agent: Supervisor",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "text",
+              "type": "string"
+            },
+            {
+              "name": "role",
+              "type": "string"
+            },
+            {
+              "name": "session_id",
+              "type": "string"
+            },
+            {
+              "name": "context_window",
+              "type": "string"
+            },
+            {
+              "name": "system_prompt",
+              "type": "string"
+            },
+            {
+              "name": "valid_intent_types",
+              "type": "string"
+            },
+            {
+              "name": "db_context",
+              "type": "string"
+            },
+            {
+              "name": "agent_name",
+              "type": "string"
+            },
+            {
+              "name": "agent",
+              "type": "string"
+            },
+            {
+              "name": "conversation_history",
+              "type": "string"
+            },
+            {
+              "name": "pipeline_key",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c1000001-0001-4001-8001-000000000001",
+      "name": "Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Trigger').item.json.text }}",
+        "options": {
+          "systemMessage": "You are the Dojo AI Supervisor for a martial arts dojo management system. Analyze the user request and route it to the correct specialist agent(s).\n\n## Specialist Agents\n\n- **AttendanceAgent** — check-ins, check-outs, class schedules, attendance history\n- **EnrollmentAgent** — session enrollment, unenrollment, course roster management, waitlist\n- **CoreAgent** — belt promotions/tests, member create/update/lookup, calendar events, tasks, programs\n- **SubscriptionsAgent** — subscriptions, billing, invoices, payments, credits, plan changes, pauses, cancellations\n- **CommunicationsAgent** — email, SMS, guardian contact, discuss channels, marketing campaigns, social posts\n- **GeneralAgent** — CRM leads, sales orders, accounting, HR, anything not covered by the above\n\n## Decision Rules\n\n1. **Single domain**: Call exactly ONE specialist with the full user request.\n2. **Multi domain**: Decompose the request into sub-tasks. Call each specialist IN SEQUENCE with only its relevant sub-task as user_request.\n3. **Result-passing**: When a later step needs data from an earlier step — e.g. member names from an invoice list — extract that data from the prior tool's response and embed it explicitly in the next user_request. NEVER send a vague task like \"get profiles for each overdue member\" without the actual names. Instead write: \"Get profiles for Jordan Smith, Sarah Lee, Mike Johnson\".\n4. **For-each batching**: For \"for each X\" requests, collect all X items from the prior step and pass them as a single list in one agent call. Do not loop one item at a time.\n5. **Pending confirmation**: If a specialist tool returns a JSON response where `state` is `pending_confirmation` — STOP immediately. Return that specialist's `response` text verbatim. Do NOT call any more specialists or tools.\n6. **Help / capability questions**: Answer directly from the specialist list above. Do not call any tools.\n7. **Step logging**: After each specialist completes, call Push_Step with: step_num (1-based integer, increment per agent called), agent_display_name (human-readable name e.g. \"Subscriptions Agent\"), agent_tool_name (exact tool name e.g. \"SubscriptionsAgent\"), result_summary (what the agent returned — include key data: names, amounts, counts, 1-3 sentences), reasoning (why you routed this sub-task to this agent and what you plan to do next).\n8. **Final reply**: After all specialists complete, compose a comprehensive natural-prose reply. For \"summarize\" or \"overview\" requests: cover each step's key findings, include totals and important data points, and add actionable insights. For simple single-domain requests: one or two concise sentences is fine.\n\n## Context\n\nUser role: {{ $('Trigger').item.json.role }}\n\nConversation history:\n{{ $('Trigger').item.json.conversation_history }}\n\nLive database context:\n{{ $('Trigger').item.json.db_context }}\n\nAdvisory domain from vector search: {{ $('Trigger').item.json.agent }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        280,
+        0
+      ],
+      "id": "c1000001-0001-4001-8001-000000000002",
+      "name": "Supervisor AI Agent",
+      "retryOnFail": true,
+      "maxTries": 2
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        220
+      ],
+      "id": "c1000001-0001-4001-8001-000000000003",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Jzdr2yiErsFuHEyP",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Log a completed agent step to Odoo. Call this AFTER each specialist agent completes — not before. Provide: step_num (1-based integer, increment per agent called), agent_display_name (human-readable name e.g. 'Subscriptions Agent'), agent_tool_name (exact tool name e.g. 'SubscriptionsAgent'), result_summary (1-3 sentences of what the agent returned — include key data: names, amounts, counts), reasoning (why you routed this sub-task to this agent).",
+        "method": "POST",
+        "url": "http://web:8069/dojo/ai/step",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ pipeline_key: $('Trigger').item.json.pipeline_key || '', step_num: parseInt($fromAI('step_num', 'Step number, 1-based integer, increment for each agent')) || 1, name: $fromAI('agent_display_name', 'Human-readable agent name e.g. Subscriptions Agent'), agent_name: $fromAI('agent_tool_name', 'Exact tool name used e.g. SubscriptionsAgent'), detail: $fromAI('result_summary', 'What the agent returned - include key data like names amounts counts. 1-3 sentences.') + ' | Why: ' + $fromAI('reasoning', 'Why you routed this sub-task to this agent') }) }}",
+        "options": {
+          "timeout": 3000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        300,
+        220
+      ],
+      "id": "c1000001-0001-4001-8001-000000000004",
+      "name": "Push_Step"
+    },
+    {
+      "parameters": {
+        "name": "AttendanceAgent",
+        "description": "Handles attendance tasks: check-ins, check-outs, class schedules, attendance history and reports. Provide user_request: the specific attendance-related sub-task text to process.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "LQOtAQyhya19709W"
+        },
+        "fields": {
+          "values": [
+            {
+              "name": "text",
+              "value": "={{ $fromAI('user_request', 'The specific attendance-related task text to send to this agent') || $json.text }}"
+            },
+            {
+              "name": "role",
+              "value": "={{ $json.role }}"
+            },
+            {
+              "name": "session_id",
+              "value": "={{ $json.session_id }}"
+            },
+            {
+              "name": "context_window",
+              "value": "={{ $json.context_window }}"
+            },
+            {
+              "name": "system_prompt",
+              "value": ""
+            },
+            {
+              "name": "valid_intent_types",
+              "value": "={{ $json.valid_intent_types || '' }}"
+            },
+            {
+              "name": "db_context",
+              "value": "={{ $json.db_context || '' }}"
+            },
+            {
+              "name": "agent_name",
+              "value": "Attendance Agent"
+            },
+            {
+              "name": "agent",
+              "value": "attendance"
+            },
+            {
+              "name": "conversation_history",
+              "value": "={{ $json.conversation_history || '' }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        520,
+        220
+      ],
+      "id": "c1000001-0001-4001-8001-000000000010",
+      "name": "AttendanceAgent"
+    },
+    {
+      "parameters": {
+        "name": "EnrollmentAgent",
+        "description": "Handles enrollment tasks: enrolling members in sessions or courses, unenrolling, viewing course rosters, managing waitlists. Provide user_request: the specific enrollment-related sub-task text to process.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "y7ppFz99vG2KYtcM"
+        },
+        "fields": {
+          "values": [
+            {
+              "name": "text",
+              "value": "={{ $fromAI('user_request', 'The specific enrollment-related task text to send to this agent') || $json.text }}"
+            },
+            {
+              "name": "role",
+              "value": "={{ $json.role }}"
+            },
+            {
+              "name": "session_id",
+              "value": "={{ $json.session_id }}"
+            },
+            {
+              "name": "context_window",
+              "value": "={{ $json.context_window }}"
+            },
+            {
+              "name": "system_prompt",
+              "value": ""
+            },
+            {
+              "name": "valid_intent_types",
+              "value": "={{ $json.valid_intent_types || '' }}"
+            },
+            {
+              "name": "db_context",
+              "value": "={{ $json.db_context || '' }}"
+            },
+            {
+              "name": "agent_name",
+              "value": "Enrollment Agent"
+            },
+            {
+              "name": "agent",
+              "value": "enrollment"
+            },
+            {
+              "name": "conversation_history",
+              "value": "={{ $json.conversation_history || '' }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        740,
+        220
+      ],
+      "id": "c1000001-0001-4001-8001-000000000011",
+      "name": "EnrollmentAgent"
+    },
+    {
+      "parameters": {
+        "name": "CoreAgent",
+        "description": "Handles core dojo operations: belt promotions, belt tests, member create/update/lookup, calendar events, tasks, programs, instructor profiles. Provide user_request: the specific core-related sub-task text to process.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "nqa29YJh4DmonXVD"
+        },
+        "fields": {
+          "values": [
+            {
+              "name": "text",
+              "value": "={{ $fromAI('user_request', 'The specific core dojo task text to send to this agent') || $json.text }}"
+            },
+            {
+              "name": "role",
+              "value": "={{ $json.role }}"
+            },
+            {
+              "name": "session_id",
+              "value": "={{ $json.session_id }}"
+            },
+            {
+              "name": "context_window",
+              "value": "={{ $json.context_window }}"
+            },
+            {
+              "name": "system_prompt",
+              "value": ""
+            },
+            {
+              "name": "valid_intent_types",
+              "value": "={{ $json.valid_intent_types || '' }}"
+            },
+            {
+              "name": "db_context",
+              "value": "={{ $json.db_context || '' }}"
+            },
+            {
+              "name": "agent_name",
+              "value": "Core Agent"
+            },
+            {
+              "name": "agent",
+              "value": "core"
+            },
+            {
+              "name": "conversation_history",
+              "value": "={{ $json.conversation_history || '' }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        960,
+        220
+      ],
+      "id": "c1000001-0001-4001-8001-000000000012",
+      "name": "CoreAgent"
+    },
+    {
+      "parameters": {
+        "name": "SubscriptionsAgent",
+        "description": "Handles subscription and billing tasks: subscription create/update/cancel/pause, billing, invoices, payments, credits, dunning, plan changes. Provide user_request: the specific subscription-related sub-task text to process.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "DKv7tyjq9drKI0lz"
+        },
+        "fields": {
+          "values": [
+            {
+              "name": "text",
+              "value": "={{ $fromAI('user_request', 'The specific subscription or billing task text to send to this agent') || $json.text }}"
+            },
+            {
+              "name": "role",
+              "value": "={{ $json.role }}"
+            },
+            {
+              "name": "session_id",
+              "value": "={{ $json.session_id }}"
+            },
+            {
+              "name": "context_window",
+              "value": "={{ $json.context_window }}"
+            },
+            {
+              "name": "system_prompt",
+              "value": ""
+            },
+            {
+              "name": "valid_intent_types",
+              "value": "={{ $json.valid_intent_types || '' }}"
+            },
+            {
+              "name": "db_context",
+              "value": "={{ $json.db_context || '' }}"
+            },
+            {
+              "name": "agent_name",
+              "value": "Subscriptions Agent"
+            },
+            {
+              "name": "agent",
+              "value": "subscriptions"
+            },
+            {
+              "name": "conversation_history",
+              "value": "={{ $json.conversation_history || '' }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        1180,
+        220
+      ],
+      "id": "c1000001-0001-4001-8001-000000000013",
+      "name": "SubscriptionsAgent"
+    },
+    {
+      "parameters": {
+        "name": "CommunicationsAgent",
+        "description": "Handles communications tasks: sending email, SMS, contacting guardians, discuss channel messages, marketing campaigns, social media posts. Provide user_request: the specific communications-related sub-task text to process.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "KhKhlTLen6FSLUfL"
+        },
+        "fields": {
+          "values": [
+            {
+              "name": "text",
+              "value": "={{ $fromAI('user_request', 'The specific communications task text to send to this agent') || $json.text }}"
+            },
+            {
+              "name": "role",
+              "value": "={{ $json.role }}"
+            },
+            {
+              "name": "session_id",
+              "value": "={{ $json.session_id }}"
+            },
+            {
+              "name": "context_window",
+              "value": "={{ $json.context_window }}"
+            },
+            {
+              "name": "system_prompt",
+              "value": ""
+            },
+            {
+              "name": "valid_intent_types",
+              "value": "={{ $json.valid_intent_types || '' }}"
+            },
+            {
+              "name": "db_context",
+              "value": "={{ $json.db_context || '' }}"
+            },
+            {
+              "name": "agent_name",
+              "value": "Communications Agent"
+            },
+            {
+              "name": "agent",
+              "value": "communications"
+            },
+            {
+              "name": "conversation_history",
+              "value": "={{ $json.conversation_history || '' }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        1400,
+        220
+      ],
+      "id": "c1000001-0001-4001-8001-000000000014",
+      "name": "CommunicationsAgent"
+    },
+    {
+      "parameters": {
+        "name": "GeneralAgent",
+        "description": "Handles general and cross-cutting tasks: CRM leads, sales orders, accounting, HR, calendar, general questions, and anything not covered by the other specialist agents. Provide user_request: the specific sub-task text to process.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "bFYiBJlup2jo6Yr1"
+        },
+        "fields": {
+          "values": [
+            {
+              "name": "text",
+              "value": "={{ $fromAI('user_request', 'The specific task text to send to this agent') || $json.text }}"
+            },
+            {
+              "name": "role",
+              "value": "={{ $json.role }}"
+            },
+            {
+              "name": "session_id",
+              "value": "={{ $json.session_id }}"
+            },
+            {
+              "name": "context_window",
+              "value": "={{ $json.context_window }}"
+            },
+            {
+              "name": "system_prompt",
+              "value": ""
+            },
+            {
+              "name": "valid_intent_types",
+              "value": "={{ $json.valid_intent_types || '' }}"
+            },
+            {
+              "name": "db_context",
+              "value": "={{ $json.db_context || '' }}"
+            },
+            {
+              "name": "agent_name",
+              "value": "General Agent"
+            },
+            {
+              "name": "agent",
+              "value": "general"
+            },
+            {
+              "name": "conversation_history",
+              "value": "={{ $json.conversation_history || '' }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        1620,
+        220
+      ],
+      "id": "c1000001-0001-4001-8001-000000000015",
+      "name": "GeneralAgent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nreturn [{ json: { success: true, state: raw.state || 'executed', response: raw.output || raw.text || raw.response || '', intent: raw.intent || null, result: raw.result || null, session_key: raw.session_key || null } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ],
+      "id": "c1000001-0001-4001-8001-000000000020",
+      "name": "Format Output"
+    }
+  ],
+  "connections": {
+    "Trigger": {
+      "main": [
+        [
+          {
+            "node": "Supervisor AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supervisor AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Supervisor AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push_Step": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AttendanceAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EnrollmentAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CoreAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SubscriptionsAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CommunicationsAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GeneralAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "4127f58e-5522-44bd-8c32-284fb9328666",
+  "activeVersionId": "4127f58e-5522-44bd-8c32-284fb9328666",
+  "versionCounter": 18,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-04-23T00:08:02.696Z",
+      "createdAt": "2026-04-23T00:08:02.696Z",
+      "role": "workflow:owner",
+      "workflowId": "EgxK4leeuX9Nurop",
+      "projectId": "70NbV1fkf6m33YN0",
+      "project": {
+        "updatedAt": "2026-04-19T04:52:13.328Z",
+        "createdAt": "2026-04-19T04:51:23.947Z",
+        "id": "70NbV1fkf6m33YN0",
+        "name": "Calvin Tran <calvinntran.cs@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "493f48c5-0340-4c05-ae7e-386a4ab4da7a"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-04-23T01:25:04.775Z",
+    "createdAt": "2026-04-23T01:25:04.775Z",
+    "versionId": "4127f58e-5522-44bd-8c32-284fb9328666",
+    "workflowId": "EgxK4leeuX9Nurop",
+    "nodes": [
+      {
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "text",
+                "type": "string"
+              },
+              {
+                "name": "role",
+                "type": "string"
+              },
+              {
+                "name": "session_id",
+                "type": "string"
+              },
+              {
+                "name": "context_window",
+                "type": "string"
+              },
+              {
+                "name": "system_prompt",
+                "type": "string"
+              },
+              {
+                "name": "valid_intent_types",
+                "type": "string"
+              },
+              {
+                "name": "db_context",
+                "type": "string"
+              },
+              {
+                "name": "agent_name",
+                "type": "string"
+              },
+              {
+                "name": "agent",
+                "type": "string"
+              },
+              {
+                "name": "conversation_history",
+                "type": "string"
+              },
+              {
+                "name": "pipeline_key",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "c1000001-0001-4001-8001-000000000001",
+        "name": "Trigger"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('Trigger').item.json.text }}",
+          "options": {
+            "systemMessage": "You are the Dojo AI Supervisor for a martial arts dojo management system. Analyze the user request and route it to the correct specialist agent(s).\n\n## Specialist Agents\n\n- **AttendanceAgent** — check-ins, check-outs, class schedules, attendance history\n- **EnrollmentAgent** — session enrollment, unenrollment, course roster management, waitlist\n- **CoreAgent** — belt promotions/tests, member create/update/lookup, calendar events, tasks, programs\n- **SubscriptionsAgent** — subscriptions, billing, invoices, payments, credits, plan changes, pauses, cancellations\n- **CommunicationsAgent** — email, SMS, guardian contact, discuss channels, marketing campaigns, social posts\n- **GeneralAgent** — CRM leads, sales orders, accounting, HR, anything not covered by the above\n\n## Decision Rules\n\n1. **Single domain**: Call exactly ONE specialist with the full user request.\n2. **Multi domain**: Decompose the request into sub-tasks. Call each specialist IN SEQUENCE with only its relevant sub-task as user_request.\n3. **Result-passing**: When a later step needs data from an earlier step — e.g. member names from an invoice list — extract that data from the prior tool's response and embed it explicitly in the next user_request. NEVER send a vague task like \"get profiles for each overdue member\" without the actual names. Instead write: \"Get profiles for Jordan Smith, Sarah Lee, Mike Johnson\".\n4. **For-each batching**: For \"for each X\" requests, collect all X items from the prior step and pass them as a single list in one agent call. Do not loop one item at a time.\n5. **Pending confirmation**: If a specialist tool returns a JSON response where `state` is `pending_confirmation` — STOP immediately. Return that specialist's `response` text verbatim. Do NOT call any more specialists or tools.\n6. **Help / capability questions**: Answer directly from the specialist list above. Do not call any tools.\n7. **Step logging**: After each specialist completes, call Push_Step with: step_num (1-based integer, increment per agent called), agent_display_name (human-readable name e.g. \"Subscriptions Agent\"), agent_tool_name (exact tool name e.g. \"SubscriptionsAgent\"), result_summary (what the agent returned — include key data: names, amounts, counts, 1-3 sentences), reasoning (why you routed this sub-task to this agent and what you plan to do next).\n8. **Final reply**: After all specialists complete, compose a comprehensive natural-prose reply. For \"summarize\" or \"overview\" requests: cover each step's key findings, include totals and important data points, and add actionable insights. For simple single-domain requests: one or two concise sentences is fine.\n\n## Context\n\nUser role: {{ $('Trigger').item.json.role }}\n\nConversation history:\n{{ $('Trigger').item.json.conversation_history }}\n\nLive database context:\n{{ $('Trigger').item.json.db_context }}\n\nAdvisory domain from vector search: {{ $('Trigger').item.json.agent }}"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          280,
+          0
+        ],
+        "id": "c1000001-0001-4001-8001-000000000002",
+        "name": "Supervisor AI Agent",
+        "retryOnFail": true,
+        "maxTries": 2
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gpt-4o",
+            "mode": "list",
+            "cachedResultName": "gpt-4o"
+          },
+          "options": {
+            "temperature": 0.2
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          80,
+          220
+        ],
+        "id": "c1000001-0001-4001-8001-000000000003",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAiApi": {
+            "id": "Jzdr2yiErsFuHEyP",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Log a completed agent step to Odoo. Call this AFTER each specialist agent completes — not before. Provide: step_num (1-based integer, increment per agent called), agent_display_name (human-readable name e.g. 'Subscriptions Agent'), agent_tool_name (exact tool name e.g. 'SubscriptionsAgent'), result_summary (1-3 sentences of what the agent returned — include key data: names, amounts, counts), reasoning (why you routed this sub-task to this agent).",
+          "method": "POST",
+          "url": "http://web:8069/dojo/ai/step",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ pipeline_key: $('Trigger').item.json.pipeline_key || '', step_num: parseInt($fromAI('step_num', 'Step number, 1-based integer, increment for each agent')) || 1, name: $fromAI('agent_display_name', 'Human-readable agent name e.g. Subscriptions Agent'), agent_name: $fromAI('agent_tool_name', 'Exact tool name used e.g. SubscriptionsAgent'), detail: $fromAI('result_summary', 'What the agent returned - include key data like names amounts counts. 1-3 sentences.') + ' | Why: ' + $fromAI('reasoning', 'Why you routed this sub-task to this agent') }) }}",
+          "options": {
+            "timeout": 3000,
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequestTool",
+        "typeVersion": 4.4,
+        "position": [
+          300,
+          220
+        ],
+        "id": "c1000001-0001-4001-8001-000000000004",
+        "name": "Push_Step"
+      },
+      {
+        "parameters": {
+          "name": "AttendanceAgent",
+          "description": "Handles attendance tasks: check-ins, check-outs, class schedules, attendance history and reports. Provide user_request: the specific attendance-related sub-task text to process.",
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "LQOtAQyhya19709W"
+          },
+          "fields": {
+            "values": [
+              {
+                "name": "text",
+                "value": "={{ $fromAI('user_request', 'The specific attendance-related task text to send to this agent') || $json.text }}"
+              },
+              {
+                "name": "role",
+                "value": "={{ $json.role }}"
+              },
+              {
+                "name": "session_id",
+                "value": "={{ $json.session_id }}"
+              },
+              {
+                "name": "context_window",
+                "value": "={{ $json.context_window }}"
+              },
+              {
+                "name": "system_prompt",
+                "value": ""
+              },
+              {
+                "name": "valid_intent_types",
+                "value": "={{ $json.valid_intent_types || '' }}"
+              },
+              {
+                "name": "db_context",
+                "value": "={{ $json.db_context || '' }}"
+              },
+              {
+                "name": "agent_name",
+                "value": "Attendance Agent"
+              },
+              {
+                "name": "agent",
+                "value": "attendance"
+              },
+              {
+                "name": "conversation_history",
+                "value": "={{ $json.conversation_history || '' }}"
+              }
+            ]
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.1,
+        "position": [
+          520,
+          220
+        ],
+        "id": "c1000001-0001-4001-8001-000000000010",
+        "name": "AttendanceAgent"
+      },
+      {
+        "parameters": {
+          "name": "EnrollmentAgent",
+          "description": "Handles enrollment tasks: enrolling members in sessions or courses, unenrolling, viewing course rosters, managing waitlists. Provide user_request: the specific enrollment-related sub-task text to process.",
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "y7ppFz99vG2KYtcM"
+          },
+          "fields": {
+            "values": [
+              {
+                "name": "text",
+                "value": "={{ $fromAI('user_request', 'The specific enrollment-related task text to send to this agent') || $json.text }}"
+              },
+              {
+                "name": "role",
+                "value": "={{ $json.role }}"
+              },
+              {
+                "name": "session_id",
+                "value": "={{ $json.session_id }}"
+              },
+              {
+                "name": "context_window",
+                "value": "={{ $json.context_window }}"
+              },
+              {
+                "name": "system_prompt",
+                "value": ""
+              },
+              {
+                "name": "valid_intent_types",
+                "value": "={{ $json.valid_intent_types || '' }}"
+              },
+              {
+                "name": "db_context",
+                "value": "={{ $json.db_context || '' }}"
+              },
+              {
+                "name": "agent_name",
+                "value": "Enrollment Agent"
+              },
+              {
+                "name": "agent",
+                "value": "enrollment"
+              },
+              {
+                "name": "conversation_history",
+                "value": "={{ $json.conversation_history || '' }}"
+              }
+            ]
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.1,
+        "position": [
+          740,
+          220
+        ],
+        "id": "c1000001-0001-4001-8001-000000000011",
+        "name": "EnrollmentAgent"
+      },
+      {
+        "parameters": {
+          "name": "CoreAgent",
+          "description": "Handles core dojo operations: belt promotions, belt tests, member create/update/lookup, calendar events, tasks, programs, instructor profiles. Provide user_request: the specific core-related sub-task text to process.",
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "nqa29YJh4DmonXVD"
+          },
+          "fields": {
+            "values": [
+              {
+                "name": "text",
+                "value": "={{ $fromAI('user_request', 'The specific core dojo task text to send to this agent') || $json.text }}"
+              },
+              {
+                "name": "role",
+                "value": "={{ $json.role }}"
+              },
+              {
+                "name": "session_id",
+                "value": "={{ $json.session_id }}"
+              },
+              {
+                "name": "context_window",
+                "value": "={{ $json.context_window }}"
+              },
+              {
+                "name": "system_prompt",
+                "value": ""
+              },
+              {
+                "name": "valid_intent_types",
+                "value": "={{ $json.valid_intent_types || '' }}"
+              },
+              {
+                "name": "db_context",
+                "value": "={{ $json.db_context || '' }}"
+              },
+              {
+                "name": "agent_name",
+                "value": "Core Agent"
+              },
+              {
+                "name": "agent",
+                "value": "core"
+              },
+              {
+                "name": "conversation_history",
+                "value": "={{ $json.conversation_history || '' }}"
+              }
+            ]
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.1,
+        "position": [
+          960,
+          220
+        ],
+        "id": "c1000001-0001-4001-8001-000000000012",
+        "name": "CoreAgent"
+      },
+      {
+        "parameters": {
+          "name": "SubscriptionsAgent",
+          "description": "Handles subscription and billing tasks: subscription create/update/cancel/pause, billing, invoices, payments, credits, dunning, plan changes. Provide user_request: the specific subscription-related sub-task text to process.",
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "DKv7tyjq9drKI0lz"
+          },
+          "fields": {
+            "values": [
+              {
+                "name": "text",
+                "value": "={{ $fromAI('user_request', 'The specific subscription or billing task text to send to this agent') || $json.text }}"
+              },
+              {
+                "name": "role",
+                "value": "={{ $json.role }}"
+              },
+              {
+                "name": "session_id",
+                "value": "={{ $json.session_id }}"
+              },
+              {
+                "name": "context_window",
+                "value": "={{ $json.context_window }}"
+              },
+              {
+                "name": "system_prompt",
+                "value": ""
+              },
+              {
+                "name": "valid_intent_types",
+                "value": "={{ $json.valid_intent_types || '' }}"
+              },
+              {
+                "name": "db_context",
+                "value": "={{ $json.db_context || '' }}"
+              },
+              {
+                "name": "agent_name",
+                "value": "Subscriptions Agent"
+              },
+              {
+                "name": "agent",
+                "value": "subscriptions"
+              },
+              {
+                "name": "conversation_history",
+                "value": "={{ $json.conversation_history || '' }}"
+              }
+            ]
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.1,
+        "position": [
+          1180,
+          220
+        ],
+        "id": "c1000001-0001-4001-8001-000000000013",
+        "name": "SubscriptionsAgent"
+      },
+      {
+        "parameters": {
+          "name": "CommunicationsAgent",
+          "description": "Handles communications tasks: sending email, SMS, contacting guardians, discuss channel messages, marketing campaigns, social media posts. Provide user_request: the specific communications-related sub-task text to process.",
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "KhKhlTLen6FSLUfL"
+          },
+          "fields": {
+            "values": [
+              {
+                "name": "text",
+                "value": "={{ $fromAI('user_request', 'The specific communications task text to send to this agent') || $json.text }}"
+              },
+              {
+                "name": "role",
+                "value": "={{ $json.role }}"
+              },
+              {
+                "name": "session_id",
+                "value": "={{ $json.session_id }}"
+              },
+              {
+                "name": "context_window",
+                "value": "={{ $json.context_window }}"
+              },
+              {
+                "name": "system_prompt",
+                "value": ""
+              },
+              {
+                "name": "valid_intent_types",
+                "value": "={{ $json.valid_intent_types || '' }}"
+              },
+              {
+                "name": "db_context",
+                "value": "={{ $json.db_context || '' }}"
+              },
+              {
+                "name": "agent_name",
+                "value": "Communications Agent"
+              },
+              {
+                "name": "agent",
+                "value": "communications"
+              },
+              {
+                "name": "conversation_history",
+                "value": "={{ $json.conversation_history || '' }}"
+              }
+            ]
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.1,
+        "position": [
+          1400,
+          220
+        ],
+        "id": "c1000001-0001-4001-8001-000000000014",
+        "name": "CommunicationsAgent"
+      },
+      {
+        "parameters": {
+          "name": "GeneralAgent",
+          "description": "Handles general and cross-cutting tasks: CRM leads, sales orders, accounting, HR, calendar, general questions, and anything not covered by the other specialist agents. Provide user_request: the specific sub-task text to process.",
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "bFYiBJlup2jo6Yr1"
+          },
+          "fields": {
+            "values": [
+              {
+                "name": "text",
+                "value": "={{ $fromAI('user_request', 'The specific task text to send to this agent') || $json.text }}"
+              },
+              {
+                "name": "role",
+                "value": "={{ $json.role }}"
+              },
+              {
+                "name": "session_id",
+                "value": "={{ $json.session_id }}"
+              },
+              {
+                "name": "context_window",
+                "value": "={{ $json.context_window }}"
+              },
+              {
+                "name": "system_prompt",
+                "value": ""
+              },
+              {
+                "name": "valid_intent_types",
+                "value": "={{ $json.valid_intent_types || '' }}"
+              },
+              {
+                "name": "db_context",
+                "value": "={{ $json.db_context || '' }}"
+              },
+              {
+                "name": "agent_name",
+                "value": "General Agent"
+              },
+              {
+                "name": "agent",
+                "value": "general"
+              },
+              {
+                "name": "conversation_history",
+                "value": "={{ $json.conversation_history || '' }}"
+              }
+            ]
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.1,
+        "position": [
+          1620,
+          220
+        ],
+        "id": "c1000001-0001-4001-8001-000000000015",
+        "name": "GeneralAgent"
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw = $input.first().json;\nreturn [{ json: { success: true, state: raw.state || 'executed', response: raw.output || raw.text || raw.response || '', intent: raw.intent || null, result: raw.result || null, session_key: raw.session_key || null } }];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          520,
+          0
+        ],
+        "id": "c1000001-0001-4001-8001-000000000020",
+        "name": "Format Output"
+      }
+    ],
+    "connections": {
+      "Trigger": {
+        "main": [
+          [
+            {
+              "node": "Supervisor AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Supervisor AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Format Output",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Supervisor AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Push_Step": {
+        "ai_tool": [
+          [
+            {
+              "node": "Supervisor AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AttendanceAgent": {
+        "ai_tool": [
+          [
+            {
+              "node": "Supervisor AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "EnrollmentAgent": {
+        "ai_tool": [
+          [
+            {
+              "node": "Supervisor AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "CoreAgent": {
+        "ai_tool": [
+          [
+            {
+              "node": "Supervisor AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SubscriptionsAgent": {
+        "ai_tool": [
+          [
+            {
+              "node": "Supervisor AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "CommunicationsAgent": {
+        "ai_tool": [
+          [
+            {
+              "node": "Supervisor AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GeneralAgent": {
+        "ai_tool": [
+          [
+            {
+              "node": "Supervisor AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Calvin Tran",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-04-23T01:25:04.842Z",
+        "id": 141,
+        "workflowId": "EgxK4leeuX9Nurop",
+        "versionId": "4127f58e-5522-44bd-8c32-284fb9328666",
+        "event": "activated",
+        "userId": "493f48c5-0340-4c05-ae7e-386a4ab4da7a"
+      },
+      {
+        "createdAt": "2026-04-23T01:25:04.814Z",
+        "id": 140,
+        "workflowId": "EgxK4leeuX9Nurop",
+        "versionId": "4127f58e-5522-44bd-8c32-284fb9328666",
+        "event": "deactivated",
+        "userId": "493f48c5-0340-4c05-ae7e-386a4ab4da7a"
+      }
+    ]
+  }
+}

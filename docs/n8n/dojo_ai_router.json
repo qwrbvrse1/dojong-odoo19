@@ -20,7 +20,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// \u2500\u2500 Validate & normalise incoming request \u2500\u2500\nconst body = $input.first().json.body || $input.first().json;\n\nconst text = (body.text || '').trim();\nif (!text) {\n  return [{ json: { success: false, state: 'error', response: 'Missing required field: text', error: 'validation_error' } }];\n}\n\nconst VALID_ROLES = ['admin', 'instructor', 'kiosk'];\nconst role = VALID_ROLES.includes(body.role) ? body.role : 'instructor';\n\nconst session_id = body.session_id || ('auto_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));\n\nlet context_window = parseInt(body.context_window, 10);\nif (isNaN(context_window) || context_window < 1) context_window = 10;\nif (context_window > 50) context_window = 50;\n\nconst channel = body.channel || null;\n\nreturn [{ json: { text, role, session_id, context_window, channel, _valid: true } }];"
+        "jsCode": "// \u2500\u2500 Validate & normalise incoming request \u2500\u2500\nconst body = $input.first().json.body || $input.first().json;\n\nconst text = (body.text || '').trim();\nif (!text) {\n  return [{ json: { success: false, state: 'error', response: 'Missing required field: text', error: 'validation_error' } }];\n}\n\nconst VALID_ROLES = ['admin', 'instructor', 'kiosk'];\nconst role = VALID_ROLES.includes(body.role) ? body.role : 'instructor';\n\nconst session_id = body.session_id || ('auto_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));\n\nlet context_window = parseInt(body.context_window, 10);\nif (isNaN(context_window) || context_window < 1) context_window = 10;\nif (context_window > 50) context_window = 50;\n\nconst channel = body.channel || null;\nconst pipeline_key = body.pipeline_key || '';\n\nreturn [{ json: { text, role, session_id, context_window, channel, pipeline_key, _valid: true } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -135,7 +135,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Merge Build History (user request context) with Discovery (agent routing).\n// After the Switch node, $('Build History') is no longer accessible,\n// so we unify everything into one item here.\nconst bh = $('Build History').item.json;\nconst disc = $input.first().json;\nreturn [{ json: {\n  text: bh.text,\n  role: bh.role,\n  session_id: bh.session_id,\n  context_window: bh.context_window,\n  conversation_history: bh.conversation_history || '',\n  agent: disc.agent || null,\n  agent_name: disc.agent_name || null,\n  system_prompt: disc.system_prompt || '',\n  valid_intent_types: disc.valid_intent_types || [],\n  db_context: disc.db_context || '',\n  intents: disc.intents || [],\n  intent_count: disc.intent_count || 0,\n  system_prompt_available: disc.system_prompt_available || false\n} }];"
+        "jsCode": "// Merge Build History (user request context) with Discovery (agent routing).\n// After the Switch node, $('Build History') is no longer accessible,\n// so we unify everything into one item here.\nconst bh = $('Build History').item.json;\nconst disc = $input.first().json;\nreturn [{ json: {\n  text: bh.text,\n  role: bh.role,\n  session_id: bh.session_id,\n  context_window: bh.context_window,\n  conversation_history: bh.conversation_history || '',\n  pipeline_key: bh.pipeline_key || '',\n  agent: disc.agent || null,\n  agent_name: disc.agent_name || null,\n  system_prompt: disc.system_prompt || '',\n  valid_intent_types: disc.valid_intent_types || [],\n  db_context: disc.db_context || '',\n  intents: disc.intents || [],\n  intent_count: disc.intent_count || 0,\n  system_prompt_available: disc.system_prompt_available || false\n} }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -216,77 +216,20 @@
     },
     {
       "parameters": {
-        "jsCode": "const AGENT_MAP = {attendance:'LQOtAQyhya19709W',enrollment:'y7ppFz99vG2KYtcM',core:'nqa29YJh4DmonXVD',subscriptions:'DKv7tyjq9drKI0lz',communications:'KhKhlTLen6FSLUfL'};\nconst GENERAL_ID = 'bFYiBJlup2jo6Yr1';\nconst d = $input.first().json;\nconst agent = (d.agent || '').toLowerCase();\nconst workflowId = AGENT_MAP[agent] || GENERAL_ID;\nreturn [{ json: { ...d, _workflowId: workflowId } }];"
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "EgxK4leeuX9Nurop"
+        }
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
       "position": [
         1540,
         -80
       ],
-      "id": "a0000001-0001-4001-8001-000000000040",
-      "name": "Resolve Agent"
-    },
-    {
-      "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ $json._workflowId }}"
-        },
-        "fields": {
-          "values": [
-            {
-              "name": "text",
-              "value": "={{ $json.text }}"
-            },
-            {
-              "name": "role",
-              "value": "={{ $json.role }}"
-            },
-            {
-              "name": "session_id",
-              "value": "={{ $json.session_id }}"
-            },
-            {
-              "name": "context_window",
-              "value": "={{ $json.context_window }}"
-            },
-            {
-              "name": "system_prompt",
-              "value": "={{ $json.system_prompt || '' }}"
-            },
-            {
-              "name": "valid_intent_types",
-              "value": "={{ ($json.valid_intent_types || []).join(', ') }}"
-            },
-            {
-              "name": "db_context",
-              "value": "={{ $json.db_context || '' }}"
-            },
-            {
-              "name": "agent_name",
-              "value": "={{ $json.agent_name || 'General Agent' }}"
-            },
-            {
-              "name": "agent",
-              "value": "={{ $json.agent || 'general' }}"
-            },
-            {
-              "name": "conversation_history",
-              "value": "={{ $json.conversation_history || '' }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.2,
-      "position": [
-        1820,
-        -80
-      ],
-      "id": "a0000001-0001-4001-8001-000000000041",
-      "name": "Call Agent"
+      "id": "a0000001-0001-4001-8001-000000000042",
+      "name": "Call Supervisor"
     }
   ],
   "connections": {
@@ -367,7 +310,18 @@
       "main": [
         [
           {
-            "node": "Resolve Agent",
+            "node": "Call Supervisor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Supervisor": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
             "type": "main",
             "index": 0
           }
@@ -390,28 +344,6 @@
         [
           {
             "node": "Return Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Resolve Agent": {
-      "main": [
-        [
-          {
-            "node": "Call Agent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Call Agent": {
-      "main": [
-        [
-          {
-            "node": "Format Response",
             "type": "main",
             "index": 0
           }

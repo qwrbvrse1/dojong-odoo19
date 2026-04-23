@@ -81,7 +81,7 @@ IMPORTANT RULES:
     "cancel event", "remove calendar event", "delete event" → calendar_event_cancel (parameters: {{"event_name": "..."}})
 - INVOICE / BILLING MAPPING:
     "has [name] paid", "check [name]'s invoice", "is [name] up to date", "payment status for [name]" → invoice_lookup (parameters: {{"member_name": "..."}})
-    "show overdue invoices", "who hasn't paid", "unpaid invoices", "who is behind on payments" → invoice_list (parameters: {{"filter": "overdue"}})
+    "show overdue invoices", "who hasn't paid", "unpaid invoices", "who is behind on payments", "members with overdue payments", "list members with overdue payments", "who owes money", "outstanding balances" → invoice_list (parameters: {{"filter": "overdue"}})
     "show unpaid invoices" → invoice_list (parameters: {{"filter": "unpaid"}})
     "show paid invoices" → invoice_list (parameters: {{"filter": "paid"}})
 - COMMUNICATION MAPPING:
@@ -92,6 +92,14 @@ IMPORTANT RULES:
 - ACTIVITY MAPPING:
     "schedule a follow-up", "my follow-ups", "what activities do I have", "pending reminders" → activity_list (parameters: {{}})
     "schedule a follow-up call with [name]", "add an activity for [name]", "set a reminder to" → activity_create (parameters: {{"summary": "...", "date_deadline": "..."}})
+- PHONE NUMBER LOOKUP — IMPORTANT: a bare phone number (e.g. "555-1234", "+1 (408) 867-5309", "4085559876")
+  WITHOUT the words "lead", "prospect", or "pipeline" in the same message → ALWAYS phone_lookup:
+    "555-1234" → phone_lookup (parameters: {{"phone": "555-1234"}})
+    "+1 (408) 867-5309" → phone_lookup (parameters: {{"phone": "+1 (408) 867-5309"}})
+    "look up 4085551234" → phone_lookup (parameters: {{"phone": "4085551234"}})
+    "what student has number 555-0112" → phone_lookup (parameters: {{"phone": "555-0112"}})
+  phone_lookup searches BOTH members AND leads and returns all matches.
+  NEVER map a bare phone number to lead_lookup unless the user explicitly says "lead", "prospect", or "pipeline".
 - CRITICAL: For parameter VALUES, always use the ACTUAL values from the user's input, NEVER use template placeholders like {{member_name}}, {{target_belt}}, {{class_name}} etc.
   Example of CORRECT parameters: {{"member_name": "Mary Smith", "target_belt": "Blue Belt"}}
   Example of WRONG parameters: {{"member_name": "{{member_name}}", "target_belt": "{{target_belt}}"}}
@@ -184,6 +192,9 @@ KEYWORD RULES (override any other reasoning):
   - "what belt is", "what rank", "belt rank" without register/test action → belt_lookup
   - "pause", "put on hold", "hold subscription" → subscription_pause
   - "resume", "reactivate subscription" → subscription_resume
+  - phone number (digits with dashes, dots, or parentheses) WITHOUT "lead"/"prospect"/"pipeline" in message
+    → ALWAYS phone_lookup with {{"phone": "<number>"}} — searches both members AND leads
+    Examples: "555-1234", "+1 (408) 867-5309", "4085551234", "555-0112" → phone_lookup
 
 ═══════════════════════════════════════════════════════════
 OUTPUT FORMAT FOR ACTIONS
@@ -917,14 +928,23 @@ class AIProcessorIntentExt(models.AbstractModel):
             top_types = {r["intent_type"] for r in results}
             top_score = results[0]["similarity"] if results else 0.0
 
-            # Identify the dominant domain agent from top results
-            domain_counts = {}
-            for r in results:
-                d = r.get("domain_agent")
-                if d:
-                    domain_counts[d] = domain_counts.get(d, 0) + 1
-            if domain_counts:
-                identified_domain = max(domain_counts, key=domain_counts.get)
+            # Identify the dominant domain agent from top results.
+            # When the top hit is high-confidence (>= 0.55), use its domain
+            # directly so that a clear winner isn't outvoted by many weaker
+            # hits from a neighbouring domain (e.g. enrollment intents beating
+            # attendance when the user asks about class schedules).
+            # Otherwise fall back to score-weighted voting.
+            top_result_domain = results[0].get("domain_agent") if results else None
+            if top_result_domain and top_score >= 0.55:
+                identified_domain = top_result_domain
+            else:
+                domain_scores = {}
+                for r in results:
+                    d = r.get("domain_agent")
+                    if d:
+                        domain_scores[d] = domain_scores.get(d, 0.0) + r["similarity"]
+                if domain_scores:
+                    identified_domain = max(domain_scores, key=domain_scores.get)
 
             _logger.info(
                 "Vector filter: top=%s (%.3f), domain=%s, matched %d/%d intents for role=%s",
@@ -945,12 +965,21 @@ class AIProcessorIntentExt(models.AbstractModel):
                         "domain_agent": r.get("domain_agent"),
                     })
 
+            # Person-name queries must always have member_lookup available.
+            # Without it, "find Riley Lee" can vectorize to a CRM intent and
+            # member_lookup gets excluded, causing "not found" on real members.
+            _name_tokens = self._extract_name_tokens(query_text)
+            _has_name = bool(_name_tokens)
+
             # If top score is very high (>= 0.65), we can be very aggressive
             # and send only the top 3 intents
             if top_score >= 0.65:
                 top_types_strict = {r["intent_type"] for r in results[:3]}
                 # Always include 'unknown' as an escape hatch
                 top_types_strict.add("unknown")
+                # Always include member_lookup when query contains a person name
+                if _has_name:
+                    top_types_strict.add("member_lookup")
                 filtered = [d for d in intent_defs if d["intent_type"] in top_types_strict]
                 if filtered:
                     _logger.info(
@@ -963,6 +992,9 @@ class AIProcessorIntentExt(models.AbstractModel):
             # Normal filtering: send all matches above threshold
             # Always include 'unknown' as an escape hatch
             top_types.add("unknown")
+            # Always include member_lookup when query contains a person name
+            if _has_name:
+                top_types.add("member_lookup")
             filtered = [d for d in intent_defs if d["intent_type"] in top_types]
             if filtered:
                 _logger.info(
@@ -984,12 +1016,21 @@ class AIProcessorIntentExt(models.AbstractModel):
     # ─────────────────────────────────────────────────────────────────────────
 
     def _format_intent_definitions(self, intent_defs):
-        """Format intent definitions for the system prompt."""
+        """Format intent definitions for the system prompt.
+
+        Any curly braces in DB-sourced content are escaped so that the
+        resulting string can be safely interpolated into a .format() template
+        without causing spurious KeyErrors (e.g. '{phone}' in a description).
+        """
+        def _esc(s):
+            """Escape curly braces that are not already doubled."""
+            return str(s).replace("{", "{{").replace("}", "}}") if s else s
+
         lines = []
         for intent in intent_defs:
             lines.append(f"\n## {intent['intent_type']}: {intent['name']}")
             if intent.get("description"):
-                lines.append(f"   Description: {intent['description']}")
+                lines.append(f"   Description: {_esc(intent['description'])}")
             if intent.get("parameters"):
                 params = intent["parameters"]
                 if isinstance(params, dict) and "properties" in params:
@@ -998,7 +1039,7 @@ class AIProcessorIntentExt(models.AbstractModel):
                     param_strs = []
                     for name, schema in props.items():
                         req = "(required)" if name in required else "(optional)"
-                        desc = schema.get("description", "")
+                        desc = _esc(schema.get("description", ""))
                         param_strs.append(f"      - {name} {req}: {desc}")
                     if param_strs:
                         lines.append("   Parameters:")
@@ -1006,7 +1047,7 @@ class AIProcessorIntentExt(models.AbstractModel):
             if intent.get("examples"):
                 lines.append("   Examples:")
                 for ex in intent["examples"][:6]:  # Up to 6 examples for better coverage
-                    lines.append(f"      - \"{ex}\"")
+                    lines.append(f"      - \"{_esc(ex)}\"")
 
         return "\n".join(lines)
 

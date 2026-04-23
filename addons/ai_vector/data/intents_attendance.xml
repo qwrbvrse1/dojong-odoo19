@@ -162,5 +162,52 @@ Record Test8's check-in at 3:30pm</field>
         <field name="active">True</field>
     </record>
 
+    <record id="intent_checkin_required_today" model="ai.intent.schema">
+        <field name="intent_type">checkin_required_today</field>
+        <field name="name">Check-In Required Today</field>
+        <field name="description">List members enrolled in today's sessions who have not yet checked in</field>
+        <field name="category">attendance</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "session_id": {"type": "integer", "description": "Filter by a specific session ID (optional)"}
+    }
+}</field>
+        <field name="example_phrases">Who hasn't checked in today?
+Show me members that still need to check in
+Which students are missing from today's class?
+Who is enrolled but not here yet?
+List members who need to check in</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_session_no_shows" model="ai.intent.schema">
+        <field name="intent_type">session_no_shows</field>
+        <field name="name">Session No-Shows</field>
+        <field name="description">List members who were enrolled in a past session but did not check in (absent)</field>
+        <field name="category">attendance</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "session_id": {"type": "integer", "description": "ID of the session to check"},
+        "session_name": {"type": "string", "description": "Name of the session"}
+    }
+}</field>
+        <field name="example_phrases">Who didn't show up to yesterday's class?
+List the no-shows for last Tuesday's session
+Which enrolled students were absent?
+Who missed the 6pm class?
+No-show list for today's session</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
 </data>
 </odoo>

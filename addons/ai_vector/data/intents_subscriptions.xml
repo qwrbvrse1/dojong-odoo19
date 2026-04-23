@@ -158,6 +158,51 @@ Unpause John's membership</field>
         <field name="active">True</field>
     </record>
 
+    <record id="intent_members_active_subscriptions" model="ai.intent.schema">
+        <field name="intent_type">members_active_subscriptions</field>
+        <field name="name">Members with Active Subscriptions</field>
+        <field name="description">List all members who currently have an active subscription</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {}
+}</field>
+        <field name="example_phrases">Show me all members with active subscriptions
+List current paying members
+Who has an active membership?
+Show all members with active plans
+Which members are currently subscribed?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_subscription_status_summary" model="ai.intent.schema">
+        <field name="intent_type">subscription_status_summary</field>
+        <field name="name">Subscription Status Summary</field>
+        <field name="description">Aggregate count of all subscriptions grouped by state. Returns a dashboard-style breakdown of subscription health across the school.</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {}
+}</field>
+        <field name="example_phrases">Give me a subscription breakdown
+How many active subscriptions do we have?
+Show me subscription stats
+What's the breakdown of member subscription states?
+How many members are paused vs active?
+Summarize our subscription status
+How many contracts are active?
+Give me a contract breakdown</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
     <record id="intent_credit_transaction_create" model="ai.intent.schema">
         <field name="intent_type">credit_transaction_create</field>
         <field name="name">Create Credit Transaction</field>

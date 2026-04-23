@@ -65,6 +65,10 @@
             'ai_assistant/static/src/css/walkie_elder.css',
             'ai_assistant/static/src/xml/walkie_elder.xml',
             'ai_assistant/static/src/js/walkie_elder.js',
+            # Discuss side panel
+            'ai_assistant/static/src/css/discuss_ai_panel.css',
+            'ai_assistant/static/src/xml/discuss_ai_panel.xml',
+            'ai_assistant/static/src/js/discuss_ai_panel.js',
         ],
     },
     'demo': [],

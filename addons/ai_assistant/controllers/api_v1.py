@@ -380,6 +380,33 @@ class AiApiV1(http.Controller):
                 import time as _time
                 start = _time.time()
 
+                # Phone number override — intercept n8n sending lead_lookup for a
+                # bare phone query.  Applies when either the raw text or the phone
+                # parameter looks like a phone number and no CRM-specific keyword
+                # ("lead", "prospect", "pipeline", "crm") is present.
+                _raw_text_for_phone = (payload.get("text") or "").strip()
+                _phone_param_str = str(
+                    parameters.get("phone") or parameters.get("phone_number") or ""
+                )
+                _phone_check_str = _raw_text_for_phone or _phone_param_str
+                import re as _re_phone
+                _PHONE_PAT = _re_phone.compile(
+                    r'\b(?:\+?1[-\.\s]?)?\(?\d{3}\)?[-\.\s]\d{3}[-\.\s]\d{4}\b'
+                    r'|\b\d{3}[-\.\s]\d{4}\b'
+                    r'|\b\d{10}\b'
+                )
+                _phone_hit = _PHONE_PAT.search(_phone_check_str)
+                if _phone_hit and intent_type in ("lead_lookup", "member_lookup"):
+                    _crm_kws = ("lead", "prospect", "pipeline", "crm")
+                    if not any(kw in _raw_text_for_phone.lower() for kw in _crm_kws):
+                        _logger.info(
+                            "api_v1 phone override: %s → phone_lookup (matched '%s')",
+                            intent_type, _phone_hit.group(0),
+                        )
+                        intent_type = "phone_lookup"
+                        parameters.setdefault("phone", _phone_hit.group(0))
+                        confidence = max(confidence, 0.95)
+
                 # Build intent_data dict matching LLM parse output format
                 intent_data = {
                     "intent_type": intent_type,

@@ -127,7 +127,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ intent_type: $fromAI('intent_type', 'The exact intent_type string'), parameters: JSON.parse($fromAI('parameters', 'JSON object of parameters') || '{}'), role: $('Trigger').item.json.role, session_id: $('Trigger').item.json.session_id, text: $('Trigger').item.json.text, confidence: parseFloat($fromAI('confidence', 'Confidence score 0.7 to 1.0') || '0.85') }) }}",
+        "jsonBody": "={{ JSON.stringify({ intent_type: $fromAI('intent_type', 'The exact intent_type string'), parameters: ((p) => { try { return typeof p === 'string' ? JSON.parse(p || '{}') : (p || {}); } catch(e) { return {}; } })($fromAI('parameters', 'JSON object of parameters')), role: $('Trigger').item.json.role, session_id: $('Trigger').item.json.session_id, text: $('Trigger').item.json.text, confidence: parseFloat($fromAI('confidence', 'Confidence score 0.7 to 1.0') || '0.85') }) }}",
         "options": {
           "timeout": 30000
         }

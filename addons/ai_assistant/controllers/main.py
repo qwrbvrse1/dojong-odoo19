@@ -38,7 +38,7 @@ class AiAssistantController(http.Controller):
     # ═══════════════════════════════════════════════════════════════════════════
 
     @http.route("/dojo/ai/text", type="jsonrpc", auth="user", methods=["POST"])
-    def text_query(self, text="", role=None, conversation_history=None, chat_session_id=None, clarification_session_key=None, **kwargs):
+    def text_query(self, text="", role=None, conversation_history=None, chat_session_id=None, clarification_session_key=None, pipeline_key=None, **kwargs):
         """
         Process a plain-text query through the dojo AI assistant.
         
@@ -82,7 +82,7 @@ class AiAssistantController(http.Controller):
 
         try:
             assistant = request.env["ai.assistant.service"]
-            result = assistant.handle_command(text, role=role, input_type="text", conversation_history=conversation_history, chat_session_id=chat_session_id or None, clarification_session_key=clarification_session_key or None)
+            result = assistant.handle_command(text, role=role, input_type="text", conversation_history=conversation_history, chat_session_id=chat_session_id or None, clarification_session_key=clarification_session_key or None, pipeline_key=(pipeline_key or "").strip() or None)
 
             # Surface vector routing suggestions at response top-level for UI
             intent = result.get("intent") or {}
@@ -491,6 +491,116 @@ class AiAssistantController(http.Controller):
         except Exception as exc:
             _logger.warning("Dojo AI /dojo/ai/speak failed: %s", exc)
             return {"success": False, "error": str(exc)}
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Pipeline Step Push (n8n → Odoo) + Polling (browser → Odoo)
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    @http.route("/dojo/ai/step", type="http", auth="none", methods=["POST"], csrf=False)
+    def push_pipeline_step(self, **kwargs):
+        """
+        Receive a real-time pipeline step update from n8n.
+
+        n8n calls this endpoint from an HTTP Request node after each major
+        workflow stage so the browser can display live progress.
+
+        Expects JSON body:
+            {
+                pipeline_key: str,   # key sent by Odoo in the original payload
+                step_num: int,       # 1-based step number
+                name: str,           # human-readable step label
+                detail: str,         # optional extra detail (intent_type, model, etc.)
+                agent_name: str,     # optional agent name
+                model_name: str,     # optional Odoo model e.g. "dojo.member"
+                count: int           # optional record count
+            }
+
+        Security: validates X-Pipeline-Secret header against
+        ai_assistant.pipeline_step_secret ir.config_parameter.
+        If no secret is configured the endpoint is open (dev-only).
+        """
+        import time as _time
+
+        def _json(data, status=200):
+            return request.make_response(
+                json.dumps(data).encode(),
+                headers=[("Content-Type", "application/json")],
+                status=status,
+            )
+
+        try:
+            raw = request.httprequest.get_data(as_text=True)
+            data = json.loads(raw) if raw else {}
+        except Exception:
+            return _json({"ok": False, "error": "Invalid JSON"}, 400)
+
+        pipeline_key = (data.get("pipeline_key") or "").strip()
+        if not pipeline_key:
+            return _json({"ok": False, "error": "pipeline_key required"}, 400)
+
+        # Validate shared secret (optional — if not configured, allow all)
+        try:
+            secret = request.env["ir.config_parameter"].sudo().get_str(
+                "ai_assistant.pipeline_step_secret", ""
+            )
+            if secret:
+                provided = request.httprequest.headers.get("X-Pipeline-Secret", "")
+                if provided != secret:
+                    return _json({"ok": False, "error": "Forbidden"}, 403)
+        except Exception:
+            pass
+
+        from odoo.addons.ai_assistant.models.ai_assistant_service import AiAssistantService
+        cls = AiAssistantService
+
+        # Initialise cache entry if n8n fires before Odoo's own init
+        if pipeline_key not in cls._pipeline_steps_cache:
+            cls._pipeline_steps_cache[pipeline_key] = {
+                "steps": [],
+                "done": False,
+                "expires_at": _time.time() + cls._PIPELINE_STEPS_TTL,
+            }
+
+        cache = cls._pipeline_steps_cache[pipeline_key]
+        if cache.get("done"):
+            return _json({"ok": True, "note": "pipeline already closed"})
+
+        step = {
+            "step_num": int(data.get("step_num") or len(cache["steps"]) + 1),
+            "name": (data.get("name") or "Processing").strip(),
+            "detail": (data.get("detail") or "").strip(),
+            "agent_name": (data.get("agent_name") or "").strip(),
+            "model_name": (data.get("model_name") or "").strip(),
+            "count": int(data.get("count") or 0),
+        }
+        cache["steps"].append(step)
+        _logger.debug("Pipeline step recorded: key=%s step=%s", pipeline_key, step)
+
+        return _json({"ok": True})
+
+    @http.route("/dojo/ai/steps", type="jsonrpc", auth="user", methods=["GET", "POST"])
+    def poll_pipeline_steps(self, pipeline_key="", **kwargs):
+        """
+        Return accumulated pipeline steps for the given key.
+
+        Called by the browser every ~400 ms while waiting for an AI response.
+
+        Returns:
+            {
+                steps: [{ step_num, name, detail, agent_name, model_name, count }],
+                done: bool
+            }
+        """
+        pipeline_key = (pipeline_key or "").strip()
+        if not pipeline_key:
+            return {"steps": [], "done": False}
+
+        from odoo.addons.ai_assistant.models.ai_assistant_service import AiAssistantService
+        cache = AiAssistantService._pipeline_steps_cache.get(pipeline_key)
+        if not cache:
+            return {"steps": [], "done": False}
+
+        return {"steps": cache["steps"], "done": cache.get("done", False)}
 
     # ═══════════════════════════════════════════════════════════════════════════
     # Helper Methods

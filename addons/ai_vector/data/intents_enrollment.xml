@@ -30,6 +30,32 @@ Enroll Jane in the next available class</field>
         <field name="active">True</field>
     </record>
 
+    <record id="intent_enroll_next_session" model="ai.intent.schema">
+        <field name="intent_type">enroll_next_session</field>
+        <field name="name">Enroll in Next Session</field>
+        <field name="description">Enroll a member in the next upcoming session of a course they are already part of</field>
+        <field name="category">enrollment</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to enroll"},
+        "course_name": {"type": "string", "description": "Course or class name (optional — uses member's current course if omitted)"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="example_phrases">Enroll John in their next class session
+Sign Sarah up for their next class
+Add Mike to the next available session
+Enroll Casey in their next BJJ session
+Put Jordan in the next class</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Enroll {member_name} in their next available class session?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
     <record id="intent_member_unenroll" model="ai.intent.schema">
         <field name="intent_type">member_unenroll</field>
         <field name="name">Unenroll Member</field>
@@ -184,6 +210,56 @@ Set up Sarah for automatic enrollment in Kids BJJ
 Enable auto-enrollment for Test8 in Advanced Sparring</field>
         <field name="confirmation_template">Set up auto-enrollment for {member_name} in {class_name} ({mode})?</field>
         <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_next_class_session" model="ai.intent.schema">
+        <field name="intent_type">next_class_session</field>
+        <field name="name">Next Class Session</field>
+        <field name="description">Find the next upcoming class session, optionally for a specific member</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Filter by member name (optional)"},
+        "limit": {"type": "integer", "description": "Number of sessions to return (default 5)"}
+    }
+}</field>
+        <field name="example_phrases">What's the next class?
+When is the next session?
+What class is coming up next?
+What's John's next class?
+When is Sarah's next session?
+Show me the next 3 classes</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_previous_class_session" model="ai.intent.schema">
+        <field name="intent_type">previous_class_session</field>
+        <field name="name">Previous Class Session</field>
+        <field name="description">Find the most recent past class session(s), optionally for a specific member</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Filter by member name (optional)"},
+        "limit": {"type": "integer", "description": "Number of sessions to return (default 5)"}
+    }
+}</field>
+        <field name="example_phrases">What was the last class?
+When was the previous session?
+Show me the most recent class
+What was John's last session?
+When did Sarah last have class?
+Show me the previous 3 sessions</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
         <field name="supports_bulk">False</field>
         <field name="active">True</field>
     </record>

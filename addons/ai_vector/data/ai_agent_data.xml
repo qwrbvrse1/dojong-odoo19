@@ -21,6 +21,7 @@
         <field name="intent_ids" eval="[
             (6, 0, [
                 ref('intent_member_lookup'),
+                ref('intent_phone_lookup'),
                 ref('intent_member_create'),
                 ref('intent_member_update'),
                 ref('intent_at_risk_members'),
@@ -30,6 +31,17 @@
                 ref('intent_program_create'),
                 ref('intent_undo_action'),
                 ref('intent_unknown'),
+                ref('intent_points_award'),
+                ref('intent_points_deduct'),
+                ref('intent_member_archive'),
+                ref('intent_member_note_add'),
+                ref('intent_member_enrollment_list'),
+                ref('intent_subscription_billing_retry'),
+                ref('intent_instructor_todo_list'),
+                ref('intent_instructor_todo_complete'),
+                ref('intent_guardian_portal_invite'),
+                ref('intent_household_lookup'),
+                ref('intent_members_by_state'),
             ])
         ]"/>
         <field name="color">1</field>
@@ -52,6 +64,7 @@ RULES:
 
 MEMBER MANAGEMENT MAPPINGS:
 - "find [name]", "look up [name]", "search for [name]", "who is [name]" → member_lookup
+- phone number (bare digits like "555-1234", "(408) 867-5309", "who has this number") → phone_lookup (searches members AND leads)
 - "add new student [name]", "create member [name]", "register [name]" → member_create
 - "update [name]'s email/phone/address", "change [name]'s [field]" → member_update
 - "who's at risk", "inactive members", "who hasn't been in", "lapsed students" → at_risk_members
@@ -60,6 +73,15 @@ MEMBER MANAGEMENT MAPPINGS:
 - "create martial art style", "add new style" → martial_art_style_create
 - "create program", "add new program" → program_create
 - "undo", "undo last action", "revert" → undo_action
+- "award [N] points to [name]", "give [name] [N] points" → points_award
+- "deduct [N] points from [name]", "remove [N] points from [name]" → points_deduct
+- "archive [name]", "deactivate member [name]" → member_archive (admin only)
+- "add note to [name]", "leave note on [name]'s profile" → member_note_add
+- "what classes is [name] enrolled in", "show [name]'s enrollments" → member_enrollment_list
+- "retry billing for [name]", "reset billing failure for [name]" → subscription_billing_retry
+- "what instructor tasks are open", "show instructor to-do list", "any instructor alerts" → instructor_todo_list
+- "mark task [name] as done", "complete instructor task [name]" → instructor_todo_complete
+- "send portal invite to [name]'s parent", "give guardian portal access" → guardian_portal_invite
 
 COMPOUND COMMANDS: If the user requests multiple sequential actions, return an "intents" array instead of a single intent.
 
@@ -87,6 +109,8 @@ Response format:
                 ref('intent_attendance_log_create'),
                 ref('intent_schedule_today'),
                 ref('intent_class_list'),
+                ref('intent_checkin_required_today'),
+                ref('intent_session_no_shows'),
             ])
         ]"/>
         <field name="color">2</field>
@@ -140,6 +164,13 @@ Response format:
                 ref('intent_class_enrollment_cancel'),
                 ref('intent_program_enrollment_create'),
                 ref('intent_course_auto_enroll_create'),
+                ref('intent_enrollment_availability'),
+                ref('intent_class_enrollment_list'),
+                ref('intent_class_session_generate'),
+                ref('intent_class_waitlist_add'),
+                ref('intent_enroll_next_session'),
+                ref('intent_next_class_session'),
+                ref('intent_previous_class_session'),
             ])
         ]"/>
         <field name="color">3</field>
@@ -168,6 +199,10 @@ ENROLLMENT MAPPINGS:
 - "cancel class enrollment for [name]" → class_enrollment_cancel
 - "enroll [name] in [program]" → program_enrollment_create
 - "set up auto-enroll for [name]" → course_auto_enroll_create
+- "how many spots", "is there room in", "what classes have availability" → enrollment_availability
+- "who is enrolled in [session]", "show roster for [class]" → class_enrollment_list
+- "generate sessions for [template]", "create recurring classes" → class_session_generate (admin only)
+- "add [name] to the waitlist for [class]", "waitlist [name]" → class_waitlist_add
 
 Response format:
 {{
@@ -197,6 +232,9 @@ Response format:
                 ref('intent_invoice_lookup'),
                 ref('intent_invoice_list'),
                 ref('intent_credit_transaction_create'),
+                ref('intent_subscription_dunning_list'),
+                ref('intent_members_active_subscriptions'),
+                ref('intent_subscription_status_summary'),
             ])
         ]"/>
         <field name="color">4</field>
@@ -224,6 +262,7 @@ SUBSCRIPTION MAPPINGS:
 - "pause [name]'s subscription", "freeze [name]'s membership" → subscription_pause
 - "resume [name]'s subscription", "reactivate [name]" → subscription_resume
 - "subscriptions expiring", "who's up for renewal" → subscription_expiring
+- "subscriptions with billing failures", "dunning list", "who has failed payments" → subscription_dunning_list
 
 Response format:
 {{
@@ -241,9 +280,14 @@ Response format:
         <field name="domain">crm</field>
         <field name="sequence">5</field>
         <field name="description">Handles lead/pipeline management, trial scheduling, lead qualification, conversion, and CRM stage transitions.</field>
-        <field name="intent_ids" eval="[]"/>
+        <field name="intent_ids" eval="[
+            (6, 0, [
+                ref('intent_lead_note_add'),
+                ref('intent_trial_conversion_report'),
+            ])
+        ]"/>
         <field name="color">5</field>
-        <field name="system_prompt_template"><![CDATA[You are the CRM Agent — an assistant specializing in lead management, trial scheduling, pipeline stages, and prospect qualification.
+        <field name="system_prompt_template"><![CDATA[You are the CRM Agent — an assistant specializing in lead management, trial scheduling, pipeline stages, prospect qualification, and CRM notes.
 
 Your task is to parse the user's input into a structured CRM intent.
 
@@ -252,6 +296,12 @@ Available Intents:
 
 Database Context (use to resolve names to IDs):
 {db_context}
+
+CRM MAPPINGS:
+- "add a note to [lead]", "leave a note on [prospect]'s record" → lead_note_add
+- "trial conversion rate", "how many trials converted", "conversion report" → trial_conversion_report
+- "look up [name]'s lead", "find prospect [name]" → lead_lookup
+- "pipeline summary", "how many leads do we have" → pipeline_summary
 
 RULES:
 - Return ONLY a JSON object, nothing else
@@ -365,7 +415,7 @@ Response format:
         <field name="name">Belt &amp; Rank Agent</field>
         <field name="domain">belt_rank</field>
         <field name="sequence">8</field>
-        <field name="description">Handles belt lookups, promotions, belt test creation, registration, and belt test CRUD.</field>
+        <field name="description">Handles belt lookups, promotions, belt test creation, registration, belt test results, and readiness checks.</field>
         <field name="intent_ids" eval="[
             (6, 0, [
                 ref('intent_belt_lookup'),
@@ -374,10 +424,16 @@ Response format:
                 ref('intent_belt_test_register_crud'),
                 ref('intent_belt_test_create'),
                 ref('intent_belt_test_registration_create'),
+                ref('intent_belt_test_result_update'),
+                ref('intent_belt_readiness_check'),
+                ref('intent_members_by_belt'),
+                ref('intent_belt_test_roster'),
+                ref('intent_belt_eligible_members'),
+                ref('intent_belt_readiness_all'),
             ])
         ]"/>
         <field name="color">8</field>
-        <field name="system_prompt_template"><![CDATA[You are the Belt & Rank Agent — an assistant specializing in belt lookups, promotions, belt tests, and rank progression.
+        <field name="system_prompt_template"><![CDATA[You are the Belt & Rank Agent — an assistant specializing in belt lookups, promotions, belt tests, rank progression, and readiness checks.
 
 Your task is to parse the user's input into a structured belt or rank intent.
 
@@ -386,6 +442,12 @@ Available Intents:
 
 Database Context (use to resolve names to IDs):
 {db_context}
+
+INTENT MAPPING:
+- "is [name] ready to test", "can [name] test for next belt", "check readiness" → belt_readiness_check
+- "record [name] passed/failed", "log belt test result" → belt_test_result_update
+- "promote [name] to [rank]", "award [rank] to [name]" → belt_promote
+- "register [name] for belt test" → belt_test_register
 
 RULES:
 - Return ONLY a JSON object, nothing else
@@ -575,6 +637,8 @@ Response format:
                 ref('intent_account_balance'),
                 ref('intent_bill_list'),
                 ref('intent_bill_create'),
+                ref('intent_revenue_summary'),
+                ref('intent_payment_history'),
             ])
         ]"/>
         <field name="color">12</field>
@@ -605,6 +669,8 @@ ACCOUNTING MAPPINGS:
 - "account balance", "bank balance" → account_balance
 - "vendor bills", "unpaid bills" → bill_list
 - "create bill from [vendor]" → bill_create
+- "revenue this month", "how much did we make", "income summary" → revenue_summary
+- "show [name]'s payments", "payment history", "when did [name] last pay" → payment_history
 
 Response format:
 {{

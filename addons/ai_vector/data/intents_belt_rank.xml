@@ -165,5 +165,99 @@ Add Test8 to belt test #5</field>
         <field name="active">True</field>
     </record>
 
+    <record id="intent_members_by_belt" model="ai.intent.schema">
+        <field name="intent_type">members_by_belt</field>
+        <field name="name">Members by Belt Color</field>
+        <field name="description">List members who hold a specific belt color or rank</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "belt_color": {"type": "string", "description": "Belt color or rank name (e.g., blue, brown, black)"}
+    },
+    "required": ["belt_color"]
+}</field>
+        <field name="example_phrases">Show me all blue belts
+List the black belt members
+Who has a brown belt?
+How many purple belts do we have?
+Show members at the advanced rank</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_test_roster" model="ai.intent.schema">
+        <field name="intent_type">belt_test_roster</field>
+        <field name="name">Belt Test Roster</field>
+        <field name="description">Show the list of members registered for an upcoming belt test event</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "test_name": {"type": "string", "description": "Name or partial name of the belt test event"},
+        "test_id": {"type": "integer", "description": "ID of the belt test event"}
+    }
+}</field>
+        <field name="example_phrases">Who is registered for the upcoming belt test?
+Show the belt test roster
+List everyone testing this Saturday
+Who's signed up for the spring grading?
+Belt test participant list</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_eligible_members" model="ai.intent.schema">
+        <field name="intent_type">belt_eligible_members</field>
+        <field name="name">Belt-Eligible Members</field>
+        <field name="description">List members who have met the attendance threshold for their next belt promotion</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {}
+}</field>
+        <field name="example_phrases">Who is ready to be promoted?
+Which members have enough classes for their next belt?
+Show me eligible students for belt promotion
+Who qualifies for their next rank?
+List members ready for testing</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_readiness_all" model="ai.intent.schema">
+        <field name="intent_type">belt_readiness_all</field>
+        <field name="name">Belt Readiness — All Members</field>
+        <field name="description">Show belt test readiness for all active ranked members. Returns who is ready to test and who still needs more sessions.</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "ready_only": {"type": "boolean", "description": "If true, only return members who are ready to test (default false)"}
+    }
+}</field>
+        <field name="example_phrases">Show belt test readiness for all members
+Who is ready to test for their next belt?
+Which members can be promoted?
+Show me the belt readiness report
+Who's eligible for belt promotion?
+Show belt readiness for everyone
+List all members ready to test</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
 </data>
 </odoo>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
+<odoo noupdate="0">
     <!--
         AI Intent Schema Seed Data
         
@@ -28,6 +28,31 @@ Find member Sarah
 What's Test8's information?
 Show me details for Mike
 Who is Jane Doe?</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_phone_lookup" model="ai.intent.schema">
+        <field name="intent_type">phone_lookup</field>
+        <field name="name">Phone Lookup</field>
+        <field name="description">Look up members AND CRM leads by phone number (searches both dojo.member and crm.lead)</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "phone": {"type": "string", "description": "Phone number to search for (any format: 555-1234, (408) 867-5309, +1 555-123-4567, etc.)"}
+    },
+    "required": ["phone"]
+}</field>
+        <field name="example_phrases">Who has phone number 555-1234?
+What member has this number: (408) 867-5309
+Look up +1 555 123 4567
+Find the student with number 555-0112
+Who does this number belong to?
+Search by phone 4085551234</field>
         <field name="allowed_roles">kiosk,instructor,admin</field>
         <field name="requires_confirmation">False</field>
         <field name="is_undoable">False</field>
@@ -117,7 +142,10 @@ Show all belt ranks</field>
 Is Sarah's membership active?
 Check Test8's plan
 Does Mike have an active subscription?
-What plan is Jane on?</field>
+What plan is Jane on?
+What's John's contract status?
+Is Sarah's contract active?
+Check Mike's contract</field>
         <field name="allowed_roles">instructor,admin</field>
         <field name="requires_confirmation">False</field>
         <field name="is_undoable">False</field>
@@ -326,7 +354,10 @@ Promote Jane to her next belt level</field>
 Sign Sarah up for the unlimited plan
 Add Test8 to the family membership
 Set up a yearly plan for Mike
-Start a new subscription for Jane</field>
+Start a new subscription for Jane
+Create a contract for John
+Sign Sarah up for a contract
+Set up a new contract for Mike</field>
         <field name="confirmation_template">Create {plan_name} subscription for {member_name}?</field>
         <field name="is_undoable">True</field>
         <field name="supports_bulk">False</field>
@@ -352,7 +383,10 @@ Start a new subscription for Jane</field>
 End Sarah's membership
 Stop Test8's plan
 Terminate Mike's subscription
-Cancel Jane's membership plan</field>
+Cancel Jane's membership plan
+Cancel John's contract
+End Sarah's contract
+Terminate Mike's contract</field>
         <field name="confirmation_template">Cancel subscription for {member_name}?</field>
         <field name="is_undoable">True</field>
         <field name="supports_bulk">False</field>
@@ -722,7 +756,10 @@ What's being shown on the kiosk right now?</field>
 }</field>
         <field name="example_phrases">Pause Alex's membership
 Put Sarah's subscription on hold
-Suspend John's membership temporarily</field>
+Suspend John's membership temporarily
+Pause Alex's contract
+Put Sarah's contract on hold
+Suspend John's contract</field>
         <field name="allowed_roles">admin</field>
         <field name="requires_confirmation">True</field>
         <field name="confirmation_template">Pause {member_name}'s active subscription?</field>
@@ -746,7 +783,10 @@ Suspend John's membership temporarily</field>
 }</field>
         <field name="example_phrases">Resume Alex's membership
 Reactivate Sarah's subscription
-Unpause John's membership</field>
+Unpause John's membership
+Resume Alex's contract
+Reactivate Sarah's contract
+Unpause John's contract</field>
         <field name="allowed_roles">admin</field>
         <field name="requires_confirmation">True</field>
         <field name="confirmation_template">Resume {member_name}'s paused subscription?</field>
@@ -1973,7 +2013,10 @@ Does John have any credits on account?</field>
 Show me Sarah's family
 What family members are linked to Mike?
 Show the Smith household
-Who is the guardian for this student?</field>
+Who is the guardian for this student?
+List all households
+View households
+Show me all families</field>
         <field name="allowed_roles">instructor,admin</field>
         <field name="requires_confirmation">False</field>
         <field name="is_undoable">False</field>
@@ -2980,6 +3023,868 @@ Show my inbox messages</field>
         <field name="allowed_roles">instructor,admin</field>
         <field name="requires_confirmation">False</field>
         <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Batch A — Points & Member Admin Intents                              -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_points_award" model="ai.intent.schema">
+        <field name="intent_type">points_award</field>
+        <field name="name">Award Points</field>
+        <field name="description">Award dojo points to a member (creates a points transaction)</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to award points to"},
+        "amount": {"type": "integer", "description": "Number of points to award"},
+        "note": {"type": "string", "description": "Reason for the award (optional)"}
+    },
+    "required": ["member_name", "amount"]
+}</field>
+        <field name="example_phrases">Award 50 points to John Smith
+Give Sarah 100 points for helping out
+Add 25 points to Mike's account
+Award Jordan bonus points for attendance
+Give 10 points to Casey for winning the tournament</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Award {amount} points to {member_name}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_points_deduct" model="ai.intent.schema">
+        <field name="intent_type">points_deduct</field>
+        <field name="name">Deduct Points</field>
+        <field name="description">Deduct dojo points from a member (creates a negative adjustment transaction)</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to deduct points from"},
+        "amount": {"type": "integer", "description": "Number of points to deduct"},
+        "note": {"type": "string", "description": "Reason for the deduction (optional)"}
+    },
+    "required": ["member_name", "amount"]
+}</field>
+        <field name="example_phrases">Deduct 20 points from John Smith
+Remove 50 points from Sarah's account
+Subtract 10 points from Mike for missing class
+Take away 100 points from Casey</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Deduct {amount} points from {member_name}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_member_archive" model="ai.intent.schema">
+        <field name="intent_type">member_archive</field>
+        <field name="name">Archive Member</field>
+        <field name="description">Deactivate (archive) a member record so they no longer appear in active lists</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to archive"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="example_phrases">Archive John Smith
+Deactivate member Sarah Jones
+Remove Casey from active members
+Archive Mike — he moved away
+Deactivate Jordan's account</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Archive {member_name}? They will be deactivated.</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_member_note_add" model="ai.intent.schema">
+        <field name="intent_type">member_note_add</field>
+        <field name="name">Add Member Note</field>
+        <field name="description">Post an internal note to a member's chatter / activity log</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to add the note to"},
+        "note": {"type": "string", "description": "Text of the note to add"}
+    },
+    "required": ["member_name", "note"]
+}</field>
+        <field name="example_phrases">Add a note to John Smith: great improvement this week
+Leave a note on Sarah's profile about her injury
+Note on Mike: parents want a call back
+Add internal note for Casey — struggling with back kick
+Write a note on Jordan's profile</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Add note to {member_name}'s profile?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_member_enrollment_list" model="ai.intent.schema">
+        <field name="intent_type">member_enrollment_list</field>
+        <field name="name">Member Enrollment List</field>
+        <field name="description">List a member's current/upcoming class session enrollments</field>
+        <field name="category">read</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="example_phrases">What classes is John enrolled in?
+Show Sarah's class schedule
+Which sessions does Mike have this week?
+List Casey's current enrollments
+What's Jordan signed up for?</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_subscription_billing_retry" model="ai.intent.schema">
+        <field name="intent_type">subscription_billing_retry</field>
+        <field name="name">Retry Subscription Billing</field>
+        <field name="description">Reset billing failure count on a member's subscription so the next billing run retries the charge</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member with the failed billing"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="example_phrases">Retry billing for John Smith
+Try billing Casey again
+Reset billing failure for Sarah
+Attempt payment again for Mike
+Retry the failed charge for Jordan</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Retry billing for {member_name}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Batch B — Class & Roster                                               -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_enrollment_availability" model="ai.intent.schema">
+        <field name="intent_type">enrollment_availability</field>
+        <field name="name">Enrollment Availability</field>
+        <field name="description">Show available spots in upcoming class sessions</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "class_name": {"type": "string", "description": "Filter by class name or template"}
+    }
+}</field>
+        <field name="example_phrases">How many spots are left in Tuesday's class?
+Is there room in the BJJ session?
+What classes have availability?
+Show me open slots for this week
+Which sessions still have space?</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_class_enrollment_list" model="ai.intent.schema">
+        <field name="intent_type">class_enrollment_list</field>
+        <field name="name">Class Enrollment List</field>
+        <field name="description">List all members enrolled in a specific class session</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "session_name": {"type": "string"},
+        "class_name": {"type": "string"}
+    }
+}</field>
+        <field name="example_phrases">Who is enrolled in Thursday's class?
+Show the roster for tonight's BJJ session
+List everyone signed up for Saturday's class
+Who's coming to the 6pm session?
+Show me the class roster</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_class_session_generate" model="ai.intent.schema">
+        <field name="intent_type">class_session_generate</field>
+        <field name="name">Generate Class Sessions</field>
+        <field name="description">Generate recurring sessions from a class template's recurrence schedule</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "template_name": {"type": "string", "description": "Name of the class template"},
+        "horizon_days": {"type": "integer", "description": "Days ahead to generate (default 30)"}
+    },
+    "required": ["template_name"]
+}</field>
+        <field name="example_phrases">Generate sessions for BJJ class
+Create upcoming sessions for the Monday Karate template
+Generate next month's sessions for Taekwondo
+Schedule sessions for the kids' class template
+Create recurring classes for Muay Thai</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Generate sessions for '{template_name}'?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_class_waitlist_add" model="ai.intent.schema">
+        <field name="intent_type">class_waitlist_add</field>
+        <field name="name">Add to Waitlist</field>
+        <field name="description">Add a member to the waitlist for a class session</field>
+        <field name="category">enrollment</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string"},
+        "class_name": {"type": "string"},
+        "session_name": {"type": "string"}
+    },
+    "required": ["member_name", "class_name"]
+}</field>
+        <field name="example_phrases">Add John to the waitlist for BJJ
+Put Sarah on the waitlist for tonight's class
+Waitlist Mike for the Saturday session
+Add Casey to the waitlist — the class is full
+Put Jordan on standby for Thursday's Karate</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Add {member_name} to the waitlist for '{class_name}'?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Batch C — Belt & Instructor (4 intents)
+         ═══════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_belt_test_result_update" model="ai.intent.schema">
+        <field name="intent_type">belt_test_result_update</field>
+        <field name="name">Record Belt Test Result</field>
+        <field name="description">Record the result (pass/fail/absent) of a belt test for a specific member.</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string"},
+        "result": {"type": "string", "enum": ["pass", "fail", "absent"]},
+        "notes": {"type": "string"},
+        "test_name": {"type": "string"},
+        "test_id": {"type": "integer"}
+    },
+    "required": ["member_name", "result"]
+}</field>
+        <field name="example_phrases">Mark John as passed the belt test
+Record that Sarah failed her belt test
+Log absent for Mike's test
+Mark Casey as passed with notes: excellent technique
+Record Jordan's belt test result as pass</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Record belt test result '{result}' for {member_name}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_readiness_check" model="ai.intent.schema">
+        <field name="intent_type">belt_readiness_check</field>
+        <field name="name">Check Belt Readiness</field>
+        <field name="description">Check if a member has enough attendance to test for their next belt rank.</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string"},
+        "member_id": {"type": "integer"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="example_phrases">Is John ready to test for his next belt?
+Can Sarah test for the next rank?
+Check belt readiness for Mike
+Is Casey eligible for promotion?
+How many classes does Jordan need before testing?
+Is Alex ready for their black belt test?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_instructor_todo_list" model="ai.intent.schema">
+        <field name="intent_type">instructor_todo_list</field>
+        <field name="name">List Instructor Tasks</field>
+        <field name="description">List open tasks in the Instructor Alerts project (instructor to-do items).</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "include_done": {"type": "boolean"},
+        "project_name": {"type": "string"}
+    }
+}</field>
+        <field name="example_phrases">What instructor tasks are open?
+Show me my to-do list
+What are the instructor alerts?
+List all open instructor tasks
+What needs to be done for instructors today?
+Any pending instructor tasks?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_instructor_todo_complete" model="ai.intent.schema">
+        <field name="intent_type">instructor_todo_complete</field>
+        <field name="name">Complete Instructor Task</field>
+        <field name="description">Mark an instructor task/alert as done/completed.</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "task_name": {"type": "string"},
+        "task_id": {"type": "integer"}
+    },
+    "required": ["task_name"]
+}</field>
+        <field name="example_phrases">Mark the equipment check task as done
+Complete the task "Follow up with John"
+Close the belt order task
+Mark "Schedule makeup class" as complete
+Done with the uniform inventory task</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Mark task '{task_name}' as done?</field>
+        <field name="is_undoable">True</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Batch D — Revenue, CRM & Portal (6 intents)
+         ═══════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_subscription_dunning_list" model="ai.intent.schema">
+        <field name="intent_type">subscription_dunning_list</field>
+        <field name="name">Subscription Dunning List</field>
+        <field name="description">List subscriptions that have billing failures or are in dunning (past-due).</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "min_failures": {"type": "integer"},
+        "limit": {"type": "integer"}
+    }
+}</field>
+        <field name="example_phrases">Show me subscriptions with failed payments
+Who has billing failures?
+List all dunning subscriptions
+Which members have past-due payments?
+Show members with failed billing
+Who needs billing follow-up?</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_revenue_summary" model="ai.intent.schema">
+        <field name="intent_type">revenue_summary</field>
+        <field name="name">Revenue Summary</field>
+        <field name="description">Summarize paid invoice revenue for a given time period (week, month, quarter, year).</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "period": {"type": "string", "enum": ["week", "month", "quarter", "year"]},
+        "date_from": {"type": "string", "format": "date"},
+        "date_to": {"type": "string", "format": "date"}
+    }
+}</field>
+        <field name="example_phrases">What was our revenue this month?
+How much did we make this week?
+Show me monthly revenue
+Revenue summary for this quarter
+How much revenue did we generate this year?
+What is our total income this month?</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_payment_history" model="ai.intent.schema">
+        <field name="intent_type">payment_history</field>
+        <field name="name">Payment History</field>
+        <field name="description">List recent payments, optionally filtered by member name or date range.</field>
+        <field name="category">accounting</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string"},
+        "member_id": {"type": "integer"},
+        "date_from": {"type": "string", "format": "date"},
+        "date_to": {"type": "string", "format": "date"}
+    }
+}</field>
+        <field name="example_phrases">Show me John's payment history
+What payments did Sarah make?
+List recent payments
+When did Mike last pay?
+Show all payments this month
+Payment history for Jordan</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_trial_conversion_report" model="ai.intent.schema">
+        <field name="intent_type">trial_conversion_report</field>
+        <field name="name">Trial Conversion Report</field>
+        <field name="description">Report on how many trial prospects converted to members vs dropped off over a period.</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "period": {"type": "string", "enum": ["week", "month", "quarter", "year"]},
+        "date_from": {"type": "string", "format": "date"},
+        "date_to": {"type": "string", "format": "date"}
+    }
+}</field>
+        <field name="example_phrases">How many trials converted this month?
+Trial conversion rate this week
+How many new members signed up from trials?
+Show me the conversion report
+What's our trial-to-member conversion rate?
+How many prospects became members this quarter?</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_lead_note_add" model="ai.intent.schema">
+        <field name="intent_type">lead_note_add</field>
+        <field name="name">Add Note to Lead</field>
+        <field name="description">Add an internal note or comment to a CRM lead/prospect record.</field>
+        <field name="category">sales</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "lead_name": {"type": "string"},
+        "contact_name": {"type": "string"},
+        "lead_id": {"type": "integer"},
+        "note": {"type": "string"},
+        "message": {"type": "string"}
+    },
+    "required": ["note"]
+}</field>
+        <field name="example_phrases">Add a note to John's lead
+Leave a note on Sarah's trial record
+Note on Mike's lead: called but no answer
+Add comment to the ABC prospect
+Log a note for Jordan: interested in black belt program</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Add note to lead '{lead_name}'?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_guardian_portal_invite" model="ai.intent.schema">
+        <field name="intent_type">guardian_portal_invite</field>
+        <field name="name">Invite Guardian to Portal</field>
+        <field name="description">Send a portal login invitation email to a member's guardian/parent so they can access the member portal.</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string"},
+        "member_id": {"type": "integer"},
+        "guardian_name": {"type": "string"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="example_phrases">Send portal invite to John's parent
+Invite Sarah's guardian to the member portal
+Give Mike's mom portal access
+Send login link to Jordan's parent
+Invite the parent of Casey to the portal
+Set up portal access for Alex's guardian</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Send portal invitation to guardian of {member_name}?</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- New Query Intents                                                    -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="intent_members_by_belt" model="ai.intent.schema">
+        <field name="intent_type">members_by_belt</field>
+        <field name="name">Members by Belt Color</field>
+        <field name="description">List all active members at a given belt rank / color. Use belt_color to filter by rank name (e.g. "blue", "white", "black belt"). Returns member name, rank, membership state, and total sessions attended.</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "belt_color": {"type": "string", "description": "Belt color or rank name to filter by (e.g. blue, white, black, purple)"},
+        "belt_name": {"type": "string", "description": "Alias for belt_color"}
+    }
+}</field>
+        <field name="example_phrases">Show me all blue belt members
+Who has a white belt?
+List all black belt students
+Which members are purple belts?
+How many blue belts do we have?
+Show everyone at white belt</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_checkin_required_today" model="ai.intent.schema">
+        <field name="intent_type">checkin_required_today</field>
+        <field name="name">Check-In Required Today</field>
+        <field name="description">List members enrolled in today's sessions who haven't checked in yet (attendance_state = pending). Optionally filter to a specific session by name or ID. Results grouped by session.</field>
+        <field name="category">attendance</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "session_id": {"type": "integer", "description": "Specific session ID to check"},
+        "session_name": {"type": "string", "description": "Session or class name to filter by"},
+        "class_name": {"type": "string", "description": "Alias for session_name"}
+    }
+}</field>
+        <field name="example_phrases">Which members haven't checked in today?
+Who still needs to check in?
+Show me today's pending check-ins
+Who hasn't arrived yet for today's classes?
+List members that need to check in
+Show unchecked members for today's BJJ class</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_test_roster" model="ai.intent.schema">
+        <field name="intent_type">belt_test_roster</field>
+        <field name="name">Belt Test Roster</field>
+        <field name="description">Show the full roster of registrations for a specific belt test. Defaults to the nearest upcoming test. Returns each registered member with their target rank and current result status.</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "test_id": {"type": "integer", "description": "ID of the belt test"},
+        "test_name": {"type": "string", "description": "Name of the belt test"},
+        "date": {"type": "string", "format": "date", "description": "Date of the belt test (YYYY-MM-DD)"},
+        "program_name": {"type": "string", "description": "Program to filter by (e.g. BJJ, Taekwondo)"}
+    }
+}</field>
+        <field name="example_phrases">Show the belt test roster
+Who is registered for the belt test?
+Show me the belt test list for this month
+Who's testing for their next belt?
+List all belt test registrations
+Show the BJJ belt test roster</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_members_active_subscriptions" model="ai.intent.schema">
+        <field name="intent_type">members_active_subscriptions</field>
+        <field name="name">Members with Active Subscriptions</field>
+        <field name="description">List all members who currently have an active subscription (membership_state = active). Does not require a specific member name — retrieves the full active member roster.</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "limit": {"type": "integer", "description": "Maximum number of results to return", "default": 50}
+    }
+}</field>
+        <field name="example_phrases">List all members with active subscriptions
+Show me all active members
+Which members have an active plan?
+How many members are currently active?
+Give me the full active member list
+Show all members with a subscription</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_members_by_state" model="ai.intent.schema">
+        <field name="intent_type">members_by_state</field>
+        <field name="name">Members by Membership State</field>
+        <field name="description">List all members filtered by a specific membership state (active, paused, cancelled, trial, lead, expired). Useful for bulk queries like "show all paused members" or "list everyone on trial".</field>
+        <field name="category">member</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "state": {
+            "type": "string",
+            "enum": ["active", "paused", "cancelled", "trial", "lead", "expired"],
+            "description": "Membership state to filter by"
+        }
+    },
+    "required": ["state"]
+}</field>
+        <field name="example_phrases">Show all paused members
+List all cancelled students
+Who is on trial?
+Show me all leads
+List every expired member
+Which members are currently paused?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_session_no_shows" model="ai.intent.schema">
+        <field name="intent_type">session_no_shows</field>
+        <field name="name">Session No-Shows</field>
+        <field name="description">List members who were enrolled in a session but were marked as absent. Defaults to today's sessions if no specific session is provided.</field>
+        <field name="category">attendance</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "session_id": {"type": "integer", "description": "Specific session ID"},
+        "session_name": {"type": "string", "description": "Session or class name"},
+        "class_name": {"type": "string", "description": "Alias for session_name"},
+        "date": {"type": "string", "format": "date", "description": "Date to check (YYYY-MM-DD, defaults to today)"}
+    }
+}</field>
+        <field name="example_phrases">Who didn't show up today?
+Show me today's no-shows
+Which members were absent?
+List no-shows for tonight's class
+Who was marked absent in the BJJ session?
+Show absentees for today</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_eligible_members" model="ai.intent.schema">
+        <field name="intent_type">belt_eligible_members</field>
+        <field name="name">Belt-Eligible Members</field>
+        <field name="description">List active members whose attendance since their last promotion meets or exceeds the threshold required for their next belt test. Optionally filter by program. Returns member name, current rank, attendance count vs. threshold, and completion percentage.</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "program_name": {"type": "string", "description": "Program to filter by (e.g. BJJ, Taekwondo)"},
+        "threshold_pct": {"type": "number", "description": "Minimum completion percentage (default 100 = fully eligible)", "default": 100}
+    }
+}</field>
+        <field name="example_phrases">Who is ready for their next belt test?
+Which members are eligible for promotion?
+Show me belt-ready students
+Who has enough classes for their next belt?
+List members ready to test for the next rank
+Who can test for their belt in BJJ?</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_subscription_status_summary" model="ai.intent.schema">
+        <field name="intent_type">subscription_status_summary</field>
+        <field name="name">Subscription Status Summary</field>
+        <field name="description">Aggregate count of all subscriptions grouped by state (active, paused, cancelled, expired, etc.). Returns a quick dashboard-style breakdown of subscription health across the entire school.</field>
+        <field name="category">subscription</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {}
+}</field>
+        <field name="example_phrases">Give me a subscription breakdown
+How many active subscriptions do we have?
+Show me subscription stats
+What's the breakdown of member subscription states?
+How many members are paused vs active?
+Summarize our subscription status
+How many contracts are active?
+Give me a contract breakdown</field>
+        <field name="allowed_roles">admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="confirmation_template"></field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_next_class_session" model="ai.intent.schema">
+        <field name="intent_type">next_class_session</field>
+        <field name="name">Next Class Session</field>
+        <field name="description">Find the next upcoming class session, optionally for a specific member</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Filter by member name (optional)"},
+        "limit": {"type": "integer", "description": "Number of sessions to return (default 5)"}
+    }
+}</field>
+        <field name="example_phrases">What's the next class?
+When is the next session?
+What class is coming up next?
+What's John's next class?
+When is Sarah's next session?
+Show me the next 3 classes</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_previous_class_session" model="ai.intent.schema">
+        <field name="intent_type">previous_class_session</field>
+        <field name="name">Previous Class Session</field>
+        <field name="description">Find the most recent past class session(s), optionally for a specific member</field>
+        <field name="category">class</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Filter by member name (optional)"},
+        "limit": {"type": "integer", "description": "Number of sessions to return (default 5)"}
+    }
+}</field>
+        <field name="example_phrases">What was the last class?
+When was the previous session?
+Show me the most recent class
+What was John's last session?
+When did Sarah last have class?
+Show me the previous 3 sessions</field>
+        <field name="allowed_roles">kiosk,instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">False</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_belt_readiness_all" model="ai.intent.schema">
+        <field name="intent_type">belt_readiness_all</field>
+        <field name="name">Belt Readiness — All Members</field>
+        <field name="description">Show belt test readiness for all active ranked members. Returns a summary of who is ready to test and who still needs more sessions.</field>
+        <field name="category">belt</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "ready_only": {"type": "boolean", "description": "If true, only return members who are ready to test (default false)"}
+    }
+}</field>
+        <field name="example_phrases">Show belt test readiness for all members
+Who is ready to test for their next belt?
+Which members can be promoted?
+Show me the belt readiness report
+Who's eligible for belt promotion?
+Show belt readiness for everyone
+List all members ready to test</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">False</field>
+        <field name="is_undoable">False</field>
+        <field name="supports_bulk">True</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="intent_enroll_next_session" model="ai.intent.schema">
+        <field name="intent_type">enroll_next_session</field>
+        <field name="name">Enroll in Next Session</field>
+        <field name="description">Enroll a member in the next upcoming session of a course they are already part of</field>
+        <field name="category">enrollment</field>
+        <field name="parameters_schema">{
+    "type": "object",
+    "properties": {
+        "member_name": {"type": "string", "description": "Name of the member to enroll"},
+        "course_name": {"type": "string", "description": "Course or class name (optional — uses member's current course if omitted)"}
+    },
+    "required": ["member_name"]
+}</field>
+        <field name="example_phrases">Enroll John in their next class session
+Sign Sarah up for their next class
+Add Mike to the next available session
+Enroll Casey in their next BJJ session
+Put Jordan in the next class</field>
+        <field name="allowed_roles">instructor,admin</field>
+        <field name="requires_confirmation">True</field>
+        <field name="confirmation_template">Enroll {member_name} in their next available class session?</field>
+        <field name="is_undoable">True</field>
         <field name="supports_bulk">False</field>
         <field name="active">True</field>
     </record>
