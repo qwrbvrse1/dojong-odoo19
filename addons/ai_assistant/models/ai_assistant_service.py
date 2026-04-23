@@ -5019,9 +5019,12 @@ class AiAssistantService(models.AbstractModel):
         Look up belt rank information.
 
         - If a member is in context → return that member's current rank + stripe count.
-        - Otherwise → return all belt ranks in sequence order.
+        - If a member_name was provided but not resolved → return not-found error.
+        - Otherwise (no member requested) → return all belt ranks in sequence order.
         """
         member_id = resolved_data.get("member_id")
+        params = intent_data.get("parameters", {}) or {}
+        requested_name = (params.get("member_name") or "").strip()
 
         if member_id:
             member = self.env["dojo.member"].browse(member_id)
@@ -5043,6 +5046,16 @@ class AiAssistantService(models.AbstractModel):
                     "member_name": member.name,
                     "rank_id": rank.id if rank else None,
                 },
+            }
+
+        # A name was requested but could not be resolved — do NOT fall through to
+        # "list all ranks", because the agent will then fabricate a rank for that
+        # person. Return an explicit not-found result instead.
+        if requested_name:
+            return {
+                "success": False,
+                "error": f"No member found matching '{requested_name}'. Please check the spelling or confirm the member exists.",
+                "data": {"requested_name": requested_name, "found": False},
             }
 
         # No member in context — return all belt ranks

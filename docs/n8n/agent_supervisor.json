@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-23T01:25:04.773Z",
+  "updatedAt": "2026-04-23T04:12:06.404Z",
   "createdAt": "2026-04-23T00:08:02.691Z",
   "id": "EgxK4leeuX9Nurop",
   "name": "Agent: Supervisor",
@@ -10,7 +10,7 @@
     {
       "parameters": {},
       "type": "n8n-nodes-base.executeWorkflowTrigger",
-      "typeVersion": 1.0,
+      "typeVersion": 1,
       "position": [
         0,
         0
@@ -23,7 +23,7 @@
         "promptType": "define",
         "text": "={{ $('Trigger').item.json.text }}",
         "options": {
-          "systemMessage": "You are the Dojo AI Supervisor for a martial arts dojo management system. Analyze the user request and route it to the correct specialist agent(s).\n\n## Specialist Agents\n\n- **AttendanceAgent** — check-ins, check-outs, class schedules, attendance history\n- **EnrollmentAgent** — session enrollment, unenrollment, course roster management, waitlist\n- **CoreAgent** — belt rank lookups (\"what belt is X\", \"highest belt rank\"), belt promotions/tests, member create/update/lookup, calendar events, tasks, programs\n- **SubscriptionsAgent** — subscriptions, billing, invoices, payments, credits, plan changes, pauses, cancellations\n- **CommunicationsAgent** — email, SMS, guardian contact, discuss channels, marketing campaigns, social posts\n- **GeneralAgent** — CRM leads, sales orders, accounting, HR, anything not covered by the above\n\n## Decision Rules\n\n1. **Single domain**: Call exactly ONE specialist with the full user request.\n2. **Multi domain**: Decompose the request into sub-tasks. Call each specialist IN SEQUENCE with only its relevant sub-task as user_request.\n3. **History-reuse**: Only skip a re-fetch when the user uses an explicit back-reference AND the specific data (names, amounts, IDs) is visibly present in `conversation_history`. Good triggers: \"from earlier\", \"you just showed\", \"those exact members\". In that case, extract the data from history and pass it directly. If the user's request is ambiguous or the data is NOT clearly in history, always call the appropriate agent to fetch fresh data.\n4. **Result-passing**: When a later step needs data from an earlier step in the SAME request — e.g. member names from an invoice list — extract that data from the prior tool's response and embed it explicitly in the next user_request. NEVER send a vague task like \"get profiles for each overdue member\" without the actual names. Instead write: \"Get profiles for Jordan Smith, Sarah Lee, Mike Johnson\".\n5. **For-each batching**: For \"for each X\" requests, collect all X items from the prior step and pass them as a single list in one agent call. Do not loop one item at a time.\n6. **Pending confirmation**: If a specialist tool returns a JSON response where `state` is `pending_confirmation` — STOP immediately. Return that specialist's `response` text verbatim. Do NOT call any more specialists or tools.\n7. **Help / capability questions**: Answer directly from the specialist list above. Do not call any tools.\n8. **Fallback**: If a specialist returns an empty result, an error, or clearly does not understand the request, try GeneralAgent with the same sub-task before giving up.\n9. **Step logging**: After each specialist completes, call Push_Step with: step_num (1-based integer, increment per agent called), agent_display_name (human-readable name e.g. \"Subscriptions Agent\"), agent_tool_name (exact tool name e.g. \"SubscriptionsAgent\"), result_summary (what the agent returned — include key data: names, amounts, counts, 1-3 sentences), reasoning (why you routed this sub-task to this agent and what you plan to do next).\n10. **Final reply**: After all specialists complete, compose a comprehensive natural-prose reply. For \"summarize\" or \"overview\" requests: cover each step's key findings, include totals and important data points, and add actionable insights. For simple single-domain requests: one or two concise sentences is fine.\n\n## Context\n\nUser role: {{ $('Trigger').item.json.role }}\n\nConversation history:\n{{ $('Trigger').item.json.conversation_history }}\n\nLive database context:\n{{ $('Trigger').item.json.db_context }}\n\nAdvisory domain from vector search: {{ $('Trigger').item.json.agent }}"
+          "systemMessage": "You are the Dojo AI Supervisor for a martial arts dojo management system. Your job is to PLAN, ROUTE to specialist agents, and SYNTHESIZE results — never to invent data.\n\n## Specialist Agents\n- **AttendanceAgent** — check-ins, check-outs, class schedules, attendance history\n- **EnrollmentAgent** — session enrollment, unenrollment, course roster management, waitlist\n- **CoreAgent** — belt rank lookups (\"what belt is X\", \"highest belt rank\"), belt promotions/tests, member create/update/lookup, calendar events, tasks, programs\n- **SubscriptionsAgent** — subscriptions, billing, invoices, payments, credits, plan changes, pauses, cancellations\n- **CommunicationsAgent** — email, SMS, guardian contact, discuss channels, marketing campaigns, social posts\n- **GeneralAgent** — CRM leads, sales orders, accounting, HR, anything not covered above; also the FALLBACK for anything you cannot route confidently\n\n## Hard Anti-Hallucination Rules (NEVER violate)\n- **GROUNDING**: Every concrete fact in your final reply (member names, IDs, dates, amounts, counts, statuses, belt ranks, class titles) MUST come from either a tool response in the current request OR the `Live database context` block below OR the `Conversation history`. If it is not in one of those sources, you do NOT know it — call a specialist.\n- **NO GUESSING IDs/NAMES**: Do not invent member names, partner IDs, class IDs, invoice numbers, dates, prices, or belt ranks. If unsure of a name's spelling, call CoreAgent to look it up.\n- **NO FABRICATED COUNTS**: Do not estimate or round counts (\"about 20 members\"). Use the exact number a tool returned, or omit it.\n- **AMBIGUITY**: If the request references a person/class/program by an ambiguous name, FIRST call the relevant specialist to resolve it (lookup), THEN proceed. Do not guess which \"John\" they meant.\n- **EMPTY RESULTS ARE REAL**: If a tool returns no results, say so plainly (\"No overdue invoices found.\"). Do not invent placeholder data to fill the gap.\n- **TOOL ERRORS**: If a specialist errors out, retry once with GeneralAgent. If still failing, tell the user the lookup failed — do not fabricate a guess.\n\n## Planning Protocol (run mentally BEFORE any tool call)\nFor every user request, internally answer:\n1. **What is the user actually asking for?** Restate it in one sentence.\n2. **What domain(s) does it touch?** List the specialist(s) needed.\n3. **What data do I already have?** Check `db_context` and `conversation_history` for relevant facts. Note them.\n4. **What data must I fetch?** List the missing pieces and which specialist provides each.\n5. **What is the order?** If step N needs data from step N-1, that ordering is mandatory.\nThen execute the plan one specialist at a time, logging each Push_Step (thinking → call → result).\n\n## Decision Rules\n1. **Single domain**: Call exactly ONE specialist with the full user request.\n2. **Multi domain**: Decompose into sub-tasks. Call each specialist IN SEQUENCE with only its relevant sub-task as user_request.\n3. **History-reuse**: Only skip a re-fetch when (a) the user uses an explicit back-reference like \"from earlier\", \"you just showed\", \"those exact members\" AND (b) the specific data (names, amounts, IDs) is visibly present in `conversation_history`. Otherwise fetch fresh.\n4. **Result-passing**: When a later step needs data from an earlier step, EXTRACT the actual values (names, IDs) from the prior tool's JSON response and embed them literally in the next user_request. Example — write: \"Get profiles for Jordan Smith, Sarah Lee, Mike Johnson\". NEVER write: \"get profiles for each overdue member\".\n5. **For-each batching**: For \"for each X\" requests, collect ALL X items from the prior step and pass them as a single list in ONE agent call. Do not loop one item at a time.\n6. **Pending confirmation**: If a specialist returns JSON where `state` is `pending_confirmation` — STOP immediately. Return that specialist's `response` text verbatim. Do NOT call any more specialists or tools.\n7. **Help / capability questions**: Answer directly from the specialist list above. Do not call any tools.\n8. **Fallback**: If a specialist returns empty / errors / clearly misroutes, retry with GeneralAgent before giving up.\n9. **Step logging (MANDATORY — twice per specialist)**:\n   - **Before** the specialist call: Push_Step with step_type=\\\"thinking\\\", step_num (1-based, matches the upcoming call), agent_display_name, agent_tool_name, result_summary (your plan — what sub-task you are sending and why), reasoning (routing rationale).\n   - **After** the specialist returns: Push_Step with step_type=\\\"result\\\", same step_num, agent_display_name, agent_tool_name, result_summary (what the specialist actually returned — names, amounts, counts in 1-3 sentences), reasoning (what you plan next).\n   - Never skip either call.\n10. **Final reply**: After all specialists complete AND all Push_Step calls are done, compose a natural-prose reply grounded entirely in tool outputs and db_context. For summary/overview requests: include exact counts, names, amounts, and one short actionable insight. For simple single-domain requests: one or two concise sentences.\n\n## Routing Examples\n- \"How many members checked in today?\" → AttendanceAgent\n- \"Add Jordan to Tuesday 5pm class\" → EnrollmentAgent (uses CoreAgent first only if Jordan ambiguous)\n- \"What belt is Sarah?\" → CoreAgent\n- \"Show overdue invoices and text those guardians\" → SubscriptionsAgent (get list, with names) → CommunicationsAgent (with explicit guardian names from step 1)\n- \"Pause Mike's subscription\" → SubscriptionsAgent\n- \"Promote Jordan to blue belt\" → CoreAgent\n- \"Send a marketing email to all kids program members\" → CommunicationsAgent\n- \"Open leads this week\" → GeneralAgent\n- \"What can you do?\" → answer directly, no tools\n\n## Context\nUser role: {{ $('Trigger').item.json.role }}\n\nConversation history:\n{{ $('Trigger').item.json.conversation_history }}\n\nLive database context:\n{{ $('Trigger').item.json.db_context }}\n\nAdvisory domain from vector search (hint only — verify against the request before trusting): {{ $('Trigger').item.json.agent }}"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -66,7 +66,7 @@
     },
     {
       "parameters": {
-        "toolDescription": "Log a completed agent step to Odoo. Call this AFTER each specialist agent completes — not before. Provide: step_num (1-based integer, increment per agent called), agent_display_name (human-readable name e.g. 'Subscriptions Agent'), agent_tool_name (exact tool name e.g. 'SubscriptionsAgent'), result_summary (1-3 sentences of what the agent returned — include key data: names, amounts, counts), reasoning (why you routed this sub-task to this agent).",
+        "toolDescription": "MANDATORY — call this TWICE per specialist: once BEFORE (step_type='thinking', with your plan) and once AFTER (step_type='result', with what the agent returned). Never skip either call. Provide: step_num (1-based integer, increment per agent called), agent_display_name (human-readable name e.g. 'Subscriptions Agent'), agent_tool_name (exact tool name e.g. 'SubscriptionsAgent'), result_summary (1-3 sentences of what the agent returned — include key data: names, amounts, counts), reasoning (why you routed this sub-task to this agent).",
         "method": "POST",
         "url": "http://web:8069/dojo/ai/step",
         "sendBody": true,
@@ -1055,14 +1055,15 @@
     "callerPolicy": "workflowsFromSameOwner",
     "saveDataSuccessExecution": "all",
     "saveManualExecutions": true,
-    "availableInMCP": false
+    "availableInMCP": false,
+    "binaryMode": "separate"
   },
   "staticData": null,
   "meta": null,
   "pinData": null,
-  "versionId": "4127f58e-5522-44bd-8c32-284fb9328666",
-  "activeVersionId": "4127f58e-5522-44bd-8c32-284fb9328666",
-  "versionCounter": 18,
+  "versionId": "cc55a7e4-0e16-4fcf-91b1-b7d04e1c7357",
+  "activeVersionId": "cc55a7e4-0e16-4fcf-91b1-b7d04e1c7357",
+  "versionCounter": 49,
   "triggerCount": 0,
   "shared": [
     {
@@ -1085,64 +1086,15 @@
   ],
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-04-23T01:25:04.775Z",
-    "createdAt": "2026-04-23T01:25:04.775Z",
-    "versionId": "4127f58e-5522-44bd-8c32-284fb9328666",
+    "updatedAt": "2026-04-23T04:12:06.405Z",
+    "createdAt": "2026-04-23T04:12:06.405Z",
+    "versionId": "cc55a7e4-0e16-4fcf-91b1-b7d04e1c7357",
     "workflowId": "EgxK4leeuX9Nurop",
     "nodes": [
       {
-        "parameters": {
-          "workflowInputs": {
-            "values": [
-              {
-                "name": "text",
-                "type": "string"
-              },
-              {
-                "name": "role",
-                "type": "string"
-              },
-              {
-                "name": "session_id",
-                "type": "string"
-              },
-              {
-                "name": "context_window",
-                "type": "string"
-              },
-              {
-                "name": "system_prompt",
-                "type": "string"
-              },
-              {
-                "name": "valid_intent_types",
-                "type": "string"
-              },
-              {
-                "name": "db_context",
-                "type": "string"
-              },
-              {
-                "name": "agent_name",
-                "type": "string"
-              },
-              {
-                "name": "agent",
-                "type": "string"
-              },
-              {
-                "name": "conversation_history",
-                "type": "string"
-              },
-              {
-                "name": "pipeline_key",
-                "type": "string"
-              }
-            ]
-          }
-        },
+        "parameters": {},
         "type": "n8n-nodes-base.executeWorkflowTrigger",
-        "typeVersion": 1.1,
+        "typeVersion": 1,
         "position": [
           0,
           0
@@ -1155,7 +1107,7 @@
           "promptType": "define",
           "text": "={{ $('Trigger').item.json.text }}",
           "options": {
-            "systemMessage": "You are the Dojo AI Supervisor for a martial arts dojo management system. Analyze the user request and route it to the correct specialist agent(s).\n\n## Specialist Agents\n\n- **AttendanceAgent** — check-ins, check-outs, class schedules, attendance history\n- **EnrollmentAgent** — session enrollment, unenrollment, course roster management, waitlist\n- **CoreAgent** — belt promotions/tests, member create/update/lookup, calendar events, tasks, programs\n- **SubscriptionsAgent** — subscriptions, billing, invoices, payments, credits, plan changes, pauses, cancellations\n- **CommunicationsAgent** — email, SMS, guardian contact, discuss channels, marketing campaigns, social posts\n- **GeneralAgent** — CRM leads, sales orders, accounting, HR, anything not covered by the above\n\n## Decision Rules\n\n1. **Single domain**: Call exactly ONE specialist with the full user request.\n2. **Multi domain**: Decompose the request into sub-tasks. Call each specialist IN SEQUENCE with only its relevant sub-task as user_request.\n3. **Result-passing**: When a later step needs data from an earlier step — e.g. member names from an invoice list — extract that data from the prior tool's response and embed it explicitly in the next user_request. NEVER send a vague task like \"get profiles for each overdue member\" without the actual names. Instead write: \"Get profiles for Jordan Smith, Sarah Lee, Mike Johnson\".\n4. **For-each batching**: For \"for each X\" requests, collect all X items from the prior step and pass them as a single list in one agent call. Do not loop one item at a time.\n5. **Pending confirmation**: If a specialist tool returns a JSON response where `state` is `pending_confirmation` — STOP immediately. Return that specialist's `response` text verbatim. Do NOT call any more specialists or tools.\n6. **Help / capability questions**: Answer directly from the specialist list above. Do not call any tools.\n7. **Step logging**: After each specialist completes, call Push_Step with: step_num (1-based integer, increment per agent called), agent_display_name (human-readable name e.g. \"Subscriptions Agent\"), agent_tool_name (exact tool name e.g. \"SubscriptionsAgent\"), result_summary (what the agent returned — include key data: names, amounts, counts, 1-3 sentences), reasoning (why you routed this sub-task to this agent and what you plan to do next).\n8. **Final reply**: After all specialists complete, compose a comprehensive natural-prose reply. For \"summarize\" or \"overview\" requests: cover each step's key findings, include totals and important data points, and add actionable insights. For simple single-domain requests: one or two concise sentences is fine.\n\n## Context\n\nUser role: {{ $('Trigger').item.json.role }}\n\nConversation history:\n{{ $('Trigger').item.json.conversation_history }}\n\nLive database context:\n{{ $('Trigger').item.json.db_context }}\n\nAdvisory domain from vector search: {{ $('Trigger').item.json.agent }}"
+            "systemMessage": "You are the Dojo AI Supervisor for a martial arts dojo management system. Your job is to PLAN, ROUTE to specialist agents, and SYNTHESIZE results — never to invent data.\n\n## Specialist Agents\n- **AttendanceAgent** — check-ins, check-outs, class schedules, attendance history\n- **EnrollmentAgent** — session enrollment, unenrollment, course roster management, waitlist\n- **CoreAgent** — belt rank lookups (\"what belt is X\", \"highest belt rank\"), belt promotions/tests, member create/update/lookup, calendar events, tasks, programs\n- **SubscriptionsAgent** — subscriptions, billing, invoices, payments, credits, plan changes, pauses, cancellations\n- **CommunicationsAgent** — email, SMS, guardian contact, discuss channels, marketing campaigns, social posts\n- **GeneralAgent** — CRM leads, sales orders, accounting, HR, anything not covered above; also the FALLBACK for anything you cannot route confidently\n\n## Hard Anti-Hallucination Rules (NEVER violate)\n- **GROUNDING**: Every concrete fact in your final reply (member names, IDs, dates, amounts, counts, statuses, belt ranks, class titles) MUST come from either a tool response in the current request OR the `Live database context` block below OR the `Conversation history`. If it is not in one of those sources, you do NOT know it — call a specialist.\n- **NO GUESSING IDs/NAMES**: Do not invent member names, partner IDs, class IDs, invoice numbers, dates, prices, or belt ranks. If unsure of a name's spelling, call CoreAgent to look it up.\n- **NO FABRICATED COUNTS**: Do not estimate or round counts (\"about 20 members\"). Use the exact number a tool returned, or omit it.\n- **AMBIGUITY**: If the request references a person/class/program by an ambiguous name, FIRST call the relevant specialist to resolve it (lookup), THEN proceed. Do not guess which \"John\" they meant.\n- **EMPTY RESULTS ARE REAL**: If a tool returns no results, say so plainly (\"No overdue invoices found.\"). Do not invent placeholder data to fill the gap.\n- **TOOL ERRORS**: If a specialist errors out, retry once with GeneralAgent. If still failing, tell the user the lookup failed — do not fabricate a guess.\n\n## Planning Protocol (run mentally BEFORE any tool call)\nFor every user request, internally answer:\n1. **What is the user actually asking for?** Restate it in one sentence.\n2. **What domain(s) does it touch?** List the specialist(s) needed.\n3. **What data do I already have?** Check `db_context` and `conversation_history` for relevant facts. Note them.\n4. **What data must I fetch?** List the missing pieces and which specialist provides each.\n5. **What is the order?** If step N needs data from step N-1, that ordering is mandatory.\nThen execute the plan one specialist at a time, logging each Push_Step (thinking → call → result).\n\n## Decision Rules\n1. **Single domain**: Call exactly ONE specialist with the full user request.\n2. **Multi domain**: Decompose into sub-tasks. Call each specialist IN SEQUENCE with only its relevant sub-task as user_request.\n3. **History-reuse**: Only skip a re-fetch when (a) the user uses an explicit back-reference like \"from earlier\", \"you just showed\", \"those exact members\" AND (b) the specific data (names, amounts, IDs) is visibly present in `conversation_history`. Otherwise fetch fresh.\n4. **Result-passing**: When a later step needs data from an earlier step, EXTRACT the actual values (names, IDs) from the prior tool's JSON response and embed them literally in the next user_request. Example — write: \"Get profiles for Jordan Smith, Sarah Lee, Mike Johnson\". NEVER write: \"get profiles for each overdue member\".\n5. **For-each batching**: For \"for each X\" requests, collect ALL X items from the prior step and pass them as a single list in ONE agent call. Do not loop one item at a time.\n6. **Pending confirmation**: If a specialist returns JSON where `state` is `pending_confirmation` — STOP immediately. Return that specialist's `response` text verbatim. Do NOT call any more specialists or tools.\n7. **Help / capability questions**: Answer directly from the specialist list above. Do not call any tools.\n8. **Fallback**: If a specialist returns empty / errors / clearly misroutes, retry with GeneralAgent before giving up.\n9. **Step logging (MANDATORY — twice per specialist)**:\n   - **Before** the specialist call: Push_Step with step_type=\\\"thinking\\\", step_num (1-based, matches the upcoming call), agent_display_name, agent_tool_name, result_summary (your plan — what sub-task you are sending and why), reasoning (routing rationale).\n   - **After** the specialist returns: Push_Step with step_type=\\\"result\\\", same step_num, agent_display_name, agent_tool_name, result_summary (what the specialist actually returned — names, amounts, counts in 1-3 sentences), reasoning (what you plan next).\n   - Never skip either call.\n10. **Final reply**: After all specialists complete AND all Push_Step calls are done, compose a natural-prose reply grounded entirely in tool outputs and db_context. For summary/overview requests: include exact counts, names, amounts, and one short actionable insight. For simple single-domain requests: one or two concise sentences.\n\n## Routing Examples\n- \"How many members checked in today?\" → AttendanceAgent\n- \"Add Jordan to Tuesday 5pm class\" → EnrollmentAgent (uses CoreAgent first only if Jordan ambiguous)\n- \"What belt is Sarah?\" → CoreAgent\n- \"Show overdue invoices and text those guardians\" → SubscriptionsAgent (get list, with names) → CommunicationsAgent (with explicit guardian names from step 1)\n- \"Pause Mike's subscription\" → SubscriptionsAgent\n- \"Promote Jordan to blue belt\" → CoreAgent\n- \"Send a marketing email to all kids program members\" → CommunicationsAgent\n- \"Open leads this week\" → GeneralAgent\n- \"What can you do?\" → answer directly, no tools\n\n## Context\nUser role: {{ $('Trigger').item.json.role }}\n\nConversation history:\n{{ $('Trigger').item.json.conversation_history }}\n\nLive database context:\n{{ $('Trigger').item.json.db_context }}\n\nAdvisory domain from vector search (hint only — verify against the request before trusting): {{ $('Trigger').item.json.agent }}"
           }
         },
         "type": "@n8n/n8n-nodes-langchain.agent",
@@ -1198,7 +1150,7 @@
       },
       {
         "parameters": {
-          "toolDescription": "Log a completed agent step to Odoo. Call this AFTER each specialist agent completes — not before. Provide: step_num (1-based integer, increment per agent called), agent_display_name (human-readable name e.g. 'Subscriptions Agent'), agent_tool_name (exact tool name e.g. 'SubscriptionsAgent'), result_summary (1-3 sentences of what the agent returned — include key data: names, amounts, counts), reasoning (why you routed this sub-task to this agent).",
+          "toolDescription": "MANDATORY — call this TWICE per specialist: once BEFORE (step_type='thinking', with your plan) and once AFTER (step_type='result', with what the agent returned). Never skip either call. Provide: step_num (1-based integer, increment per agent called), agent_display_name (human-readable name e.g. 'Subscriptions Agent'), agent_tool_name (exact tool name e.g. 'SubscriptionsAgent'), result_summary (1-3 sentences of what the agent returned — include key data: names, amounts, counts), reasoning (why you routed this sub-task to this agent).",
           "method": "POST",
           "url": "http://web:8069/dojo/ai/step",
           "sendBody": true,
@@ -1231,49 +1183,125 @@
             "mode": "id",
             "value": "LQOtAQyhya19709W"
           },
-          "fields": {
-            "values": [
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "text": "={{ $fromAI('user_request', 'The specific attendance-related task text to send to this agent') || $('Trigger').item.json.text }}",
+              "role": "={{ $('Trigger').item.json.role }}",
+              "session_id": "={{ $('Trigger').item.json.session_id }}",
+              "context_window": "={{ $('Trigger').item.json.context_window }}",
+              "system_prompt": "",
+              "valid_intent_types": "={{ $('Trigger').item.json.valid_intent_types || '' }}",
+              "db_context": "={{ $('Trigger').item.json.db_context || '' }}",
+              "agent_name": "Attendance Agent",
+              "agent": "attendance",
+              "conversation_history": "={{ $('Trigger').item.json.conversation_history || '' }}"
+            },
+            "matchingColumns": [],
+            "schema": [
               {
-                "name": "text",
-                "value": "={{ $fromAI('user_request', 'The specific attendance-related task text to send to this agent') || $('Trigger').item.json.text }}"
+                "id": "text",
+                "displayName": "text",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "role",
-                "value": "={{ $('Trigger').item.json.role }}"
+                "id": "role",
+                "displayName": "role",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "session_id",
-                "value": "={{ $('Trigger').item.json.session_id }}"
+                "id": "session_id",
+                "displayName": "session_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "context_window",
-                "value": "={{ $('Trigger').item.json.context_window }}"
+                "id": "context_window",
+                "displayName": "context_window",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "system_prompt",
-                "value": ""
+                "id": "system_prompt",
+                "displayName": "system_prompt",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "valid_intent_types",
-                "value": "={{ $('Trigger').item.json.valid_intent_types || '' }}"
+                "id": "valid_intent_types",
+                "displayName": "valid_intent_types",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "db_context",
-                "value": "={{ $('Trigger').item.json.db_context || '' }}"
+                "id": "db_context",
+                "displayName": "db_context",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "agent_name",
-                "value": "Attendance Agent"
+                "id": "agent_name",
+                "displayName": "agent_name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "agent",
-                "value": "attendance"
+                "id": "agent",
+                "displayName": "agent",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "conversation_history",
-                "value": "={{ $('Trigger').item.json.conversation_history || '' }}"
+                "id": "conversation_history",
+                "displayName": "conversation_history",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               }
-            ]
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
           }
         },
         "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
@@ -1294,49 +1322,125 @@
             "mode": "id",
             "value": "y7ppFz99vG2KYtcM"
           },
-          "fields": {
-            "values": [
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "text": "={{ $fromAI('user_request', 'The specific enrollment-related task text to send to this agent') || $('Trigger').item.json.text }}",
+              "role": "={{ $('Trigger').item.json.role }}",
+              "session_id": "={{ $('Trigger').item.json.session_id }}",
+              "context_window": "={{ $('Trigger').item.json.context_window }}",
+              "system_prompt": "",
+              "valid_intent_types": "={{ $('Trigger').item.json.valid_intent_types || '' }}",
+              "db_context": "={{ $('Trigger').item.json.db_context || '' }}",
+              "agent_name": "Enrollment Agent",
+              "agent": "enrollment",
+              "conversation_history": "={{ $('Trigger').item.json.conversation_history || '' }}"
+            },
+            "matchingColumns": [],
+            "schema": [
               {
-                "name": "text",
-                "value": "={{ $fromAI('user_request', 'The specific enrollment-related task text to send to this agent') || $('Trigger').item.json.text }}"
+                "id": "text",
+                "displayName": "text",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "role",
-                "value": "={{ $('Trigger').item.json.role }}"
+                "id": "role",
+                "displayName": "role",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "session_id",
-                "value": "={{ $('Trigger').item.json.session_id }}"
+                "id": "session_id",
+                "displayName": "session_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "context_window",
-                "value": "={{ $('Trigger').item.json.context_window }}"
+                "id": "context_window",
+                "displayName": "context_window",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "system_prompt",
-                "value": ""
+                "id": "system_prompt",
+                "displayName": "system_prompt",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "valid_intent_types",
-                "value": "={{ $('Trigger').item.json.valid_intent_types || '' }}"
+                "id": "valid_intent_types",
+                "displayName": "valid_intent_types",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "db_context",
-                "value": "={{ $('Trigger').item.json.db_context || '' }}"
+                "id": "db_context",
+                "displayName": "db_context",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "agent_name",
-                "value": "Enrollment Agent"
+                "id": "agent_name",
+                "displayName": "agent_name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "agent",
-                "value": "enrollment"
+                "id": "agent",
+                "displayName": "agent",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "conversation_history",
-                "value": "={{ $('Trigger').item.json.conversation_history || '' }}"
+                "id": "conversation_history",
+                "displayName": "conversation_history",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               }
-            ]
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
           }
         },
         "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
@@ -1357,49 +1461,125 @@
             "mode": "id",
             "value": "nqa29YJh4DmonXVD"
           },
-          "fields": {
-            "values": [
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "text": "={{ $fromAI('user_request', 'The specific core dojo task text to send to this agent') || $('Trigger').item.json.text }}",
+              "role": "={{ $('Trigger').item.json.role }}",
+              "session_id": "={{ $('Trigger').item.json.session_id }}",
+              "context_window": "={{ $('Trigger').item.json.context_window }}",
+              "system_prompt": "",
+              "valid_intent_types": "={{ $('Trigger').item.json.valid_intent_types || '' }}",
+              "db_context": "={{ $('Trigger').item.json.db_context || '' }}",
+              "agent_name": "Core Agent",
+              "agent": "core",
+              "conversation_history": "={{ $('Trigger').item.json.conversation_history || '' }}"
+            },
+            "matchingColumns": [],
+            "schema": [
               {
-                "name": "text",
-                "value": "={{ $fromAI('user_request', 'The specific core dojo task text to send to this agent') || $('Trigger').item.json.text }}"
+                "id": "text",
+                "displayName": "text",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "role",
-                "value": "={{ $('Trigger').item.json.role }}"
+                "id": "role",
+                "displayName": "role",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "session_id",
-                "value": "={{ $('Trigger').item.json.session_id }}"
+                "id": "session_id",
+                "displayName": "session_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "context_window",
-                "value": "={{ $('Trigger').item.json.context_window }}"
+                "id": "context_window",
+                "displayName": "context_window",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "system_prompt",
-                "value": ""
+                "id": "system_prompt",
+                "displayName": "system_prompt",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "valid_intent_types",
-                "value": "={{ $('Trigger').item.json.valid_intent_types || '' }}"
+                "id": "valid_intent_types",
+                "displayName": "valid_intent_types",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "db_context",
-                "value": "={{ $('Trigger').item.json.db_context || '' }}"
+                "id": "db_context",
+                "displayName": "db_context",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "agent_name",
-                "value": "Core Agent"
+                "id": "agent_name",
+                "displayName": "agent_name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "agent",
-                "value": "core"
+                "id": "agent",
+                "displayName": "agent",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "conversation_history",
-                "value": "={{ $('Trigger').item.json.conversation_history || '' }}"
+                "id": "conversation_history",
+                "displayName": "conversation_history",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               }
-            ]
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
           }
         },
         "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
@@ -1420,49 +1600,125 @@
             "mode": "id",
             "value": "DKv7tyjq9drKI0lz"
           },
-          "fields": {
-            "values": [
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "text": "={{ $fromAI('user_request', 'The specific subscription or billing task text to send to this agent') || $('Trigger').item.json.text }}",
+              "role": "={{ $('Trigger').item.json.role }}",
+              "session_id": "={{ $('Trigger').item.json.session_id }}",
+              "context_window": "={{ $('Trigger').item.json.context_window }}",
+              "system_prompt": "",
+              "valid_intent_types": "={{ $('Trigger').item.json.valid_intent_types || '' }}",
+              "db_context": "={{ $('Trigger').item.json.db_context || '' }}",
+              "agent_name": "Subscriptions Agent",
+              "agent": "subscriptions",
+              "conversation_history": "={{ $('Trigger').item.json.conversation_history || '' }}"
+            },
+            "matchingColumns": [],
+            "schema": [
               {
-                "name": "text",
-                "value": "={{ $fromAI('user_request', 'The specific subscription or billing task text to send to this agent') || $('Trigger').item.json.text }}"
+                "id": "text",
+                "displayName": "text",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "role",
-                "value": "={{ $('Trigger').item.json.role }}"
+                "id": "role",
+                "displayName": "role",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "session_id",
-                "value": "={{ $('Trigger').item.json.session_id }}"
+                "id": "session_id",
+                "displayName": "session_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "context_window",
-                "value": "={{ $('Trigger').item.json.context_window }}"
+                "id": "context_window",
+                "displayName": "context_window",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "system_prompt",
-                "value": ""
+                "id": "system_prompt",
+                "displayName": "system_prompt",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "valid_intent_types",
-                "value": "={{ $('Trigger').item.json.valid_intent_types || '' }}"
+                "id": "valid_intent_types",
+                "displayName": "valid_intent_types",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "db_context",
-                "value": "={{ $('Trigger').item.json.db_context || '' }}"
+                "id": "db_context",
+                "displayName": "db_context",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "agent_name",
-                "value": "Subscriptions Agent"
+                "id": "agent_name",
+                "displayName": "agent_name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "agent",
-                "value": "subscriptions"
+                "id": "agent",
+                "displayName": "agent",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "conversation_history",
-                "value": "={{ $('Trigger').item.json.conversation_history || '' }}"
+                "id": "conversation_history",
+                "displayName": "conversation_history",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               }
-            ]
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
           }
         },
         "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
@@ -1483,49 +1739,125 @@
             "mode": "id",
             "value": "KhKhlTLen6FSLUfL"
           },
-          "fields": {
-            "values": [
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "text": "={{ $fromAI('user_request', 'The specific communications task text to send to this agent') || $('Trigger').item.json.text }}",
+              "role": "={{ $('Trigger').item.json.role }}",
+              "session_id": "={{ $('Trigger').item.json.session_id }}",
+              "context_window": "={{ $('Trigger').item.json.context_window }}",
+              "system_prompt": "",
+              "valid_intent_types": "={{ $('Trigger').item.json.valid_intent_types || '' }}",
+              "db_context": "={{ $('Trigger').item.json.db_context || '' }}",
+              "agent_name": "Communications Agent",
+              "agent": "communications",
+              "conversation_history": "={{ $('Trigger').item.json.conversation_history || '' }}"
+            },
+            "matchingColumns": [],
+            "schema": [
               {
-                "name": "text",
-                "value": "={{ $fromAI('user_request', 'The specific communications task text to send to this agent') || $('Trigger').item.json.text }}"
+                "id": "text",
+                "displayName": "text",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "role",
-                "value": "={{ $('Trigger').item.json.role }}"
+                "id": "role",
+                "displayName": "role",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "session_id",
-                "value": "={{ $('Trigger').item.json.session_id }}"
+                "id": "session_id",
+                "displayName": "session_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "context_window",
-                "value": "={{ $('Trigger').item.json.context_window }}"
+                "id": "context_window",
+                "displayName": "context_window",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "system_prompt",
-                "value": ""
+                "id": "system_prompt",
+                "displayName": "system_prompt",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "valid_intent_types",
-                "value": "={{ $('Trigger').item.json.valid_intent_types || '' }}"
+                "id": "valid_intent_types",
+                "displayName": "valid_intent_types",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "db_context",
-                "value": "={{ $('Trigger').item.json.db_context || '' }}"
+                "id": "db_context",
+                "displayName": "db_context",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "agent_name",
-                "value": "Communications Agent"
+                "id": "agent_name",
+                "displayName": "agent_name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "agent",
-                "value": "communications"
+                "id": "agent",
+                "displayName": "agent",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "conversation_history",
-                "value": "={{ $('Trigger').item.json.conversation_history || '' }}"
+                "id": "conversation_history",
+                "displayName": "conversation_history",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               }
-            ]
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
           }
         },
         "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
@@ -1546,49 +1878,125 @@
             "mode": "id",
             "value": "bFYiBJlup2jo6Yr1"
           },
-          "fields": {
-            "values": [
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "text": "={{ $fromAI('user_request', 'The specific task text to send to this agent') || $('Trigger').item.json.text }}",
+              "role": "={{ $('Trigger').item.json.role }}",
+              "session_id": "={{ $('Trigger').item.json.session_id }}",
+              "context_window": "={{ $('Trigger').item.json.context_window }}",
+              "system_prompt": "",
+              "valid_intent_types": "={{ $('Trigger').item.json.valid_intent_types || '' }}",
+              "db_context": "={{ $('Trigger').item.json.db_context || '' }}",
+              "agent_name": "General Agent",
+              "agent": "general",
+              "conversation_history": "={{ $('Trigger').item.json.conversation_history || '' }}"
+            },
+            "matchingColumns": [],
+            "schema": [
               {
-                "name": "text",
-                "value": "={{ $fromAI('user_request', 'The specific task text to send to this agent') || $('Trigger').item.json.text }}"
+                "id": "text",
+                "displayName": "text",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "role",
-                "value": "={{ $('Trigger').item.json.role }}"
+                "id": "role",
+                "displayName": "role",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "session_id",
-                "value": "={{ $('Trigger').item.json.session_id }}"
+                "id": "session_id",
+                "displayName": "session_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "context_window",
-                "value": "={{ $('Trigger').item.json.context_window }}"
+                "id": "context_window",
+                "displayName": "context_window",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "system_prompt",
-                "value": ""
+                "id": "system_prompt",
+                "displayName": "system_prompt",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "valid_intent_types",
-                "value": "={{ $('Trigger').item.json.valid_intent_types || '' }}"
+                "id": "valid_intent_types",
+                "displayName": "valid_intent_types",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "db_context",
-                "value": "={{ $('Trigger').item.json.db_context || '' }}"
+                "id": "db_context",
+                "displayName": "db_context",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "agent_name",
-                "value": "General Agent"
+                "id": "agent_name",
+                "displayName": "agent_name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "agent",
-                "value": "general"
+                "id": "agent",
+                "displayName": "agent",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
-                "name": "conversation_history",
-                "value": "={{ $('Trigger').item.json.conversation_history || '' }}"
+                "id": "conversation_history",
+                "displayName": "conversation_history",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               }
-            ]
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
           }
         },
         "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
@@ -1732,18 +2140,18 @@
     "autosaved": false,
     "workflowPublishHistory": [
       {
-        "createdAt": "2026-04-23T01:25:04.842Z",
-        "id": 141,
+        "createdAt": "2026-04-23T04:12:06.485Z",
+        "id": 169,
         "workflowId": "EgxK4leeuX9Nurop",
-        "versionId": "4127f58e-5522-44bd-8c32-284fb9328666",
+        "versionId": "cc55a7e4-0e16-4fcf-91b1-b7d04e1c7357",
         "event": "activated",
         "userId": "493f48c5-0340-4c05-ae7e-386a4ab4da7a"
       },
       {
-        "createdAt": "2026-04-23T01:25:04.814Z",
-        "id": 140,
+        "createdAt": "2026-04-23T04:12:06.458Z",
+        "id": 168,
         "workflowId": "EgxK4leeuX9Nurop",
-        "versionId": "4127f58e-5522-44bd-8c32-284fb9328666",
+        "versionId": "cc55a7e4-0e16-4fcf-91b1-b7d04e1c7357",
         "event": "deactivated",
         "userId": "493f48c5-0340-4c05-ae7e-386a4ab4da7a"
       }
