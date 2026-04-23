@@ -14,7 +14,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "http://web:8069/api/v1/ai/health",
+        "url": "http://127.0.0.1:8069/api/v1/ai/health",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": { "timeout": 10000 }
@@ -25,7 +25,7 @@
       "id": "b7000001-0001-4001-8001-000000000002",
       "name": "Health Check",
       "credentials": {
-        "httpHeaderAuth": { "id": "MGTS1e0OnNIkltBl", "name": "Odoo API Key" }
+        "httpHeaderAuth": { "id": "KuwAJGUqyLT3qP6w", "name": "Odoo API Key" }
       },
       "continueOnFail": true
     },

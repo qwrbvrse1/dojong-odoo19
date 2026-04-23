@@ -98,7 +98,7 @@
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
-          "id": "Jzdr2yiErsFuHEyP",
+          "id": "ib7qIOTfQ0AghmIe",
           "name": "OpenAI account"
         }
       }
@@ -122,7 +122,7 @@
       "parameters": {
         "toolDescription": "Execute an action in the dojo management system. You MUST provide: intent_type (exact string from the available intents list, e.g. 'member_enroll', 'course_enroll'), parameters (JSON object with required params, e.g. {\"member_name\": \"Jordan\", \"session_id\": 42}), and confidence (number 0.7-1.0). Returns either the result directly (for lookups) or state='pending_confirmation' for mutations.",
         "method": "POST",
-        "url": "http://web:8069/api/v1/ai/execute",
+        "url": "http://127.0.0.1:8069/api/v1/ai/execute",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -142,7 +142,7 @@
       "name": "Execute_Intent",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "MGTS1e0OnNIkltBl",
+          "id": "KuwAJGUqyLT3qP6w",
           "name": "Odoo API Key"
         }
       }
@@ -151,7 +151,7 @@
       "parameters": {
         "toolDescription": "Confirm or cancel a pending action. Only call AFTER Execute_Intent returned state='pending_confirmation' AND the user explicitly confirmed or denied.",
         "method": "POST",
-        "url": "http://web:8069/api/v1/ai/confirm",
+        "url": "http://127.0.0.1:8069/api/v1/ai/confirm",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -171,7 +171,7 @@
       "name": "Confirm_Intent",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "MGTS1e0OnNIkltBl",
+          "id": "KuwAJGUqyLT3qP6w",
           "name": "Odoo API Key"
         }
       }

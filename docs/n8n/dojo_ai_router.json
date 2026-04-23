@@ -65,7 +65,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://web:8069/api/v1/ai/chat/history",
+        "url": "http://127.0.0.1:8069/api/v1/ai/chat/history",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -85,7 +85,7 @@
       "name": "Fetch History",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "MGTS1e0OnNIkltBl",
+          "id": "KuwAJGUqyLT3qP6w",
           "name": "Odoo API Key"
         }
       },
@@ -107,7 +107,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://web:8069/api/v1/ai/discover",
+        "url": "http://127.0.0.1:8069/api/v1/ai/discover",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -127,7 +127,7 @@
       "name": "Discovery",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "MGTS1e0OnNIkltBl",
+          "id": "KuwAJGUqyLT3qP6w",
           "name": "Odoo API Key"
         }
       },
@@ -162,7 +162,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://web:8069/api/v1/ai/chat/save",
+        "url": "http://127.0.0.1:8069/api/v1/ai/chat/save",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -182,7 +182,7 @@
       "name": "Save Turn",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "MGTS1e0OnNIkltBl",
+          "id": "KuwAJGUqyLT3qP6w",
           "name": "Odoo API Key"
         }
       },
@@ -219,7 +219,7 @@
         "workflowId": {
           "__rl": true,
           "mode": "id",
-          "value": "EgxK4leeuX9Nurop"
+          "value": "XgvnphmakusR0Xbt"
         }
       },
       "type": "n8n-nodes-base.executeWorkflow",

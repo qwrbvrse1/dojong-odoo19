@@ -399,8 +399,8 @@
                                     <th class="text-center">Enrolled</th>
                                     <th class="text-center">Present</th>
                                     <th class="text-center">Absent</th>
-                                    <th style="min-width:110px">Fill Rate</th>
-                                    <th style="min-width:110px">Attendance</th>
+                                    <th class="o_di_table_fill_rate">Fill Rate</th>
+                                    <th class="o_di_table_attendance">Attendance</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -414,25 +414,25 @@
                                         <td class="text-center"><t t-out="s.enrolled"/></td>
                                         <td class="text-center fw-semibold" style="color:#1e8e3e"><t t-out="s.present"/></td>
                                         <td class="text-center fw-semibold" style="color:#d93025"><t t-out="s.absent"/></td>
-                                        <td>
+                                        <td class="o_di_table_fill_rate">
                                             <div class="o_ad_bar_wrap">
                                                 <div class="o_ad_bar_bg">
                                                     <div t-attf-class="o_ad_bar_fill {{ rateClass(s.fill_rate) }}"
                                                          t-att-style="barFill(s.fill_rate)"/>
                                                 </div>
-                                                <span t-attf-class="o_ad_bar_label {{ rateClass(s.fill_rate) }}">
+                                                <span class="text-center" t-attf-class="o_ad_bar_label {{ rateClass(s.fill_rate) }}">
                                                     <t t-out="pct(s.fill_rate)"/>
                                                 </span>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td class="o_di_table_attendance">
                                             <t t-if="s.attendance_rate !== null">
                                                 <div class="o_ad_bar_wrap">
                                                     <div class="o_ad_bar_bg">
                                                         <div t-attf-class="o_ad_bar_fill {{ rateClass(s.attendance_rate) }}"
                                                              t-att-style="barFill(s.attendance_rate)"/>
                                                     </div>
-                                                    <span t-attf-class="o_ad_bar_label {{ rateClass(s.attendance_rate) }}">
+                                                    <span class="text-center" t-attf-class="o_ad_bar_label {{ rateClass(s.attendance_rate) }}">
                                                         <t t-out="pct(s.attendance_rate)"/>
                                                     </span>
                                                 </div>

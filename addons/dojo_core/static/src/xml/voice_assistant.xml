@@ -22,7 +22,7 @@
         <div class="dojo-va-header">
             <div class="dojo-va-header-left">
                 <div class="dojo-va-avatar">
-                    <img src="/dojo_core/static/src/img/uft-logo.png" alt="AI"/>
+                    <img src="/dojo_core/static/description/uft-logo.png" alt="AI"/>
                 </div>
                 <div>
                     <div class="dojo-va-title">Dojang AI Assistant</div>

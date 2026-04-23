@@ -389,11 +389,29 @@ html .o_web_client>.o_action_manager {
 }
 
 /* ── Table ────────────────────────────────────────────────────── */
+
+/* Column widths for recent-sessions table */
 .o_di_table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.875rem;
+    table-layout: auto;
 }
+
+.o_di_table th:nth-child(1),
+.o_di_table td:nth-child(1) {
+    width: 25%;
+}
+
+.o_di_table .o_di_table_fill_rate,
+.o_di_table .o_di_table_attendance {
+    width: 15%;
+    min-width: 120px;
+}
+
+.o_di_table td:nth-child(1) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 
 .o_di_table thead th {
     padding: 9px 16px;
@@ -490,8 +508,7 @@ html .o_web_client>.o_action_manager {
 .o_ad_bar_label {
     font-size: 0.78rem;
     font-weight: 600;
-    min-width: 34px;
-    text-align: right;
+    text-align: center;
     white-space: nowrap;
 }
 
@@ -2590,5 +2607,4 @@ select.o_mp_form_control {
 
 .o_mc_full_btn:hover {
     background: rgba(26, 115, 232, 0.08);
-}
 }
