@@ -1924,13 +1924,26 @@ class AiAssistantService(models.AbstractModel):
                 text_lower,
             ))
 
+            # Redirect hallucinated intent type directly (n8n LLM sometimes invents course_roster)
+            if intent_type == "course_roster":
+                _logger.info("Intent redirect: course_roster → class_enrollment_list (not a valid intent)")
+                intent_type = "class_enrollment_list"
+                if intent_data:
+                    intent_data["intent_type"] = "class_enrollment_list"
+
             if any(
                 kw in text_lower for kw in ("roster", "course roster", "permanent roster", "add to the course", "add to course")
             ):
-                _logger.info("Keyword override: %s → course_enroll (user said 'roster')", intent_type)
-                intent_type = "course_enroll"
-                if intent_data:
-                    intent_data["intent_type"] = "course_enroll"
+                if _is_question:
+                    _logger.info("Keyword override: %s → class_enrollment_list (READ roster query)", intent_type)
+                    intent_type = "class_enrollment_list"
+                    if intent_data:
+                        intent_data["intent_type"] = "class_enrollment_list"
+                else:
+                    _logger.info("Keyword override: %s → course_enroll (user said 'roster' + action verb)", intent_type)
+                    intent_type = "course_enroll"
+                    if intent_data:
+                        intent_data["intent_type"] = "course_enroll"
 
             # belt_test_registration_list when user asks who is registered/signed up
             if "belt test" in text_lower and _is_question and any(
