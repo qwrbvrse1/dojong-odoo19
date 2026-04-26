@@ -1,6 +1,6 @@
 {
     "name": "Dojang Automation",
-    "version": "19.2.1.0.0",
+    "version": "saas~19.2.1.0.0",
     "summary": "Dojang-branded UI layer for automation workflows",
     "author": "Dojo",
     "category": "Hidden",
