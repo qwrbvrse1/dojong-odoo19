@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+
+    <!-- ── Stat Panel ──────────────────────────────────────────────────────── -->
+
+    <t t-name="dojo_automation.AutomationStatPanel">
+        <div class="dojo-auto-stat-panel d-flex flex-wrap gap-2 px-3 pt-3 pb-2">
+            <t t-if="state.loading">
+                <div t-foreach="[1,2,3,4]" t-as="i" t-key="i"
+                     class="dojo-auto-stat-skeleton"/>
+            </t>
+            <t t-else="">
+                <div class="dojo-auto-chip dojo-auto-chip--info">
+                    <i class="fa fa-bolt dojo-auto-chip__icon"/>
+                    <span class="dojo-auto-chip__value" t-esc="state.activeRules"/>
+                    <span class="dojo-auto-chip__label">Active Rules</span>
+                </div>
+                <div class="dojo-auto-chip dojo-auto-chip--success">
+                    <i class="fa fa-play-circle dojo-auto-chip__icon"/>
+                    <span class="dojo-auto-chip__value" t-esc="state.triggeredToday"/>
+                    <span class="dojo-auto-chip__label">Triggered Today</span>
+                </div>
+                <div class="dojo-auto-chip dojo-auto-chip--warning">
+                    <i class="fa fa-refresh dojo-auto-chip__icon"/>
+                    <span class="dojo-auto-chip__value" t-esc="state.runningNow"/>
+                    <span class="dojo-auto-chip__label">Running Now</span>
+                </div>
+                <div t-attf-class="dojo-auto-chip dojo-auto-chip--danger{{ state.errors7Days > 0 ? ' is-alert' : '' }}">
+                    <i class="fa fa-exclamation-triangle dojo-auto-chip__icon"/>
+                    <span class="dojo-auto-chip__value" t-esc="state.errors7Days"/>
+                    <span class="dojo-auto-chip__label">Errors (7 days)</span>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <!-- ── Filter Chips ────────────────────────────────────────────────────── -->
+
+    <t t-name="dojo_automation.AutomationFilterChips">
+        <div class="dojo-auto-filter-chips px-3 pb-2">
+            <button t-attf-class="dojo-auto-filter-chip{{ !chips.some(c => c.active) ? ' active' : '' }}"
+                    t-on-click="() => { for (const c of chips) { if (c.active) toggleChip(c.name); } }">
+                <i class="fa fa-list fa-sm"/> All
+            </button>
+            <t t-foreach="chips" t-as="chip" t-key="chip.name">
+                <button t-attf-class="dojo-auto-filter-chip{{ chip.active ? ' active' : '' }}"
+                        t-on-click="() => toggleChip(chip.name)"
+                        t-att-aria-pressed="chip.active ? 'true' : 'false'">
+                    <i t-attf-class="fa {{ chip.icon }} fa-sm"/>
+                    <t t-esc="chip.label"/>
+                </button>
+            </t>
+        </div>
+    </t>
+
+    <!-- ── Inject above Renderer in web.KanbanView ─────────────────────────── -->
+    <!--
+        Identical pattern to Sprint 1 (dojo_crm/static/src/xml/crm_stat_panel.xml).
+        OWL resolves AutomationStatPanel/AutomationFilterChips from
+        AutomationKanbanController.components at render time — other kanban
+        controllers silently skip unknown component names.
+    -->
+    <t t-inherit="web.KanbanView" t-inherit-mode="extension">
+        <xpath expr="//t[@t-component='props.Renderer']" position="before">
+            <AutomationStatPanel/>
+            <AutomationFilterChips/>
+        </xpath>
+    </t>
+
+</templates>
