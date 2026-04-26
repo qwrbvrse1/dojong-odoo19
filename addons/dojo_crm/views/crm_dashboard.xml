@@ -4,13 +4,29 @@
          CRM Pipeline Dashboard — Kanban enhancements
          ================================================================ -->
 
+    <!-- Point crm.lead kanban view at DojoCrmKanbanController so OWL uses the
+         isolated dojo_crm.CrmKanbanView template (not the shared web.KanbanView). -->
+    <record model="ir.ui.view" id="view_crm_lead_kanban_js_class">
+        <field name="name">crm.lead.kanban.js_class</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_kanban_view_leads"/>
+        <field name="arch" type="xml">
+            <xpath expr="//kanban" position="attributes">
+                <attribute name="js_class">dojo_crm_kanban</attribute>
+            </xpath>
+        </field>
+    </record>
+
     <!-- Add lead score + trial status to kanban cards -->
     <record id="view_crm_lead_kanban_dojo_inherit" model="ir.ui.view">
         <field name="name">crm.lead.kanban.dojo.inherit</field>
         <field name="model">crm.lead</field>
         <field name="inherit_id" ref="crm.crm_case_kanban_view_leads"/>
         <field name="arch" type="xml">
-            <!-- Declare extra fields so they are fetched for the kanban view -->
+            <!-- Scope SCSS polish + add extra fields for the kanban view -->
+            <xpath expr="//kanban" position="attributes">
+                <attribute name="class" add="dojo-crm-pipeline" separator=" "/>
+            </xpath>
             <xpath expr="//kanban" position="inside">
                 <field name="dojo_lead_score"/>
                 <field name="trial_attended"/>
@@ -18,20 +34,26 @@
                 <field name="is_converted"/>
             </xpath>
             <xpath expr="//kanban//templates//t[@t-name='card']" position="inside">
-                <div class="d-flex align-items-center gap-1 mt-1">
+                <div class="d-flex align-items-center gap-1 mt-1 flex-wrap">
                     <t t-if="record.dojo_lead_score.raw_value">
                         <span t-attf-class="badge #{record.dojo_lead_score.raw_value >= 60 ? 'text-bg-success' : (record.dojo_lead_score.raw_value >= 30 ? 'text-bg-warning' : 'text-bg-secondary')}">
                             Score: <t t-out="record.dojo_lead_score.raw_value"/>
                         </span>
                     </t>
                     <t t-if="record.trial_attended.raw_value">
-                        <span class="badge text-bg-info">Attended</span>
+                        <span class="dojo-status-badge attended">
+                            <i class="fa fa-check-circle fa-sm"/>Attended
+                        </span>
                     </t>
                     <t t-if="record.no_show.raw_value">
-                        <span class="badge text-bg-danger">No-Show</span>
+                        <span class="dojo-status-badge no-show">
+                            <i class="fa fa-times-circle fa-sm"/>No-Show
+                        </span>
                     </t>
                     <t t-if="record.is_converted.raw_value">
-                        <span class="badge text-bg-success">Converted</span>
+                        <span class="dojo-status-badge converted">
+                            <i class="fa fa-user-plus fa-sm"/>Converted
+                        </span>
                     </t>
                 </div>
             </xpath>

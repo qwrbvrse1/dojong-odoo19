@@ -2,7 +2,11 @@
 
 import { Component, useState, onMounted } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
-import { AutomationKanbanController } from "automation_oca/static/src/views/automation_upload/automation_upload.esm.js";
+import { registry } from "@web/core/registry";
+import {
+    AutomationKanbanController,
+    AutomationKanbanView,
+} from "automation_oca/static/src/views/automation_upload/automation_upload.esm.js";
 
 // ─── Stat Panel ───────────────────────────────────────────────────────────────
 
@@ -93,14 +97,25 @@ export class AutomationFilterChips extends Component {
     }
 }
 
-// ─── Register on AutomationKanbanController ───────────────────────────────────
-// Mutate AutomationKanbanController.components directly — same pattern as
-// Sprint 1 (dojo_crm/static/src/js/crm_stat_panel.js line 123).
-// Do NOT create a subclass — the OWL components snapshot is taken at class
-// definition time; mutating the imported class is the correct approach.
+// ─── Dedicated controller + view — isolated template per module ───────────────
+// Subclass AutomationKanbanController so it owns a dedicated template
+// (dojo_automation.AutomationKanbanView). That template is a named child of
+// web.KanbanView and ONLY injects AutomationStatPanel/AutomationFilterChips.
+// No mutation of the shared web.KanbanView template — other kanban views are
+// unaffected. The automation kanban view is pointed here via js_class in XML.
 
-AutomationKanbanController.components = {
+class DojoAutomationKanbanController extends AutomationKanbanController {
+    static template = "dojo_automation.AutomationKanbanView";
+}
+DojoAutomationKanbanController.components = {
     ...AutomationKanbanController.components,
     AutomationStatPanel,
     AutomationFilterChips,
 };
+
+const dojoAutomationKanbanView = {
+    ...AutomationKanbanView,
+    Controller: DojoAutomationKanbanController,
+};
+
+registry.category("views").add("dojo_automation_kanban", dojoAutomationKanbanView);

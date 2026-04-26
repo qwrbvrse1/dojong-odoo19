@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+
+    <!-- ── Stat Panel ──────────────────────────────────────────────────────── -->
+
+    <t t-name="dojo_crm.CrmStatPanel">
+        <div class="dojo-stat-panel d-flex flex-wrap gap-2">
+            <t t-if="state.loading">
+                <div t-foreach="[1,2,3,4]" t-as="i" t-key="i"
+                     class="dojo-stat-skeleton"/>
+            </t>
+            <t t-else="">
+                <div class="dojo-stat-chip">
+                    <span class="dojo-stat-label">Total Leads</span>
+                    <span class="dojo-stat-value" t-esc="state.totalLeads"/>
+                </div>
+                <div class="dojo-stat-chip">
+                    <span class="dojo-stat-label">Conversion Rate</span>
+                    <span class="dojo-stat-value"><t t-esc="state.conversionRate"/>%</span>
+                </div>
+                <div t-attf-class="dojo-stat-chip{{ state.trialsThisWeek > 0 ? ' is-alert' : '' }}">
+                    <span class="dojo-stat-label">Trials This Week</span>
+                    <span class="dojo-stat-value" t-esc="state.trialsThisWeek"/>
+                </div>
+                <div t-attf-class="dojo-stat-chip{{ state.expiringOffers > 0 ? ' is-warning' : '' }}">
+                    <span class="dojo-stat-label">Expiring Offers</span>
+                    <span class="dojo-stat-value" t-esc="state.expiringOffers"/>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <!-- ── Filter Chips ────────────────────────────────────────────────────── -->
+
+    <t t-name="dojo_crm.CrmFilterChips">
+        <div class="dojo-filter-chips">
+            <t t-foreach="chips" t-as="chip" t-key="chip.name">
+                <button
+                    t-attf-class="dojo-filter-chip{{ chip.active ? ' active' : '' }}"
+                    t-on-click="() => this.toggleChip(chip.name)"
+                    t-att-aria-pressed="chip.active ? 'true' : 'false'"
+                >
+                    <i t-attf-class="fa {{ chip.icon }} fa-sm"/>
+                    <t t-esc="chip.label"/>
+                </button>
+            </t>
+        </div>
+    </t>
+
+    <!-- ── Dedicated template for DojoCrmKanbanController ────────────────────
+         Uses t-name so this becomes a NEW named template, not a mutation of
+         web.KanbanView itself. Only DojoCrmKanbanController (which has
+         CrmStatPanel/CrmFilterChips in its components map) uses this template
+         via static template = "dojo_crm.CrmKanbanView".
+         Other kanban controllers continue to use the unmodified web.KanbanView.
+    ──────────────────────────────────────────────────────────────────────── -->
+    <t t-name="dojo_crm.CrmKanbanView"
+       t-inherit="web.KanbanView"
+       t-inherit-mode="extension">
+        <xpath expr="//t[@t-component='props.Renderer']" position="before">
+            <CrmStatPanel/>
+            <CrmFilterChips/>
+        </xpath>
+    </t>
+
+</templates>

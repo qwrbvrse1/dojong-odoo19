@@ -14,7 +14,26 @@
     </record>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
-         2. KANBAN CARD — redesign rule cards
+         2. KANBAN VIEW — point to dedicated DojoAutomationKanbanController
+    ════════════════════════════════════════════════════════════════════════ -->
+
+    <!-- Set js_class so Odoo uses DojoAutomationKanbanController (which owns the
+         dojo_automation.AutomationKanbanView template) instead of the base
+         AutomationKanbanController. This isolates our template injection from all
+         other kanban views that use the unmodified web.KanbanView. -->
+    <record model="ir.ui.view" id="automation_configuration_kanban_js_class">
+        <field name="name">automation.configuration.kanban.js_class</field>
+        <field name="model">automation.configuration</field>
+        <field name="inherit_id" ref="automation_oca.automation_configuration_kanban_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//kanban" position="attributes">
+                <attribute name="js_class">dojo_automation_kanban</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         3. KANBAN CARD — redesign rule cards
     ════════════════════════════════════════════════════════════════════════ -->
 
     <record model="ir.ui.view" id="automation_configuration_kanban_inherit">
@@ -95,7 +114,7 @@
     </record>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
-         3. FORM — accordion sections + workflow steps section title
+         4. FORM — accordion sections + workflow steps section title
     ════════════════════════════════════════════════════════════════════════ -->
 
     <record model="ir.ui.view" id="automation_configuration_form_inherit">

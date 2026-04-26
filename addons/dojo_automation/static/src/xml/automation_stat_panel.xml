@@ -53,14 +53,16 @@
         </div>
     </t>
 
-    <!-- ── Inject above Renderer in web.KanbanView ─────────────────────────── -->
-    <!--
-        Identical pattern to Sprint 1 (dojo_crm/static/src/xml/crm_stat_panel.xml).
-        OWL resolves AutomationStatPanel/AutomationFilterChips from
-        AutomationKanbanController.components at render time — other kanban
-        controllers silently skip unknown component names.
-    -->
-    <t t-inherit="web.KanbanView" t-inherit-mode="extension">
+    <!-- ── Dedicated template for DojoAutomationKanbanController ─────────────
+         Uses t-name so this becomes a NEW named template, not a mutation of
+         web.KanbanView itself. Only DojoAutomationKanbanController (which has
+         AutomationStatPanel/AutomationFilterChips in its components map) uses
+         this template via static template = "dojo_automation.AutomationKanbanView".
+         Other kanban controllers continue to use the unmodified web.KanbanView.
+    ──────────────────────────────────────────────────────────────────────── -->
+    <t t-name="dojo_automation.AutomationKanbanView"
+       t-inherit="web.KanbanView"
+       t-inherit-mode="extension">
         <xpath expr="//t[@t-component='props.Renderer']" position="before">
             <AutomationStatPanel/>
             <AutomationFilterChips/>
