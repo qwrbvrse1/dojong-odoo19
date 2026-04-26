@@ -62,7 +62,7 @@
     ──────────────────────────────────────────────────────────────────────── -->
     <t t-name="dojo_automation.AutomationKanbanView"
        t-inherit="web.KanbanView"
-       t-inherit-mode="extension">
+       t-inherit-mode="primary">
         <xpath expr="//t[@t-component='props.Renderer']" position="before">
             <AutomationStatPanel/>
             <AutomationFilterChips/>

@@ -56,7 +56,7 @@
     ──────────────────────────────────────────────────────────────────────── -->
     <t t-name="dojo_crm.CrmKanbanView"
        t-inherit="web.KanbanView"
-       t-inherit-mode="extension">
+       t-inherit-mode="primary">
         <xpath expr="//t[@t-component='props.Renderer']" position="before">
             <CrmStatPanel/>
             <CrmFilterChips/>
