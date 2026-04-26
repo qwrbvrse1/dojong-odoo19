@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         1. MENU LABELS — rebrand to "Dojang"
+    ════════════════════════════════════════════════════════════════════════ -->
+
+    <record model="ir.ui.menu" id="automation_oca.automation_root_menu">
+        <field name="name">Dojang Automation</field>
+    </record>
+
+    <record model="ir.ui.menu" id="automation_oca.automation_configuration_menu">
+        <field name="name">Dojang Rules</field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         2. KANBAN CARD — redesign rule cards
+    ════════════════════════════════════════════════════════════════════════ -->
+
+    <record model="ir.ui.view" id="automation_configuration_kanban_inherit">
+        <field name="name">automation.configuration.kanban.dojo</field>
+        <field name="model">automation.configuration</field>
+        <field name="inherit_id" ref="automation_oca.automation_configuration_kanban_view"/>
+        <field name="arch" type="xml">
+
+            <!-- Declare extra fields needed by the new card template -->
+            <xpath expr="//kanban/field[@name='state']" position="after">
+                <field name="is_periodic"/>
+                <field name="model_id"/>
+                <field name="next_execution_date"/>
+            </xpath>
+
+            <!-- Replace card template -->
+            <xpath expr="//templates/t[@t-name='card']" position="replace">
+                <t t-name="card">
+                    <div t-attf-class="dojo-auto-rule-card dojo-auto-rule-card--{{ record.state.value }}">
+                        <div class="dojo-auto-rule-card__body">
+
+                            <!-- Header row: name + state badge -->
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <strong class="dojo-auto-rule-card__name o_text_overflow">
+                                    <field name="name"/>
+                                </strong>
+                                <span t-attf-class="dojo-auto-state-badge dojo-auto-state-{{ record.state.value }}">
+                                    <t t-esc="record.state.value"/>
+                                </span>
+                            </div>
+
+                            <!-- Meta: model + periodic/on-demand chip -->
+                            <div class="text-muted small mb-2 d-flex align-items-center gap-1">
+                                <field name="model_id"/>
+                                <span t-if="record.is_periodic.raw_value"
+                                      class="badge bg-info ms-1">Periodic</span>
+                                <span t-if="!record.is_periodic.raw_value and record.state.raw_value !== 'done'"
+                                      class="badge bg-warning text-dark ms-1">On Demand</span>
+                            </div>
+
+                            <!-- Stats row: mail, action, click counts + next run -->
+                            <div class="d-flex gap-3 dojo-auto-rule-card__stats align-items-center">
+                                <span title="Emails sent">
+                                    <i class="fa fa-envelope me-1 text-info"/>
+                                    <field name="activity_mail_count"/>
+                                </span>
+                                <span title="Actions run">
+                                    <i class="fa fa-cogs me-1 text-warning"/>
+                                    <field name="activity_action_count"/>
+                                </span>
+                                <span title="Link clicks">
+                                    <i class="fa fa-hand-pointer-o me-1"/>
+                                    <field name="click_count"/>
+                                </span>
+                                <span t-if="record.state.raw_value === 'periodic'"
+                                      title="Next run" class="ms-auto text-info small">
+                                    <i class="fa fa-clock-o me-1"/>
+                                    <field name="next_execution_date"/>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Actions row — revealed on card hover via CSS opacity -->
+                        <div class="dojo-auto-rule-card__actions">
+                            <button t-if="record.state.raw_value === 'periodic' or record.state.raw_value === 'ondemand'"
+                                    class="btn btn-sm btn-primary"
+                                    type="object" name="run_automation">
+                                <i class="fa fa-play me-1"/> Run Now
+                            </button>
+                            <a type="edit" class="btn btn-sm btn-secondary">
+                                <i class="fa fa-pencil me-1"/> Edit
+                            </a>
+                        </div>
+                    </div>
+                </t>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         3. FORM — accordion sections + workflow steps section title
+    ════════════════════════════════════════════════════════════════════════ -->
+
+    <record model="ir.ui.view" id="automation_configuration_form_inherit">
+        <field name="name">automation.configuration.form.dojo</field>
+        <field name="model">automation.configuration</field>
+        <field name="inherit_id" ref="automation_oca.automation_configuration_form_view"/>
+        <field name="arch" type="xml">
+
+            <!-- Replace the flat <group> with two accordions -->
+            <xpath expr="//sheet/group" position="replace">
+
+                <!-- Accordion 1: Trigger Setup (open by default) -->
+                <details class="dojo-accordion mb-2" open="">
+                    <summary class="dojo-accordion__summary">
+                        <span class="dojo-accordion__title">Trigger Setup</span>
+                        <i class="fa fa-chevron-down dojo-accordion__chevron"/>
+                    </summary>
+                    <div class="dojo-accordion__body">
+                        <group>
+                            <field name="active" invisible="1"/>
+                            <field name="model" invisible="1"/>
+                            <field name="is_periodic"
+                                   readonly="state != 'draft'"
+                                   widget="boolean_toggle"/>
+                            <field name="model_id"
+                                   options="{'no_create_edit': True, 'no_open': True}"/>
+                            <field name="field_id"
+                                   string="Deduplicate by"
+                                   options="{'no_create_edit': True, 'no_open': True}"/>
+                            <field name="next_execution_date"
+                                   readonly="1"
+                                   invisible="state != 'periodic'"/>
+                        </group>
+                    </div>
+                </details>
+
+                <!-- Accordion 2: Conditions (collapsed by default) -->
+                <details class="dojo-accordion mb-3">
+                    <summary class="dojo-accordion__summary">
+                        <span class="dojo-accordion__title">Conditions</span>
+                        <i class="fa fa-chevron-down dojo-accordion__chevron"/>
+                    </summary>
+                    <div class="dojo-accordion__body">
+                        <group>
+                            <field name="tag_ids"
+                                   widget="many2many_tags"
+                                   options="{'color_field': 'color'}"/>
+                            <label for="filter_id" string="Filter"/>
+                            <div class="container ps-0">
+                                <div class="row">
+                                    <div class="col-5">
+                                        <field name="filter_id" domain="filter_domain"/>
+                                    </div>
+                                    <button name="save_filter"
+                                            type="object"
+                                            string="Save filter"
+                                            icon="fa-save"
+                                            class="text-primary filter-left col-7"
+                                            invisible="filter_id"/>
+                                </div>
+                            </div>
+                            <field name="filter_domain" invisible="1"/>
+                            <field name="domain"
+                                   string="Domain"
+                                   widget="domain"
+                                   invisible="not filter_id"
+                                   options="{'foldable': True, 'model': 'model'}"/>
+                            <field name="editable_domain"
+                                   string="Domain"
+                                   widget="domain"
+                                   invisible="filter_id"
+                                   options="{'foldable': True, 'model': 'model'}"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </div>
+                </details>
+            </xpath>
+
+            <!-- Add "Dojang Workflow Steps" section title above the step kanban -->
+            <xpath expr="//field[@name='automation_step_ids']" position="before">
+                <div class="dojo-section-title">Dojang Workflow Steps</div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
