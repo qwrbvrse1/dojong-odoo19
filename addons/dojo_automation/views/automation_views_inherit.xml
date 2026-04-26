@@ -42,7 +42,7 @@
                                     <field name="name"/>
                                 </strong>
                                 <span t-attf-class="dojo-auto-state-badge dojo-auto-state-{{ record.state.value }}">
-                                    <t t-esc="record.state.value"/>
+                                    <t t-out="record.state.value"/>
                                 </span>
                             </div>
 
@@ -84,7 +84,7 @@
                                     type="object" name="run_automation">
                                 <i class="fa fa-play me-1"/> Run Now
                             </button>
-                            <a type="edit" class="btn btn-sm btn-secondary">
+                            <a type="edit" role="button" class="btn btn-sm btn-secondary">
                                 <i class="fa fa-pencil me-1"/> Edit
                             </a>
                         </div>
