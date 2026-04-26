@@ -1,0 +1,298 @@
+// ─── Dojang Automation — all styles ──────────────────────────────────────────
+// Color tokens map to MuK/Bootstrap variables. Never hardcode hex.
+
+// ── Stat Panel ────────────────────────────────────────────────────────────────
+
+.dojo-auto-stat-panel {
+    background: var(--surface, var(--bs-body-bg));
+    border-bottom: 1px solid var(--border, var(--bs-border-color));
+}
+
+.dojo-auto-stat-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 12px 20px;
+    border-radius: var(--radius-md, 0.5rem);
+    background: var(--surface, var(--bs-body-bg));
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+    border: 1px solid var(--border, var(--bs-border-color));
+    min-width: 120px;
+    text-align: center;
+    transition: box-shadow var(--transition-fast, 150ms ease);
+
+    &:hover {
+        box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.12));
+    }
+
+    &__icon { font-size: 1.25rem; margin-bottom: 2px; }
+    &__value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+    &__label { font-size: 0.75rem; color: var(--text-muted, var(--bs-secondary-color)); }
+
+    &--info    .dojo-auto-chip__icon { color: var(--info,    var(--bs-info)); }
+    &--success .dojo-auto-chip__icon { color: var(--success, var(--bs-success)); }
+    &--warning .dojo-auto-chip__icon { color: var(--warning, var(--bs-warning)); }
+    &--danger  .dojo-auto-chip__icon { color: var(--danger,  var(--bs-danger)); }
+
+    &--danger.is-alert {
+        border-color: var(--danger, var(--bs-danger));
+        background: rgba(var(--bs-danger-rgb), 0.06);
+    }
+}
+
+.dojo-auto-stat-skeleton {
+    width: 120px;
+    height: 88px;
+    border-radius: var(--radius-md, 0.5rem);
+    background: linear-gradient(
+        90deg,
+        var(--surface, var(--bs-body-bg)) 25%,
+        var(--surface-hover, #f0f0f0) 50%,
+        var(--surface, var(--bs-body-bg)) 75%
+    );
+    background-size: 200% 100%;
+    animation: dojo-auto-shimmer 1.4s infinite;
+}
+
+@keyframes dojo-auto-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+// ── Filter Chips ──────────────────────────────────────────────────────────────
+
+.dojo-auto-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    border-bottom: 1px solid var(--border, var(--bs-border-color));
+}
+
+.dojo-auto-filter-chip {
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid var(--border, var(--bs-border-color));
+    background: transparent;
+    color: var(--text-primary, var(--bs-body-color));
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all var(--transition-fast, 150ms ease);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+
+    &:hover { background: var(--surface-hover, rgba(0, 0, 0, 0.04)); }
+
+    &.active {
+        background: var(--info, var(--bs-info));
+        border-color: var(--info, var(--bs-info));
+        color: #fff;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--primary, var(--bs-primary));
+        outline-offset: 2px;
+    }
+}
+
+// ── Rule Cards — main Kanban view ─────────────────────────────────────────────
+
+.dojo-auto-rule-card {
+    border-radius: var(--radius-md, 0.5rem);
+    border: 1px solid var(--border, var(--bs-border-color));
+    border-left: 4px solid var(--bs-secondary);
+    background: var(--surface, var(--bs-body-bg));
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+    overflow: hidden;
+    transition:
+        transform var(--transition-fast, 150ms ease),
+        box-shadow var(--transition-fast, 150ms ease);
+    animation: dojo-auto-card-enter 300ms ease both;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.12));
+
+        .dojo-auto-rule-card__actions { opacity: 1; }
+    }
+
+    &--periodic  { border-left-color: var(--info,    var(--bs-info)); }
+    &--ondemand  { border-left-color: var(--warning, var(--bs-warning)); }
+    &--done      { border-left-color: var(--success, var(--bs-success)); }
+    &--draft     { border-left-color: var(--bs-secondary); }
+
+    &--periodic {
+        animation:
+            dojo-auto-card-enter 300ms ease both,
+            dojo-auto-pulse-border 2s ease-in-out infinite 1s;
+    }
+
+    &__body   { padding: 12px 14px 8px; }
+    &__name   { font-weight: 600; font-size: 0.9375rem; }
+    &__stats  { font-size: 0.8rem; color: var(--text-muted, var(--bs-secondary-color)); }
+
+    &__actions {
+        display: flex;
+        gap: 6px;
+        padding: 8px 14px;
+        border-top: 1px solid var(--border, var(--bs-border-color));
+        background: var(--surface-hover, rgba(0, 0, 0, 0.02));
+        opacity: 0;
+        transition: opacity var(--transition-fast, 150ms ease);
+    }
+}
+
+@for $i from 1 through 6 {
+    .o_kanban_record:nth-child(#{$i}) .dojo-auto-rule-card {
+        animation-delay: #{($i - 1) * 50}ms;
+    }
+}
+.o_kanban_record:nth-child(n+7) .dojo-auto-rule-card { animation-delay: 300ms; }
+
+@keyframes dojo-auto-card-enter {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dojo-auto-pulse-border {
+    0%, 100% { box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08)); }
+    50% {
+        box-shadow:
+            var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08)),
+            0 0 0 3px rgba(var(--bs-info-rgb, 13, 202, 240), 0.25);
+    }
+}
+
+.dojo-auto-state-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    padding: 3px 8px;
+    border-radius: 100px;
+    white-space: nowrap;
+    transition: background var(--transition-fast, 150ms ease);
+
+    &.dojo-auto-state-periodic { background: var(--info,    var(--bs-info));    color: #fff; }
+    &.dojo-auto-state-ondemand { background: var(--warning, var(--bs-warning)); color: #000; }
+    &.dojo-auto-state-done     { background: var(--success, var(--bs-success)); color: #fff; }
+    &.dojo-auto-state-draft    { background: var(--bs-secondary);               color: #fff; }
+}
+
+// ── Form Accordions ───────────────────────────────────────────────────────────
+
+.dojo-accordion {
+    border: 1px solid var(--border, var(--bs-border-color));
+    border-radius: var(--radius-md, 0.5rem);
+    overflow: hidden;
+
+    &__summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px;
+        cursor: pointer;
+        background: var(--surface-hover, rgba(0, 0, 0, 0.02));
+        border-bottom: 1px solid transparent;
+        list-style: none;
+        user-select: none;
+        transition: background var(--transition-fast, 150ms ease);
+        min-height: 44px;
+
+        &::-webkit-details-marker { display: none; }
+        &:hover { background: var(--surface-hover, rgba(0, 0, 0, 0.04)); }
+        &:focus-visible { outline: 2px solid var(--primary, var(--bs-primary)); }
+    }
+
+    &__title {
+        font-size: 0.8125rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted, var(--bs-secondary-color));
+    }
+
+    &__chevron {
+        transition: transform var(--transition-fast, 150ms ease);
+        color: var(--text-muted, var(--bs-secondary-color));
+    }
+
+    &[open] > .dojo-accordion__summary {
+        border-bottom-color: var(--border, var(--bs-border-color));
+
+        .dojo-accordion__chevron { transform: rotate(180deg); }
+    }
+
+    &__body { padding: 8px 4px; }
+}
+
+.dojo-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted, var(--bs-secondary-color));
+    padding: 16px 0 6px;
+    border-top: 1px solid var(--border, var(--bs-border-color));
+    margin-top: 8px;
+}
+
+// ── Step Cards — inside automation_step kanban widget ─────────────────────────
+// step_icon values confirmed from automation_oca source:
+//   mail     → "fa fa-envelope"
+//   activity → "fa fa-clock-o"
+//   action   → "fa fa-cogs"
+
+.o_automation_kanban {
+
+    .o_automation_kanban_card {
+        border-radius: var(--radius-md, 0.5rem);
+        transition:
+            transform var(--transition-fast, 150ms ease),
+            box-shadow var(--transition-fast, 150ms ease);
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.12));
+        }
+    }
+
+    .o_automation_kanban_header_icon {
+        .fa-envelope { color: var(--info,    var(--bs-info)); }
+        .fa-clock-o  { color: var(--success, var(--bs-success)); }
+        .fa-cogs     { color: var(--warning, var(--bs-warning)); }
+    }
+
+    // Left-border by step type via :has() (Chrome 105+, FF 121+, Safari 15.4+)
+    .o_automation_kanban_card:has(.fa-envelope) { border-left: 3px solid var(--info,    var(--bs-info)); }
+    .o_automation_kanban_card:has(.fa-clock-o)  { border-left: 3px solid var(--success, var(--bs-success)); }
+    .o_automation_kanban_card:has(.fa-cogs)     { border-left: 3px solid var(--warning, var(--bs-warning)); }
+
+    .o_automation_kanban_card:has(.fa-envelope) .o_automation_kanban_header_icon:hover { background: var(--info,    var(--bs-info)); }
+    .o_automation_kanban_card:has(.fa-clock-o)  .o_automation_kanban_header_icon:hover { background: var(--success, var(--bs-success)); }
+    .o_automation_kanban_card:has(.fa-cogs)     .o_automation_kanban_header_icon:hover { background: var(--warning, var(--bs-warning)); }
+
+    .o_automation_kanban_time_info {
+        background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+        border-radius: var(--radius-md, 0.5rem);
+        padding: 4px 8px !important;
+    }
+
+    .o_automation_kanban_position_line {
+        border-color: var(--border, var(--bs-border-color));
+    }
+
+    .o_automation_kanban_box:has(.fa-envelope) .o_automation_kanban_card_position { color: var(--info,    var(--bs-info)) !important; }
+    .o_automation_kanban_box:has(.fa-clock-o)  .o_automation_kanban_card_position { color: var(--success, var(--bs-success)) !important; }
+    .o_automation_kanban_box:has(.fa-cogs)     .o_automation_kanban_card_position { color: var(--warning, var(--bs-warning)) !important; }
+
+    .o_automation_kpi_error {
+        color: var(--danger, var(--bs-danger));
+        font-weight: 700;
+    }
+}
+
+// ── Global micro-interactions ─────────────────────────────────────────────────
+
+.btn:active { transform: scale(0.97); }
