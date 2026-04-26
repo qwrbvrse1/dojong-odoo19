@@ -4,19 +4,6 @@
          CRM Pipeline Dashboard — Kanban enhancements
          ================================================================ -->
 
-    <!-- Point crm.lead kanban view at DojoCrmKanbanController so OWL uses the
-         isolated dojo_crm.CrmKanbanView template (not the shared web.KanbanView). -->
-    <record model="ir.ui.view" id="view_crm_lead_kanban_js_class">
-        <field name="name">crm.lead.kanban.js_class</field>
-        <field name="model">crm.lead</field>
-        <field name="inherit_id" ref="crm.crm_case_kanban_view_leads"/>
-        <field name="arch" type="xml">
-            <xpath expr="//kanban" position="attributes">
-                <attribute name="js_class">dojo_crm_kanban</attribute>
-            </xpath>
-        </field>
-    </record>
-
     <!-- Add lead score + trial status to kanban cards -->
     <record id="view_crm_lead_kanban_dojo_inherit" model="ir.ui.view">
         <field name="name">crm.lead.kanban.dojo.inherit</field>

@@ -2,11 +2,7 @@
 
 import { Component, useState, onMounted } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
-import { registry } from "@web/core/registry";
-import {
-    AutomationKanbanController,
-    AutomationKanbanView,
-} from "automation_oca/static/src/views/automation_upload/automation_upload.esm.js";
+import { AutomationKanbanController } from "automation_oca/static/src/views/automation_upload/automation_upload.esm.js";
 
 // ─── Stat Panel ───────────────────────────────────────────────────────────────
 
@@ -97,25 +93,16 @@ export class AutomationFilterChips extends Component {
     }
 }
 
-// ─── Dedicated controller + view — isolated template per module ───────────────
-// Subclass AutomationKanbanController so it owns a dedicated template
-// (dojo_automation.AutomationKanbanView). That template is a named child of
-// web.KanbanView and ONLY injects AutomationStatPanel/AutomationFilterChips.
-// No mutation of the shared web.KanbanView template — other kanban views are
-// unaffected. The automation kanban view is pointed here via js_class in XML.
+// ─── Inject into AutomationKanbanController — isolated template per module ────
+// Set AutomationKanbanController.template to our dedicated primary template
+// (dojo_automation.AutomationKanbanView) so only this controller uses the
+// template that has AutomationStatPanel/AutomationFilterChips injected.
+// web.KanbanView itself is unchanged (primary mode creates an independent copy),
+// so all other kanbans continue to render without these components.
 
-class DojoAutomationKanbanController extends AutomationKanbanController {
-    static template = "dojo_automation.AutomationKanbanView";
-}
-DojoAutomationKanbanController.components = {
+AutomationKanbanController.template = "dojo_automation.AutomationKanbanView";
+AutomationKanbanController.components = {
     ...AutomationKanbanController.components,
     AutomationStatPanel,
     AutomationFilterChips,
 };
-
-const dojoAutomationKanbanView = {
-    ...AutomationKanbanView,
-    Controller: DojoAutomationKanbanController,
-};
-
-registry.category("views").add("dojo_automation_kanban", dojoAutomationKanbanView);

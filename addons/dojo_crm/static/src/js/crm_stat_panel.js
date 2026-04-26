@@ -2,7 +2,6 @@
 
 import { Component, useState, onMounted } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
-import { registry } from "@web/core/registry";
 import { crmKanbanView } from "@crm/views/crm_kanban/crm_kanban_view";
 
 // ─── Stat Panel ──────────────────────────────────────────────────────────────
@@ -115,25 +114,16 @@ export class CrmFilterChips extends Component {
     }
 }
 
-// ─── Dedicated controller + view — isolated template per module ───────────────
-// Subclass crmKanbanView.Controller so it owns a dedicated template
-// (dojo_crm.CrmKanbanView). That template is a named child of web.KanbanView
-// and ONLY injects CrmStatPanel/CrmFilterChips.
-// No mutation of the shared web.KanbanView template — other kanban views are
-// unaffected. The crm.lead kanban view is pointed here via js_class in XML.
+// ─── Inject into crmKanbanView.Controller — isolated template per module ──────
+// Set crmKanbanView.Controller.template to our dedicated primary template
+// (dojo_crm.CrmKanbanView) so only this controller uses the template that has
+// CrmStatPanel/CrmFilterChips injected.
+// web.KanbanView itself is unchanged (primary mode creates an independent copy),
+// so all other kanbans continue to render without these components.
 
-class DojoCrmKanbanController extends crmKanbanView.Controller {
-    static template = "dojo_crm.CrmKanbanView";
-}
-DojoCrmKanbanController.components = {
+crmKanbanView.Controller.template = "dojo_crm.CrmKanbanView";
+crmKanbanView.Controller.components = {
     ...crmKanbanView.Controller.components,
     CrmStatPanel,
     CrmFilterChips,
 };
-
-const dojoCrmKanbanView = {
-    ...crmKanbanView,
-    Controller: DojoCrmKanbanController,
-};
-
-registry.category("views").add("dojo_crm_kanban", dojoCrmKanbanView);
