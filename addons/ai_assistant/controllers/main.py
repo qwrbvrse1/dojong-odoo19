@@ -30,6 +30,9 @@ from odoo.http import request
 
 _logger = logging.getLogger(__name__)
 
+_MAX_WALKIE_PIN_ATTEMPTS = 5
+_WALKIE_LOCKOUT_MINUTES = 15
+
 
 class AiAssistantController(http.Controller):
 
@@ -658,10 +661,20 @@ class AiWalkieTalkieController(http.Controller):
         )
         if not record:
             raise ValueError("Invalid or inactive walkie-talkie link.")
+        lock_state = record._get_pin_lock_state()
+        if lock_state["locked"]:
+            raise ValueError(f"Too many attempts. Try again in {lock_state['retry_in_minutes']} min.")
         if not record.walkie_pin:
             raise ValueError("This walkie-talkie has no PIN set. Ask an admin to configure it.")
-        if (pin or "") != record.walkie_pin:
+        if not record._verify_walkie_pin_value(pin):
+            failure = record._register_pin_failure(
+                _MAX_WALKIE_PIN_ATTEMPTS,
+                _WALKIE_LOCKOUT_MINUTES,
+            )
+            if failure["error"] == "locked":
+                raise ValueError(f"Too many attempts. Try again in {failure['retry_in_minutes']} min.")
             raise ValueError("Incorrect PIN.")
+        record._clear_pin_attempts()
         return record
 
     # ── SPA shell ──────────────────────────────────────────────────────────────

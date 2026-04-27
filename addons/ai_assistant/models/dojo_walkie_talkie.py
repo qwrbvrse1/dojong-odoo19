@@ -13,15 +13,21 @@ accessible outside the Odoo backend, similar to the kiosk.
 
 import json
 import logging
+import re
 import secrets
+
+from werkzeug.security import check_password_hash, generate_password_hash
 
 import requests
 from markupsafe import Markup
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 _logger = logging.getLogger(__name__)
+
+_PIN_HASH_PREFIXES = ("pbkdf2:", "scrypt:")
+_WALKIE_PIN_PATTERN = re.compile(r"\d{4,8}")
 
 # ElevenLabs STT supported language codes (ISO 639-1)
 _SUPPORTED_STT_LANGS = [
@@ -60,6 +66,10 @@ def _odoo_lang_to_stt(odoo_lang):
     iso = odoo_lang.split("_")[0].lower()
     supported = {code for code, _ in _SUPPORTED_STT_LANGS}
     return iso if iso in supported else "en"
+
+
+def _looks_like_password_hash(value):
+    return bool(value) and value.startswith(_PIN_HASH_PREFIXES) and "$" in value
 
 
 class AiWalkieTalkie(models.Model):
@@ -129,6 +139,17 @@ class AiWalkieTalkie(models.Model):
         help="Map each AI channel to a Discuss channel for automatic voice message posting.",
     )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            self._prepare_walkie_pin_vals(vals)
+        return super().create(vals_list)
+
+    def write(self, vals):
+        vals = dict(vals)
+        self._prepare_walkie_pin_vals(vals)
+        return super().write(vals)
+
     @api.depends("walkie_token")
     def _compute_walkie_url(self):
         base = self.env["ir.config_parameter"].sudo().get_str("web.base.url") or ""
@@ -137,6 +158,73 @@ class AiWalkieTalkie(models.Model):
                 rec.walkie_url = f"{base}/walkie/{rec.walkie_token}"
             else:
                 rec.walkie_url = ""
+
+    def _prepare_walkie_pin_vals(self, vals):
+        walkie_pin = (vals.get("walkie_pin") or "").strip()
+        if not walkie_pin:
+            return vals
+        vals["walkie_pin"] = (
+            walkie_pin
+            if _looks_like_password_hash(walkie_pin)
+            else generate_password_hash(walkie_pin, method="pbkdf2:sha256")
+        )
+        return vals
+
+    def _verify_walkie_pin_value(self, raw_pin):
+        self.ensure_one()
+        raw_pin = (raw_pin or "").strip()
+        stored = self.walkie_pin or ""
+        if not raw_pin or not stored or not _WALKIE_PIN_PATTERN.fullmatch(raw_pin):
+            return False
+        if _looks_like_password_hash(stored):
+            try:
+                return check_password_hash(stored, raw_pin)
+            except ValueError:
+                return False
+        if stored == raw_pin:
+            self.sudo().write({"walkie_pin": raw_pin})
+            return True
+        return False
+
+    def _get_or_create_pin_attempt(self):
+        self.ensure_one()
+        Attempt = self.env["ai.walkie.pin.attempt"].sudo()
+        attempt = Attempt.search([("walkie_talkie_id", "=", self.id)], limit=1)
+        if attempt:
+            return attempt
+        try:
+            return Attempt.create({"walkie_talkie_id": self.id})
+        except Exception:
+            return Attempt.search([("walkie_talkie_id", "=", self.id)], limit=1)
+
+    def _get_pin_lock_state(self):
+        self.ensure_one()
+        attempt = self._get_or_create_pin_attempt()
+        retry_in_minutes = attempt.get_retry_minutes()
+        return {
+            "locked": bool(retry_in_minutes),
+            "retry_in_minutes": retry_in_minutes,
+        }
+
+    def _clear_pin_attempts(self):
+        for walkie in self:
+            walkie._get_or_create_pin_attempt().clear_state()
+
+    def _register_pin_failure(self, max_attempts, lockout_minutes):
+        self.ensure_one()
+        return self._get_or_create_pin_attempt().register_failure(
+            max_attempts,
+            lockout_minutes,
+        )
+
+    @api.constrains("walkie_pin")
+    def _check_walkie_pin(self):
+        for rec in self:
+            walkie_pin = (rec.walkie_pin or "").strip()
+            if not walkie_pin or _looks_like_password_hash(walkie_pin):
+                continue
+            if not _WALKIE_PIN_PATTERN.fullmatch(walkie_pin):
+                raise ValidationError("Access PIN must be 4 to 8 digits (numbers only).")
 
     def action_generate_token(self):
         """Generate (or regenerate) the standalone URL token for this instance."""

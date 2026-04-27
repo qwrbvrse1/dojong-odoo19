@@ -3,7 +3,6 @@ Kiosk service methods -- all business logic for the kiosk SPA lives here.
 Methods are designed to be called from the kiosk HTTP controller via sudo().
 """
 from datetime import datetime, timedelta
-import threading
 
 import pytz
 
@@ -11,15 +10,8 @@ from odoo import api, fields, models
 from odoo.exceptions import AccessError
 from odoo.tools import html2plaintext
 
-# Module-level rate limit state: {key: {"attempts": int, "locked_until": datetime|None}}
-# Protected by _PIN_ATTEMPTS_LOCK for thread safety within a single worker.
-# NOTE: in multi-worker deployments each worker process has its own dict;
-# a database-backed rate limiter would give full cross-worker protection.
-_PIN_ATTEMPTS: dict = {}
-_PIN_ATTEMPTS_LOCK = threading.Lock()
 _MAX_PIN_ATTEMPTS = 5
 _LOCKOUT_MINUTES = 15
-_MAX_PIN_ENTRIES = 500  # evict oldest entry when this size is reached
 
 
 class DojoKioskService(models.AbstractModel):
@@ -395,6 +387,43 @@ class DojoKioskService(models.AbstractModel):
             "issues": self._compute_issue_flags(member),
         }
 
+    def _public_member_entry(self, member):
+        """Minimal member payload safe for public kiosk search and barcode lookup."""
+        return {
+            "member_id": member.id,
+            "name": member.name,
+            "belt_rank": member.current_rank_id.name if member.current_rank_id else "",
+            "is_trial": False,
+        }
+
+    def _public_trial_lead_dict(self, lead):
+        """Minimal trial payload safe for public kiosk search results."""
+        session = lead.trial_session_id
+        program_name = ""
+        if session and session.template_id and session.template_id.program_id:
+            program_name = session.template_id.program_id.name
+        session_dict = {}
+        if session:
+            session_dict = {
+                "id": session.id,
+                "name": session.name,
+                "template_name": session.template_id.name if session.template_id else session.name,
+                "program_name": program_name,
+                "start": str(session.start_datetime) if session.start_datetime else "",
+                "end": str(session.end_datetime) if session.end_datetime else "",
+                "instructor": "",
+            }
+        return {
+            "member_id": None,
+            "lead_id": lead.id,
+            "name": lead.contact_name or lead.partner_name or "Unknown",
+            "is_trial": True,
+            "trial_program": program_name,
+            "trial_session": session_dict,
+            "partner_id": lead.partner_id.id if lead.partner_id else False,
+            "belt_rank": "",
+        }
+
     # -------------------------------------------------------------------------
     # Member lookup
     # -------------------------------------------------------------------------
@@ -407,7 +436,7 @@ class DojoKioskService(models.AbstractModel):
         )
         if not member:
             return None
-        return self._member_profile_dict(member)
+        return self._public_member_entry(member)
 
     @api.model
     def search_members(self, query, limit=20):
@@ -422,7 +451,7 @@ class DojoKioskService(models.AbstractModel):
             ("phone", "ilike", query.strip()),
         ]
         members = self.env["dojo.member"].search(domain, limit=limit, order="name asc")
-        return [self._member_profile_dict(m) for m in members]
+        return [self._public_member_entry(m) for m in members]
 
     def search_trial_leads(self, query, limit=10):
         """Search CRM leads with a booked trial session by name or email."""
@@ -437,7 +466,7 @@ class DojoKioskService(models.AbstractModel):
             ("email_from", "ilike", query.strip()),
         ]
         leads = self.env["crm.lead"].search(domain, limit=limit, order="contact_name asc")
-        return [self._trial_lead_dict(lead) for lead in leads]
+        return [self._public_trial_lead_dict(lead) for lead in leads]
 
     def _trial_lead_dict(self, lead):
         session = lead.trial_session_id
@@ -1164,48 +1193,42 @@ class DojoKioskService(models.AbstractModel):
         if token:
             try:
                 config_record = self.validate_token(token)
-                cfg_id = config_record.id
             except AccessError:
                 return {"success": False, "error": "invalid_token"}
         elif config_id:
-            cfg_id = int(config_id)
+            config_record = self.env["dojo.kiosk.config"].browse(int(config_id))
+            if not config_record.exists() or not config_record.active:
+                return {"success": False, "error": "invalid_token"}
         else:
-            cfg_id = None
+            return {"success": False, "error": "invalid_token"}
 
-        key = cfg_id or "global"
-        now = datetime.utcnow()
+        lock_state = config_record._get_pin_lock_state()
+        if lock_state["locked"]:
+            return {
+                "success": False,
+                "error": "locked",
+                "retry_in_minutes": lock_state["retry_in_minutes"],
+            }
 
-        # Check lockout state under lock (fast path)
-        with _PIN_ATTEMPTS_LOCK:
-            if len(_PIN_ATTEMPTS) >= _MAX_PIN_ENTRIES:
-                # Evict the oldest entry to cap memory usage
-                del _PIN_ATTEMPTS[next(iter(_PIN_ATTEMPTS))]
-            state = _PIN_ATTEMPTS.setdefault(key, {"attempts": 0, "locked_until": None})
-            if state["locked_until"] and now < state["locked_until"]:
-                remaining = int((state["locked_until"] - now).total_seconds() / 60) + 1
-                return {"success": False, "error": "locked", "retry_in_minutes": remaining}
+        if config_record._verify_pin_value(pin):
+            config_record._clear_pin_attempts()
+            return {"success": True}
 
-        # Database lookup outside the lock to avoid blocking other threads
-        domain = [("active", "=", True), ("pin_code", "=", pin)]
-        if cfg_id:
-            domain.append(("id", "=", cfg_id))
-        else:
-            domain.append(("company_id", "in", [self.env.company.id, False]))
-        found = self.env["dojo.kiosk.config"].search(domain, limit=1)
-
-        # Update attempt counter under lock
-        with _PIN_ATTEMPTS_LOCK:
-            if found:
-                _PIN_ATTEMPTS[key] = {"attempts": 0, "locked_until": None}
-                return {"success": True}
-            state = _PIN_ATTEMPTS.setdefault(key, {"attempts": 0, "locked_until": None})
-            state["attempts"] += 1
-            if state["attempts"] >= _MAX_PIN_ATTEMPTS:
-                state["locked_until"] = now + timedelta(minutes=_LOCKOUT_MINUTES)
-                state["attempts"] = 0
-                return {"success": False, "error": "locked", "retry_in_minutes": _LOCKOUT_MINUTES}
-            remaining_tries = _MAX_PIN_ATTEMPTS - state["attempts"]
-            return {"success": False, "error": "wrong_pin", "remaining_tries": remaining_tries}
+        failure = config_record._register_pin_failure(
+            _MAX_PIN_ATTEMPTS,
+            _LOCKOUT_MINUTES,
+        )
+        if failure["locked"]:
+            return {
+                "success": False,
+                "error": "locked",
+                "retry_in_minutes": failure["retry_in_minutes"],
+            }
+        return {
+            "success": False,
+            "error": "wrong_pin",
+            "remaining_tries": failure["remaining_tries"],
+        }
 
     # -------------------------------------------------------------------------
     # Check-out

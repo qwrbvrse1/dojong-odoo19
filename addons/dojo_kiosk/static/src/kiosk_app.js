@@ -1283,7 +1283,7 @@ class StudentCheckinModal extends Component {
                 <div class="k-checkin-modal__head">
                     <div class="k-checkin-modal__avatar-wrap">
                         <img class="k-checkin-modal__avatar"
-                            t-att-src="avatarUrl(props.member.member_id)"
+                            t-att-src="memberAvatarUrl(props.member)"
                             t-att-alt="props.member.name"
                             t-on-error="onImgError"/>
                     </div>
@@ -1393,7 +1393,10 @@ class StudentCheckinModal extends Component {
 
     static props = ["member", "sessions", "loading", "result", "checkedInSession", "onSelect", "onCheckout", "onClose"];
     onOverlayClick() { if (!this.props.result) this.props.onClose(); }
-    avatarUrl(id) { return avatarUrl(id); }
+    memberAvatarUrl(member) {
+        if (member.is_trial && member.partner_id) return partnerAvatarUrl(member.partner_id);
+        return avatarUrl(member.member_id);
+    }
     formatTime(dt) { return formatTime(dt); }
     onImgError(ev) {
         const img = ev.target;

@@ -7,6 +7,7 @@ from . import ai_processor_ext
 from . import ai_assistant_service
 from . import ai_calendar_service
 from . import ai_communication_service
+from . import ai_walkie_pin_attempt
 from . import dojo_walkie_talkie
 from . import dojo_walkie_channel_mapping
 from . import res_config_settings
