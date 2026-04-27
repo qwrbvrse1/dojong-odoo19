@@ -77,6 +77,20 @@ class DojoMemberSubscriptionStripe(models.Model):
             # No saved card — invoice-by-email path already handled by super()
             return invoice
 
+        if self.env.context.get('dojo_defer_auto_charge'):
+            scheduled_date = (
+                self.env.context.get('dojo_auto_charge_scheduled_date')
+                or invoice.invoice_date_due
+            )
+            invoice.sudo().action_schedule_dojo_auto_charge(scheduled_date)
+            invoice.sudo().action_send_dojo_deferred_charge_notifications()
+            _logger.info(
+                'Dojo Stripe: scheduled invoice %s for deferred auto-charge on %s.',
+                invoice.name,
+                scheduled_date,
+            )
+            return invoice
+
         try:
             tx = household.action_charge_invoice(invoice)
         except UserError as exc:
@@ -148,6 +162,20 @@ class DojoMemberSubscriptionStripe(models.Model):
         # All subs in a billing group share the same household/billing partner.
         household = subs[0].member_id.partner_id.parent_id if subs else None
         if not household or not getattr(household, 'payment_token_count', 0):
+            return invoice
+
+        if self.env.context.get('dojo_defer_auto_charge'):
+            scheduled_date = (
+                self.env.context.get('dojo_auto_charge_scheduled_date')
+                or invoice.invoice_date_due
+            )
+            invoice.sudo().action_schedule_dojo_auto_charge(scheduled_date)
+            invoice.sudo().action_send_dojo_deferred_charge_notifications()
+            _logger.info(
+                'Dojo Stripe: scheduled consolidated invoice %s for deferred auto-charge on %s.',
+                invoice.name,
+                scheduled_date,
+            )
             return invoice
 
         try:

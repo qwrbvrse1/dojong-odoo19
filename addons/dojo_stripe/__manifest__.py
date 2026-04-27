@@ -24,10 +24,12 @@ Invoicing → Configuration → Payment Providers → Stripe.
     "depends": [
         "dojo_subscriptions",
         "hr",
+        "account_payment",
         "payment_stripe",
     ],
     "data": [
         "security/ir.model.access.csv",
+        "data/ir_cron.xml",
         "views/dojo_stripe_views.xml",
     ],
     "assets": {

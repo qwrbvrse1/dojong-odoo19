@@ -130,6 +130,24 @@ class SaleSubscription(models.Model):
             return self.member_id.partner_id
         return self.env["res.partner"].browse()
 
+    def _billing_household(self):
+        """Return the household record for this subscription when one exists."""
+        self.ensure_one()
+        household = self.member_id.partner_id.parent_id
+        if household and household.is_household:
+            return household
+        return self.env["res.partner"].browse()
+
+    def _has_household_card_on_file(self):
+        """Return True when the billing household has an active saved card."""
+        self.ensure_one()
+        household = self._billing_household()
+        return bool(
+            household
+            and household.is_household
+            and getattr(household, 'payment_token_count', 0)
+        )
+
     def _next_date_from(self, from_date):
         """Return the billing date one period after from_date."""
         period = self.plan_id.billing_period if self.plan_id else "monthly"
@@ -242,11 +260,15 @@ class SaleSubscription(models.Model):
             )
         today = fields.Date.today()
         invoice_line_ids, period_start = self._build_invoice_lines(today)
+        invoice_date_due = (
+            self.env.context.get('dojo_auto_charge_scheduled_date')
+            or period_start
+        )
         invoice = self.env['account.move'].sudo().create({
             'move_type': 'out_invoice',
             'partner_id': billing_partner.id,
             'invoice_date': today,
-            'invoice_date_due': period_start,
+            'invoice_date_due': invoice_date_due,
             'subscription_id': self.id,
             'company_id': (self.company_id or self.env.company).id,
             'invoice_line_ids': invoice_line_ids,
@@ -254,7 +276,12 @@ class SaleSubscription(models.Model):
         invoice.action_post()
         self.last_invoice_id = invoice
         plan = self.plan_id
-        if plan and plan.auto_send_invoice and billing_partner.email:
+        if (
+            not self.env.context.get('dojo_skip_invoice_email')
+            and plan
+            and plan.auto_send_invoice
+            and billing_partner.email
+        ):
             try:
                 template = self.env.ref(
                     'account.email_template_edi_invoice',
@@ -291,11 +318,15 @@ class SaleSubscription(models.Model):
             lines, period_start = sub._build_invoice_lines(today)
             all_line_vals.extend(lines)
             period_starts.append(period_start)
+        invoice_date_due = (
+            self.env.context.get('dojo_auto_charge_scheduled_date')
+            or min(period_starts)
+        )
         invoice = self.env['account.move'].sudo().create({
             'move_type': 'out_invoice',
             'partner_id': billing_partner.id,
             'invoice_date': today,
-            'invoice_date_due': min(period_starts),
+            'invoice_date_due': invoice_date_due,
             'company_id': company.id,
             'invoice_line_ids': all_line_vals,
             'dojo_subscription_ids': [(6, 0, subs.ids)],
@@ -304,7 +335,11 @@ class SaleSubscription(models.Model):
         for sub in subs:
             sub.last_invoice_id = invoice
         auto_send = any(s.plan_id.auto_send_invoice for s in subs if s.plan_id)
-        if auto_send and billing_partner.email:
+        if (
+            not self.env.context.get('dojo_skip_invoice_email')
+            and auto_send
+            and billing_partner.email
+        ):
             try:
                 template = self.env.ref(
                     'account.email_template_edi_invoice',
@@ -406,6 +441,7 @@ class SaleSubscription(models.Model):
     def _cron_generate_invoices(self):
         """Generate consolidated household invoices for all active subscriptions due today."""
         today = fields.Date.today()
+        scheduled_charge_date = today + relativedelta(days=3)
         due = self.search([
             ("state", "=", "active"),
             ("recurring_next_date", "!=", False),
@@ -439,26 +475,37 @@ class SaleSubscription(models.Model):
             key = (partner.id, (sub.company_id or self.env.company).id)
             groups[key] |= sub
         for _key, group_subs in groups.items():
+            defer_auto_charge = bool(
+                len(group_subs) == 1
+                and group_subs._has_household_card_on_file()
+            )
+            if len(group_subs) > 1:
+                first_sub = group_subs[0]
+                defer_auto_charge = first_sub._has_household_card_on_file()
+            invoice_runner = group_subs.with_context(
+                dojo_defer_auto_charge=defer_auto_charge,
+                dojo_auto_charge_scheduled_date=scheduled_charge_date,
+            )
             if len(group_subs) == 1:
-                sub = group_subs
+                sub = invoice_runner
                 try:
                     sub.action_generate_invoice()
-                    if sub.billing_failure_count:
+                    if not defer_auto_charge and sub.billing_failure_count:
                         sub._reset_billing_failures()
                 except Exception as exc:
                     sub._handle_billing_failure(exc)
             else:
                 try:
-                    self._generate_household_invoice(group_subs, today)
-                    for sub in group_subs:
-                        if sub.billing_failure_count:
+                    invoice_runner._generate_household_invoice(invoice_runner, today)
+                    for sub in invoice_runner:
+                        if not defer_auto_charge and sub.billing_failure_count:
                             sub._reset_billing_failures()
                 except Exception as exc:
                     _logger.error(
                         'Dojo billing: failed to generate consolidated invoice for group: %s',
                         exc, exc_info=True,
                     )
-                    for sub in group_subs:
+                    for sub in invoice_runner:
                         sub._handle_billing_failure(exc)
 
     # ── Dunning ───────────────────────────────────────────────────────────
