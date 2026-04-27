@@ -1,0 +1,262 @@
+// ─── CRM Pipeline — Sprint 1 UI Polish ───────────────────────────────────────
+// All values use Bootstrap 5 / MuK CSS vars. No hardcoded hex. No !important.
+
+// ─── Stat Panel ──────────────────────────────────────────────────────────────
+
+.dojo-stat-panel {
+    padding: 12px 16px 4px;
+
+    .dojo-stat-chip {
+        display: flex;
+        flex-direction: column;
+        min-width: 130px;
+        padding: 10px 16px;
+        background: var(--bs-body-bg, #fff);
+        border: 1px solid var(--bs-border-color, #dee2e6);
+        border-radius: var(--bs-border-radius, 0.375rem);
+        transition: border-color 0.15s ease-in-out;
+
+        &.is-alert {
+            border-color: var(--bs-info, #0dcaf0);
+            background: color-mix(in srgb, var(--bs-info, #0dcaf0) 10%, transparent);
+        }
+
+        &.is-warning {
+            border-color: var(--bs-warning, #ffc107);
+            background: color-mix(in srgb, var(--bs-warning, #ffc107) 10%, transparent);
+        }
+    }
+
+    .dojo-stat-label {
+        font-size: 0.68rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--bs-secondary-color, #6c757d);
+        margin-bottom: 2px;
+    }
+
+    .dojo-stat-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--bs-body-color, #212529);
+        line-height: 1.2;
+    }
+
+    // Shimmer skeleton while loading
+    .dojo-stat-skeleton {
+        width: 130px;
+        height: 62px;
+        border-radius: var(--bs-border-radius, 0.375rem);
+        background: linear-gradient(
+            90deg,
+            var(--bs-border-color, #dee2e6) 25%,
+            var(--bs-body-bg, #fff) 50%,
+            var(--bs-border-color, #dee2e6) 75%
+        );
+        background-size: 200% 100%;
+        animation: dojo-shimmer 1.3s ease-in-out infinite;
+    }
+}
+
+@keyframes dojo-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+// ─── Filter Chips ─────────────────────────────────────────────────────────────
+
+.dojo-filter-chips {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 0 16px 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar { display: none; }
+
+    .dojo-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        min-height: 30px;
+        border: 1px solid var(--bs-border-color, #dee2e6);
+        border-radius: 999px;
+        background: var(--bs-body-bg, #fff);
+        color: var(--bs-body-color, #212529);
+        font-size: 0.8rem;
+        font-weight: 500;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
+        user-select: none;
+
+        &:hover {
+            border-color: var(--bs-primary, #0d6efd);
+            background: color-mix(in srgb, var(--bs-primary, #0d6efd) 8%, transparent);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--bs-primary, #0d6efd);
+            outline-offset: 2px;
+        }
+
+        &:active {
+            transform: scale(0.96);
+        }
+
+        &.active {
+            background: var(--bs-primary, #0d6efd);
+            border-color: var(--bs-primary, #0d6efd);
+            color: #fff;
+        }
+    }
+}
+
+// ─── Kanban Card Polish ───────────────────────────────────────────────────────
+
+.dojo-crm-pipeline {
+
+    // Card hover lift
+    .o_kanban_record {
+        border-radius: var(--bs-border-radius, 0.375rem);
+        transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+        }
+
+        &:active {
+            transform: scale(0.97);
+            box-shadow: none;
+        }
+    }
+
+    // Score badge — smooth color transition
+    .badge {
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.72rem;
+        padding: 3px 9px;
+    }
+
+    // Status badges — icon + text pill style
+    .dojo-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        line-height: 1.4;
+
+        &.attended  { background: var(--bs-success, #198754); color: #fff; }
+        &.no-show   { background: var(--bs-danger,  #dc3545); color: #fff; }
+        &.converted { background: var(--bs-info,    #0dcaf0); color: #000; }
+    }
+}
+
+// ─── Kanban Column Headers — sticky ──────────────────────────────────────────
+
+.o_crm_kanban .o_kanban_group > .o_column_title,
+.dojo-crm-pipeline .o_kanban_group > .o_column_title {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--bs-body-bg, #fff);
+    border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+    padding-bottom: 8px;
+}
+
+// ─── Lead Form ────────────────────────────────────────────────────────────────
+
+.dojo-crm-lead-form {
+
+    // Score block — number + label + bar in one row
+    .dojo-score-block {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 16px;
+        background: var(--bs-body-bg, #fff);
+        border: 1px solid var(--bs-border-color, #dee2e6);
+        border-radius: var(--bs-border-radius, 0.375rem);
+        margin-bottom: 12px;
+
+        .dojo-score-number-wrap {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .dojo-score-number {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--bs-body-color, #212529);
+
+            .o_field_widget { display: inline; }
+        }
+
+        .dojo-score-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+
+            &.dojo-score-hot  { color: var(--bs-success, #198754); }
+            &.dojo-score-warm { color: var(--bs-warning, #ffc107); }
+            &.dojo-score-cold { color: var(--bs-secondary, #6c757d); }
+        }
+
+        .dojo-score-bar {
+            flex: 1;
+            min-width: 120px;
+        }
+    }
+
+    // Status strip — key state badges below the score
+    .dojo-lead-status-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 16px;
+    }
+
+    .dojo-lead-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        line-height: 1.4;
+
+        &.attended  { background: var(--bs-success, #198754); color: #fff; }
+        &.no-show   { background: var(--bs-danger,  #dc3545); color: #fff; }
+        &.converted { background: var(--bs-info,    #0dcaf0); color: #000; }
+        &.waiver    { background: #7c3aed; color: #fff; }
+    }
+
+    // Collapsible token section
+    .dojo-token-section {
+        border-top: 1px solid var(--bs-border-color, #dee2e6);
+        padding-top: 12px;
+        margin-top: 8px;
+        font-size: 0.82rem;
+        color: var(--bs-secondary-color, #6c757d);
+
+        summary {
+            font-weight: 600;
+            color: var(--bs-body-color, #212529);
+            margin-bottom: 8px;
+        }
+    }
+}

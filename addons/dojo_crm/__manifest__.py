@@ -43,6 +43,9 @@
         "web.assets_backend": [
             "dojo_crm/static/src/xml/crm_convert_stripe_payment.xml",
             "dojo_crm/static/src/js/crm_convert_stripe_payment.js",
+            "dojo_crm/static/src/css/crm_pipeline.scss",
+            "dojo_crm/static/src/xml/crm_stat_panel.xml",
+            "dojo_crm/static/src/js/crm_stat_panel.js",
         ],
     },
 }

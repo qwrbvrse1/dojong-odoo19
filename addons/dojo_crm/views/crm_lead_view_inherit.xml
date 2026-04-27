@@ -14,22 +14,31 @@
         <field name="model">crm.lead</field>
         <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
-            <!-- Add Convert to Member button in the header -->
+
+            <!-- Scope form styles -->
+            <xpath expr="//sheet" position="attributes">
+                <attribute name="class" add="dojo-crm-lead-form" separator=" "/>
+            </xpath>
+
+            <!-- Header buttons — one primary action at a time -->
             <xpath expr="//header" position="inside">
+                <!-- Step 1: Book a trial (secondary — Odoo's Won/Lost are the primary pipeline controls) -->
                 <button
                     name="%(dojo_crm.action_dojo_book_trial_wizard)d"
                     string="Book Trial"
                     type="action"
-                    class="btn-primary"
-                    invisible="is_converted == True or stage_id.name == 'Trial Booked'"
+                    class="btn-secondary"
+                    invisible="is_converted == True or trial_attended == True or stage_id.name == 'Trial Booked'"
                 />
+                <!-- Step 2: Convert — only surfaces after trial is attended, so it never crowds Book Trial -->
                 <button
                     name="action_convert_to_member"
                     string="Convert to Member"
                     type="object"
                     class="btn-primary"
-                    invisible="is_converted == True"
+                    invisible="is_converted == True or trial_attended == False"
                 />
+                <!-- Post-conversion: link to the member record -->
                 <button
                     name="action_view_converted_member"
                     string="View Member"
@@ -39,35 +48,59 @@
                 />
             </xpath>
 
-            <!-- Lead score badge near the top of the form -->
+            <!-- Score block + status strip (replaces plain progress bar) -->
             <xpath expr="//div[hasclass('oe_title')]" position="after">
-                <div class="d-flex align-items-center gap-3 mb-2">
-                    <label for="dojo_lead_score" string="Lead Score"/>
-                    <field name="dojo_lead_score" widget="progressbar"
-                           options="{'editable': false, 'max_value': 100}"
-                           class="w-25"/>
+                <div class="dojo-score-block">
+                    <div class="dojo-score-number-wrap">
+                        <span class="dojo-score-number">
+                            <field name="dojo_lead_score" nolabel="1" readonly="1"/>
+                        </span>
+                        <span class="dojo-score-label dojo-score-hot"
+                              invisible="dojo_lead_score &lt; 60">Hot Lead</span>
+                        <span class="dojo-score-label dojo-score-warm"
+                              invisible="dojo_lead_score &gt;= 60 or dojo_lead_score &lt; 30">Warm Lead</span>
+                        <span class="dojo-score-label dojo-score-cold"
+                              invisible="dojo_lead_score &gt;= 30">Cold Lead</span>
+                    </div>
+                    <div class="dojo-score-bar">
+                        <field name="dojo_lead_score" widget="progressbar"
+                               options="{'editable': false, 'max_value': 100}" nolabel="1"/>
+                    </div>
+                </div>
+
+                <!-- Status strip — key states visible without opening any tab -->
+                <div class="dojo-lead-status-strip">
+                    <span class="dojo-lead-badge attended" invisible="not trial_attended">
+                        <i class="fa fa-check-circle"/> Attended
+                    </span>
+                    <span class="dojo-lead-badge no-show" invisible="not no_show">
+                        <i class="fa fa-times-circle"/> No-Show
+                    </span>
+                    <span class="dojo-lead-badge converted" invisible="not is_converted">
+                        <i class="fa fa-user-plus"/> Converted
+                    </span>
+                    <span class="dojo-lead-badge waiver" invisible="not lead_has_signed_waiver">
+                        <i class="fa fa-file-text"/> Waiver Signed
+                    </span>
                 </div>
             </xpath>
 
-            <!-- Add Dojang tabs to the form -->
+            <!-- Consolidated 2-tab layout (replaces Dojang Trial + Booking &amp; Tokens + Engagement &amp; AI) -->
             <xpath expr="//notebook" position="inside">
-                <page string="Dojang Trial" name="dojo_trial">
+
+                <!-- Tab 1: Trial Journey — trial info + booking links + token details -->
+                <page string="Trial Journey" name="dojo_trial">
                     <group>
-                        <group string="Trial Details">
+                        <group string="Trial">
                             <field name="trial_session_id"/>
-                            <field name="trial_attended"/>
-                            <field name="trial_reminder_sent" readonly="1"/>
-                            <field name="no_show"/>
-                            <field name="no_show_date" readonly="1"/>
-                            <field name="no_show_followup_sent" readonly="1"/>
+                            <field name="trial_attended" widget="boolean_toggle"/>
+                            <field name="no_show" widget="boolean_toggle" readonly="1"/>
+                            <field name="no_show_date" readonly="1" invisible="not no_show"/>
                             <field name="offer_sent_date"/>
-                            <field name="offer_expiry_followup_sent" readonly="1"/>
                         </group>
                         <group string="Conversion">
                             <field name="dojo_member_id" readonly="1"/>
-                            <field name="is_converted" readonly="1"/>
-                        </group>
-                        <group string="Waiver">
+                            <field name="is_converted" readonly="1" widget="boolean_toggle"/>
                             <field name="lead_has_signed_waiver" readonly="1" widget="boolean_toggle"/>
                             <field name="lead_waiver_signed_by" readonly="1"
                                    invisible="not lead_has_signed_waiver"/>
@@ -75,34 +108,43 @@
                                    invisible="not lead_has_signed_waiver"/>
                         </group>
                     </group>
-                </page>
 
-                <page string="Booking &amp; Tokens" name="dojo_tokens">
-                    <group>
-                        <group string="Booking Links">
-                            <field name="trial_booking_url" widget="url" readonly="1"/>
-                            <field name="trial_manage_url" widget="url" readonly="1"/>
-                            <field name="booking_link_clicked" readonly="1"/>
-                        </group>
-                        <group string="Token Details">
-                            <field name="trial_booking_token" readonly="1"/>
-                            <field name="trial_cancel_token" readonly="1"/>
-                            <field name="trial_token_expires" readonly="1"/>
-                        </group>
+                    <!-- Booking links — only shown when a token exists -->
+                    <group string="Booking Links" invisible="not trial_booking_token">
+                        <field name="trial_booking_url" widget="url" readonly="1"/>
+                        <field name="trial_manage_url" widget="url" readonly="1"/>
+                        <field name="booking_link_clicked" readonly="1"/>
                     </group>
+
+                    <!-- Token details — collapsed; technical staff only -->
+                    <div class="dojo-token-section" invisible="not trial_booking_token">
+                        <details>
+                            <summary style="cursor:pointer;user-select:none;">Token Details</summary>
+                            <group>
+                                <field name="trial_booking_token" readonly="1"/>
+                                <field name="trial_cancel_token" readonly="1"/>
+                                <field name="trial_token_expires" readonly="1"/>
+                                <field name="trial_reminder_sent" readonly="1"/>
+                                <field name="no_show_followup_sent" readonly="1"/>
+                                <field name="offer_expiry_followup_sent" readonly="1"/>
+                            </group>
+                        </details>
+                    </div>
                 </page>
 
+                <!-- Tab 2: Engagement &amp; AI -->
                 <page string="Engagement &amp; AI" name="dojo_engagement">
                     <group>
                         <group string="Engagement">
                             <field name="last_engagement_date" readonly="1"/>
                         </group>
-                        <group string="AI Summary">
-                            <field name="ai_summary" readonly="1" nolabel="1"
-                                   placeholder="AI-generated summary will appear here after analysis."/>
-                        </group>
+                    </group>
+                    <group string="AI Summary">
+                        <field name="ai_summary" readonly="1" nolabel="1"
+                               placeholder="AI-generated summary will appear here after analysis."/>
                     </group>
                 </page>
+
             </xpath>
         </field>
     </record>
