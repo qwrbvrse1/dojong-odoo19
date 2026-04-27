@@ -27,7 +27,7 @@ class DojoFirebaseService(models.AbstractModel):
         return (
             self.env['ir.config_parameter']
             .sudo()
-            .get_param('firebase.cf_base_url', '')
+            .get_str('firebase.cf_base_url', '')
             .rstrip('/')
         )
 
@@ -35,7 +35,7 @@ class DojoFirebaseService(models.AbstractModel):
         return (
             self.env['ir.config_parameter']
             .sudo()
-            .get_param('firebase.cf_secret', '')
+            .get_str('firebase.cf_secret', '')
         )
 
     def _cf_headers(self):

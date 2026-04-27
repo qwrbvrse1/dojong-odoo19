@@ -22,7 +22,7 @@ class FirebaseController(http.Controller):
         """
         icp = request.env['ir.config_parameter'].sudo()
 
-        if icp.get_param('firebase.push_enabled') != 'True':
+        if not icp.get_bool('firebase.push_enabled'):
             # Return a no-op service worker — allows graceful fail on disabled installs
             return request.make_response(
                 '// Firebase push notifications are not enabled.\n',
@@ -32,10 +32,10 @@ class FirebaseController(http.Controller):
                 ],
             )
 
-        api_key = json.dumps(icp.get_param('firebase.web_api_key', ''))
-        project_id = json.dumps(icp.get_param('firebase.project_id', ''))
-        sender_id = json.dumps(icp.get_param('firebase.messaging_sender_id', ''))
-        app_id = json.dumps(icp.get_param('firebase.app_id', ''))
+        api_key = json.dumps(icp.get_str('firebase.web_api_key', ''))
+        project_id = json.dumps(icp.get_str('firebase.project_id', ''))
+        sender_id = json.dumps(icp.get_str('firebase.messaging_sender_id', ''))
+        app_id = json.dumps(icp.get_str('firebase.app_id', ''))
 
         sw_content = (
             "importScripts('https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js');\n"

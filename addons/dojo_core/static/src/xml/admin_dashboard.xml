@@ -180,7 +180,29 @@
                 <div class="o_di_card_body" style="max-height:none;overflow:visible">
                     <MiniCalendar
                         sessionDates="calendarSessionDates"
-                        onNavigateCalendar.bind="openCalendar"/>
+                        selectedDate="state.selectedDate"
+                        onNavigateCalendar.bind="openCalendar"
+                        onDayClick.bind="onDayClick"/>
+                    <!-- Day sessions panel -->
+                    <div class="o_mc_day_panel">
+                        <div class="o_mc_day_panel_hdr" t-out="selectedDateLabel"/>
+                        <t t-if="selectedDaySessions.length === 0">
+                            <div class="o_mc_day_panel_empty">No sessions on this day</div>
+                        </t>
+                        <t t-else="">
+                            <t t-foreach="selectedDaySessions" t-as="s" t-key="s.id">
+                                <div class="o_mc_day_panel_row" t-on-click="() => this.openSessionRecord(s.id)">
+                                    <div class="o_mc_day_panel_name" t-out="s.class_name"/>
+                                    <div class="o_mc_day_panel_meta">
+                                        <span t-out="s.instructor_name"/>
+                                    </div>
+                                    <span t-attf-class="o_mc_day_panel_cap {{ s.enrolled >= s.capacity ? 'is-full' : '' }}">
+                                        <t t-out="s.enrolled"/>/<t t-out="s.capacity"/>
+                                    </span>
+                                </div>
+                            </t>
+                        </t>
+                    </div>
                 </div>
             </div>
             <!-- Instructor Performance -->

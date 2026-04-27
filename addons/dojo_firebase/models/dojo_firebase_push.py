@@ -22,7 +22,7 @@ class DojoFirebasePush(models.AbstractModel):
         return (
             self.env['ir.config_parameter']
             .sudo()
-            .get_param('firebase.push_enabled') == 'True'
+            .get_bool('firebase.push_enabled')
         )
 
     @api.model

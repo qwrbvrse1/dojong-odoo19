@@ -17,10 +17,14 @@
         "views/dojo_marketing_card_views.xml",
         "views/dojo_member_badge_button.xml",
         "views/portal_marketing_banner.xml",
+        "views/card_campaign_views_inherit.xml",
         "data/marketing_card_campaigns.xml",
         "data/automation_oca_membership.xml",
     ],
     "assets": {
+        "web.assets_backend": [
+            "dojo_marketing/static/src/css/marketing_backend.scss",
+        ],
         "web.assets_frontend": [
             "dojo_marketing/static/src/dojo_marketing.css",
         ],

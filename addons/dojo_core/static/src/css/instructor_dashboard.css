@@ -1090,6 +1090,82 @@ html .o_web_client>.o_action_manager {
     margin: 0;
 }
 
+/* ── Mini Calendar — selected day + clickable days ──────────────── */
+.o_mc_day_in_month {
+    cursor: pointer;
+}
+
+.o_mc_day_selected {
+    outline: 2px solid #1a73e8;
+    outline-offset: -2px;
+    border-radius: 6px;
+}
+
+/* ── Calendar Day Sessions Panel ────────────────────────────────── */
+.o_mc_day_panel {
+    border-top: 1px solid #f1f3f4;
+    margin-top: 4px;
+    padding: 8px 0 4px;
+}
+
+.o_mc_day_panel_hdr {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: #9aa0a6;
+    padding: 2px 12px 6px;
+}
+
+.o_mc_day_panel_empty {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    color: #9aa0a6;
+    font-style: italic;
+}
+
+.o_mc_day_panel_row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.o_mc_day_panel_row:hover {
+    background: #f8f9fa;
+}
+
+.o_mc_day_panel_name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #202124;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.o_mc_day_panel_meta {
+    font-size: 0.73rem;
+    color: #5f6368;
+    margin-top: 1px;
+}
+
+.o_mc_day_panel_cap {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1e8e3e;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.o_mc_day_panel_cap.is-full {
+    color: #d93025;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    DOJO MEMBER PROFILE
 ═══════════════════════════════════════════════════════════════ */

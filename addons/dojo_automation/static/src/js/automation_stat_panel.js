@@ -2,7 +2,7 @@
 
 import { Component, useState, onMounted } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
-import { AutomationKanbanController } from "automation_oca/static/src/views/automation_upload/automation_upload.esm.js";
+import { AutomationKanbanController } from "@automation_oca/views/automation_upload/automation_upload.esm";
 
 // ─── Stat Panel ───────────────────────────────────────────────────────────────
 

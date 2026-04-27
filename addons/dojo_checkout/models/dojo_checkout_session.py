@@ -93,7 +93,7 @@ class DojoCheckoutSession(models.Model):
     # ── Results ───────────────────────────────────────────────────────────
     resulting_member_id = fields.Many2one("dojo.member", readonly=True, string="Parent / Primary Member")
     resulting_child_member_id = fields.Many2one("dojo.member", readonly=True, string="Child Member")
-    resulting_subscription_id = fields.Many2one("dojo.member.subscription", readonly=True)
+    resulting_subscription_id = fields.Many2one("sale.subscription", readonly=True)
 
     # ── Computed ──────────────────────────────────────────────────────────
     @api.depends("plan_id", "selected_upsell_ids")
@@ -166,7 +166,7 @@ class DojoCheckoutSession(models.Model):
             })
 
         def _create_subscription(member_id):
-            return env["dojo.member.subscription"].sudo().with_context(
+            return env["sale.subscription"].sudo().with_context(
                 skip_subscription_check=True
             ).create({
                 "member_id": member_id,

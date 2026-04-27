@@ -18,25 +18,25 @@
         <t t-if="!state.profile">
             <div class="o_di_page_header">
                 <div class="o_di_header_left">
-                    <div class="o_di_header_icon o_di_header_icon_blue">
-                        <i class="fa fa-user"/>
+                    <div class="o_di_header_icon">
+                        <span class="material-symbols-outlined">person</span>
                     </div>
                     <div>
-                        <div class="o_di_header_title">Instructor Dashboard</div>
-                        <div class="o_di_header_date" t-out="todayLabel"/>
+                        <div class="o_ad_header_title">Instructor Dashboard</div>
+                        <div class="o_ad_header_date" t-out="todayLabel"/>
                     </div>
                 </div>
             </div>
             <div style="padding:28px">
-                <div class="o_di_card" style="max-width:480px;margin:auto">
+                <div class="o_ad_card" style="max-width:480px;margin:auto">
                     <div class="o_di_card_body">
-                        <div class="o_di_empty">
-                            <i class="fa fa-user-times fa-2x" style="color:#d93025"/>
-                            <div class="fw-semibold">No instructor profile found</div>
-                            <div style="color:#5f6368;font-size:.85rem">
+                        <div class="o_ad_empty">
+                            <span class="material-symbols-outlined">person_off</span>
+                            <p class="fw-semibold">No instructor profile found</p>
+                            <p style="color:#5f6368;font-size:.85rem">
                                 Your account is not linked to an instructor record.
                                 Contact an administrator to set up your instructor profile.
-                            </div>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -48,25 +48,25 @@
             <!-- ── Page Header ──────────────────────────────────────── -->
             <div class="o_di_page_header">
                 <div class="o_di_header_left">
-                    <div class="o_di_header_icon o_di_header_icon_blue">
-                        <i class="fa fa-user"/>
+                    <div class="o_di_header_icon">
+                        <span class="material-symbols-outlined">person</span>
                     </div>
                     <div>
-                        <div class="o_di_header_title">
+                        <div class="o_ad_header_title">
                             <t t-out="greeting"/>, <t t-out="state.profile.name"/>
                         </div>
-                        <div class="o_di_header_date" t-out="todayLabel"/>
+                        <div class="o_ad_header_date" t-out="todayLabel"/>
                     </div>
                 </div>
                 <div class="o_di_header_actions">
-                    <button class="o_di_hdr_btn" t-on-click="openTodaysClasses">
-                        <i class="fa fa-calendar-check-o"/>Today's Classes
+                    <button class="o_ad_hdr_btn" t-on-click="openTodaysClasses">
+                        <span class="material-symbols-outlined">history_edu</span>Today's Classes
                     </button>
-                    <button class="o_di_hdr_btn" t-on-click="openMyStudents">
-                        <i class="fa fa-users"/>My Students
+                    <button class="o_ad_hdr_btn" t-on-click="openMyStudents">
+                        <span class="material-symbols-outlined">group</span>My Students
                     </button>
-                    <button class="o_di_hdr_btn o_di_hdr_btn_icon" t-on-click="_reload" title="Refresh">
-                        <i class="fa fa-refresh"/>
+                    <button class="o_ad_hdr_btn o_ad_hdr_btn_icon o_ad_hdr_btn_refresh" t-on-click="_reload" title="Refresh">
+                        <span class="material-symbols-outlined">refresh</span>
                     </button>
                 </div>
             </div>
@@ -74,103 +74,128 @@
             <!-- ── KPI Stat Chips ────────────────────────────────────── -->
             <div class="o_di_stat_row">
 
-                <div class="o_di_stat_chip o_di_stat_blue is-clickable" t-on-click="openTodaysClasses">
-                    <div class="o_di_stat_value" t-out="state.profile.sessions_today_count"/>
-                    <div class="o_di_stat_label">Today's Classes</div>
+                <div class="o_ad_stat_chip o_ad_stat_blue is-clickable" style="flex:1;min-width:130px;max-width:220px" t-on-click="openTodaysClasses">
+                    <div class="o_ad_stat_value" t-out="state.profile.sessions_today_count"/>
+                    <div class="o_ad_stat_label">Today's Classes</div>
                 </div>
 
-                <div class="o_di_stat_chip o_di_stat_green is-clickable" t-on-click="openMyStudents">
-                    <div class="o_di_stat_value" t-out="state.profile.students_total_count"/>
-                    <div class="o_di_stat_label">My Students</div>
+                <div class="o_ad_stat_chip o_ad_stat_green is-clickable" style="flex:1;min-width:130px;max-width:220px" t-on-click="openMyStudents">
+                    <div class="o_ad_stat_value" t-out="state.profile.students_total_count"/>
+                    <div class="o_ad_stat_label">My Students</div>
                 </div>
 
-                <div class="o_di_stat_chip o_di_stat_orange">
-                    <div class="o_di_stat_value"><t t-out="pct(state.profile.avg_fill_rate)"/></div>
-                    <div class="o_di_stat_label">Avg Fill Rate</div>
-                    <div class="o_di_stat_sub">last 30 days</div>
+                <div class="o_ad_stat_chip o_ad_stat_orange" style="flex:1;min-width:130px;max-width:220px">
+                    <div class="o_ad_stat_value"><t t-out="pct(state.profile.avg_fill_rate)"/></div>
+                    <div class="o_ad_stat_label">Avg Fill Rate</div>
+                    <div class="o_ad_stat_sub">last 30 days</div>
                 </div>
 
-                <div class="o_di_stat_chip o_di_stat_purple">
-                    <div class="o_di_stat_value"><t t-out="pct(state.profile.attendance_rate)"/></div>
-                    <div class="o_di_stat_label">Attendance Rate</div>
-                    <div class="o_di_stat_sub">last 30 days</div>
+                <div class="o_ad_stat_chip o_ad_stat_purple" style="flex:1;min-width:130px;max-width:220px">
+                    <div class="o_ad_stat_value"><t t-out="pct(state.profile.attendance_rate)"/></div>
+                    <div class="o_ad_stat_label">Attendance Rate</div>
+                    <div class="o_ad_stat_sub">last 30 days</div>
                 </div>
 
             </div>
 
             <!-- ── Quick Actions ─────────────────────────────────────── -->
-            <div class="o_di_section_label">Quick Actions</div>
-            <div class="o_di_quick_grid">
+            <div class="o_ad_section_label">Quick Actions</div>
+            <div class="o_ad_quick_grid" style="grid-template-columns:repeat(5,1fr)">
 
-                <button class="o_di_quick_item" t-on-click="openTodaysClasses">
-                    <div class="o_di_quick_icon o_di_quick_icon_blue">
-                        <i class="fa fa-calendar-check-o"/>
+                <button class="o_ad_quick_item" t-on-click="openTodaysClasses">
+                    <div class="o_ad_quick_icon">
+                        <span class="material-symbols-outlined">history_edu</span>
                     </div>
-                    <span class="o_di_quick_label">Today's Classes</span>
+                    <span class="o_ad_quick_label">Today's Classes</span>
                 </button>
 
-                <button class="o_di_quick_item" t-on-click="openKiosk">
-                    <div class="o_di_quick_icon o_di_quick_icon_green">
-                        <i class="fa fa-tablet"/>
+                <button class="o_ad_quick_item" t-on-click="openKiosk">
+                    <div class="o_ad_quick_icon">
+                        <span class="material-symbols-outlined">tablet</span>
                     </div>
-                    <span class="o_di_quick_label">Kiosk</span>
+                    <span class="o_ad_quick_label">Kiosk</span>
                 </button>
 
-                <button class="o_di_quick_item" t-on-click="openMyStudents">
-                    <div class="o_di_quick_icon o_di_quick_icon_teal">
-                        <i class="fa fa-users"/>
+                <button class="o_ad_quick_item" t-on-click="openMyStudents">
+                    <div class="o_ad_quick_icon">
+                        <span class="material-symbols-outlined">group</span>
                     </div>
-                    <span class="o_di_quick_label">My Students</span>
+                    <span class="o_ad_quick_label">My Students</span>
                 </button>
 
-                <button class="o_di_quick_item" t-on-click="openCalendar">
-                    <div class="o_di_quick_icon o_di_quick_icon_purple">
-                        <i class="fa fa-calendar"/>
+                <button class="o_ad_quick_item" t-on-click="openCalendar">
+                    <div class="o_ad_quick_icon">
+                        <span class="material-symbols-outlined">calendar_month</span>
                     </div>
-                    <span class="o_di_quick_label">Class Calendar</span>
+                    <span class="o_ad_quick_label">Class Calendar</span>
                 </button>
 
-                <button class="o_di_quick_item" t-on-click="openTodos">
-                    <div class="o_di_quick_icon o_di_quick_icon_orange">
-                        <i class="fa fa-tasks"/>
+                <button class="o_ad_quick_item" t-on-click="openTodos">
+                    <div class="o_ad_quick_icon">
+                        <span class="material-symbols-outlined">task_alt</span>
                     </div>
-                    <span class="o_di_quick_label">My To-Dos</span>
+                    <span class="o_ad_quick_label">My To-Dos</span>
                 </button>
 
             </div>
 
             <!-- ── Content 2-col Grid ────────────────────────────────── -->
-            <div class="o_di_content_grid">
+            <div class="o_di_content_grid o_ad_content_grid">
 
                 <!-- Mini Calendar -->
-                <div class="o_di_card">
-                    <div class="o_di_card_header">
-                        <div class="o_di_card_title">
-                            <i class="fa fa-calendar me-1" style="color:#1a73e8"/>Calendar
+                <div class="o_ad_card">
+                    <div class="o_ad_card_header">
+                        <div>
+                            <div class="o_ad_card_title">
+                                <span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;color:#1a73e8">calendar_month</span>
+                                Calendar
+                            </div>
                         </div>
-                        <button class="o_di_view_btn" t-on-click="openCalendar">Full View</button>
+                        <button class="o_ad_view_btn" t-on-click="openCalendar">Full View</button>
                     </div>
                     <div class="o_di_card_body" style="max-height:none;overflow:visible">
                         <MiniCalendar
                             sessionDates="calendarSessionDates"
-                            onNavigateCalendar.bind="openCalendar"/>
+                            selectedDate="state.selectedDate"
+                            onNavigateCalendar.bind="openCalendar"
+                            onDayClick.bind="onDayClick"/>
+                        <!-- Day sessions panel -->
+                        <div class="o_mc_day_panel">
+                            <div class="o_mc_day_panel_hdr" t-out="selectedDateLabel"/>
+                            <t t-if="selectedDaySessions.length === 0">
+                                <div class="o_mc_day_panel_empty">No sessions on this day</div>
+                            </t>
+                            <t t-else="">
+                                <t t-foreach="selectedDaySessions" t-as="s" t-key="s.id">
+                                    <div class="o_mc_day_panel_row" t-on-click="() => this.openQuickAttendance(s.id)">
+                                        <div>
+                                            <div class="o_mc_day_panel_name" t-out="s.template_id[1]"/>
+                                            <div class="o_mc_day_panel_meta" t-out="fmtTime(s.start_datetime)"/>
+                                        </div>
+                                        <span t-attf-class="o_mc_day_panel_cap {{ s.seats_taken >= s.capacity ? 'is-full' : '' }}">
+                                            <t t-out="s.seats_taken"/>/<t t-out="s.capacity"/>
+                                        </span>
+                                    </div>
+                                </t>
+                            </t>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Today's Classes -->
-                <div class="o_di_card">
-                    <div class="o_di_card_header">
-                        <div class="o_di_card_title">
-                            Today's Classes
-                            <span class="o_di_card_subtitle" t-out="todayLabel"/>
+                <div class="o_ad_card">
+                    <div class="o_ad_card_header">
+                        <div>
+                            <div class="o_ad_card_title">Today's Classes</div>
+                            <div class="o_ad_card_subtitle" t-out="todayLabel"/>
                         </div>
-                        <button class="o_di_view_btn" t-on-click="openTodaysClasses">View All</button>
+                        <button class="o_ad_view_btn" t-on-click="openTodaysClasses">View All</button>
                     </div>
                     <div class="o_di_card_body">
                         <t t-if="state.sessionsToday.length === 0">
-                            <div class="o_di_empty">
-                                <i class="fa fa-calendar-o fa-2x"/>
-                                <div>No classes scheduled for today</div>
+                            <div class="o_ad_empty">
+                                <span class="material-symbols-outlined">event_busy</span>
+                                <p>No classes scheduled for today</p>
                             </div>
                         </t>
                         <t t-else="">
@@ -181,10 +206,10 @@
                                             <t t-out="s.template_id[1]"/>
                                         </div>
                                         <div class="o_di_session_meta">
-                                            <i class="fa fa-clock-o me-1"/>
+                                            <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle">schedule</span>
                                             <t t-out="fmtDt(s.start_datetime)"/>
                                             <span class="ms-2">
-                                                <i class="fa fa-users me-1"/>
+                                                <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle">group</span>
                                                 <t t-out="s.seats_taken"/>/<t t-out="s.capacity"/>
                                             </span>
                                         </div>
@@ -196,7 +221,7 @@
                                         <t t-if="s.state !== 'cancelled'">
                                             <button class="o_di_attend_btn"
                                                     t-on-click="() => this.openQuickAttendance(s.id)">
-                                                <i class="fa fa-check me-1"/>Attendance
+                                                <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle">task_alt</span>Attendance
                                             </button>
                                         </t>
                                     </div>
@@ -207,19 +232,19 @@
                 </div>
 
                 <!-- Upcoming Classes -->
-                <div class="o_di_card">
-                    <div class="o_di_card_header">
-                        <div class="o_di_card_title">
-                            Upcoming Classes
-                            <span class="o_di_card_subtitle">next 14 days</span>
+                <div class="o_ad_card">
+                    <div class="o_ad_card_header">
+                        <div>
+                            <div class="o_ad_card_title">Upcoming Classes</div>
+                            <div class="o_ad_card_subtitle">next 14 days</div>
                         </div>
-                        <button class="o_di_view_btn" t-on-click="openCalendar">Calendar</button>
+                        <button class="o_ad_view_btn" t-on-click="openCalendar">Calendar</button>
                     </div>
                     <div class="o_di_card_body">
                         <t t-if="state.upcomingSessions.length === 0">
-                            <div class="o_di_empty">
-                                <i class="fa fa-calendar fa-2x"/>
-                                <div>No upcoming classes in the next 14 days</div>
+                            <div class="o_ad_empty">
+                                <span class="material-symbols-outlined">event_available</span>
+                                <p>No upcoming classes in the next 14 days</p>
                             </div>
                         </t>
                         <t t-else="">
@@ -230,10 +255,10 @@
                                             <t t-out="s.template_id[1]"/>
                                         </div>
                                         <div class="o_di_session_meta">
-                                            <i class="fa fa-calendar-o me-1"/>
+                                            <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle">calendar_today</span>
                                             <t t-out="fmtDt(s.start_datetime)"/>
                                             <span class="ms-2">
-                                                <i class="fa fa-users me-1"/>
+                                                <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle">group</span>
                                                 <t t-out="s.seats_taken"/>/<t t-out="s.capacity"/>
                                             </span>
                                         </div>
@@ -248,17 +273,20 @@
                 </div>
 
                 <!-- Recent Students -->
-                <div class="o_di_card">
-                    <div class="o_di_card_header">
-                        <div class="o_di_card_title">
-                            <i class="fa fa-users me-2" style="color:#1a73e8"/>My Recent Students
+                <div class="o_ad_card">
+                    <div class="o_ad_card_header">
+                        <div>
+                            <div class="o_ad_card_title">
+                                <span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;color:#1a73e8">group</span>
+                                My Recent Students
+                            </div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <t t-if="state.recentStudents.length > 0">
                                 <button class="o_di_carousel_nav"
                                         t-on-click="prevStudentPage"
                                         t-att-disabled="state.studentPage === 0">
-                                    <i class="fa fa-chevron-left"/>
+                                    <span class="material-symbols-outlined" style="font-size:14px">chevron_left</span>
                                 </button>
                                 <span class="o_di_carousel_pager">
                                     <t t-out="state.studentPage + 1"/>/<t t-out="totalStudentPages"/>
@@ -266,17 +294,17 @@
                                 <button class="o_di_carousel_nav"
                                         t-on-click="nextStudentPage"
                                         t-att-disabled="state.studentPage >= totalStudentPages - 1">
-                                    <i class="fa fa-chevron-right"/>
+                                    <span class="material-symbols-outlined" style="font-size:14px">chevron_right</span>
                                 </button>
                             </t>
-                            <button class="o_di_view_btn" t-on-click="openMyStudents">View All</button>
+                            <button class="o_ad_view_btn" t-on-click="openMyStudents">View All</button>
                         </div>
                     </div>
                     <div class="o_di_card_body">
                         <t t-if="state.recentStudents.length === 0">
-                            <div class="o_di_empty">
-                                <i class="fa fa-users fa-2x"/>
-                                <div>No students found</div>
+                            <div class="o_ad_empty">
+                                <span class="material-symbols-outlined">group</span>
+                                <p>No students found</p>
                             </div>
                         </t>
                         <t t-else="">
@@ -289,7 +317,7 @@
                                                  alt=""
                                                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
                                             <div class="o_di_student_avatar_fallback">
-                                                <i class="fa fa-user"/>
+                                                <span class="material-symbols-outlined">person</span>
                                             </div>
                                         </div>
                                         <span class="o_di_student_name" t-out="s.name"/>
@@ -301,16 +329,18 @@
                 </div>
 
                 <!-- Kiosk -->
-                <div class="o_di_card">
-                    <div class="o_di_card_header">
-                        <div class="o_di_card_title">Kiosk</div>
-                        <button class="o_di_view_btn" t-on-click="openKiosk">Manage</button>
+                <div class="o_ad_card">
+                    <div class="o_ad_card_header">
+                        <div>
+                            <div class="o_ad_card_title">Kiosk</div>
+                        </div>
+                        <button class="o_ad_view_btn" t-on-click="openKiosk">Manage</button>
                     </div>
                     <div class="o_di_card_body">
                         <t t-if="state.kiosks.length === 0">
-                            <div class="o_di_empty">
-                                <i class="fa fa-tablet fa-2x"/>
-                                <div>No kiosks configured</div>
+                            <div class="o_ad_empty">
+                                <span class="material-symbols-outlined">tablet</span>
+                                <p>No kiosks configured</p>
                             </div>
                         </t>
                         <t t-else="">
@@ -319,13 +349,13 @@
                                     <div class="o_di_session_info">
                                         <div class="o_di_session_name" t-out="k.name"/>
                                         <div class="o_di_session_meta">
-                                            <i class="fa fa-link me-1"/>
+                                            <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle">link</span>
                                             <t t-out="k.kiosk_url"/>
                                         </div>
                                     </div>
                                     <button class="o_di_attend_btn"
                                             t-on-click="() => this.launchKioskUrl(k.kiosk_url)">
-                                        <i class="fa fa-external-link me-1"/>Launch
+                                        <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle">open_in_new</span>Launch
                                     </button>
                                 </div>
                             </t>
@@ -334,28 +364,30 @@
                 </div>
 
                 <!-- My To-Dos -->
-                <div class="o_di_card">
-                    <div class="o_di_card_header">
-                        <div class="o_di_card_title">My To-Dos</div>
-                        <button class="o_di_view_btn" t-on-click="openTodos">View All</button>
+                <div class="o_ad_card">
+                    <div class="o_ad_card_header">
+                        <div>
+                            <div class="o_ad_card_title">My To-Dos</div>
+                        </div>
+                        <button class="o_ad_view_btn" t-on-click="openTodos">View All</button>
                     </div>
                     <div class="o_di_card_body">
                         <t t-if="state.todos.length === 0">
-                            <div class="o_di_empty">
-                                <i class="fa fa-check-circle fa-2x" style="color:#1e8e3e"/>
-                                <div>All caught up! No open to-dos.</div>
+                            <div class="o_ad_empty">
+                                <span class="material-symbols-outlined">task_alt</span>
+                                <p>All caught up! No open to-dos.</p>
                             </div>
                         </t>
                         <t t-else="">
                             <div class="o_di_todo_list">
                                 <t t-foreach="state.todos" t-as="todo" t-key="todo.id">
                                     <div class="o_di_todo_item">
-                                        <i class="fa fa-circle-o o_di_todo_icon"/>
+                                        <span class="material-symbols-outlined o_di_todo_icon" style="font-size:16px">radio_button_unchecked</span>
                                         <div class="o_di_todo_body">
                                             <div class="o_di_todo_name" t-out="todo.name"/>
                                             <t t-if="todo.date_deadline">
                                                 <div class="o_di_todo_due">
-                                                    <i class="fa fa-calendar-o me-1"/>
+                                                    <span class="material-symbols-outlined" style="font-size:12px;vertical-align:middle">calendar_today</span>
                                                     Due <t t-out="fmtDate(todo.date_deadline)"/>
                                                 </div>
                                             </t>

@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_dojo_belt_rank_user,dojo.belt.rank user,model_dojo_belt_rank,base.group_user,1,1,1,1
+access_dojo_belt_test_user,dojo.belt.test user,model_dojo_belt_test,base.group_user,1,1,1,1
+access_dojo_belt_test_registration_user,dojo.belt.test.registration user,model_dojo_belt_test_registration,base.group_user,1,1,1,1
+access_dojo_member_rank_user,dojo.member.rank user,model_dojo_member_rank,base.group_user,1,1,1,1

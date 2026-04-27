@@ -16,6 +16,9 @@ class InstructorDashboard extends Component {
         this.action = useService("action");
         this.rootRef = useRef("root");
 
+        const _pad = n => String(n).padStart(2, "0");
+        const _now = new Date();
+        const _todayStr = `${_now.getFullYear()}-${_pad(_now.getMonth() + 1)}-${_pad(_now.getDate())}`;
         this.state = useState({
             loading: true,
             profile: null,
@@ -25,6 +28,8 @@ class InstructorDashboard extends Component {
             kiosks: [],
             recentStudents: [],
             studentPage: 0,
+            // calendar day-view panel
+            selectedDate: _todayStr,
         });
 
         onWillStart(() => this._loadData());
@@ -213,6 +218,26 @@ class InstructorDashboard extends Component {
     openCalendar() { this.action.doAction("dojo_core.action_my_sessions_calendar"); }
     openTodos() { this.action.doAction("dojo_core.action_my_todos"); }
 
+    onDayClick(dateStr) {
+        this.state.selectedDate = dateStr;
+    }
+
+    get selectedDaySessions() {
+        const date = this.state.selectedDate;
+        if (!date) return [];
+        const all = [...this.state.sessionsToday, ...this.state.upcomingSessions];
+        return all.filter(s => s.start_datetime && s.start_datetime.slice(0, 10) === date);
+    }
+
+    get selectedDateLabel() {
+        const d = this.state.selectedDate;
+        if (!d) return "";
+        const [y, m, day] = d.split("-").map(Number);
+        return new Date(y, m - 1, day).toLocaleDateString(undefined, {
+            weekday: "short", month: "long", day: "numeric",
+        });
+    }
+
     /** Dates (YYYY-MM-DD) of all loaded sessions for the mini calendar dots */
     get calendarSessionDates() {
         const dates = new Set();
@@ -227,6 +252,16 @@ class InstructorDashboard extends Component {
         }
         return [...dates];
     }
+    openSessionRecord(id) {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "dojo.class.session",
+            res_id: id,
+            views: [[false, "form"]],
+            target: "current",
+        });
+    }
+
     openKiosk() {
         this.action.doAction({
             type: "ir.actions.act_window",

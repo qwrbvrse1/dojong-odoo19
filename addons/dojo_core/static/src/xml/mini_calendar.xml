@@ -7,11 +7,11 @@
         <!-- Month navigation -->
         <div class="o_mc_nav">
             <button class="o_mc_nav_btn" t-on-click="prevMonth" title="Previous month">
-                <i class="fa fa-chevron-left"/>
+                <span class="material-symbols-outlined" style="font-size:16px">chevron_left</span>
             </button>
             <span class="o_mc_month_label" t-out="monthName"/>
             <button class="o_mc_nav_btn" t-on-click="nextMonth" title="Next month">
-                <i class="fa fa-chevron-right"/>
+                <span class="material-symbols-outlined" style="font-size:16px">chevron_right</span>
             </button>
         </div>
 
@@ -27,7 +27,8 @@
 
             <!-- Day cells -->
             <t t-foreach="calendarDays" t-as="day" t-key="day.dateStr">
-                <div t-attf-class="o_mc_day{{ !day.inMonth ? ' o_mc_day_off' : '' }}{{ day.isToday ? ' o_mc_day_today' : '' }}{{ day.hasSession and day.inMonth ? ' o_mc_day_active' : '' }}">
+                <div t-attf-class="o_mc_day{{ !day.inMonth ? ' o_mc_day_off' : ' o_mc_day_in_month' }}{{ day.isToday ? ' o_mc_day_today' : '' }}{{ day.hasSession and day.inMonth ? ' o_mc_day_active' : '' }}{{ day.isSelected and day.inMonth and !day.isToday ? ' o_mc_day_selected' : '' }}"
+                     t-on-click="() => this.clickDay(day)">
                     <span class="o_mc_day_num" t-out="day.dayNum"/>
                     <t t-if="day.hasSession and day.inMonth">
                         <span class="o_mc_dot"/>

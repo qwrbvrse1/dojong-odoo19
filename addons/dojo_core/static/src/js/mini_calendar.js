@@ -5,7 +5,9 @@ export class MiniCalendar extends Component {
     static template = "dojo_core.MiniCalendar";
     static props = {
         sessionDates: { type: Array, optional: true },
+        selectedDate: { type: String, optional: true },
         onNavigateCalendar: { type: Function, optional: true },
+        onDayClick: { type: Function, optional: true },
     };
     static defaultProps = {
         sessionDates: [],
@@ -40,6 +42,7 @@ export class MiniCalendar extends Component {
         const lastDay = new Date(year, month + 1, 0);
         const sessionSet = new Set(this.props.sessionDates || []);
         const todayStr = this._isoDate(new Date());
+        const selectedStr = this.props.selectedDate || "";
         const startDow = firstDay.getDay(); // 0 = Sunday
 
         const days = [];
@@ -53,6 +56,7 @@ export class MiniCalendar extends Component {
                 dayNum: d.getDate(),
                 inMonth: false,
                 isToday: false,
+                isSelected: false,
                 hasSession: sessionSet.has(dateStr),
             });
         }
@@ -66,6 +70,7 @@ export class MiniCalendar extends Component {
                 dayNum: day,
                 inMonth: true,
                 isToday: dateStr === todayStr,
+                isSelected: dateStr === selectedStr,
                 hasSession: sessionSet.has(dateStr),
             });
         }
@@ -81,11 +86,19 @@ export class MiniCalendar extends Component {
                 dayNum: d.getDate(),
                 inMonth: false,
                 isToday: false,
+                isSelected: false,
                 hasSession: sessionSet.has(dateStr),
             });
         }
 
         return days;
+    }
+
+    clickDay(day) {
+        if (!day.inMonth) return;
+        if (this.props.onDayClick) {
+            this.props.onDayClick(day.dateStr);
+        }
     }
 
     prevMonth() {

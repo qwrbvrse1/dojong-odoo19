@@ -1,0 +1,155 @@
+/* ── Dojo Marketing — Backend Campaign Kanban + List + Form Styles ───────── */
+
+/* ── Kanban: campaign thumbnail ─────────────────────────────────────────── */
+
+.dojo-mc-campaign-thumbnail {
+    margin-bottom: 0.625rem;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border, var(--bs-border-color));
+
+    .o_field_image,
+    .o_field_widget {
+        display: block;
+        width: 100%;
+    }
+
+    img {
+        width: 100% !important;
+        height: 110px !important;
+        object-fit: cover;
+        display: block;
+        transition: transform 200ms ease;
+    }
+
+    &--empty {
+        height: 110px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        background: var(--bs-tertiary-bg, #f8f9fa);
+        color: var(--text-muted, var(--bs-secondary-color));
+        font-size: 0.75rem;
+    }
+}
+
+/* Kanban card: lift on hover */
+.dojo-mc-campaign-card {
+    transition: box-shadow 180ms ease, transform 180ms ease;
+
+    &:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
+        transform: translateY(-2px);
+
+        .dojo-mc-campaign-thumbnail img {
+            transform: scale(1.03);
+        }
+    }
+}
+
+/* Hover: lift badge pills to primary color */
+.dojo-mc-campaign-card .badge:hover {
+    background-color: var(--primary, var(--bs-primary)) !important;
+    color: #fff !important;
+    transition: background-color var(--transition-fast, 150ms ease);
+}
+
+/* ── Form: image_preview polish ─────────────────────────────────────────── */
+
+.o_marketing_card_image_preview img {
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+    width: 100%;
+}
+
+/* ── Form: step indicators ──────────────────────────────────────────────── */
+
+.dojo-mc-form-step {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.5rem 0 0.625rem;
+    border-bottom: 2px solid var(--border, var(--bs-border-color));
+    margin-bottom: 1rem;
+
+    &__badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--primary, var(--bs-primary));
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        flex-shrink: 0;
+        line-height: 1;
+    }
+
+    &__label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--bs-body-color, #212529);
+        letter-spacing: 0.01em;
+    }
+}
+
+/* Template picker: breathing room below the badges */
+.dojo-mc-template-picker .o_field_widget {
+    padding-bottom: 0.5rem;
+}
+
+/* ── List: compact preview thumbnail ───────────────────────────────────── */
+
+.o_list_view .dojo-mc-list-thumb {
+    width: 64px;
+    min-width: 64px;
+    max-width: 64px;
+    padding: 4px 6px !important;
+
+    .o_field_image,
+    .o_field_widget {
+        display: block;
+        line-height: 0;
+    }
+
+    img {
+        width: 56px !important;
+        height: 38px !important;
+        object-fit: cover;
+        border-radius: 5px;
+        border: 1px solid var(--border, var(--bs-border-color));
+        display: block;
+    }
+}
+
+/* ── List: stat badge columns ───────────────────────────────────────────── */
+
+.o_list_view td .dojo-mc-list-stat {
+    .o_field_widget {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    span, .o_field_integer {
+        display: inline-block;
+        background: var(--bs-secondary-bg, #e9ecef);
+        color: var(--bs-secondary-color, #6c757d);
+        border-radius: 20px;
+        padding: 1px 10px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        min-width: 32px;
+        text-align: center;
+    }
+}
+
+.o_list_view tr:not(.o_data_row_selected) td .dojo-mc-list-stat {
+    .o_field_integer:not(:empty) {
+        background: color-mix(in srgb, var(--primary, var(--bs-primary)) 12%, transparent);
+        color: var(--primary, var(--bs-primary));
+    }
+}

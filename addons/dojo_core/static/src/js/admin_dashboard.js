@@ -15,6 +15,7 @@ class AdminDashboard extends Component {
         this.action = useService("action");
         this.rootRef = useRef("root");
 
+        const todayStr = this._isoToday();
         this.state = useState({
             loading: true,
             summary: null,
@@ -26,6 +27,8 @@ class AdminDashboard extends Component {
             // which section is expanded in dropped table
             droppedExpanded: false,
             sessionsExpanded: false,
+            // calendar day-view panel
+            selectedDate: todayStr,
         });
 
         onWillStart(() => this._loadData());
@@ -163,6 +166,29 @@ class AdminDashboard extends Component {
     openCalendar() { this.action.doAction("dojo_core.action_all_sessions_calendar"); }
     openInstructorKpis() { this.action.doAction("dojo_core.action_all_instructor_kpis"); }
 
+    _isoToday() {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, "0");
+        return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    }
+
+    onDayClick(dateStr) {
+        this.state.selectedDate = dateStr;
+    }
+
+    get selectedDaySessions() {
+        return this.state.recentSessions.filter(s => s.date === this.state.selectedDate);
+    }
+
+    get selectedDateLabel() {
+        const d = this.state.selectedDate;
+        if (!d) return "";
+        const [y, m, day] = d.split("-").map(Number);
+        return new Date(y, m - 1, day).toLocaleDateString(undefined, {
+            weekday: "short", month: "long", day: "numeric",
+        });
+    }
+
     /** Dates (YYYY-MM-DD) of recent sessions for the mini calendar dots */
     get calendarSessionDates() {
         return [...new Set(
@@ -185,6 +211,16 @@ class AdminDashboard extends Component {
         this.action.doAction({
             type: "ir.actions.act_window",
             res_model: "dojo.instructor.profile",
+            res_id: id,
+            views: [[false, "form"]],
+            target: "current",
+        });
+    }
+
+    openSessionRecord(id) {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "dojo.class.session",
             res_id: id,
             views: [[false, "form"]],
             target: "current",

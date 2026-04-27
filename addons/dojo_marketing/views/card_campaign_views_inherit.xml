@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         1. Kanban — image_preview thumbnail + card_count badge
+         Inherits: marketing_card.card_campaign_view_kanban
+    ================================================================ -->
+    <record id="card_campaign_kanban_dojo" model="ir.ui.view">
+        <field name="name">card.campaign.kanban.dojo</field>
+        <field name="model">card.campaign</field>
+        <field name="inherit_id" ref="marketing_card.card_campaign_view_kanban"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//templates" position="before">
+                <field name="image_preview"/>
+                <field name="card_count"/>
+            </xpath>
+
+            <xpath expr="//templates/t[@t-name='card']" position="replace">
+                <t t-name="card" class="o_marketing_card_campaign_kanban dojo-mc-campaign-card">
+
+                    <t t-if="record.image_preview.raw_value">
+                        <div class="dojo-mc-campaign-thumbnail">
+                            <field name="image_preview" widget="image" nolabel="1"
+                                   options="{'size': [0, 120]}"/>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <div class="dojo-mc-campaign-thumbnail dojo-mc-campaign-thumbnail--empty">
+                            <i class="fa fa-id-card fa-2x" aria-hidden="true"/>
+                            <span>No preview yet</span>
+                        </div>
+                    </t>
+
+                    <field name="name" class="fw-bolder fs-5 mt-1"/>
+
+                    <field name="tag_ids" widget="many2many_tags"
+                           options="{'color_field': 'color', 'on_tag_click': 'edit_color'}"
+                           class="mt-1"/>
+
+                    <footer class="pt-0">
+                        <div class="d-flex gap-1">
+                            <a type="object" name="action_view_cards" href="#" class="me-1">
+                                <span class="badge rounded-pill" title="Cards Generated">
+                                    <i class="fa fa-fw fa-id-card" aria-hidden="true"/>
+                                    <field name="card_count"/>
+                                </span>
+                            </a>
+                            <a type="object" name="action_view_cards_shared" href="#" class="me-1">
+                                <span class="badge rounded-pill" title="Shared">
+                                    <i class="fa fa-fw fa-share" aria-hidden="true"/>
+                                    <field name="card_share_count"/>
+                                </span>
+                            </a>
+                        </div>
+                        <field name="user_id" class="ms-auto" widget="many2one_avatar_user"/>
+                    </footer>
+
+                </t>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- ================================================================
+         2. Form — decluttered header, stepped Card Layout tab
+         Inherits: marketing_card.card_campaign_view_form
+    ================================================================ -->
+    <record id="card_campaign_form_dojo" model="ir.ui.view">
+        <field name="name">card.campaign.form.dojo</field>
+        <field name="model">card.campaign</field>
+        <field name="inherit_id" ref="marketing_card.card_campaign_view_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Rename "Recipients" → "Preview Member" -->
+            <xpath expr="//field[@name='preview_record_ref']" position="replace">
+                <field name="preview_record_ref"
+                       string="Preview Member"
+                       placeholder="Select a member to preview the card…"
+                       options="{'no_create': True}"/>
+            </xpath>
+
+            <!-- Rename "Post Link" → "Share URL" with a clearer placeholder -->
+            <xpath expr="//field[@name='target_url']" position="attributes">
+                <attribute name="string">Share URL</attribute>
+                <attribute name="placeholder">Link members land on after clicking the card</attribute>
+            </xpath>
+
+            <!-- Remove Post Suggestion from the cluttered top group
+                 (it lives in the Recipient Message tab instead) -->
+            <xpath expr="//field[@name='post_suggestion']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Add Post Suggestion at the top of Recipient Message tab
+                 (it belongs here — it's about what the recipient sees) -->
+            <xpath expr="//page[@name='Recipient Message']/group" position="before">
+                <group>
+                    <field name="post_suggestion"
+                           string="Default Share Message"
+                           placeholder="e.g. I just earned my Blue Belt at the Dojo!"
+                           widget="text_emojis"
+                           colspan="2"/>
+                </group>
+                <separator colspan="2"/>
+            </xpath>
+
+            <!-- Replace the entire Card Layout tab with a two-step guided layout -->
+            <xpath expr="//page[@name='Card Layout']" position="replace">
+                <page name="Card Layout" string="Card Layout">
+
+                    <!-- ── Step 1: Choose Template ─────────────────────── -->
+                    <div class="dojo-mc-form-step">
+                        <span class="dojo-mc-form-step__badge">1</span>
+                        <span class="dojo-mc-form-step__label">Choose a Template</span>
+                    </div>
+                    <field name="card_template_id" required="1" nolabel="1"
+                           widget="selection_badge" options="{'size': 'sm'}"
+                           class="dojo-mc-template-picker"/>
+
+                    <!-- ── Step 2: Content + Live Preview ─────────────── -->
+                    <div class="dojo-mc-form-step mt-3">
+                        <span class="dojo-mc-form-step__badge">2</span>
+                        <span class="dojo-mc-form-step__label">Fill In Card Content</span>
+                    </div>
+
+                    <group>
+                        <group>
+
+                            <!-- Background image -->
+                            <field name="content_background" widget="image" class="w-25"
+                                   nolabel="1" colspan="2"/>
+
+                            <separator string="Card Text" colspan="2"/>
+
+                            <label string="Heading" for="content_header"/>
+                            <div class="d-flex align-items-center gap-2">
+                                <field name="content_header_dyn"
+                                       title="Toggle on to pull the heading from a member field"/>
+                                <field name="content_header"
+                                       invisible="content_header_dyn"
+                                       placeholder="e.g. Welcome to the Dojo"/>
+                                <field name="content_header_path"
+                                       invisible="not content_header_dyn"
+                                       placeholder="Member field (e.g. partner_id.name)"
+                                       widget="field_selector"
+                                       options="{'model': 'res_model'}"/>
+                                <field name="content_header_color" widget="color"
+                                       class="ms-auto flex-shrink-0"
+                                       style="min-width: 40px; max-width: 40px;"/>
+                            </div>
+
+                            <label string="Sub-Heading" for="content_sub_header"/>
+                            <div class="d-flex align-items-center gap-2">
+                                <field name="content_sub_header_dyn"
+                                       title="Toggle on to pull the sub-heading from a member field"/>
+                                <field name="content_sub_header"
+                                       invisible="content_sub_header_dyn"
+                                       placeholder="e.g. Active Member · Blue Belt"/>
+                                <field name="content_sub_header_path"
+                                       invisible="not content_sub_header_dyn"
+                                       placeholder="Member field"
+                                       widget="field_selector"
+                                       options="{'model': 'res_model'}"/>
+                                <field name="content_sub_header_color" widget="color"
+                                       class="ms-auto flex-shrink-0"
+                                       style="min-width: 40px; max-width: 40px;"/>
+                            </div>
+
+                            <label string="Section / Program" for="content_section"/>
+                            <div class="d-flex align-items-center gap-2">
+                                <field name="content_section_dyn"
+                                       title="Toggle on to pull this from a member field"/>
+                                <field name="content_section"
+                                       invisible="content_section_dyn"
+                                       placeholder="e.g. Brazilian Jiu-Jitsu"/>
+                                <field name="content_section_path"
+                                       invisible="not content_section_dyn"
+                                       placeholder="Member field"
+                                       widget="field_selector"
+                                       options="{'model': 'res_model'}"/>
+                            </div>
+
+                            <label string="Name / Person" for="content_sub_section1"/>
+                            <div class="d-flex align-items-center gap-2">
+                                <field name="content_sub_section1_dyn"
+                                       title="Toggle on to pull this from a member field"/>
+                                <field name="content_sub_section1"
+                                       invisible="content_sub_section1_dyn"
+                                       placeholder="e.g. Alex Chen"/>
+                                <field name="content_sub_section1_path"
+                                       invisible="not content_sub_section1_dyn"
+                                       placeholder="Member field"
+                                       widget="field_selector"
+                                       options="{'model': 'res_model'}"/>
+                            </div>
+
+                            <label string="Role / Title" for="content_sub_section2"/>
+                            <div class="d-flex align-items-center gap-2">
+                                <field name="content_sub_section2_dyn"
+                                       title="Toggle on to pull this from a member field"/>
+                                <field name="content_sub_section2"
+                                       invisible="content_sub_section2_dyn"
+                                       placeholder="e.g. Blue Belt · 3 years"/>
+                                <field name="content_sub_section2_path"
+                                       invisible="not content_sub_section2_dyn"
+                                       placeholder="Member field"
+                                       widget="field_selector"
+                                       options="{'model': 'res_model'}"/>
+                            </div>
+
+                            <separator string="Card Images" colspan="2"/>
+
+                            <field name="content_image1_path"
+                                   string="Member Photo"
+                                   placeholder="e.g. image_128"
+                                   widget="field_selector"
+                                   options="{'model': 'res_model'}"/>
+                            <field name="content_image2_path"
+                                   string="Logo / Secondary"
+                                   placeholder="Optional — e.g. company logo field"
+                                   widget="field_selector"
+                                   options="{'model': 'res_model'}"/>
+                            <field name="content_button"
+                                   string="Button Text"
+                                   placeholder="Leave empty for no button"/>
+
+                        </group>
+                        <group>
+                            <separator string="Live Preview" colspan="2"/>
+                            <field name="image_preview" class="o_marketing_card_image_preview"
+                                   nolabel="1" colspan="2"
+                                   invisible="not card_template_id"
+                                   widget="image" options="{'size': [0, 500]}"/>
+                        </group>
+                    </group>
+
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- ================================================================
+         3. Action — default to kanban view
+    ================================================================ -->
+    <record id="marketing_card.card_campaign_action" model="ir.actions.act_window">
+        <field name="view_mode">kanban,list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No member card campaigns yet</p>
+            <p>Create a campaign to generate personalised cards for your members — complete with QR codes and auto-delivery.</p>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         4. List — preview thumbnail + stat badges + dim empty campaigns
+         Inherits: marketing_card.card_campaign_view_tree
+    ================================================================ -->
+    <record id="card_campaign_list_dojo" model="ir.ui.view">
+        <field name="name">card.campaign.list.dojo</field>
+        <field name="model">card.campaign</field>
+        <field name="inherit_id" ref="marketing_card.card_campaign_view_tree"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//list" position="attributes">
+                <attribute name="decoration-muted">card_count == 0</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='create_date']" position="replace">
+                <field name="image_preview" widget="image" nolabel="1"
+                       class="dojo-mc-list-thumb" string=" "/>
+                <field name="card_count" column_invisible="1"/>
+            </xpath>
+
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="card_count" string="Cards"
+                       class="dojo-mc-list-stat"/>
+                <field name="card_share_count" string="Shared"
+                       class="dojo-mc-list-stat"/>
+            </xpath>
+
+            <xpath expr="//field[@name='tag_ids']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- ================================================================
+         5. Menu — surface Member Cards inside the Promotions app
+    ================================================================ -->
+    <menuitem
+        id="menu_dojo_marketing_campaigns"
+        name="Member Cards"
+        parent="dojo_marketing.menu_dojo_marketing_root"
+        action="marketing_card.card_campaign_action"
+        sequence="20"
+        groups="dojo_core.group_dojo_admin"
+    />
+
+</odoo>

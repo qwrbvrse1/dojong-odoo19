@@ -19,10 +19,8 @@
             (4, ref('hr.group_hr_user')),
             (4, ref('event.group_event_user')),
             (4, ref('project.group_project_user')),
-            (4, ref('stock.group_stock_user')),
             (4, ref('purchase.group_purchase_user')),
             (4, ref('mass_mailing.group_mass_mailing_user')),
-            (4, ref('connect.group_connect_user')),
         ]"/>
     </record>
 

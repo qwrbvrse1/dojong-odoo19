@@ -16,13 +16,13 @@ class MailMail(models.Model):
     """
     _inherit = 'mail.mail'
 
-    def send(self, auto_commit=False, raise_exception=False, smtp_session=None):
+    def send(self, auto_commit=False, raise_exception=False, post_send_callback=None):
         icp = self.env['ir.config_parameter'].sudo()
-        if icp.get_param('firebase.email_enabled') != 'True':
+        if not icp.get_bool('firebase.email_enabled'):
             return super().send(
                 auto_commit=auto_commit,
                 raise_exception=raise_exception,
-                smtp_session=smtp_session,
+                post_send_callback=post_send_callback,
             )
 
         # Firebase relay path — process each queued mail individually
