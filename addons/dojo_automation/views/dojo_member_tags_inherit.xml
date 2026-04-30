@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Surface res.partner.category_ids on dojo.member so the include/exclude
+         tag pickers in the automation builder are actually populatable.
+         dojo.member uses _inherits = {"res.partner": "partner_id"}, so the
+         field is reachable via partner_id.category_id. -->
+    <record id="view_dojo_member_form_tags_inherit" model="ir.ui.view">
+        <field name="name">dojo.member.form.dojo_automation.tags</field>
+        <field name="model">dojo.member</field>
+        <field name="inherit_id" ref="dojo_core.view_dojo_member_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='date_of_birth']" position="after">
+                <field name="category_id"
+                       string="Tags"
+                       widget="many2many_tags"
+                       options="{'color_field': 'color', 'no_quick_create': True}"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

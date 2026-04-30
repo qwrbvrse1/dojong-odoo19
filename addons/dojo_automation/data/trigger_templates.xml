@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         Pre-built triggers shown in the Spark-style automation builder.
+         Admins pick one of these and the configuration is hydrated with the
+         right model + domain + scheduling defaults so they never have to
+         look at Odoo backend models directly.
+    ═══════════════════════════════════════════════════════════════════════ -->
+
+    <!-- ── Tag Assignment ───────────────────────────────────────────────── -->
+    <record id="trigger_tag_assigned" model="dojo.automation.trigger.template">
+        <field name="name">When a tag is assigned to a contact</field>
+        <field name="code">tag_assigned</field>
+        <field name="description">Run when a member is tagged. Use the include/exclude tag pickers below to choose which tags qualify.</field>
+        <field name="icon">fa-tag</field>
+        <field name="category">tag</field>
+        <field name="sequence">10</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="default_domain">[]</field>
+        <field name="is_periodic_default" eval="True"/>
+        <field name="supports_tag_filter" eval="True"/>
+        <field name="supports_contact_type" eval="True"/>
+    </record>
+
+    <!-- ── Member becomes a contact type ────────────────────────────────── -->
+    <record id="trigger_contact_type" model="dojo.automation.trigger.template">
+        <field name="name">They become a contact type</field>
+        <field name="code">contact_type</field>
+        <field name="description">Run the moment a member moves into a specific stage (Lead, Trial, Active, Paused, Cancelled).</field>
+        <field name="icon">fa-user-plus</field>
+        <field name="category">member</field>
+        <field name="sequence">20</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="default_field_id" ref="dojo_core.field_dojo_member__membership_state"/>
+        <field name="default_domain">[]</field>
+        <field name="is_periodic_default" eval="True"/>
+        <field name="supports_tag_filter" eval="True"/>
+        <field name="supports_contact_type" eval="True"/>
+    </record>
+
+    <!-- ── Based on a date ──────────────────────────────────────────────── -->
+    <record id="trigger_date_anniversary" model="dojo.automation.trigger.template">
+        <field name="name">Based on a date</field>
+        <field name="code">date_anniversary</field>
+        <field name="description">Run on a specific calendar date for matching members (e.g. anniversary, holiday).</field>
+        <field name="icon">fa-calendar</field>
+        <field name="category">date</field>
+        <field name="sequence">30</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="default_domain">[("active", "=", True)]</field>
+        <field name="is_periodic_default" eval="True"/>
+        <field name="supports_tag_filter" eval="True"/>
+        <field name="supports_contact_type" eval="True"/>
+    </record>
+
+    <!-- ── Based on their birthday ──────────────────────────────────────── -->
+    <record id="trigger_birthday" model="dojo.automation.trigger.template">
+        <field name="name">Based on their birthday</field>
+        <field name="code">birthday</field>
+        <field name="description">Run for members whose birthday falls today (or with an offset configured in the first step).</field>
+        <field name="icon">fa-birthday-cake</field>
+        <field name="category">date</field>
+        <field name="sequence">40</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="default_field_id" ref="dojo_core.field_dojo_member__date_of_birth"/>
+        <field name="default_domain">[("date_of_birth", "!=", False)]</field>
+        <field name="is_periodic_default" eval="True"/>
+        <field name="supports_tag_filter" eval="True"/>
+        <field name="supports_contact_type" eval="True"/>
+    </record>
+
+    <!-- ── Based on when they last attended ─────────────────────────────── -->
+    <record id="trigger_last_attended" model="dojo.automation.trigger.template">
+        <field name="name">Based on when they last attended</field>
+        <field name="code">last_attended</field>
+        <field name="description">Re-engage members who have not attended class recently (inactive students).</field>
+        <field name="icon">fa-clock-o</field>
+        <field name="category">attendance</field>
+        <field name="sequence">50</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="default_domain">[("membership_state", "in", ["trial", "active"])]</field>
+        <field name="is_periodic_default" eval="True"/>
+        <field name="supports_tag_filter" eval="True"/>
+        <field name="supports_contact_type" eval="True"/>
+    </record>
+
+    <!-- ── Based on when they start attending ───────────────────────────── -->
+    <record id="trigger_started_attending" model="dojo.automation.trigger.template">
+        <field name="name">Based on when they start attending</field>
+        <field name="code">started_attending</field>
+        <field name="description">Welcome workflow for members logging their first attendance.</field>
+        <field name="icon">fa-play-circle</field>
+        <field name="category">attendance</field>
+        <field name="sequence">60</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="default_domain">[("membership_state", "in", ["trial", "active"])]</field>
+        <field name="is_periodic_default" eval="True"/>
+        <field name="supports_tag_filter" eval="True"/>
+        <field name="supports_contact_type" eval="True"/>
+    </record>
+
+    <!-- ── Based on when they earn a rank ───────────────────────────────── -->
+    <record id="trigger_rank_earned" model="dojo.automation.trigger.template">
+        <field name="name">Based on when they earn a rank</field>
+        <field name="code">rank_earned</field>
+        <field name="description">Celebrate belt promotions. Triggers when current_rank_id changes.</field>
+        <field name="icon">fa-trophy</field>
+        <field name="category">belt</field>
+        <field name="sequence">70</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="default_field_id" ref="dojo_core.field_dojo_member__current_rank_id"/>
+        <field name="default_domain">[("current_rank_id", "!=", False)]</field>
+        <field name="is_periodic_default" eval="True"/>
+        <field name="supports_tag_filter" eval="True"/>
+        <field name="supports_contact_type" eval="True"/>
+    </record>
+
+    <!-- ── Membership starts ────────────────────────────────────────────── -->
+    <record id="trigger_membership_start" model="dojo.automation.trigger.template">
+        <field name="name">When they start a membership</field>
+        <field name="code">membership_start</field>
+        <field name="description">First-paid-membership onboarding sequence (Active state).</field>
+        <field name="icon">fa-id-card</field>
+        <field name="category">subscription</field>
+        <field name="sequence">80</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="default_field_id" ref="dojo_core.field_dojo_member__membership_state"/>
+        <field name="default_domain">[("membership_state", "=", "active")]</field>
+        <field name="is_periodic_default" eval="True"/>
+        <field name="supports_tag_filter" eval="True"/>
+        <field name="supports_contact_type" eval="False"/>
+    </record>
+
+    <!-- ── Membership expiring ──────────────────────────────────────────── -->
+    <record id="trigger_membership_expiring" model="dojo.automation.trigger.template">
+        <field name="name">When membership is expiring</field>
+        <field name="code">membership_expiring</field>
+        <field name="description">Renewal reminders for subscriptions approaching their end date.</field>
+        <field name="icon">fa-hourglass-end</field>
+        <field name="category">subscription</field>
+        <field name="sequence">90</field>
+        <field name="model_id" ref="subscription_oca.model_sale_subscription"/>
+        <field name="default_domain">[("end_date", "!=", False), ("stage_id.type", "in", ["progress", "draft"])]</field>
+        <field name="is_periodic_default" eval="True"/>
+        <field name="supports_tag_filter" eval="False"/>
+        <field name="supports_contact_type" eval="False"/>
+    </record>
+
+    <!-- ── Attendance milestones ────────────────────────────────────────── -->
+    <record id="trigger_attendance_milestone" model="dojo.automation.trigger.template">
+        <field name="name">Based on attendance milestones</field>
+        <field name="code">attendance_milestone</field>
+        <field name="description">Celebrate students hitting class-count milestones (10, 25, 50, 100, 200 classes).</field>
+        <field name="icon">fa-flag-checkered</field>
+        <field name="category">attendance</field>
+        <field name="sequence">100</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="default_domain">[("membership_state", "in", ["trial", "active"])]</field>
+        <field name="is_periodic_default" eval="True"/>
+        <field name="supports_tag_filter" eval="True"/>
+        <field name="supports_contact_type" eval="False"/>
+    </record>
+
+    <!-- ── New trial signup (CRM lead) ──────────────────────────────────── -->
+    <record id="trigger_new_trial_signup" model="dojo.automation.trigger.template">
+        <field name="name">A new trial signup arrives</field>
+        <field name="code">new_trial_signup</field>
+        <field name="description">Public /dojo/book-trial form creates a CRM lead. Run a welcome / waiver / first-class workflow.</field>
+        <field name="icon">fa-rocket</field>
+        <field name="category">member</field>
+        <field name="sequence">110</field>
+        <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="default_domain">[("type", "=", "lead")]</field>
+        <field name="is_periodic_default" eval="True"/>
+        <field name="supports_tag_filter" eval="False"/>
+        <field name="supports_contact_type" eval="False"/>
+    </record>
+
+    <!-- ── Member paused / cancelled ────────────────────────────────────── -->
+    <record id="trigger_member_paused_cancelled" model="dojo.automation.trigger.template">
+        <field name="name">Member is paused or cancelled</field>
+        <field name="code">member_paused_cancelled</field>
+        <field name="description">Win-back sequences for members who left or paused their membership.</field>
+        <field name="icon">fa-user-times</field>
+        <field name="category">member</field>
+        <field name="sequence">120</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="default_field_id" ref="dojo_core.field_dojo_member__membership_state"/>
+        <field name="default_domain">[("membership_state", "in", ["paused", "cancelled"])]</field>
+        <field name="is_periodic_default" eval="True"/>
+        <field name="supports_tag_filter" eval="True"/>
+        <field name="supports_contact_type" eval="True"/>
+    </record>
+
+</odoo>

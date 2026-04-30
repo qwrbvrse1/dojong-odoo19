@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Custom CRM Pipeline Board — ir.actions.client entry point -->
+    <record id="action_dojo_crm_pipeline_board" model="ir.actions.client">
+        <field name="name">CRM Pipeline</field>
+        <field name="tag">dojo_crm.CrmPipelineApp</field>
+        <field name="target">main</field>
+    </record>
+</odoo>

@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     Trigger Picker — Spark-style radio list grouped by category.
+═══════════════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_automation.TriggerPicker">
+    <div class="dojo-builder-trigger-picker">
+        <h5 class="dojo-builder-section-title">
+            What is the action that will trigger this Automation?
+        </h5>
+        <t t-foreach="groupedTemplates" t-as="grp" t-key="grp.value">
+            <div class="dojo-builder-trigger-group">
+                <div class="dojo-builder-trigger-group__title" t-esc="grp.label"/>
+                <ul class="dojo-builder-trigger-list">
+                    <t t-foreach="grp.items" t-as="tpl" t-key="tpl.id">
+                        <li class="dojo-builder-trigger-row">
+                            <label class="dojo-builder-trigger-row__label">
+                                <input type="radio"
+                                       name="dojo_trigger"
+                                       t-att-value="tpl.id"
+                                       t-att-checked="props.selectedId === tpl.id"
+                                       t-on-change="onPick"/>
+                                <span class="dojo-builder-trigger-row__icon">
+                                    <i t-attf-class="fa {{ tpl.icon || 'fa-bolt' }}"/>
+                                </span>
+                                <span class="dojo-builder-trigger-row__name" t-esc="tpl.name"/>
+                                <i class="fa fa-question-circle dojo-builder-trigger-row__help"
+                                   t-att-title="tpl.description or ''"/>
+                            </label>
+                        </li>
+                    </t>
+                </ul>
+            </div>
+        </t>
+    </div>
+</t>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     Tag Chip Input
+═══════════════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_automation.TagChipInput">
+    <div class="dojo-tag-input">
+        <label class="dojo-tag-input__label" t-esc="props.label"/>
+        <div class="dojo-tag-input__field">
+            <t t-foreach="selectedTags" t-as="tag" t-key="tag.id">
+                <span class="dojo-tag-pill">
+                    <span t-esc="tag.name"/>
+                    <button type="button"
+                            class="dojo-tag-pill__x"
+                            t-on-click="() => this.removeTag(tag.id)">×</button>
+                </span>
+            </t>
+            <input type="text"
+                   class="dojo-tag-input__query"
+                   t-att-placeholder="props.placeholder || 'Type to add a tag...'"
+                   t-att-value="state.query"
+                   t-on-input="onQueryInput"/>
+        </div>
+        <ul t-if="state.query and suggestions.length"
+            class="dojo-tag-input__dropdown">
+            <li t-foreach="suggestions" t-as="s" t-key="s.id"
+                class="dojo-tag-input__option"
+                t-on-click="() => this.addTag(s.id)">
+                <span t-esc="s.name"/>
+            </li>
+        </ul>
+    </div>
+</t>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     Step Card (Workflow Canvas item)
+═══════════════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_automation.StepCard">
+    <div t-attf-class="dojo-step-card dojo-step-card--{{ props.side }} dojo-step-card--{{ kindMeta.color }}">
+        <div class="dojo-step-card__inner">
+            <div class="dojo-step-card__header">
+                <span class="dojo-step-card__delay" t-esc="delayLabel"/>
+                <span class="dojo-step-card__type">
+                    <i t-attf-class="fa {{ kindMeta.icon }}"/>
+                    <span t-esc="kindMeta.label"/>
+                </span>
+            </div>
+            <div class="dojo-step-card__body" t-esc="summary"/>
+            <div class="dojo-step-card__actions">
+                <button class="btn btn-sm btn-light"
+                        t-att-disabled="!props.canMoveUp"
+                        t-on-click="onMoveUpClick"
+                        title="Move up">
+                    <i class="fa fa-arrow-up"/>
+                </button>
+                <button class="btn btn-sm btn-light"
+                        t-att-disabled="!props.canMoveDown"
+                        t-on-click="onMoveDownClick"
+                        title="Move down">
+                    <i class="fa fa-arrow-down"/>
+                </button>
+                <button class="btn btn-sm btn-primary"
+                        t-on-click="onEditClick">
+                    <i class="fa fa-pencil me-1"/>Edit
+                </button>
+                <button class="btn btn-sm btn-outline-danger"
+                        t-on-click="onDeleteClick">
+                    <i class="fa fa-trash"/>
+                </button>
+            </div>
+        </div>
+    </div>
+</t>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     Workflow Canvas — alternating-side timeline
+═══════════════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_automation.WorkflowCanvas">
+    <div class="dojo-workflow-canvas">
+        <div t-if="props.steps.length" class="dojo-workflow-canvas__rail"/>
+        <div t-if="!props.steps.length" class="dojo-workflow-canvas__empty">
+            <i class="fa fa-magic fa-3x mb-2 text-muted"/>
+            <p class="text-muted">No steps yet — add the first action below.</p>
+            <button class="btn btn-primary" t-on-click="onAddClick">
+                <i class="fa fa-plus me-1"/>Add first step
+            </button>
+        </div>
+        <t t-foreach="props.steps" t-as="step" t-key="step_index">
+            <div class="dojo-workflow-canvas__row">
+                <StepCard step="step"
+                          index="step_index"
+                          side="sideFor(step_index)"
+                          canMoveUp="step_index > 0"
+                          canMoveDown="step_index &lt; props.steps.length - 1"
+                          onEdit="props.onEdit"
+                          onDelete="props.onDelete"
+                          onMoveUp="props.onMoveUp"
+                          onMoveDown="props.onMoveDown"/>
+                <div class="dojo-workflow-canvas__node">
+                    <span class="dojo-workflow-canvas__node-circle">
+                        <i class="fa fa-check"/>
+                    </span>
+                </div>
+            </div>
+        </t>
+        <div t-if="props.steps.length" class="dojo-workflow-canvas__add-row">
+            <button class="btn btn-sm btn-outline-primary"
+                    t-on-click="onAddClick">
+                <i class="fa fa-plus me-1"/>Add next step
+            </button>
+        </div>
+    </div>
+</t>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     Step Composer (drawer)
+═══════════════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_automation.StepComposer">
+    <div class="dojo-step-composer">
+        <div class="dojo-step-composer__backdrop" t-on-click="cancel"/>
+        <div class="dojo-step-composer__panel">
+            <div class="dojo-step-composer__header">
+                <h4 t-esc="props.title"/>
+                <button class="btn btn-sm btn-light" t-on-click="cancel">
+                    <i class="fa fa-times"/>
+                </button>
+            </div>
+            <div class="dojo-step-composer__body">
+
+                <div class="dojo-step-composer__kind-row">
+                    <t t-foreach="kinds" t-as="k" t-key="k.kind">
+                        <button t-attf-class="dojo-kind-chip dojo-kind-chip--{{ k.color }} {{ state.step.kind === k.kind ? 'dojo-kind-chip--active' : '' }}"
+                                t-on-click="() => this.setKind(k.kind)">
+                            <i t-attf-class="fa {{ k.icon }} me-1"/>
+                            <span t-esc="k.label"/>
+                        </button>
+                    </t>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Step name</label>
+                    <input type="text"
+                           class="form-control"
+                           t-att-value="state.step.name"
+                           t-on-input="onNameInput"
+                           placeholder="e.g. Welcome email"/>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Run on day</label>
+                    <div class="dojo-delay-row">
+                        <t t-foreach="delayPresets" t-as="d" t-key="d_index">
+                            <button t-attf-class="btn btn-sm {{ state.step.delay_days === d ? 'btn-primary' : 'btn-outline-secondary' }}"
+                                    t-on-click="() => this.pickDelayPreset(d)">
+                                <t t-if="d === 0">Day 0</t>
+                                <t t-else="">Day <t t-esc="d"/></t>
+                            </button>
+                        </t>
+                        <input type="number"
+                               class="form-control dojo-delay-row__custom"
+                               min="0"
+                               t-att-value="state.step.delay_days"
+                               t-on-input="onDelayInput"/>
+                    </div>
+                </div>
+
+                <!-- Email options -->
+                <div t-if="state.step.kind === 'email'" class="dojo-step-composer__section">
+                    <label class="form-label">Email Template</label>
+                    <select class="form-select"
+                            t-on-change="onMailTemplateChange">
+                        <option value="">— pick a template —</option>
+                        <t t-foreach="props.mailTemplates" t-as="m" t-key="m.id">
+                            <option t-att-value="m.id"
+                                    t-att-selected="state.step.mail_template_id === m.id">
+                                <t t-esc="m.name"/>
+                            </option>
+                        </t>
+                    </select>
+                </div>
+
+                <!-- Task options -->
+                <div t-if="state.step.kind === 'task'" class="dojo-step-composer__section">
+                    <label class="form-label">Activity Type</label>
+                    <select class="form-select"
+                            t-on-change="onActivityTypeChange">
+                        <option value="">— pick an activity type —</option>
+                        <t t-foreach="props.activityTypes" t-as="a" t-key="a.id">
+                            <option t-att-value="a.id"
+                                    t-att-selected="state.step.activity_type_id === a.id">
+                                <t t-esc="a.name"/>
+                            </option>
+                        </t>
+                    </select>
+                    <label class="form-label mt-2">Summary</label>
+                    <input type="text"
+                           class="form-control"
+                           t-att-value="state.step.activity_summary"
+                           t-on-input="onActivitySummaryInput"
+                           placeholder="e.g. Call student to confirm trial"/>
+                    <label class="form-label mt-2">Notes</label>
+                    <textarea class="form-control"
+                              rows="3"
+                              t-att-value="state.step.activity_note"
+                              t-on-input="onActivityNoteInput"/>
+                </div>
+
+                <!-- SMS options -->
+                <div t-if="state.step.kind === 'sms'" class="dojo-step-composer__section">
+                    <label class="form-label">SMS Template</label>
+                    <select class="form-select"
+                            t-on-change="onSmsTemplateChange">
+                        <option value="">— pick a template —</option>
+                        <t t-foreach="props.smsTemplates" t-as="s" t-key="s.id">
+                            <option t-att-value="s.id"
+                                    t-att-selected="state.step.sms_template_id === s.id">
+                                <t t-esc="s.name"/>
+                            </option>
+                        </t>
+                    </select>
+                    <label class="form-label mt-2">Phone field on record (optional)</label>
+                    <input type="text"
+                           class="form-control"
+                           t-att-value="state.step.phone_field"
+                           t-on-input="onPhoneFieldInput"
+                           placeholder="leave blank to use mobile/phone"/>
+                </div>
+            </div>
+            <div class="dojo-step-composer__footer">
+                <button class="btn btn-secondary" t-on-click="cancel">Cancel</button>
+                <button class="btn btn-primary" t-on-click="save">
+                    <i class="fa fa-check me-1"/>Save step
+                </button>
+            </div>
+        </div>
+    </div>
+</t>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     Builder Root
+═══════════════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_automation.AutomationBuilder">
+    <div class="dojo-builder">
+        <div t-if="state.loading" class="dojo-builder__loading">
+            <i class="fa fa-spinner fa-spin fa-2x"/>
+            <p class="mt-2 text-muted">Loading builder...</p>
+        </div>
+        <t t-if="!state.loading">
+            <!-- Header -->
+            <div class="dojo-builder__header">
+                <button class="btn btn-link" t-on-click="backToList">
+                    <i class="fa fa-arrow-left me-1"/>Automations
+                </button>
+                <input type="text"
+                       class="dojo-builder__name"
+                       t-att-value="state.doc.name"
+                       t-on-input="onNameInput"
+                       placeholder="Name your Automation, example: Trial Welcome Series"/>
+                <div class="dojo-builder__header-actions">
+                    <label class="dojo-builder__toggle">
+                        <input type="checkbox"
+                               t-att-checked="state.doc.active"
+                               t-on-change="onActiveToggle"/>
+                        <span>Active</span>
+                    </label>
+                    <button class="btn btn-outline-primary"
+                            t-att-disabled="!state.doc.id"
+                            t-on-click="runNow">
+                        <i class="fa fa-play me-1"/>Run Now
+                    </button>
+                    <button class="btn btn-primary"
+                            t-att-disabled="state.saving"
+                            t-on-click="save">
+                        <i class="fa fa-save me-1"/>
+                        <t t-if="!state.saving">Save</t>
+                        <t t-else="">Saving...</t>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body: 2 panels -->
+            <div class="dojo-builder__body">
+
+                <!-- Left: Trigger picker + filters -->
+                <div class="dojo-builder__pane dojo-builder__pane--left">
+                    <TriggerPicker templates="state.triggerTemplates"
+                                   categories="state.categories"
+                                   selectedId="state.doc.trigger_template_id"
+                                   onSelect.bind="onSelectTemplate"/>
+
+                    <t t-if="selectedTemplate and selectedTemplate.supports_contact_type">
+                        <div class="dojo-builder-section mt-3">
+                            <h6 class="dojo-builder-section-title">Contact Type</h6>
+                            <select class="form-select"
+                                    t-on-change="onContactTypeChange">
+                                <t t-foreach="state.contactTypes" t-as="ct" t-key="ct.value">
+                                    <option t-att-value="ct.value"
+                                            t-att-selected="state.doc.contact_type === ct.value">
+                                        <t t-esc="ct.label"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                    </t>
+
+                    <t t-if="selectedTemplate and selectedTemplate.supports_tag_filter">
+                        <div class="dojo-builder-section mt-3">
+                            <h6 class="dojo-builder-section-title">Refine by Tags</h6>
+                            <p class="text-muted small">
+                                Members must carry an Include tag (if any) and may not carry an Exclude tag.
+                                Leave both empty to target everyone matching the trigger.
+                            </p>
+                            <TagChipInput label="'Include'"
+                                          placeholder="'Type to add an include tag...'"
+                                          selectedIds="state.doc.tag_include_ids"
+                                          availableTags="state.availableTags"
+                                          onChange.bind="onIncludeTagsChange"/>
+                            <TagChipInput label="'Exclude'"
+                                          placeholder="'Type to add an exclude tag...'"
+                                          selectedIds="state.doc.tag_exclude_ids"
+                                          availableTags="state.availableTags"
+                                          onChange.bind="onExcludeTagsChange"/>
+                        </div>
+                    </t>
+
+                </div>
+
+                <!-- Right: Workflow canvas -->
+                <div class="dojo-builder__pane dojo-builder__pane--right">
+                    <h5 class="dojo-builder-section-title">Workflow Steps</h5>
+                    <p class="text-muted small">
+                        Each step runs in order on the day shown. Spark-style chain — Day 0 → Day 7 → ...
+                    </p>
+                    <WorkflowCanvas steps="state.doc.steps"
+                                    onAdd.bind="addStep"
+                                    onEdit.bind="editStep"
+                                    onDelete.bind="deleteStep"
+                                    onMoveUp.bind="moveStepUp"
+                                    onMoveDown.bind="moveStepDown"/>
+                </div>
+            </div>
+
+            <!-- Composer drawer -->
+            <t t-if="state.composerOpen">
+                <StepComposer step="state.composerStep"
+                              title="state.composerTitle"
+                              mailTemplates="state.mailTemplates"
+                              activityTypes="state.activityTypes"
+                              smsTemplates="state.smsTemplates"
+                              onSave.bind="saveComposer"
+                              onCancel.bind="cancelComposer"/>
+            </t>
+        </t>
+    </div>
+</t>
+
+</templates>

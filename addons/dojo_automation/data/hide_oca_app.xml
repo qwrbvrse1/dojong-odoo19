@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Hide automation_oca from the Apps list. dojo_automation is the
+         user-facing entry point; the OCA module is a hidden technical
+         dependency. Runs on every install/upgrade. -->
+    <function model="ir.module.module" name="write">
+        <function model="ir.module.module" name="search">
+            <value eval="[('name', '=', 'automation_oca')]"/>
+        </function>
+        <value eval="{'application': False}"/>
+    </function>
+
+</odoo>

@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Placeholder lead is noupdate so manual preview edits aren't wiped -->
+    <data noupdate="1">
+        <record id="crm_lead_card_preview" model="crm.lead">
+            <field name="name">[Marketing Card Preview] Sample CRM Lead</field>
+            <field name="contact_name">Sample Lead</field>
+            <field name="partner_name">Sample Lead</field>
+            <field name="email_from">preview@example.com</field>
+            <field name="type">lead</field>
+            <field name="description">Internal placeholder used by Marketing Card previews. Safe to leave in place — do not delete.</field>
+        </record>
+    </data>
+
+    <!-- Card campaigns and SMS templates are noupdate="0" so upgrades apply changes -->
+    <data noupdate="0">
+
+        <!-- ============================================================
+             Marketing Card campaigns — one per CRM intent
+             content_header_dyn=True renders the lead's contact_name field
+             directly on the card image (no Jinja interpolation in this field)
+             ============================================================ -->
+        <record id="card_campaign_crm_qualified" model="card.campaign">
+            <field name="name">CRM: Qualified — Book Free Trial</field>
+            <field name="res_model">crm.lead</field>
+            <field name="card_template_id" ref="marketing_card.card_template_light"/>
+            <field name="preview_record_ref" eval="'crm.lead,%d' % ref('crm_lead_card_preview')"/>
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">contact_name</field>
+            <field name="content_sub_header">Your FREE trial class is waiting!</field>
+            <field name="content_button">Book Trial</field>
+            <field name="target_url">https://example.com/crm</field>
+        </record>
+
+        <record id="card_campaign_crm_trial_booked" model="card.campaign">
+            <field name="name">CRM: Trial Booked Confirmation</field>
+            <field name="res_model">crm.lead</field>
+            <field name="card_template_id" ref="marketing_card.card_template_light"/>
+            <field name="preview_record_ref" eval="'crm.lead,%d' % ref('crm_lead_card_preview')"/>
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">contact_name</field>
+            <field name="content_sub_header">See you at your trial class!</field>
+            <field name="content_button">View Details</field>
+            <field name="target_url">https://example.com/crm</field>
+        </record>
+
+        <record id="card_campaign_crm_trial_attended" model="card.campaign">
+            <field name="name">CRM: Post-Trial Special Offer</field>
+            <field name="res_model">crm.lead</field>
+            <field name="card_template_id" ref="marketing_card.card_template_light"/>
+            <field name="preview_record_ref" eval="'crm.lead,%d' % ref('crm_lead_card_preview')"/>
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">contact_name</field>
+            <field name="content_sub_header">Great class! Your special offer is ready.</field>
+            <field name="content_button">Claim Offer</field>
+            <field name="target_url">https://example.com/crm</field>
+        </record>
+
+        <record id="card_campaign_crm_missed_trial" model="card.campaign">
+            <field name="name">CRM: Missed Trial — Re-engage</field>
+            <field name="res_model">crm.lead</field>
+            <field name="card_template_id" ref="marketing_card.card_template_light"/>
+            <field name="preview_record_ref" eval="'crm.lead,%d' % ref('crm_lead_card_preview')"/>
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">contact_name</field>
+            <field name="content_sub_header">We missed you — book a new trial!</field>
+            <field name="content_button">Reschedule</field>
+            <field name="target_url">https://example.com/crm</field>
+        </record>
+
+        <record id="card_campaign_crm_no_show" model="card.campaign">
+            <field name="name">CRM: No-Show Reschedule</field>
+            <field name="res_model">crm.lead</field>
+            <field name="card_template_id" ref="marketing_card.card_template_light"/>
+            <field name="preview_record_ref" eval="'crm.lead,%d' % ref('crm_lead_card_preview')"/>
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">contact_name</field>
+            <field name="content_sub_header">Let's find a time that works for you.</field>
+            <field name="content_button">Pick New Time</field>
+            <field name="target_url">https://example.com/crm</field>
+        </record>
+
+        <record id="card_campaign_crm_no_show_followup" model="card.campaign">
+            <field name="name">CRM: No-Show 2nd Follow-Up</field>
+            <field name="res_model">crm.lead</field>
+            <field name="card_template_id" ref="marketing_card.card_template_light"/>
+            <field name="preview_record_ref" eval="'crm.lead,%d' % ref('crm_lead_card_preview')"/>
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">contact_name</field>
+            <field name="content_sub_header">Still curious? Your spot is open.</field>
+            <field name="content_button">Book Now</field>
+            <field name="target_url">https://example.com/crm</field>
+        </record>
+
+        <record id="card_campaign_crm_offer_details" model="card.campaign">
+            <field name="name">CRM: Membership Plan Offer</field>
+            <field name="res_model">crm.lead</field>
+            <field name="card_template_id" ref="marketing_card.card_template_light"/>
+            <field name="preview_record_ref" eval="'crm.lead,%d' % ref('crm_lead_card_preview')"/>
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">contact_name</field>
+            <field name="content_sub_header">Your personalised membership offer is ready.</field>
+            <field name="content_button">View Offer</field>
+            <field name="target_url">https://example.com/crm</field>
+        </record>
+
+        <record id="card_campaign_crm_offer_expiry" model="card.campaign">
+            <field name="name">CRM: Offer Expiry — 72h Nudge</field>
+            <field name="res_model">crm.lead</field>
+            <field name="card_template_id" ref="marketing_card.card_template_light"/>
+            <field name="preview_record_ref" eval="'crm.lead,%d' % ref('crm_lead_card_preview')"/>
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">contact_name</field>
+            <field name="content_sub_header">Last chance — offer expires in 72 hours!</field>
+            <field name="content_button">Claim Now</field>
+            <field name="target_url">https://example.com/crm</field>
+        </record>
+
+        <record id="card_campaign_crm_trial_reminder" model="card.campaign">
+            <field name="name">CRM: Trial Reminder — 24h</field>
+            <field name="res_model">crm.lead</field>
+            <field name="card_template_id" ref="marketing_card.card_template_light"/>
+            <field name="preview_record_ref" eval="'crm.lead,%d' % ref('crm_lead_card_preview')"/>
+            <field name="content_header_dyn" eval="True"/>
+            <field name="content_header_path">contact_name</field>
+            <field name="content_sub_header">Your trial is tomorrow — see you there!</field>
+            <field name="content_button">Get Directions</field>
+            <field name="target_url">https://example.com/crm</field>
+        </record>
+
+        <!-- ============================================================
+             SMS Templates — one per CRM intent (mirrors email templates)
+             Linked to the matching Marketing Card.
+             ============================================================ -->
+        <record id="sms_template_qualified" model="sms.template">
+            <field name="name">Dojang CRM: Qualified — Free Trial (SMS)</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="card_campaign_id" ref="card_campaign_crm_qualified"/>
+            <field name="body">Hi {{ object.contact_name or object.partner_name }}, this is {{ object.user_id.name or 'Dojang' }} from {{ object.company_id.name }}. Ready to book your FREE trial class? 🥋 Reply YES or call us!</field>
+        </record>
+
+        <record id="sms_template_trial_booked" model="sms.template">
+            <field name="name">Dojang CRM: Trial Booked (SMS)</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="card_campaign_id" ref="card_campaign_crm_trial_booked"/>
+            <field name="body">{{ object.contact_name or object.partner_name }}, your FREE trial is confirmed! 🥋 We can't wait to see you. Reply HELP if you have questions.</field>
+        </record>
+
+        <record id="sms_template_trial_attended" model="sms.template">
+            <field name="name">Dojang CRM: Post-Trial Offer (SMS)</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="card_campaign_id" ref="card_campaign_crm_trial_attended"/>
+            <field name="body">Awesome class today, {{ object.contact_name }}! 🥋 We have a special offer just for trial students. Check your email for details or reply YES to claim it.</field>
+        </record>
+
+        <record id="sms_template_missed_trial" model="sms.template">
+            <field name="name">Dojang CRM: Missed Trial — Re-engage (SMS)</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="card_campaign_id" ref="card_campaign_crm_missed_trial"/>
+            <field name="body">Hi {{ object.contact_name }}, we missed you at your trial 🥋 Want to reschedule? Reply YES or call {{ object.company_id.phone or 'us' }}.</field>
+        </record>
+
+        <record id="sms_template_no_show" model="sms.template">
+            <field name="name">Dojang CRM: No-Show Reschedule (SMS)</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="card_campaign_id" ref="card_campaign_crm_no_show"/>
+            <field name="body">Hi {{ object.contact_name }}, missed you today! 🥋 Let's find a better time. Reply with your preferred day/time or call us.</field>
+        </record>
+
+        <record id="sms_template_no_show_followup" model="sms.template">
+            <field name="name">Dojang CRM: No-Show 2nd Follow-Up (SMS)</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="card_campaign_id" ref="card_campaign_crm_no_show_followup"/>
+            <field name="body">{{ object.contact_name }}, still interested in trying us out? 🥋 We'd love to see you. Reply YES to book.</field>
+        </record>
+
+        <record id="sms_template_offer_details" model="sms.template">
+            <field name="name">Dojang CRM: Evaluation Plan (SMS)</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="card_campaign_id" ref="card_campaign_crm_offer_details"/>
+            <field name="body">Hi {{ object.contact_name }}, your personalised membership offer is ready 🥋 Check your email or reply for details.</field>
+        </record>
+
+        <record id="sms_template_offer_expiry" model="sms.template">
+            <field name="name">Dojang CRM: Offer Expiry 72h (SMS)</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="card_campaign_id" ref="card_campaign_crm_offer_expiry"/>
+            <field name="body">⚠️ {{ object.contact_name }}, your special membership offer expires in 72 hours. Don't miss out! Reply YES to lock it in.</field>
+        </record>
+
+        <record id="sms_template_trial_reminder" model="sms.template">
+            <field name="name">Dojang CRM: 24h Trial Reminder (SMS)</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="card_campaign_id" ref="card_campaign_crm_trial_reminder"/>
+            <field name="body">Reminder: Your FREE trial class is tomorrow! 🥋 See you at {{ object.company_id.name }}. Reply HELP for directions.</field>
+        </record>
+
+    </data>
+</odoo>

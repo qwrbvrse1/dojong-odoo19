@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Expose Marketing Card link on mail.template form -->
+    <record id="email_template_form_card_link" model="ir.ui.view">
+        <field name="name">mail.template.form.dojo.card.link</field>
+        <field name="model">mail.template</field>
+        <field name="inherit_id" ref="mail.email_template_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='model_id']" position="after">
+                <field name="card_campaign_id"
+                       options="{'no_create_edit': True}"
+                       placeholder="Optional Marketing Card to embed..."/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Expose Marketing Card link on sms.template form -->
+    <record id="sms_template_form_card_link" model="ir.ui.view">
+        <field name="name">sms.template.form.dojo.card.link</field>
+        <field name="model">sms.template</field>
+        <field name="inherit_id" ref="sms.sms_template_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='model_id']" position="after">
+                <field name="card_campaign_id"
+                       options="{'no_create_edit': True}"
+                       placeholder="Optional Marketing Card link..."/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

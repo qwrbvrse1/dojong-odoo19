@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- Shared SMS dispatch server action used by the simplified builder's
+         "Send SMS" step type. Reads ``sms_template_id`` and ``phone_field``
+         directly from the step record (added by dojo_automation as real
+         fields on automation.configuration.step). No JSON parsing — safe_eval
+         forbids `import` inside server-action code. -->
+    <record id="action_send_sms" model="ir.actions.server">
+        <field name="name">Dojang Automation: Send SMS</field>
+        <field name="type">ir.actions.server</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="base.model_ir_actions_server"/>
+        <field name="code">
+# automation_oca passes ``records`` as the step's recordset.
+# The active step id is in env.context["active_id"].
+step_id = env.context.get("active_id")
+step = env["automation.configuration.step"].browse(step_id) if step_id else env["automation.configuration.step"]
+
+template = step.sms_template_id if step else env["sms.template"]
+if not template:
+    log("dojo_automation.action_send_sms: no sms_template_id on step; skipping")
+else:
+    phone_field = step.phone_field or ""
+    for rec in records:
+        number = ""
+        if phone_field and phone_field in rec._fields:
+            number = rec[phone_field] or ""
+        if not number:
+            for cand in ("mobile", "phone"):
+                if cand in rec._fields and rec[cand]:
+                    number = rec[cand]
+                    break
+        if not number and "partner_id" in rec._fields and rec.partner_id:
+            number = rec.partner_id.mobile or rec.partner_id.phone or ""
+        if not number:
+            log("dojo_automation.action_send_sms: no phone for %s,%s" % (rec._name, rec.id))
+            continue
+        body = template._render_field("body", [rec.id])[rec.id]
+        env["sms.api"]._send_sms_batch([{"res_id": rec.id, "number": number, "content": body}])
+        </field>
+    </record>
+
+</odoo>

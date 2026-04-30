@@ -5,10 +5,6 @@
          1. MENU LABELS — rebrand to "Dojang"
     ════════════════════════════════════════════════════════════════════════ -->
 
-    <record model="ir.ui.menu" id="automation_oca.automation_root_menu">
-        <field name="name">Dojang Automation</field>
-    </record>
-
     <record model="ir.ui.menu" id="automation_oca.automation_configuration_menu">
         <field name="name">Dojang Rules</field>
     </record>
@@ -84,99 +80,12 @@
                                     type="object" name="run_automation">
                                 <i class="fa fa-play me-1"/> Run Now
                             </button>
-                            <a type="edit" role="button" class="btn btn-sm btn-secondary">
+                            <button class="btn btn-sm btn-secondary" type="edit">
                                 <i class="fa fa-pencil me-1"/> Edit
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </t>
-            </xpath>
-        </field>
-    </record>
-
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         2. FORM — accordion sections + workflow steps section title
-    ════════════════════════════════════════════════════════════════════════ -->
-
-    <record model="ir.ui.view" id="automation_configuration_form_inherit">
-        <field name="name">automation.configuration.form.dojo</field>
-        <field name="model">automation.configuration</field>
-        <field name="inherit_id" ref="automation_oca.automation_configuration_form_view"/>
-        <field name="arch" type="xml">
-
-            <!-- Replace the flat <group> with two accordions -->
-            <xpath expr="//sheet/group" position="replace">
-
-                <!-- Accordion 1: Trigger Setup (open by default) -->
-                <details class="dojo-accordion mb-2" open="">
-                    <summary class="dojo-accordion__summary">
-                        <span class="dojo-accordion__title">Trigger Setup</span>
-                        <i class="fa fa-chevron-down dojo-accordion__chevron"/>
-                    </summary>
-                    <div class="dojo-accordion__body">
-                        <group>
-                            <field name="active" invisible="1"/>
-                            <field name="model" invisible="1"/>
-                            <field name="is_periodic"
-                                   readonly="state != 'draft'"
-                                   widget="boolean_toggle"/>
-                            <field name="model_id"
-                                   options="{'no_create_edit': True, 'no_open': True}"/>
-                            <field name="field_id"
-                                   string="Deduplicate by"
-                                   options="{'no_create_edit': True, 'no_open': True}"/>
-                            <field name="next_execution_date"
-                                   readonly="1"
-                                   invisible="state != 'periodic'"/>
-                        </group>
-                    </div>
-                </details>
-
-                <!-- Accordion 2: Conditions (collapsed by default) -->
-                <details class="dojo-accordion mb-3">
-                    <summary class="dojo-accordion__summary">
-                        <span class="dojo-accordion__title">Conditions</span>
-                        <i class="fa fa-chevron-down dojo-accordion__chevron"/>
-                    </summary>
-                    <div class="dojo-accordion__body">
-                        <group>
-                            <field name="tag_ids"
-                                   widget="many2many_tags"
-                                   options="{'color_field': 'color'}"/>
-                            <label for="filter_id" string="Filter"/>
-                            <div class="container ps-0">
-                                <div class="row">
-                                    <div class="col-5">
-                                        <field name="filter_id" domain="filter_domain"/>
-                                    </div>
-                                    <button name="save_filter"
-                                            type="object"
-                                            string="Save filter"
-                                            icon="fa-save"
-                                            class="text-primary filter-left col-7"
-                                            invisible="filter_id"/>
-                                </div>
-                            </div>
-                            <field name="filter_domain" invisible="1"/>
-                            <field name="domain"
-                                   string="Domain"
-                                   widget="domain"
-                                   invisible="not filter_id"
-                                   options="{'foldable': True, 'model': 'model'}"/>
-                            <field name="editable_domain"
-                                   string="Domain"
-                                   widget="domain"
-                                   invisible="filter_id"
-                                   options="{'foldable': True, 'model': 'model'}"/>
-                            <field name="company_id" groups="base.group_multi_company"/>
-                        </group>
-                    </div>
-                </details>
-            </xpath>
-
-            <!-- Add "Dojang Workflow Steps" section title above the step kanban -->
-            <xpath expr="//field[@name='automation_step_ids']" position="before">
-                <div class="dojo-section-title">Dojang Workflow Steps</div>
             </xpath>
         </field>
     </record>

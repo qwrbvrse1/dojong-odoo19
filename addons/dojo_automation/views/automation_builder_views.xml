@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- List view for trigger templates (admin maintenance) -->
+    <record id="view_trigger_template_list" model="ir.ui.view">
+        <field name="name">dojo.automation.trigger.template.list</field>
+        <field name="model">dojo.automation.trigger.template</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="category"/>
+                <field name="model_id"/>
+                <field name="is_periodic_default"/>
+                <field name="supports_tag_filter"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_trigger_template_form" model="ir.ui.view">
+        <field name="name">dojo.automation.trigger.template.form</field>
+        <field name="model">dojo.automation.trigger.template</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="icon"/>
+                        <field name="category"/>
+                        <field name="sequence"/>
+                        <field name="active" widget="boolean_toggle"/>
+                    </group>
+                    <group string="Defaults">
+                        <field name="model_id"
+                               options="{'no_create': True, 'no_open': True}"/>
+                        <field name="default_field_id"
+                               options="{'no_create': True, 'no_open': True}"/>
+                        <field name="default_domain"/>
+                        <field name="is_periodic_default" widget="boolean_toggle"/>
+                    </group>
+                    <group string="UI Controls">
+                        <field name="supports_tag_filter" widget="boolean_toggle"/>
+                        <field name="supports_contact_type" widget="boolean_toggle"/>
+                    </group>
+                    <field name="description" placeholder="Helper text shown to admins under this trigger in the picker..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Add a "Open in Builder" button to the rebranded kanban card. -->
+    <record id="automation_configuration_kanban_builder_button"
+            model="ir.ui.view">
+        <field name="name">automation.configuration.kanban.dojo.builder_btn</field>
+        <field name="model">automation.configuration</field>
+        <field name="inherit_id" ref="dojo_automation.automation_configuration_kanban_inherit"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('dojo-auto-rule-card__actions')]" position="inside">
+                <button class="btn btn-sm btn-success ms-1"
+                        type="action"
+                        name="%(dojo_automation.action_open_builder)d"
+                        context="{'default_config_id': id}">
+                    <i class="fa fa-bolt me-1"/> Builder
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

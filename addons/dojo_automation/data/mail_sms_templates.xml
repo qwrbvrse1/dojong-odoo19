@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!--
+        ════════════════════════════════════════════════════════════════════════
+        Dojo Automation — Email Templates (mail.template)
+        All templates target the dojo.member model.
+        Mako syntax: ${object.field_name}
+        ════════════════════════════════════════════════════════════════════════
+    -->
+
+    <!-- ─── 1. Welcome to the Dojo ──────────────────────────────────────── -->
+    <record id="email_tpl_welcome" model="mail.template">
+        <field name="name">Dojo – Welcome to the Team</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="subject">Welcome to the Dojo, ${object.partner_id.name or 'Warrior'}! 🥋</field>
+        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
+
+    <!-- Header -->
+    <div style="background: #1a1a2e; padding: 32px 24px; text-align: center;">
+        <h1 style="color: #f0a500; margin: 0; font-size: 28px; letter-spacing: 1px;">🥋 Welcome to the Dojo</h1>
+    </div>
+
+    <!-- Body -->
+    <div style="padding: 32px 24px;">
+        <p style="font-size: 18px; color: #1a1a2e; margin: 0 0 16px 0;">
+            Hi <strong>${object.partner_id.name or 'there'}</strong>,
+        </p>
+        <p style="color: #444; line-height: 1.7;">
+            We're thrilled to have you join our martial arts family. Every great journey begins with a single step,
+            and yours starts here — on the mat.
+        </p>
+        <p style="color: #444; line-height: 1.7;">
+            Here's what to expect as a new member:
+        </p>
+        <ul style="color: #444; line-height: 2; padding-left: 20px;">
+            <li>Your first class is designed to get you comfortable and learning right away</li>
+            <li>Our instructors are here to guide you at your own pace</li>
+            <li>Check your class schedule in the member portal</li>
+            <li>Questions? Reply to this email anytime</li>
+        </ul>
+
+        % if object.member_number:
+        <div style="background: #f5f5f5; border-left: 4px solid #f0a500; padding: 12px 16px; margin: 24px 0; border-radius: 4px;">
+            <strong style="color: #1a1a2e;">Your Member ID:</strong>
+            <span style="font-size: 20px; font-weight: bold; color: #f0a500; margin-left: 8px;">${object.member_number}</span>
+        </div>
+        % endif
+
+        <!-- CTA Button -->
+        <div style="text-align: center; margin: 32px 0;">
+            <a href="/web/login" style="display: inline-block; background: #f0a500; color: #1a1a2e; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                Access Your Portal
+            </a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background: #f5f5f5; padding: 16px 24px; text-align: center; border-top: 1px solid #e0e0e0;">
+        <p style="color: #888; font-size: 12px; margin: 0;">
+            ${object.company_id.name or 'Your Dojo'} &bull; Sent to ${object.partner_id.email or ''}
+        </p>
+    </div>
+
+</div>
+        ]]></field>
+    </record>
+
+    <!-- ─── 2. Trial Class Reminder ──────────────────────────────────────── -->
+    <record id="email_tpl_trial_reminder" model="mail.template">
+        <field name="name">Dojo – Trial Class Reminder</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="subject">Your trial class is coming up, ${object.partner_id.name or 'Warrior'}! 🥋</field>
+        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
+
+    <div style="background: #1a1a2e; padding: 32px 24px; text-align: center;">
+        <h1 style="color: #f0a500; margin: 0; font-size: 26px;">🥋 Your Trial Class Is Coming Up</h1>
+    </div>
+
+    <div style="padding: 32px 24px;">
+        <p style="font-size: 18px; color: #1a1a2e; margin: 0 0 16px 0;">
+            Hi <strong>${object.partner_id.name or 'there'}</strong> —
+        </p>
+        <p style="color: #444; line-height: 1.7;">
+            Just a friendly reminder that your trial class is scheduled soon. We can't wait to see you on the mat!
+        </p>
+
+        <div style="background: #fff8e1; border-left: 4px solid #f0a500; padding: 16px; margin: 24px 0; border-radius: 4px;">
+            <p style="margin: 0 0 8px 0; font-weight: bold; color: #1a1a2e;">Quick Checklist:</p>
+            <ul style="margin: 0; color: #555; line-height: 2; padding-left: 20px;">
+                <li>Wear comfortable workout clothes or a gi if you have one</li>
+                <li>No shoes on the mat — bare feet or clean indoor sandals</li>
+                <li>Arrive 5–10 minutes early so we can get you settled in</li>
+                <li>Bring a water bottle</li>
+            </ul>
+        </div>
+
+        <p style="color: #444; line-height: 1.7;">
+            If you have any questions before class, just reply to this email or give us a call.
+            We'll see you out there!
+        </p>
+
+        <div style="text-align: center; margin: 32px 0;">
+            <a href="/web/login" style="display: inline-block; background: #f0a500; color: #1a1a2e; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                View Your Schedule
+            </a>
+        </div>
+    </div>
+
+    <div style="background: #f5f5f5; padding: 16px 24px; text-align: center; border-top: 1px solid #e0e0e0;">
+        <p style="color: #888; font-size: 12px; margin: 0;">
+            ${object.company_id.name or 'Your Dojo'} &bull; Sent to ${object.partner_id.email or ''}
+        </p>
+    </div>
+
+</div>
+        ]]></field>
+    </record>
+
+    <!-- ─── 3. Membership Renewal Reminder ───────────────────────────────── -->
+    <record id="email_tpl_renewal_reminder" model="mail.template">
+        <field name="name">Dojo – Membership Renewal Reminder</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="subject">Your membership renews soon — ${object.company_id.name or 'the Dojo'}</field>
+        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
+
+    <div style="background: #1a1a2e; padding: 32px 24px; text-align: center;">
+        <h1 style="color: #f0a500; margin: 0; font-size: 26px;">🔔 Membership Renewal Coming Up</h1>
+    </div>
+
+    <div style="padding: 32px 24px;">
+        <p style="font-size: 18px; color: #1a1a2e; margin: 0 0 16px 0;">
+            Hi <strong>${object.partner_id.name or 'there'}</strong>,
+        </p>
+        <p style="color: #444; line-height: 1.7;">
+            This is a heads-up that your membership with
+            <strong>${object.company_id.name or 'us'}</strong> is coming up for renewal.
+            Your billing will process automatically — no action required on your end.
+        </p>
+        <p style="color: #444; line-height: 1.7;">
+            If you need to update your payment method or have any billing questions,
+            you can do so through your member portal before the renewal date.
+        </p>
+
+        <div style="text-align: center; margin: 32px 0;">
+            <a href="/web/login" style="display: inline-block; background: #f0a500; color: #1a1a2e; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                Manage My Account
+            </a>
+        </div>
+
+        <p style="color: #888; font-size: 14px; line-height: 1.6; border-top: 1px solid #eee; padding-top: 16px; margin-top: 16px;">
+            Thank you for being part of our team. We look forward to many more months of training together!
+        </p>
+    </div>
+
+    <div style="background: #f5f5f5; padding: 16px 24px; text-align: center; border-top: 1px solid #e0e0e0;">
+        <p style="color: #888; font-size: 12px; margin: 0;">
+            ${object.company_id.name or 'Your Dojo'} &bull; Sent to ${object.partner_id.email or ''}
+        </p>
+    </div>
+
+</div>
+        ]]></field>
+    </record>
+
+    <!-- ─── 4. Re-engagement / We Miss You ───────────────────────────────── -->
+    <record id="email_tpl_reengagement" model="mail.template">
+        <field name="name">Dojo – We Miss You (Re-engagement)</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="subject">We miss you, ${object.partner_id.name or 'Warrior'} — come back to the mat</field>
+        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
+
+    <div style="background: #1a1a2e; padding: 32px 24px; text-align: center;">
+        <h1 style="color: #f0a500; margin: 0; font-size: 26px;">🥋 Come Back to the Mat</h1>
+    </div>
+
+    <div style="padding: 32px 24px;">
+        <p style="font-size: 18px; color: #1a1a2e; margin: 0 0 16px 0;">
+            Hey <strong>${object.partner_id.name or 'there'}</strong>,
+        </p>
+        <p style="color: #444; line-height: 1.7;">
+            It's been a while since we've seen you in class, and we genuinely miss having you on the mat.
+            Life gets busy — we get it. But your journey in martial arts is still here, waiting for you.
+        </p>
+        <p style="color: #444; line-height: 1.7;">
+            Whether you've been gone a week or a few months, there's no judgment here — just your
+            teammates ready to train alongside you again.
+        </p>
+
+        % if object.current_rank_id:
+        <div style="background: #f5f5f5; border-left: 4px solid #f0a500; padding: 12px 16px; margin: 24px 0; border-radius: 4px;">
+            <p style="margin: 0; color: #555;">
+                You've earned your <strong style="color: #1a1a2e;">${object.current_rank_id.name}</strong> —
+                keep building on that progress!
+            </p>
+        </div>
+        % endif
+
+        <div style="text-align: center; margin: 32px 0;">
+            <a href="/web/login" style="display: inline-block; background: #f0a500; color: #1a1a2e; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                Book My Next Class
+            </a>
+        </div>
+
+        <p style="color: #888; font-size: 14px; line-height: 1.6;">
+            Have questions or want to talk through options? Just reply to this email — we're here for you.
+        </p>
+    </div>
+
+    <div style="background: #f5f5f5; padding: 16px 24px; text-align: center; border-top: 1px solid #e0e0e0;">
+        <p style="color: #888; font-size: 12px; margin: 0;">
+            ${object.company_id.name or 'Your Dojo'} &bull; Sent to ${object.partner_id.email or ''}
+        </p>
+    </div>
+
+</div>
+        ]]></field>
+    </record>
+
+    <!-- ─── 5. Belt Promotion Congratulations ────────────────────────────── -->
+    <record id="email_tpl_belt_promotion" model="mail.template">
+        <field name="name">Dojo – Belt Promotion Congratulations</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="subject">🎉 Congratulations on your promotion, ${object.partner_id.name or 'Warrior'}!</field>
+        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
+
+    <div style="background: #1a1a2e; padding: 40px 24px; text-align: center;">
+        <div style="font-size: 56px; margin-bottom: 8px;">🏆</div>
+        <h1 style="color: #f0a500; margin: 0; font-size: 28px;">Congratulations!</h1>
+        <p style="color: #ccc; margin: 8px 0 0 0; font-size: 16px;">You've earned your promotion</p>
+    </div>
+
+    <div style="padding: 32px 24px; text-align: center;">
+        <p style="font-size: 18px; color: #1a1a2e; margin: 0 0 16px 0;">
+            <strong>${object.partner_id.name or 'there'}</strong>, you did it!
+        </p>
+
+        % if object.current_rank_id:
+        <div style="background: #fff8e1; border: 2px solid #f0a500; padding: 20px; margin: 24px 0; border-radius: 8px; text-align: center;">
+            <p style="margin: 0 0 4px 0; color: #888; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">New Rank</p>
+            <p style="margin: 0; font-size: 28px; font-weight: bold; color: #1a1a2e;">${object.current_rank_id.name}</p>
+        </div>
+        % endif
+
+        <p style="color: #444; line-height: 1.7;">
+            This promotion is a reflection of your dedication, hard work, and heart on the mat.
+            Every class, every drill, every challenge you pushed through has brought you to this moment.
+        </p>
+        <p style="color: #444; line-height: 1.7;">
+            We are incredibly proud of you and can't wait to see how far you go.
+            Keep training, keep improving, keep inspiring those around you.
+        </p>
+
+        <div style="margin: 32px 0;">
+            <a href="/web/login" style="display: inline-block; background: #f0a500; color: #1a1a2e; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                View My Progress
+            </a>
+        </div>
+    </div>
+
+    <div style="background: #f5f5f5; padding: 16px 24px; text-align: center; border-top: 1px solid #e0e0e0;">
+        <p style="color: #888; font-size: 12px; margin: 0;">
+            ${object.company_id.name or 'Your Dojo'} &bull; Sent to ${object.partner_id.email or ''}
+        </p>
+    </div>
+
+</div>
+        ]]></field>
+    </record>
+
+    <!-- ─── 6. Payment Failed Notice ─────────────────────────────────────── -->
+    <record id="email_tpl_payment_failed" model="mail.template">
+        <field name="name">Dojo – Payment Failed Notice</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="subject">Action needed: payment issue for your ${object.company_id.name or 'Dojo'} membership</field>
+        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
+
+    <div style="background: #c0392b; padding: 32px 24px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">⚠️ Payment Issue</h1>
+    </div>
+
+    <div style="padding: 32px 24px;">
+        <p style="font-size: 18px; color: #1a1a2e; margin: 0 0 16px 0;">
+            Hi <strong>${object.partner_id.name or 'there'}</strong>,
+        </p>
+        <p style="color: #444; line-height: 1.7;">
+            We weren't able to process your most recent membership payment.
+            This can happen if a card expired, had insufficient funds, or your billing information changed.
+        </p>
+        <p style="color: #444; line-height: 1.7;">
+            To keep your membership active and uninterrupted, please update your payment method
+            in the member portal as soon as possible.
+        </p>
+
+        <div style="text-align: center; margin: 32px 0;">
+            <a href="/web/login" style="display: inline-block; background: #c0392b; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                Update Payment Method
+            </a>
+        </div>
+
+        <p style="color: #888; font-size: 14px; line-height: 1.6;">
+            If you believe this is an error or need assistance, just reply to this email
+            and we'll sort it out together.
+        </p>
+    </div>
+
+    <div style="background: #f5f5f5; padding: 16px 24px; text-align: center; border-top: 1px solid #e0e0e0;">
+        <p style="color: #888; font-size: 12px; margin: 0;">
+            ${object.company_id.name or 'Your Dojo'} &bull; Sent to ${object.partner_id.email or ''}
+        </p>
+    </div>
+
+</div>
+        ]]></field>
+    </record>
+
+
+    <!--
+        ════════════════════════════════════════════════════════════════════════
+        Dojo Automation — SMS Templates (sms.template)
+        All templates target the dojo.member model.
+        ════════════════════════════════════════════════════════════════════════
+    -->
+
+    <!-- ─── 1. Welcome SMS ───────────────────────────────────────────────── -->
+    <record id="sms_tpl_welcome" model="sms.template">
+        <field name="name">Dojo – Welcome SMS</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="body">Hi ${object.partner_id.name or 'there'}, welcome to ${object.company_id.name or 'the dojo'}! 🥋 We're so glad you're here. See you on the mat — reply anytime with questions.</field>
+    </record>
+
+    <!-- ─── 2. Trial Class Reminder SMS ──────────────────────────────────── -->
+    <record id="sms_tpl_trial_reminder" model="sms.template">
+        <field name="name">Dojo – Trial Class Reminder SMS</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="body">Hey ${object.partner_id.name or 'there'}! Just a reminder your trial class is coming up. Wear comfy clothes, arrive 5–10 min early, and we'll take care of the rest. See you soon! 🥋</field>
+    </record>
+
+    <!-- ─── 3. Class Day Reminder SMS ────────────────────────────────────── -->
+    <record id="sms_tpl_class_reminder" model="sms.template">
+        <field name="name">Dojo – Class Day Reminder SMS</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="body">Hi ${object.partner_id.name or 'there'}! 🥋 You've got class today at ${object.company_id.name or 'the dojo'}. See you on the mat — don't forget your water bottle!</field>
+    </record>
+
+    <!-- ─── 4. Renewal Reminder SMS ──────────────────────────────────────── -->
+    <record id="sms_tpl_renewal_reminder" model="sms.template">
+        <field name="name">Dojo – Renewal Reminder SMS</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="body">Hi ${object.partner_id.name or 'there'}, your ${object.company_id.name or 'dojo'} membership renews soon. Your payment will process automatically. To update billing, log in at your member portal. Questions? Just reply!</field>
+    </record>
+
+    <!-- ─── 5. Belt Test Eligible SMS ────────────────────────────────────── -->
+    <record id="sms_tpl_belt_test_eligible" model="sms.template">
+        <field name="name">Dojo – Belt Test Eligible SMS</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="body">Great news, ${object.partner_id.name or 'there'}! 🏆 You're eligible for your next belt test. Ask your instructor for details and keep up the great work!</field>
+    </record>
+
+    <!-- ─── 6. Payment Failed SMS ────────────────────────────────────────── -->
+    <record id="sms_tpl_payment_failed" model="sms.template">
+        <field name="name">Dojo – Payment Failed SMS</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="body">Hi ${object.partner_id.name or 'there'}, we had trouble processing your ${object.company_id.name or 'dojo'} membership payment. Please update your payment info in the member portal to keep your account active. Reply for help.</field>
+    </record>
+
+    <!-- ─── 7. Re-engagement SMS ─────────────────────────────────────────── -->
+    <record id="sms_tpl_reengagement" model="sms.template">
+        <field name="name">Dojo – Re-engagement SMS</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="body">Hey ${object.partner_id.name or 'there'}, we miss you at ${object.company_id.name or 'the dojo'}! 🥋 Ready to get back on the mat? Your spot is waiting. Reply to chat or log into the portal to book your next class.</field>
+    </record>
+
+</odoo>

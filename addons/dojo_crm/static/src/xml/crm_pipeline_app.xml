@@ -1,0 +1,1249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     KpiHeader
+═══════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_crm.KpiHeader">
+    <div class="cpb-kpi-bar">
+        <div class="cpb-kpi-cell">
+            <span class="cpb-kpi-val" t-esc="props.kpis.total_leads"/>
+            <span class="cpb-kpi-lbl">Active Leads</span>
+        </div>
+        <div class="cpb-kpi-cell">
+            <span class="cpb-kpi-val"><t t-esc="props.kpis.conversion_rate"/>%</span>
+            <span class="cpb-kpi-lbl">Conversion (30d)</span>
+        </div>
+        <div class="cpb-kpi-cell">
+            <span class="cpb-kpi-val" t-esc="props.kpis.trials_this_week"/>
+            <span class="cpb-kpi-lbl">Trials This Week</span>
+        </div>
+        <div class="cpb-kpi-cell cpb-kpi-cell--warn" t-att-class="{ 'cpb-kpi-cell--warn': props.kpis.expiring_offers > 0 }">
+            <span class="cpb-kpi-val" t-esc="props.kpis.expiring_offers"/>
+            <span class="cpb-kpi-lbl">Expiring Offers</span>
+        </div>
+    </div>
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     FilterChipsBar
+═══════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_crm.FilterChipsBar">
+    <div class="cpb-chips-bar">
+        <t t-foreach="chips" t-as="chip" t-key="chip.name">
+            <button
+                class="cpb-chip"
+                t-att-class="{ 'cpb-chip--active': chip.active }"
+                t-on-click="() => this.toggle(chip.name)">
+                <i t-attf-class="fa {{ chip.icon }}"/> <t t-esc="chip.label"/>
+            </button>
+        </t>
+    </div>
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SearchBar
+═══════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_crm.SearchBar">
+    <div class="cpb-search-bar">
+        <i class="fa fa-search cpb-search-icon"/>
+        <input
+            type="text"
+            class="cpb-search-input"
+            placeholder="Search leads…"
+            t-att-value="props.query"
+            t-on-input="(ev) => props.onInput(ev.target.value)"
+        />
+        <button t-if="props.query" class="cpb-search-clear" t-on-click="props.onClear">
+            <i class="fa fa-times"/>
+        </button>
+    </div>
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     BulkActionBar
+═══════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_crm.BulkActionBar">
+    <div class="cpb-bulk-bar">
+        <span class="cpb-bulk-count">
+            <t t-esc="props.selectedCount"/> selected
+        </span>
+        <button class="btn btn-sm btn-secondary" t-on-click="props.onMoveStage">
+            <i class="fa fa-arrow-right"/> Move Stage
+        </button>
+        <button class="btn btn-sm btn-secondary" t-on-click="props.onAssign">
+            <i class="fa fa-user"/> Assign
+        </button>
+        <button class="btn btn-sm btn-secondary" t-on-click="props.onNote">
+            <i class="fa fa-sticky-note"/> Note
+        </button>
+        <button class="btn btn-sm btn-secondary" t-on-click="props.onMessage">
+            <i class="fa fa-envelope"/> Message
+        </button>
+        <button class="btn btn-sm btn-secondary" t-on-click="props.onTagUpdate">
+            <i class="fa fa-tags"/> Tags
+        </button>
+        <button class="btn btn-sm btn-secondary" t-on-click="() => props.onArchive(true)">
+            <i class="fa fa-archive"/> Archive
+        </button>
+        <button class="btn btn-sm btn-secondary" t-on-click="() => props.onUnarchive(false)">
+            <i class="fa fa-inbox"/> Restore
+        </button>
+        <button class="btn btn-sm btn-light cpb-bulk-clear" t-on-click="props.onClear">
+            <i class="fa fa-times"/> Clear
+        </button>
+    </div>
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     LeadCard
+═══════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_crm.LeadCard">
+    <div
+        class="cpb-lead-card"
+        t-att-class="{ 'cpb-lead-card--selected': props.selected }"
+        draggable="true"
+        t-on-dragstart="handleDragStart"
+        t-on-click="() => props.onClick(props.lead.id)"
+    >
+        <!-- Checkbox (top-left) -->
+        <input
+            type="checkbox"
+            class="cpb-card-check"
+            t-att-checked="props.selected"
+            t-on-click.stop="() => props.onSelect(props.lead.id)"
+        />
+
+        <!-- Avatar -->
+        <div class="cpb-card-avatar">
+            <img t-att-src="props.lead.partner_avatar" t-att-alt="props.lead.contact_name"/>
+        </div>
+
+        <div class="cpb-card-body">
+            <!-- Name -->
+            <div class="cpb-card-name" t-esc="props.lead.contact_name or props.lead.partner_name or props.lead.name"/>
+            <div class="cpb-card-title" t-esc="props.lead.name"/>
+
+            <!-- Score badge -->
+            <div t-attf-class="cpb-score-badge {{ scoreInfo.cls }}">
+                <t t-esc="props.lead.dojo_lead_score"/>
+                <span class="cpb-score-label-text" t-esc="scoreInfo.text"/>
+            </div>
+
+            <!-- Status badges -->
+            <div class="cpb-card-badges">
+                <span t-if="props.lead.trial_attended" class="cpb-badge cpb-badge--attended">
+                    <i class="fa fa-check-circle"/> Attended
+                </span>
+                <span t-if="props.lead.no_show" class="cpb-badge cpb-badge--noshow">
+                    <i class="fa fa-times-circle"/> No-Show
+                </span>
+                <span t-if="props.lead.is_converted" class="cpb-badge cpb-badge--converted">
+                    <i class="fa fa-user-plus"/> Member
+                </span>
+            </div>
+
+            <!-- Trial session date -->
+            <div t-if="props.lead.trial_session_dt" class="cpb-card-session">
+                <i class="fa fa-calendar-o"/>
+                <t t-esc="sessionDate"/>
+            </div>
+
+            <!-- Salesperson -->
+            <div t-if="props.lead.user_name" class="cpb-card-assignee">
+                <i class="fa fa-user-o"/>
+                <t t-esc="props.lead.user_name"/>
+            </div>
+        </div>
+    </div>
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     QuickCreateForm
+═══════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_crm.QuickCreateForm">
+    <div class="cpb-quick-create">
+        <input class="form-control form-control-sm cpb-qc-input"
+            placeholder="Lead title *"
+            t-att-value="state.name"
+            t-on-input="(ev) => { state.name = ev.target.value; }"
+        />
+        <input class="form-control form-control-sm cpb-qc-input"
+            placeholder="Contact name"
+            t-att-value="state.contact_name"
+            t-on-input="(ev) => { state.contact_name = ev.target.value; }"
+        />
+        <input class="form-control form-control-sm cpb-qc-input"
+            placeholder="Email"
+            type="email"
+            t-att-value="state.email_from"
+            t-on-input="(ev) => { state.email_from = ev.target.value; }"
+        />
+        <input class="form-control form-control-sm cpb-qc-input"
+            placeholder="Phone"
+            t-att-value="state.phone"
+            t-on-input="(ev) => { state.phone = ev.target.value; }"
+        />
+        <div class="cpb-qc-actions">
+            <button class="btn btn-sm btn-primary" t-on-click="save"
+                t-att-disabled="!state.name.trim()">
+                Add
+            </button>
+            <button class="btn btn-sm btn-light" t-on-click="props.onCancel">Cancel</button>
+        </div>
+    </div>
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     StageColumn
+═══════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_crm.StageColumn">
+    <div
+        class="cpb-stage-col"
+        t-on-dragover="handleDragOver"
+        t-on-drop="handleDrop"
+    >
+        <!-- Column header -->
+        <div class="cpb-stage-header">
+            <span class="cpb-stage-name" t-esc="props.stage.name"/>
+            <span class="cpb-stage-count" t-esc="props.stage.total or props.stage.count"/>
+        </div>
+
+        <!-- Lead cards -->
+        <div class="cpb-stage-cards">
+            <t t-if="props.loading and !props.leads.length">
+                <div class="cpb-stage-loading">
+                    <i class="fa fa-spinner fa-spin"/> Loading…
+                </div>
+            </t>
+            <t t-foreach="props.leads" t-as="lead" t-key="lead.id">
+                <LeadCard
+                    lead="lead"
+                    selected="props.selectedIds.has(lead.id)"
+                    onClick="props.onLeadClick"
+                    onSelect="props.onLeadSelect"
+                    onDragStart="props.onDragStart"
+                />
+            </t>
+
+            <!-- Load more -->
+            <t t-if="props.hasMore">
+                <button class="cpb-load-more" t-on-click="() => props.onLoadMore(props.stage.id)">
+                    <t t-if="props.loading"><i class="fa fa-spinner fa-spin"/> Loading…</t>
+                    <t t-else="">Load more</t>
+                </button>
+            </t>
+        </div>
+
+        <!-- Quick-create -->
+        <div class="cpb-stage-footer">
+            <t t-if="props.showQuickCreate">
+                <QuickCreateForm
+                    stageId="props.stage.id"
+                    onSave="props.onQuickCreateSave"
+                    onCancel="props.onQuickCreateCancel"
+                />
+            </t>
+            <t t-else="">
+                <button class="cpb-add-lead" t-on-click="() => props.onOpenQuickCreate(props.stage.id)">
+                    <i class="fa fa-plus"/> New Lead
+                </button>
+            </t>
+        </div>
+    </div>
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     LeadDetailModal  — full-screen centered overlay
+═══════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_crm.LeadDetailModal">
+    <!-- Backdrop (click outside to close) -->
+    <div class="cpb-lead-modal-backdrop" t-on-click.self="props.onClose">
+        <div class="cpb-lead-modal" role="dialog" aria-modal="true">
+
+            <!-- ── Modal header ── -->
+            <div class="cpb-lead-modal-header">
+                <div class="cpb-lead-modal-identity">
+                    <!-- Avatar — click to upload new photo -->
+                    <div class="cpb-lead-modal-avatar cpb-avatar-upload"
+                         title="Click to change photo">
+                        <img t-att-src="props.lead.partner_avatar"
+                             t-att-alt="props.lead.contact_name or props.lead.name"/>
+                        <div class="cpb-avatar-upload-overlay">
+                            <i class="fa fa-camera"/>
+                        </div>
+                        <input t-ref="avatarFileInput"
+                               type="file"
+                               accept="image/*"
+                               class="cpb-avatar-file-input"
+                               t-on-change="(ev) => this.onAvatarFileChange(ev)"/>
+                    </div>
+                    <div>
+                        <h2 class="cpb-lead-modal-name"
+                            t-esc="props.lead.contact_name or props.lead.partner_name or props.lead.name"/>
+                        <p class="cpb-lead-modal-subtitle" t-esc="props.lead.name"/>
+                    </div>
+                </div>
+                <div class="cpb-lead-modal-header-actions">
+                    <!-- Delete with inline confirm -->
+                    <t t-if="!state.confirmDelete">
+                        <button class="btn btn-sm btn-outline-danger cpb-btn-delete"
+                            t-on-click="requestDelete" title="Delete lead">
+                            <i class="fa fa-trash"/>
+                        </button>
+                    </t>
+                    <t t-else="">
+                        <div class="cpb-delete-confirm-inline">
+                            <span class="cpb-delete-confirm-text">Delete this lead?</span>
+                            <button class="btn btn-sm btn-danger" t-on-click="confirmDelete">
+                                Yes, Delete
+                            </button>
+                            <button class="btn btn-sm btn-secondary" t-on-click="cancelDelete">
+                                Cancel
+                            </button>
+                        </div>
+                    </t>
+                    <button class="cpb-lead-modal-close" t-on-click="props.onClose" title="Close">
+                        <i class="fa fa-times"/>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── Score + status strip ── -->
+            <div class="cpb-lead-modal-score-row">
+                <div t-attf-class="cpb-score-big {{ scoreInfo.cls }}">
+                    <t t-esc="props.lead.dojo_lead_score"/>
+                    <span t-esc="scoreInfo.text"/>
+                </div>
+                <div class="cpb-detail-badges">
+                    <span t-if="props.lead.trial_attended" class="cpb-badge cpb-badge--attended">
+                        <i class="fa fa-check-circle"/> Attended
+                    </span>
+                    <span t-if="props.lead.no_show" class="cpb-badge cpb-badge--noshow">
+                        <i class="fa fa-times-circle"/> No-Show
+                    </span>
+                    <span t-if="props.lead.is_converted" class="cpb-badge cpb-badge--converted">
+                        <i class="fa fa-user-plus"/> Member
+                    </span>
+                    <span t-if="props.lead.lead_has_signed_waiver" class="cpb-badge cpb-badge--waiver">
+                        <i class="fa fa-file-text"/> Waiver
+                    </span>
+                </div>
+            </div>
+
+            <!-- ── Body (two-column on wide screens) ── -->
+            <div class="cpb-lead-modal-body">
+
+                <!-- LEFT COLUMN: Stage, Salesperson, Actions -->
+                <div class="cpb-lead-modal-left">
+
+                    <!-- Stage selector -->
+                    <div class="cpb-lead-modal-field">
+                        <label class="cpb-field-label">Stage</label>
+                        <select class="form-select form-select-sm"
+                            t-on-change="this.onStageChangeEv">
+                            <t t-foreach="props.stages" t-as="st" t-key="st.id">
+                                <option t-att-value="st.id"
+                                    t-att-selected="st.id === props.lead.stage_id"
+                                    t-esc="st.name"/>
+                            </t>
+                        </select>
+                    </div>
+
+                    <!-- Salesperson -->
+                    <div class="cpb-lead-modal-field">
+                        <label class="cpb-field-label">Assigned To</label>
+                        <select class="form-select form-select-sm"
+                            t-on-change="this.onAssignEv">
+                            <option value="">— Unassigned —</option>
+                            <t t-foreach="props.salespersons" t-as="u" t-key="u.id">
+                                <option t-att-value="u.id"
+                                    t-att-selected="u.id === props.lead.user_id"
+                                    t-esc="u.name"/>
+                            </t>
+                        </select>
+                    </div>
+
+                    <!-- Contact info + quick actions -->
+                    <div class="cpb-lead-modal-field">
+                        <div class="cpb-contact-header">
+                            <label class="cpb-field-label">Contact</label>
+                            <button t-if="!state.editingContact" type="button"
+                                    class="cpb-link-btn cpb-contact-edit-btn"
+                                    t-on-click="this.startEditContact">
+                                <i class="fa fa-pencil"/> Edit
+                            </button>
+                        </div>
+                        <t t-if="!state.editingContact">
+                            <div class="cpb-contact-block">
+                                <div t-if="props.lead.contact_name or props.lead.partner_name" class="cpb-contact-row">
+                                    <i class="fa fa-user-o"/>
+                                    <span t-esc="props.lead.contact_name or props.lead.partner_name"/>
+                                </div>
+                                <div t-if="props.lead.email_from" class="cpb-contact-row">
+                                    <i class="fa fa-envelope-o"/>
+                                    <a t-att-href="'mailto:' + props.lead.email_from"
+                                       t-esc="props.lead.email_from"/>
+                                </div>
+                                <div t-if="props.lead.phone" class="cpb-contact-row">
+                                    <i class="fa fa-phone"/>
+                                    <a t-att-href="'tel:' + props.lead.phone"
+                                       t-esc="props.lead.phone"/>
+                                </div>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <div class="cpb-contact-edit">
+                                <input type="text" class="form-control form-control-sm"
+                                       placeholder="Contact name"
+                                       t-att-value="state.contactDraft.contact_name"
+                                       t-on-input="(ev) => this.onContactInput('contact_name', ev)"/>
+                                <input type="email" class="form-control form-control-sm"
+                                       placeholder="Email"
+                                       t-att-value="state.contactDraft.email_from"
+                                       t-on-input="(ev) => this.onContactInput('email_from', ev)"/>
+                                <input type="tel" class="form-control form-control-sm"
+                                       placeholder="Phone"
+                                       t-att-value="state.contactDraft.phone"
+                                       t-on-input="(ev) => this.onContactInput('phone', ev)"/>
+                                <div class="cpb-contact-edit-actions">
+                                    <button type="button" class="btn btn-sm btn-secondary"
+                                            t-on-click="this.cancelEditContact">Cancel</button>
+                                    <button type="button" class="btn btn-sm btn-primary"
+                                            t-att-disabled="state.contactSaving"
+                                            t-on-click="this.saveEditContact">
+                                        <t t-if="state.contactSaving">Saving…</t>
+                                        <t t-else="">Save</t>
+                                    </button>
+                                </div>
+                            </div>
+                        </t>
+                        <!-- Quick contact action buttons -->
+                        <div class="cpb-contact-actions"
+                             t-if="props.lead.phone or props.lead.email_from">
+                            <button t-if="props.lead.phone"
+                                    type="button"
+                                    class="cpb-contact-action-btn cpb-contact-action-btn--call"
+                                    title="Call"
+                                    t-on-click="this.callLead">
+                                <i class="fa fa-phone"/> Call
+                            </button>
+                            <button t-if="props.lead.phone"
+                                    type="button"
+                                    class="cpb-contact-action-btn cpb-contact-action-btn--sms"
+                                    title="SMS"
+                                    t-on-click="this.smsLead">
+                                <i class="fa fa-comment"/> SMS
+                            </button>
+                            <button t-if="props.lead.email_from"
+                                    type="button"
+                                    class="cpb-contact-action-btn cpb-contact-action-btn--email"
+                                    title="Email"
+                                    t-on-click="this.emailLead">
+                                <i class="fa fa-envelope"/> Email
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div t-if="props.lead.tag_names and props.lead.tag_names.length" class="cpb-lead-modal-field">
+                        <label class="cpb-field-label">Tags</label>
+                        <div class="cpb-tag-list">
+                            <t t-foreach="props.lead.tag_names" t-as="tag" t-key="tag">
+                                <span class="cpb-tag" t-esc="tag"/>
+                            </t>
+                        </div>
+                    </div>
+
+                    <!-- Action buttons (smart hierarchy) -->
+                    <div class="cpb-lead-modal-actions">
+                        <!-- PRIMARY -->
+                        <t t-if="!props.lead.is_converted">
+                            <button class="btn btn-primary cpb-action-btn cpb-action-btn--primary"
+                                t-on-click="() => props.onConvertToMember(props.lead.id)">
+                                <i class="fa fa-user-plus"/> Convert to Member
+                            </button>
+                        </t>
+                        <t t-else="">
+                            <button t-if="props.lead.dojo_member_id"
+                                class="btn btn-primary cpb-action-btn cpb-action-btn--primary"
+                                t-on-click="() => props.onViewMember(props.lead.dojo_member_id)">
+                                <i class="fa fa-user"/> View Member
+                            </button>
+                        </t>
+
+                        <!-- SECONDARY (state-aware) -->
+                        <div class="cpb-action-secondary-row">
+                            <t t-if="!props.lead.is_converted">
+                                <t t-if="!props.lead.trial_session_id">
+                                    <button class="cpb-link-btn"
+                                        t-on-click="() => props.onBookTrial(props.lead.id)">
+                                        <i class="fa fa-calendar-plus-o"/> Book Trial
+                                    </button>
+                                </t>
+                                <t t-elif="!props.lead.trial_attended">
+                                    <button class="cpb-link-btn"
+                                        t-on-click="(ev) => props.onToggleField(props.lead.id, 'trial_attended', true)">
+                                        <i class="fa fa-check"/> Mark Trial Attended
+                                    </button>
+                                </t>
+                            </t>
+                            <a class="cpb-link-btn"
+                                t-att-href="'/odoo/crm/' + props.lead.id"
+                                target="_blank" rel="noopener">
+                                <i class="fa fa-external-link"/> Full Form
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: Tabs -->
+                <div class="cpb-lead-modal-right">
+
+                    <!-- Tab nav -->
+                    <div class="cpb-detail-tabs">
+                        <button class="cpb-tab" t-att-class="{'cpb-tab--active': state.tab === 'overview'}"
+                            t-on-click="() => this.setTab('overview')">Overview</button>
+                        <button class="cpb-tab" t-att-class="{'cpb-tab--active': state.tab === 'trial'}"
+                            t-on-click="() => this.setTab('trial')">Trial Journey</button>
+                        <button class="cpb-tab" t-att-class="{'cpb-tab--active': state.tab === 'engagement'}"
+                            t-on-click="() => this.setTab('engagement')">Engagement</button>
+                        <button class="cpb-tab" t-att-class="{'cpb-tab--active': state.tab === 'notes'}"
+                            t-on-click="() => this.setTab('notes')">Notes</button>
+                        <button class="cpb-tab" t-att-class="{'cpb-tab--active': state.tab === 'activities'}"
+                            t-on-click="() => this.setTab('activities')">
+                            Activities
+                            <span t-if="props.lead.activities and props.lead.activities.length"
+                                class="cpb-tab-badge" t-esc="props.lead.activities.length"/>
+                        </button>
+                        <button class="cpb-tab" t-att-class="{'cpb-tab--active': state.tab === 'messages'}"
+                            t-on-click="() => this.setTab('messages')">Messages</button>
+                    </div>
+
+                    <!-- Tab: Overview -->
+                    <div t-if="state.tab === 'overview'" class="cpb-detail-tab-body">
+                        <div class="cpb-toggle-row">
+                            <label class="cpb-toggle-label">
+                                <input type="checkbox"
+                                    t-att-checked="props.lead.trial_attended"
+                                    t-on-change="this.onToggleTrialAttended"
+                                />
+                                Trial Attended
+                            </label>
+                            <label class="cpb-toggle-label ms-4">
+                                <input type="checkbox"
+                                    t-att-checked="props.lead.no_show"
+                                    disabled="1"
+                                />
+                                No-Show <span class="cpb-hint">(auto)</span>
+                            </label>
+                        </div>
+                        <div t-if="props.lead.date_deadline" class="cpb-kv">
+                            <span class="cpb-kv-key">Deadline</span>
+                            <span class="cpb-kv-val" t-esc="props.lead.date_deadline"/>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Trial Journey -->
+                    <div t-if="state.tab === 'trial'" class="cpb-detail-tab-body">
+                        <t t-if="!props.lead.trial_session_name and !props.lead.trial_booking_url">
+                            <div class="cpb-empty-hint">No trial booked yet.</div>
+                        </t>
+                        <div class="cpb-kv" t-if="props.lead.trial_session_name">
+                            <span class="cpb-kv-key">Session</span>
+                            <span class="cpb-kv-val" t-esc="props.lead.trial_session_name"/>
+                        </div>
+                        <div class="cpb-kv" t-if="props.lead.trial_session_dt">
+                            <span class="cpb-kv-key">Date/Time</span>
+                            <span class="cpb-kv-val" t-esc="sessionDate"/>
+                        </div>
+                        <div class="cpb-kv" t-if="props.lead.offer_sent_date">
+                            <span class="cpb-kv-key">Offer Sent</span>
+                            <span class="cpb-kv-val" t-esc="offerDate"/>
+                        </div>
+                        <t t-if="props.lead.trial_booking_url">
+                            <div class="cpb-kv">
+                                <span class="cpb-kv-key">Booking Link</span>
+                                <a class="cpb-kv-val cpb-link" t-att-href="props.lead.trial_booking_url"
+                                    target="_blank" t-esc="'Open →'"/>
+                            </div>
+                            <div class="cpb-kv">
+                                <span class="cpb-kv-key">Link Clicked</span>
+                                <span class="cpb-kv-val">
+                                    <t t-if="props.lead.booking_link_clicked">
+                                        <span class="cpb-badge cpb-badge--attended">Yes</span>
+                                    </t>
+                                    <t t-else="">No</t>
+                                </span>
+                            </div>
+                        </t>
+                        <t t-if="props.lead.lead_has_signed_waiver">
+                            <div class="cpb-kv">
+                                <span class="cpb-kv-key">Waiver Signed By</span>
+                                <span class="cpb-kv-val" t-esc="props.lead.lead_waiver_signed_by"/>
+                            </div>
+                            <div class="cpb-kv">
+                                <span class="cpb-kv-key">Waiver Date</span>
+                                <span class="cpb-kv-val" t-esc="props.lead.lead_waiver_signed_on"/>
+                            </div>
+                        </t>
+                    </div>
+
+                    <!-- Tab: Engagement & AI -->
+                    <div t-if="state.tab === 'engagement'" class="cpb-detail-tab-body">
+                        <div class="cpb-kv" t-if="props.lead.last_engagement_date">
+                            <span class="cpb-kv-key">Last Engagement</span>
+                            <span class="cpb-kv-val" t-esc="engageDate"/>
+                        </div>
+                        <div t-if="props.lead.ai_summary" class="cpb-ai-summary">
+                            <div class="cpb-ai-summary-label"><i class="fa fa-magic"/> AI Summary</div>
+                            <div class="cpb-ai-summary-body" t-esc="props.lead.ai_summary"/>
+                        </div>
+                        <div t-else="" class="cpb-empty-hint">
+                            No AI summary yet.
+                        </div>
+                    </div>
+
+                    <!-- Tab: Notes -->
+                    <div t-if="state.tab === 'notes'" class="cpb-detail-tab-body cpb-notes-tab">
+                        <div class="cpb-notes-header">
+                            <label class="cpb-field-label">Personal Notes</label>
+                            <span class="cpb-notes-status" t-att-class="'cpb-notes-status--' + state.notesStatus">
+                                <t t-if="state.notesStatus === 'saving'"><i class="fa fa-spinner fa-spin"/> Saving…</t>
+                                <t t-elif="state.notesStatus === 'saved'"><i class="fa fa-check"/> Saved</t>
+                            </span>
+                        </div>
+                        <textarea class="cpb-notes-textarea form-control"
+                            rows="12"
+                            placeholder="Add notes about this lead — call summaries, preferences, follow-up reminders…"
+                            t-att-value="state.notesDraft"
+                            t-on-input="this.onNotesInput"
+                            t-on-blur="this.onNotesBlur"/>
+                        <div class="cpb-notes-hint">Saves automatically as you type.</div>
+                    </div>
+
+                    <!-- Tab: Activities -->
+                    <div t-if="state.tab === 'activities'" class="cpb-detail-tab-body">
+                        <t t-if="!props.lead.activities or !props.lead.activities.length">
+                            <div class="cpb-empty-hint">No pending activities.</div>
+                        </t>
+                        <t t-else="">
+                            <t t-foreach="props.lead.activities" t-as="act" t-key="act.id">
+                                <div class="cpb-activity" t-att-class="{ 'cpb-activity--overdue': act.overdue }">
+                                    <div class="cpb-activity-header">
+                                        <span class="cpb-activity-type" t-esc="act.type"/>
+                                        <span t-if="act.overdue" class="cpb-overdue-badge">Overdue</span>
+                                    </div>
+                                    <div t-if="act.summary" class="cpb-activity-summary" t-esc="act.summary"/>
+                                    <div t-if="act.note" class="cpb-activity-note" t-out="this.noteMarkup(act.note)"/>
+                                    <div class="cpb-activity-meta">
+                                        <i class="fa fa-calendar-o"/>
+                                        <span t-esc="act.date_deadline"/>
+                                        · <i class="fa fa-user-o"/>
+                                        <span t-esc="act.user_name"/>
+                                    </div>
+                                    <div t-if="this.isRecapActivity(act)" class="cpb-activity-actions">
+                                        <button type="button"
+                                            class="btn btn-sm cpb-action-btn cpb-action-btn--primary"
+                                            t-on-click="this.sendRecap">
+                                            <i class="fa fa-paper-plane"/> Send Recap Email
+                                        </button>
+                                    </div>
+                                </div>
+                            </t>
+                        </t>
+                    </div>
+
+                    <!-- Tab: Messages -->
+                    <div t-if="state.tab === 'messages'" class="cpb-detail-tab-body cpb-messages-tab">
+                        <t t-if="state.messagesLoading">
+                            <div class="cpb-empty-hint"><i class="fa fa-spinner fa-spin"/> Loading…</div>
+                        </t>
+                        <t t-elif="!state.messages.length">
+                            <div class="cpb-empty-hint">No messages or log notes yet.</div>
+                        </t>
+                        <t t-else="">
+                            <t t-foreach="state.messages" t-as="msg" t-key="msg.id">
+                                <div class="cpb-message"
+                                    t-att-class="{
+                                        'cpb-message--note': msg.is_note,
+                                        'cpb-message--expanded': state.expandedMessages[msg.id],
+                                    }">
+                                    <button type="button" class="cpb-message-header"
+                                        t-on-click="() => this.toggleMessage(msg.id)">
+                                        <i class="fa cpb-message-chevron"
+                                            t-att-class="state.expandedMessages[msg.id] ? 'fa-chevron-down' : 'fa-chevron-right'"/>
+                                        <span class="cpb-message-badge" t-esc="msg.is_note ? 'Log Note' : 'Message'"/>
+                                        <span class="cpb-message-author" t-esc="msg.author"/>
+                                        <span class="cpb-message-date" t-esc="msg.date"/>
+                                    </button>
+                                    <div t-if="!state.expandedMessages[msg.id]"
+                                        class="cpb-message-preview"
+                                        t-esc="this.messagePreview(msg.body)"/>
+                                    <div t-if="state.expandedMessages[msg.id]" class="cpb-message-content">
+                                        <div t-if="msg.subject" class="cpb-message-subject" t-esc="msg.subject"/>
+                                        <div class="cpb-message-body" t-out="this.noteMarkup(msg.body)"/>
+                                    </div>
+                                </div>
+                            </t>
+                        </t>
+                    </div>
+
+                </div><!-- /right column -->
+            </div><!-- /body -->
+
+        </div><!-- /cpb-lead-modal -->
+    </div><!-- /backdrop -->
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     BookTrialModal
+═══════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_crm.BookTrialModal">
+    <div class="cpb-modal-backdrop">
+        <div class="cpb-modal">
+            <div class="cpb-modal-header">
+                <h3>Book Trial</h3>
+                <button class="cpb-modal-close" t-on-click="props.onCancel"><i class="fa fa-times"/></button>
+            </div>
+            <div class="cpb-modal-body">
+                <p>Lead: <strong t-esc="props.lead.contact_name or props.lead.partner_name or props.lead.name"/></p>
+                <label class="cpb-modal-label">Select Session</label>
+                <select class="form-select"
+                    t-on-change="this.onSessionSelectChange">
+                    <option value="">— Choose a session —</option>
+                    <t t-foreach="props.sessions" t-as="s" t-key="s.id">
+                        <option t-att-value="s.id">
+                            <t t-esc="s.template_name or s.name"/> — <t t-esc="s.start_datetime"/> (<t t-esc="s.seats_left"/> seats left)
+                        </option>
+                    </t>
+                </select>
+
+                <t t-if="selectedSession and selectedSession.is_full">
+                    <div class="cpb-alert cpb-alert--warn">
+                        <i class="fa fa-exclamation-triangle"/> Session is at capacity.
+                        <label class="cpb-override-label">
+                            <input type="checkbox"
+                                t-att-checked="state.force"
+                                t-on-change="this.onForceChange"
+                            />
+                            Override capacity and book anyway
+                        </label>
+                    </div>
+                </t>
+
+                <t t-if="state.error">
+                    <div class="cpb-alert cpb-alert--error" t-esc="state.error"/>
+                </t>
+            </div>
+            <div class="cpb-modal-footer">
+                <button class="btn btn-secondary" t-on-click="props.onCancel">Cancel</button>
+                <button class="btn btn-primary" t-on-click="confirm"
+                    t-att-disabled="state.saving or !state.sessionId">
+                    <t t-if="state.saving"><i class="fa fa-spinner fa-spin"/> Booking…</t>
+                    <t t-else="">Confirm Booking</t>
+                </button>
+            </div>
+        </div>
+    </div>
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     Bulk Modals
+═══════════════════════════════════════════════════════════════════ -->
+
+<t t-name="dojo_crm.BulkMoveModal">
+    <div class="cpb-modal-backdrop">
+        <div class="cpb-modal">
+            <div class="cpb-modal-header">
+                <h3>Move <t t-esc="props.selectedCount"/> Lead(s) to Stage</h3>
+                <button class="cpb-modal-close" t-on-click="props.onCancel"><i class="fa fa-times"/></button>
+            </div>
+            <div class="cpb-modal-body">
+                <select class="form-select" t-on-change="this.onStageSelectChange">
+                    <option value="">— Select stage —</option>
+                    <t t-foreach="props.stages" t-as="st" t-key="st.id">
+                        <option t-att-value="st.id" t-esc="st.name"/>
+                    </t>
+                </select>
+            </div>
+            <div class="cpb-modal-footer">
+                <button class="btn btn-secondary" t-on-click="props.onCancel">Cancel</button>
+                <button class="btn btn-primary" t-att-disabled="!state.stageId"
+                    t-on-click="this.onConfirmStage">Move</button>
+            </div>
+        </div>
+    </div>
+</t>
+
+<t t-name="dojo_crm.BulkAssignModal">
+    <div class="cpb-modal-backdrop">
+        <div class="cpb-modal">
+            <div class="cpb-modal-header">
+                <h3>Assign <t t-esc="props.selectedCount"/> Lead(s)</h3>
+                <button class="cpb-modal-close" t-on-click="props.onCancel"><i class="fa fa-times"/></button>
+            </div>
+            <div class="cpb-modal-body">
+                <select class="form-select" t-on-change="this.onUserSelectChange">
+                    <option value="">— Select salesperson —</option>
+                    <t t-foreach="props.salespersons" t-as="u" t-key="u.id">
+                        <option t-att-value="u.id" t-esc="u.name"/>
+                    </t>
+                </select>
+            </div>
+            <div class="cpb-modal-footer">
+                <button class="btn btn-secondary" t-on-click="props.onCancel">Cancel</button>
+                <button class="btn btn-primary" t-att-disabled="!state.userId"
+                    t-on-click="this.onConfirmAssign">Assign</button>
+            </div>
+        </div>
+    </div>
+</t>
+
+<t t-name="dojo_crm.BulkNoteModal">
+    <div class="cpb-modal-backdrop">
+        <div class="cpb-modal">
+            <div class="cpb-modal-header">
+                <h3>Add Note to <t t-esc="props.selectedCount"/> Lead(s)</h3>
+                <button class="cpb-modal-close" t-on-click="props.onCancel"><i class="fa fa-times"/></button>
+            </div>
+            <div class="cpb-modal-body">
+                <textarea class="form-control" rows="4" placeholder="Internal note…"
+                    t-att-value="state.body"
+                    t-on-input="this.onBodyInput"/>
+            </div>
+            <div class="cpb-modal-footer">
+                <button class="btn btn-secondary" t-on-click="props.onCancel">Cancel</button>
+                <button class="btn btn-primary" t-att-disabled="!state.body.trim()"
+                    t-on-click="this.onPostNote">Post Note</button>
+            </div>
+        </div>
+    </div>
+</t>
+
+<t t-name="dojo_crm.BulkMessageModal">
+    <div class="cpb-modal-backdrop">
+        <div class="cpb-modal">
+            <div class="cpb-modal-header">
+                <h3>Send Message to <t t-esc="props.selectedCount"/> Lead(s)</h3>
+                <button class="cpb-modal-close" t-on-click="props.onCancel"><i class="fa fa-times"/></button>
+            </div>
+            <div class="cpb-modal-body">
+                <input class="form-control mb-2" type="text" placeholder="Subject (optional)"
+                    t-att-value="state.subject"
+                    t-on-input="this.onSubjectInput"/>
+                <textarea class="form-control" rows="4" placeholder="Message body…"
+                    t-att-value="state.body"
+                    t-on-input="this.onBodyInput"/>
+            </div>
+            <div class="cpb-modal-footer">
+                <button class="btn btn-secondary" t-on-click="props.onCancel">Cancel</button>
+                <button class="btn btn-primary" t-att-disabled="!state.body.trim()"
+                    t-on-click="this.onSend">Send</button>
+            </div>
+        </div>
+    </div>
+</t>
+
+<t t-name="dojo_crm.BulkTagModal">
+    <div class="cpb-modal-backdrop">
+        <div class="cpb-modal cpb-modal--wide">
+            <div class="cpb-modal-header">
+                <h3>Update Tags on <t t-esc="props.selectedCount"/> Lead(s)</h3>
+                <button class="cpb-modal-close" t-on-click="props.onCancel"><i class="fa fa-times"/></button>
+            </div>
+            <div class="cpb-modal-body">
+                <p class="text-muted">Check tags to <strong>add</strong>, or mark them to <strong>remove</strong> from selected leads.</p>
+                <div class="cpb-tag-grid">
+                    <t t-foreach="props.tagOptions" t-as="tag" t-key="tag.id">
+                        <div class="cpb-tag-row">
+                            <span class="cpb-tag" t-esc="tag.name"/>
+                            <label class="ms-2">
+                                <input type="checkbox"
+                                    t-att-checked="state.addIds.includes(tag.id)"
+                                    t-on-change="() => this.toggleAdd(tag.id)"
+                                /> Add
+                            </label>
+                            <label class="ms-2">
+                                <input type="checkbox"
+                                    t-att-checked="state.removeIds.includes(tag.id)"
+                                    t-on-change="() => this.toggleRemove(tag.id)"
+                                /> Remove
+                            </label>
+                        </div>
+                    </t>
+                </div>
+            </div>
+            <div class="cpb-modal-footer">
+                <button class="btn btn-secondary" t-on-click="props.onCancel">Cancel</button>
+                <button class="btn btn-primary"
+                    t-on-click="() => props.onConfirm(state.addIds, state.removeIds)">Apply</button>
+            </div>
+        </div>
+    </div>
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CrmPipelineApp (root)
+═══════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_crm.CrmPipelineApp">
+    <div class="cpb-root">
+        <!-- Top toolbar -->
+        <div class="cpb-toolbar">
+            <h1 class="cpb-toolbar-title"><i class="fa fa-funnel-dollar"/> CRM Pipeline</h1>
+            <SearchBar
+                query="state.searchQuery"
+                onInput.bind="onSearchInput"
+                onClear.bind="onSearchClear"
+            />
+            <FilterChipsBar
+                activeChips="state.activeChips"
+                onToggle.bind="onToggleChip"
+            />
+            <button class="cpb-toolbar-btn cpb-toolbar-btn--gear"
+                title="Automations"
+                t-on-click="this.openAutomations">
+                <i class="fa fa-cog"/>
+                <span class="cpb-toolbar-btn-label">Automations</span>
+            </button>
+            <button class="cpb-toolbar-btn cpb-toolbar-btn--gear"
+                title="Email &amp; SMS Templates"
+                t-on-click="this.openTemplates">
+                <i class="fa fa-envelope"/>
+                <span class="cpb-toolbar-btn-label">Templates</span>
+            </button>
+        </div>
+
+        <!-- KPI bar -->
+        <KpiHeader kpis="state.kpis"/>
+
+        <!-- Bulk action bar (appears when leads selected) -->
+        <t t-if="hasSelection">
+            <BulkActionBar
+                selectedCount="selectedCount"
+                onMoveStage.bind="openBulkMoveModal"
+                onAssign.bind="openBulkAssignModal"
+                onNote.bind="openBulkNoteModal"
+                onMessage.bind="openBulkMessageModal"
+                onTagUpdate.bind="openBulkTagModal"
+                onArchive.bind="archiveSelected"
+                onUnarchive.bind="unarchiveSelected"
+                onClear.bind="clearSelection"
+            />
+        </t>
+
+        <!-- Loading skeleton -->
+        <t t-if="state.loading">
+            <div class="cpb-loading-full">
+                <i class="fa fa-spinner fa-spin fa-2x"/>
+                <span>Loading pipeline…</span>
+            </div>
+        </t>
+
+        <!-- Board columns -->
+        <t t-else="">
+            <div class="cpb-board">
+                <div class="cpb-columns-wrap">
+                    <t t-foreach="state.stages" t-as="stage" t-key="stage.id">
+                        <t t-set="slot" t-value="state.stageLeads[stage.id] or { leads: [], total: 0, loading: false, offset: 0 }"/>
+                        <StageColumn
+                            stage="stage"
+                            leads="slot.leads"
+                            loading="slot.loading"
+                            hasMore="slot.leads.length lt slot.total"
+                            selectedIds="state.selectedIds"
+                            showQuickCreate="state.quickCreateStageId === stage.id"
+                            onLeadClick.bind="onLeadClick"
+                            onLeadSelect.bind="onLeadSelect"
+                            onLoadMore.bind="loadMoreLeads"
+                            onDrop.bind="onDrop"
+                            onOpenQuickCreate.bind="openQuickCreate"
+                            onQuickCreateSave.bind="saveQuickCreate"
+                            onQuickCreateCancel.bind="closeQuickCreate"
+                            onDragStart.bind="onDragStart"
+                        />
+                    </t>
+                </div>
+            </div>
+        </t>
+
+        <!-- Lead detail modal (full-screen overlay, rendered outside board) -->
+        <t t-if="state.detailLead">
+            <LeadDetailModal
+                lead="state.detailLead"
+                stages="state.stages"
+                salespersons="state.salespersons"
+                messagesReloadKey="state.messagesReloadKey"
+                onClose.bind="closeDetailPanel"
+                onStageChange.bind="onStageChange"
+                onAssign.bind="onAssign"
+                onBookTrial.bind="onBookTrial"
+                onConvertToMember.bind="onConvertToMember"
+                onViewMember.bind="onViewMember"
+                onToggleField.bind="onToggleField"
+                onDelete.bind="onDeleteLead"
+                onUploadAvatar.bind="onUploadAvatar"
+                onCall.bind="onCall"
+                onSendEmail.bind="onSendEmail"
+                onSendSms.bind="onSendSms"
+                onSaveDescription.bind="onSaveDescription"
+                onSendRecap.bind="onSendRecap"
+                onSaveContact.bind="onSaveContact"
+            />
+        </t>
+
+        <!-- Modals -->
+        <t t-if="state.modal === 'bookTrial' and state.detailLead">
+            <BookTrialModal
+                lead="state.detailLead"
+                sessions="state.sessions"
+                onConfirm.bind="confirmBookTrial"
+                onCancel.bind="closeModal"
+            />
+        </t>
+        <t t-if="state.modal === 'bulkMove'">
+            <BulkMoveModal
+                stages="state.stages"
+                selectedCount="selectedCount"
+                onConfirm.bind="confirmBulkMoveStage"
+                onCancel.bind="closeModal"
+            />
+        </t>
+        <t t-if="state.modal === 'bulkAssign'">
+            <BulkAssignModal
+                salespersons="state.salespersons"
+                selectedCount="selectedCount"
+                onConfirm.bind="confirmBulkAssign"
+                onCancel.bind="closeModal"
+            />
+        </t>
+        <t t-if="state.modal === 'bulkNote'">
+            <BulkNoteModal
+                selectedCount="selectedCount"
+                onConfirm.bind="confirmBulkNote"
+                onCancel.bind="closeModal"
+            />
+        </t>
+        <t t-if="state.modal === 'bulkMessage'">
+            <BulkMessageModal
+                selectedCount="selectedCount"
+                onConfirm.bind="confirmBulkMessage"
+                onCancel.bind="closeModal"
+            />
+        </t>
+        <t t-if="state.modal === 'bulkTag'">
+            <BulkTagModal
+                tagOptions="state.tagOptions"
+                selectedCount="selectedCount"
+                onConfirm.bind="confirmBulkTags"
+                onCancel.bind="closeModal"
+            />
+        </t>
+
+        <!-- Automations Drawer -->
+        <t t-if="state.automationsOpen">
+            <AutomationsDrawer
+                automations="state.automations"
+                isAdmin="state.automationsAdmin"
+                onClose.bind="closeAutomations"
+                onToggle.bind="onToggleAutomation"
+                onOpenSettings.bind="openAutomationSettings"
+            />
+        </t>
+
+        <!-- Templates Drawer -->
+        <t t-if="state.templatesOpen">
+            <TemplatesDrawer
+                templates="state.templates"
+                loading="state.templatesLoading"
+                activeTab="state.templatesTab"
+                onClose.bind="closeTemplates"
+                onSetTab.bind="setTemplatesTab"
+                onOpenTemplate.bind="openTemplateForm"
+                onOpenList.bind="openTemplateList"
+                onAddCard.bind="addTemplateCard"
+            />
+        </t>
+    </div>
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     AutomationsDrawer
+═══════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_crm.AutomationsDrawer">
+    <div class="cpb-drawer-backdrop" t-on-click="props.onClose">
+        <div class="cpb-drawer" t-on-click.stop="">
+            <div class="cpb-drawer-header">
+                <div>
+                    <h3 class="cpb-drawer-title"><i class="fa fa-bolt"/> CRM Automations</h3>
+                    <div class="cpb-drawer-subtitle">
+                        Toggle the background workflows that keep your pipeline moving.
+                    </div>
+                </div>
+                <button class="cpb-modal-close" t-on-click="props.onClose"><i class="fa fa-times"/></button>
+            </div>
+
+            <div class="cpb-drawer-body">
+                <t t-if="!props.isAdmin">
+                    <div class="cpb-alert cpb-alert--warn">
+                        <i class="fa fa-info-circle"/> View-only — only administrators can change automations.
+                    </div>
+                </t>
+
+                <t t-foreach="props.automations" t-as="auto" t-key="auto.key">
+                    <div class="cpb-automation-row" t-att-class="{'cpb-automation-row--off': !auto.enabled, 'cpb-automation-row--missing': !auto.exists}">
+                        <div class="cpb-automation-info">
+                            <div class="cpb-automation-label">
+                                <span t-esc="auto.label"/>
+                                <span t-if="!auto.exists" class="cpb-badge cpb-badge--noshow">Not installed</span>
+                            </div>
+                            <div class="cpb-automation-desc" t-esc="auto.description"/>
+                            <div class="cpb-automation-meta">
+                                <span t-if="auto.interval">Runs every <t t-esc="auto.interval"/></span>
+                                <span t-if="auto.last_run"> · Last: <t t-esc="auto.last_run"/></span>
+                            </div>
+                        </div>
+                        <label class="cpb-switch">
+                            <input type="checkbox"
+                                t-att-checked="auto.enabled"
+                                t-att-disabled="!props.isAdmin or !auto.exists"
+                                t-on-change="(ev) => this.onToggleAuto(auto.key, ev)"/>
+                            <span class="cpb-switch-slider"/>
+                        </label>
+                    </div>
+                </t>
+            </div>
+
+            <div class="cpb-drawer-footer">
+                <button class="cpb-link-btn" t-on-click="props.onOpenSettings">
+                    <i class="fa fa-cog"/> Configure schedules in Settings →
+                </button>
+            </div>
+        </div>
+    </div>
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     TemplatesDrawer
+═══════════════════════════════════════════════════════════════════ -->
+<t t-name="dojo_crm.TemplatesDrawer">
+    <div class="cpb-drawer-backdrop" t-on-click="props.onClose">
+        <div class="cpb-drawer" t-on-click.stop="">
+            <div class="cpb-drawer-header">
+                <div>
+                    <h3 class="cpb-drawer-title"><i class="fa fa-envelope"/> Email &amp; SMS Templates</h3>
+                    <div class="cpb-drawer-subtitle">
+                        Templates targeting CRM Lead. Manage them in Email Marketing &amp; SMS Marketing.
+                    </div>
+                </div>
+                <button class="cpb-modal-close" t-on-click="props.onClose"><i class="fa fa-times"/></button>
+            </div>
+
+            <div class="cpb-drawer-body">
+                <div class="cpb-tpl-tabs">
+                    <button class="cpb-tpl-tab"
+                        t-att-class="{'cpb-tpl-tab--active': props.activeTab === 'email'}"
+                        t-on-click="() => props.onSetTab('email')">
+                        <i class="fa fa-envelope"/> Email
+                        <span class="cpb-tpl-count" t-esc="(props.templates.email or []).length"/>
+                    </button>
+                    <button class="cpb-tpl-tab"
+                        t-att-class="{'cpb-tpl-tab--active': props.activeTab === 'sms'}"
+                        t-on-click="() => props.onSetTab('sms')">
+                        <i class="fa fa-mobile"/> SMS
+                        <span class="cpb-tpl-count" t-esc="(props.templates.sms or []).length"/>
+                    </button>
+                </div>
+
+                <t t-if="props.loading">
+                    <div class="cpb-empty-hint"><i class="fa fa-spinner fa-spin"/> Loading templates…</div>
+                </t>
+                <t t-elif="props.activeTab === 'email'">
+                    <t t-if="!(props.templates.email or []).length">
+                        <div class="cpb-empty-hint">
+                            No email templates target CRM Lead yet.
+                            <button class="cpb-link-btn" t-on-click="() => props.onOpenList('mail.template')">
+                                Open Email Templates →
+                            </button>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <t t-foreach="props.templates.email" t-as="tpl" t-key="tpl.id">
+                            <div class="cpb-tpl-row" t-on-click="() => props.onOpenTemplate('mail.template', tpl.id)">
+                                <div class="cpb-tpl-row-main">
+                                    <div class="cpb-tpl-row-name" t-esc="tpl.name"/>
+                                    <div t-if="tpl.subject" class="cpb-tpl-row-sub" t-esc="tpl.subject"/>
+                                    <div class="cpb-tpl-card-link">
+                                        <t t-if="tpl.card_campaign_id">
+                                            <button class="cpb-tpl-card-badge"
+                                                    t-on-click.stop="() => props.onOpenTemplate('card.campaign', tpl.card_campaign_id)"
+                                                    t-att-title="'Open card: ' + tpl.card_campaign_name">
+                                                <i class="fa fa-id-card"/>
+                                                <span t-esc="tpl.card_campaign_name"/>
+                                            </button>
+                                        </t>
+                                        <t t-else="">
+                                            <button class="cpb-tpl-card-add"
+                                                    t-on-click.stop="() => props.onAddCard('mail.template', tpl.id)">
+                                                <i class="fa fa-plus"/> Add Marketing Card
+                                            </button>
+                                        </t>
+                                    </div>
+                                </div>
+                                <i class="fa fa-external-link cpb-tpl-row-icon"/>
+                            </div>
+                        </t>
+                    </t>
+                </t>
+                <t t-else="">
+                    <t t-if="!(props.templates.sms or []).length">
+                        <div class="cpb-empty-hint">
+                            No SMS templates target CRM Lead yet.
+                            <button class="cpb-link-btn" t-on-click="() => props.onOpenList('sms.template')">
+                                Open SMS Templates →
+                            </button>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <t t-foreach="props.templates.sms" t-as="tpl" t-key="tpl.id">
+                            <div class="cpb-tpl-row" t-on-click="() => props.onOpenTemplate('sms.template', tpl.id)">
+                                <div class="cpb-tpl-row-main">
+                                    <div class="cpb-tpl-row-name" t-esc="tpl.name"/>
+                                    <div t-if="tpl.body_preview" class="cpb-tpl-row-sub" t-esc="tpl.body_preview"/>
+                                    <div class="cpb-tpl-card-link">
+                                        <t t-if="tpl.card_campaign_id">
+                                            <button class="cpb-tpl-card-badge"
+                                                    t-on-click.stop="() => props.onOpenTemplate('card.campaign', tpl.card_campaign_id)"
+                                                    t-att-title="'Open card: ' + tpl.card_campaign_name">
+                                                <i class="fa fa-id-card"/>
+                                                <span t-esc="tpl.card_campaign_name"/>
+                                            </button>
+                                        </t>
+                                        <t t-else="">
+                                            <button class="cpb-tpl-card-add"
+                                                    t-on-click.stop="() => props.onAddCard('sms.template', tpl.id)">
+                                                <i class="fa fa-plus"/> Add Marketing Card
+                                            </button>
+                                        </t>
+                                    </div>
+                                </div>
+                                <i class="fa fa-external-link cpb-tpl-row-icon"/>
+                            </div>
+                        </t>
+                    </t>
+                </t>
+            </div>
+
+            <div class="cpb-drawer-footer">
+                <button class="cpb-link-btn" t-on-click="() => props.onOpenList('mail.template')">
+                    <i class="fa fa-envelope"/> All email templates
+                </button>
+                <button class="cpb-link-btn" t-on-click="() => props.onOpenList('sms.template')">
+                    <i class="fa fa-mobile"/> All SMS templates
+                </button>
+            </div>
+        </div>
+    </div>
+</t>
+
+</templates>

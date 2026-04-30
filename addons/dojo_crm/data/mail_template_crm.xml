@@ -6,6 +6,7 @@
     <record id="mail_template_qualified" model="mail.template">
         <field name="name">Dojang CRM: Qualified — Book Your Free Trial (Email)</field>
         <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="card_campaign_id" ref="card_campaign_crm_qualified"/>
         <field name="subject">Book Your Free Trial Class — {{ object.company_id.name }}</field>
         <field name="email_to">{{ object.email_from }}</field>
         <field name="body_html"><![CDATA[
@@ -44,6 +45,7 @@
     <record id="mail_template_trial_booked" model="mail.template">
         <field name="name">Dojang CRM: Trial Booked Confirmation (Email)</field>
         <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="card_campaign_id" ref="card_campaign_crm_trial_booked"/>
         <field name="subject">Your Free Trial is Confirmed! 🥋</field>
         <field name="email_to">{{ object.email_from }}</field>
         <field name="body_html"><![CDATA[
@@ -95,6 +97,7 @@
     <record id="mail_template_trial_attended" model="mail.template">
         <field name="name">Dojang CRM: Trial-in-progress — Post-Trial Offer (Email)</field>
         <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="card_campaign_id" ref="card_campaign_crm_trial_attended"/>
         <field name="subject">Great Class Today — Here's a Special Offer for You 🥋</field>
         <field name="email_to">{{ object.email_from }}</field>
         <field name="body_html"><![CDATA[
@@ -129,6 +132,7 @@
     <record id="mail_template_trial_expired" model="mail.template">
         <field name="name">Dojang CRM: Missed Trial — Re-engage Lead (Email)</field>
         <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="card_campaign_id" ref="card_campaign_crm_missed_trial"/>
         <field name="subject">We Missed You — Book a New Trial Class</field>
         <field name="email_to">{{ object.email_from }}</field>
         <field name="body_html"><![CDATA[
@@ -203,6 +207,7 @@
     <record id="mail_template_no_show" model="mail.template">
         <field name="name">Dojang CRM: No-Show Reschedule Follow-Up (Email)</field>
         <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="card_campaign_id" ref="card_campaign_crm_no_show"/>
         <field name="subject">We Missed You — Let's Find a Better Time</field>
         <field name="email_to">{{ object.email_from }}</field>
         <field name="body_html"><![CDATA[
@@ -240,6 +245,7 @@
     <record id="mail_template_trial_reminder" model="mail.template">
         <field name="name">Dojang CRM: Trial Class Reminder — 24h (Email)</field>
         <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="card_campaign_id" ref="card_campaign_crm_trial_reminder"/>
         <field name="subject">Reminder: Your Free Trial is Tomorrow! 🥋</field>
         <field name="email_to">{{ object.email_from }}</field>
         <field name="body_html"><![CDATA[
@@ -288,6 +294,7 @@
     <record id="mail_template_offer_made_details" model="mail.template">
         <field name="name">Dojang CRM: Evaluation — Membership Plan Details (Email)</field>
         <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="card_campaign_id" ref="card_campaign_crm_offer_details"/>
         <field name="subject">Your Personalised Membership Offer is Ready 🥋</field>
         <field name="email_to">{{ object.email_from }}</field>
         <field name="body_html"><![CDATA[
@@ -327,6 +334,7 @@
     <record id="mail_template_offer_expiry_nudge" model="mail.template">
         <field name="name">Dojang CRM: Offer Expiry Nudge — 72h (Email)</field>
         <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="card_campaign_id" ref="card_campaign_crm_offer_expiry"/>
         <field name="subject">Last Chance — Your Offer Expires Soon ⚠️</field>
         <field name="email_to">{{ object.email_from }}</field>
         <field name="body_html"><![CDATA[
@@ -358,6 +366,7 @@
     <record id="mail_template_no_show_followup" model="mail.template">
         <field name="name">Dojang CRM: No-Show 2nd Follow-Up — 5 Days (Email)</field>
         <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="card_campaign_id" ref="card_campaign_crm_no_show_followup"/>
         <field name="subject">Still Interested? We'd Love to Have You 🥋</field>
         <field name="email_to">{{ object.email_from }}</field>
         <field name="body_html"><![CDATA[

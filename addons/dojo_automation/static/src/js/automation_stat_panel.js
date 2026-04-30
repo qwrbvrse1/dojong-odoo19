@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState, onMounted } from "@odoo/owl";
+import { Component, useState, onMounted, onWillUnmount } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { AutomationKanbanController } from "@automation_oca/views/automation_upload/automation_upload.esm";
 
@@ -58,10 +58,9 @@ export class AutomationStatPanel extends Component {
 }
 
 // ─── Filter Chips ─────────────────────────────────────────────────────────────
-// Filter names match <filter name="..."> in automation_configuration_search_view:
-//   "run"   → state in ['periodic', 'ondemand']
-//   "draft" → state = 'draft'
-//   "done"  → state = 'done'
+// Chip names match <filter name="..."> in automation_configuration_search_view.
+// Active state is derived from the live searchModel query (not local state) so
+// chips always stay in sync even when the user also uses the search bar.
 
 const CHIP_DEFS = [
     { name: "run",   label: "Active", icon: "fa-bolt" },
@@ -73,32 +72,65 @@ export class AutomationFilterChips extends Component {
     static template = "dojo_automation.AutomationFilterChips";
 
     setup() {
-        this.state = useState(
-            Object.fromEntries(CHIP_DEFS.map((c) => [c.name, false]))
-        );
+        // Tiny reactive counter — bumped on every searchModel "update" event so
+        // the chips getter re-runs and reflects the real search query state.
+        this.state = useState({ tick: 0 });
+        this._onSmUpdate = () => { this.state.tick++; };
+
+        onMounted(() => {
+            const sm = this.env.searchModel;
+            if (sm) sm.addEventListener("update", this._onSmUpdate);
+        });
+        onWillUnmount(() => {
+            const sm = this.env.searchModel;
+            if (sm) sm.removeEventListener("update", this._onSmUpdate);
+        });
     }
 
+    // Derive active state from the live searchModel query.
+    // Accessing `this.state.tick` makes OWL re-evaluate this getter
+    // whenever the tick increments (i.e., after every sm update).
     get chips() {
-        return CHIP_DEFS.map((c) => ({ ...c, active: this.state[c.name] }));
+        void this.state.tick; // reactive dependency
+        const sm = this.env.searchModel;
+        if (!sm) return CHIP_DEFS.map((c) => ({ ...c, active: false }));
+
+        const activeIds = new Set(sm.query.map((q) => q.searchItemId));
+        const itemsByName = Object.fromEntries(
+            Object.values(sm.searchItems).map((i) => [i.name, i])
+        );
+        return CHIP_DEFS.map((c) => ({
+            ...c,
+            active: itemsByName[c.name] ? activeIds.has(itemsByName[c.name].id) : false,
+        }));
+    }
+
+    // Use data-chip-name instead of inline arrow with argument (OWL 2 safe)
+    onChipClick(ev) {
+        const name = ev.currentTarget.dataset.chipName;
+        this.toggleChip(name);
     }
 
     toggleChip(name) {
-        this.state[name] = !this.state[name];
         const sm = this.env.searchModel;
         if (!sm) return;
-        const item = Object.values(sm.searchItems || {}).find(
-            (i) => i.name === name && i.type === "filter"
-        );
+        const item = Object.values(sm.searchItems).find((i) => i.name === name);
         if (item) sm.toggleSearchItem(item.id);
+    }
+
+    clearAll() {
+        const sm = this.env.searchModel;
+        if (!sm) return;
+        for (const c of CHIP_DEFS) {
+            const item = Object.values(sm.searchItems).find((i) => i.name === c.name);
+            if (!item) continue;
+            const inQuery = sm.query.some((q) => q.searchItemId === item.id);
+            if (inQuery) sm.toggleSearchItem(item.id);
+        }
     }
 }
 
-// ─── Inject into AutomationKanbanController — isolated template per module ────
-// Set AutomationKanbanController.template to our dedicated primary template
-// (dojo_automation.AutomationKanbanView) so only this controller uses the
-// template that has AutomationStatPanel/AutomationFilterChips injected.
-// web.KanbanView itself is unchanged (primary mode creates an independent copy),
-// so all other kanbans continue to render without these components.
+// ─── Inject into AutomationKanbanController ───────────────────────────────────
 
 AutomationKanbanController.template = "dojo_automation.AutomationKanbanView";
 AutomationKanbanController.components = {
@@ -106,3 +138,20 @@ AutomationKanbanController.components = {
     AutomationStatPanel,
     AutomationFilterChips,
 };
+
+// Always open the builder instead of the OCA form.
+AutomationKanbanController.prototype.openRecord = async function (record) {
+    await this.actionService.doAction(
+        { type: "ir.actions.client", tag: "dojo_automation_builder", target: "current" },
+        { additionalContext: { config_id: record.resId } }
+    );
+};
+
+AutomationKanbanController.prototype.createRecord = async function () {
+    await this.actionService.doAction({
+        type: "ir.actions.client",
+        tag: "dojo_automation_builder",
+        target: "current",
+    });
+};
+

@@ -39,12 +39,13 @@
     <t t-name="dojo_automation.AutomationFilterChips">
         <div class="dojo-auto-filter-chips px-3 pb-2">
             <button t-attf-class="dojo-auto-filter-chip{{ !chips.some(c => c.active) ? ' active' : '' }}"
-                    t-on-click="() => { for (const c of chips) { if (c.active) toggleChip(c.name); } }">
+                    t-on-click="clearAll">
                 <i class="fa fa-list fa-sm"/> All
             </button>
             <t t-foreach="chips" t-as="chip" t-key="chip.name">
                 <button t-attf-class="dojo-auto-filter-chip{{ chip.active ? ' active' : '' }}"
-                        t-on-click="() => toggleChip(chip.name)"
+                        t-att-data-chip-name="chip.name"
+                        t-on-click="onChipClick"
                         t-att-aria-pressed="chip.active ? 'true' : 'false'">
                     <i t-attf-class="fa {{ chip.icon }} fa-sm"/>
                     <t t-esc="chip.label"/>

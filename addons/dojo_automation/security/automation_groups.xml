@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         Map Dojo roles onto automation_oca groups so the rebranded menus
+         and the underlying automation.configuration model are visible to
+         the right users.
+
+         - Dojo Admin      → Automation Manager (full RW + manage steps)
+         - Dojo Instructor → Automation User    (read-only, can run/test)
+         - System Admin    → Automation Manager (backstop for super-users)
+    ════════════════════════════════════════════════════════════════════ -->
+
+    <record id="dojo_core.group_dojo_admin" model="res.groups">
+        <field name="implied_ids" eval="[
+            (4, ref('automation_oca.group_automation_manager')),
+            (4, ref('automation_oca.group_automation_user')),
+        ]"/>
+    </record>
+
+    <record id="dojo_core.group_dojo_instructor" model="res.groups">
+        <field name="implied_ids" eval="[
+            (4, ref('automation_oca.group_automation_user')),
+        ]"/>
+    </record>
+
+    <record id="base.group_system" model="res.groups">
+        <field name="implied_ids" eval="[
+            (4, ref('automation_oca.group_automation_manager')),
+            (4, ref('automation_oca.group_automation_user')),
+        ]"/>
+    </record>
+
+</odoo>

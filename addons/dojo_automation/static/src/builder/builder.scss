@@ -1,0 +1,480 @@
+// Spark-style automation builder
+
+.dojo-builder {
+    --dojo-builder-bg: var(--surface, #f8fafc);
+    --dojo-builder-card: var(--card-bg, #ffffff);
+    --dojo-builder-border: var(--border-color, #e5e7eb);
+    --dojo-builder-text: var(--text-color, #1f2937);
+    --dojo-builder-muted: var(--text-muted, #6b7280);
+    --dojo-builder-accent: var(--primary, #0ea5e9);
+    --dojo-builder-radius: 12px;
+
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: var(--dojo-builder-bg);
+    color: var(--dojo-builder-text);
+}
+
+.dojo-builder__loading {
+    margin: auto;
+    text-align: center;
+    color: var(--dojo-builder-muted);
+}
+
+// ── Header ──────────────────────────────────────────────────────────────────
+.dojo-builder__header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--dojo-builder-border);
+    background: var(--dojo-builder-card);
+
+    .dojo-builder__name {
+        flex: 1;
+        font-size: 1.25rem;
+        font-weight: 600;
+        border: 0;
+        background: transparent;
+        outline: none;
+        padding: 0.5rem 0;
+        color: inherit;
+
+        &::placeholder { color: var(--dojo-builder-muted); }
+        &:focus { border-bottom: 2px solid var(--dojo-builder-accent); }
+    }
+
+    .dojo-builder__header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .dojo-builder__toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.9rem;
+        color: var(--dojo-builder-muted);
+        margin: 0;
+        cursor: pointer;
+    }
+}
+
+// ── Body: 2-pane layout ─────────────────────────────────────────────────────
+.dojo-builder__body {
+    display: grid;
+    grid-template-columns: minmax(320px, 38%) 1fr;
+    gap: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.dojo-builder__pane {
+    overflow-y: auto;
+    padding: 1.25rem;
+
+    &--left {
+        border-right: 1px solid var(--dojo-builder-border);
+        background: var(--dojo-builder-card);
+    }
+    &--right {
+        background: var(--dojo-builder-bg);
+    }
+}
+
+.dojo-builder-section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--dojo-builder-text);
+    margin-bottom: 0.5rem;
+}
+
+.dojo-builder-section { margin-bottom: 1.25rem; }
+
+// ── Trigger Picker ──────────────────────────────────────────────────────────
+.dojo-builder-trigger-picker {
+    .dojo-builder-trigger-group {
+        margin-bottom: 1rem;
+    }
+    .dojo-builder-trigger-group__title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--dojo-builder-muted);
+        margin-bottom: 0.4rem;
+        font-weight: 600;
+    }
+    .dojo-builder-trigger-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .dojo-builder-trigger-row {
+        margin: 0;
+        padding: 0;
+        border-radius: 8px;
+
+        &:hover { background: rgba(14, 165, 233, 0.06); }
+    }
+    .dojo-builder-trigger-row__label {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.45rem 0.5rem;
+        margin: 0;
+        cursor: pointer;
+        width: 100%;
+        font-size: 0.9rem;
+
+        input[type="radio"] {
+            accent-color: var(--dojo-builder-accent);
+        }
+    }
+    .dojo-builder-trigger-row__icon {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        background: rgba(14, 165, 233, 0.12);
+        color: var(--dojo-builder-accent);
+        font-size: 0.85rem;
+    }
+    .dojo-builder-trigger-row__name {
+        flex: 1;
+        color: inherit;
+    }
+    .dojo-builder-trigger-row__help {
+        color: var(--dojo-builder-muted);
+        font-size: 0.85rem;
+    }
+}
+
+// ── Tag Chip Input ──────────────────────────────────────────────────────────
+.dojo-tag-input {
+    margin-bottom: 0.75rem;
+    position: relative;
+
+    &__label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--dojo-builder-muted);
+        margin-bottom: 0.2rem;
+    }
+
+    &__field {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        padding: 0.4rem 0.5rem;
+        border: 1px solid var(--dojo-builder-border);
+        border-radius: 8px;
+        background: var(--dojo-builder-card);
+        min-height: 38px;
+    }
+
+    &__query {
+        flex: 1 1 100px;
+        border: 0;
+        outline: none;
+        font-size: 0.9rem;
+        background: transparent;
+        color: inherit;
+    }
+
+    &__dropdown {
+        position: absolute;
+        z-index: 5;
+        left: 0;
+        right: 0;
+        top: 100%;
+        margin: 4px 0 0;
+        padding: 0.25rem 0;
+        list-style: none;
+        background: var(--dojo-builder-card);
+        border: 1px solid var(--dojo-builder-border);
+        border-radius: 8px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    &__option {
+        padding: 0.4rem 0.75rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+
+        &:hover { background: rgba(14, 165, 233, 0.1); }
+    }
+}
+
+.dojo-tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(14, 165, 233, 0.12);
+    color: var(--dojo-builder-accent);
+    font-size: 0.85rem;
+    font-weight: 500;
+
+    &__x {
+        all: unset;
+        cursor: pointer;
+        font-size: 1rem;
+        line-height: 1;
+        opacity: 0.7;
+        &:hover { opacity: 1; }
+    }
+}
+
+// ── Workflow Canvas (alternating timeline) ──────────────────────────────────
+.dojo-workflow-canvas {
+    position: relative;
+    padding: 1rem 0;
+
+    &__rail {
+        position: absolute;
+        left: 50%;
+        top: 1rem;
+        bottom: 1rem;
+        width: 2px;
+        background: linear-gradient(
+            to bottom,
+            var(--dojo-builder-accent) 0%,
+            var(--dojo-builder-border) 100%
+        );
+        transform: translateX(-50%);
+        opacity: 0.6;
+    }
+
+    &__row {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr 60px 1fr;
+        align-items: center;
+        margin-bottom: 1.25rem;
+        z-index: 1;
+    }
+
+    &__node {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        grid-column: 2;
+    }
+
+    &__node-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--dojo-builder-card);
+        border: 2px solid var(--dojo-builder-accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--dojo-builder-accent);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    &__empty {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--dojo-builder-muted);
+    }
+
+    &__add-row {
+        text-align: center;
+        margin-top: 0.5rem;
+    }
+}
+
+// ── Step Card ───────────────────────────────────────────────────────────────
+.dojo-step-card {
+    background: var(--dojo-builder-card);
+    border: 1px solid var(--dojo-builder-border);
+    border-radius: var(--dojo-builder-radius);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+
+    &--left { grid-column: 1; justify-self: end; }
+    &--right { grid-column: 3; justify-self: start; }
+
+    width: 100%;
+    max-width: 380px;
+
+    &:hover {
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+    }
+
+    // Color stripe
+    &--info    { border-left: 4px solid #0ea5e9; }
+    &--warning { border-left: 4px solid #f59e0b; }
+    &--success { border-left: 4px solid #22c55e; }
+
+    &__inner {
+        padding: 0.85rem 1rem;
+    }
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.4rem;
+        font-size: 0.8rem;
+    }
+
+    &__delay {
+        font-weight: 700;
+        color: var(--dojo-builder-text);
+    }
+
+    &__type {
+        color: var(--dojo-builder-muted);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    &__body {
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+        color: var(--dojo-builder-text);
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+}
+
+// ── Step Composer (drawer) ─────────────────────────────────────────────────
+.dojo-step-composer {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    display: flex;
+    justify-content: flex-end;
+
+    &__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+    }
+
+    &__panel {
+        position: relative;
+        z-index: 1;
+        width: 480px;
+        max-width: 100%;
+        height: 100%;
+        background: var(--dojo-builder-card);
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        animation: dojo-step-slide 0.2s ease-out;
+    }
+
+    &__header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--dojo-builder-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        h4 { margin: 0; font-size: 1.1rem; }
+    }
+
+    &__body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.25rem;
+    }
+
+    &__footer {
+        padding: 0.75rem 1.25rem;
+        border-top: 1px solid var(--dojo-builder-border);
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+
+    &__kind-row {
+        display: flex;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+    }
+
+    &__section {
+        padding: 0.75rem;
+        border: 1px solid var(--dojo-builder-border);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.015);
+    }
+}
+
+@keyframes dojo-step-slide {
+    from { transform: translateX(20px); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+}
+
+.dojo-kind-chip {
+    flex: 1;
+    border: 1px solid var(--dojo-builder-border);
+    border-radius: 8px;
+    padding: 0.6rem 0.4rem;
+    background: var(--dojo-builder-card);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.15s ease;
+
+    &--active {
+        border-color: var(--dojo-builder-accent);
+        background: rgba(14, 165, 233, 0.08);
+        font-weight: 600;
+    }
+
+    &--info.dojo-kind-chip--active    { color: #0ea5e9; }
+    &--warning.dojo-kind-chip--active { color: #f59e0b; }
+    &--success.dojo-kind-chip--active { color: #22c55e; }
+}
+
+.dojo-delay-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    align-items: center;
+
+    &__custom {
+        width: 80px;
+    }
+}
+
+// ── Compact responsive on small screens ─────────────────────────────────────
+@media (max-width: 768px) {
+    .dojo-builder__body {
+        grid-template-columns: 1fr;
+    }
+    .dojo-builder__pane--left {
+        border-right: 0;
+        border-bottom: 1px solid var(--dojo-builder-border);
+    }
+    .dojo-workflow-canvas__rail { display: none; }
+    .dojo-workflow-canvas__row {
+        grid-template-columns: 1fr;
+    }
+    .dojo-step-card {
+        grid-column: 1 !important;
+        justify-self: stretch !important;
+        max-width: 100%;
+    }
+    .dojo-workflow-canvas__node { display: none; }
+    .dojo-step-composer__panel { width: 100%; }
+}
