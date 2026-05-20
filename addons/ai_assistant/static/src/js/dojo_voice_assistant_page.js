@@ -20,10 +20,10 @@ import { useService } from "@web/core/utils/hooks";
 
 // Fallback steps shown while waiting when n8n has no step nodes configured.
 const FALLBACK_STEPS = [
-    { name: "Analyzing request",  detail: "Understanding what you're asking for..." },
-    { name: "Routing to agent",   detail: "Finding the right specialist to handle this..." },
-    { name: "Querying database",  detail: "Looking up the relevant records..." },
-    { name: "Formatting results", detail: "Putting together your response..." },
+    { name: "Reviewing request",  detail: "Understanding the care operations request..." },
+    { name: "Checking resident context",   detail: "Looking up the relevant resident and contact records..." },
+    { name: "Checking workflow status",  detail: "Reviewing tasks, follow-ups, and recent activity..." },
+    { name: "Preparing response", detail: "Putting together the next-step summary..." },
 ];
 
 class DojoVoiceAssistantPage extends Component {
@@ -32,7 +32,7 @@ class DojoVoiceAssistantPage extends Component {
     setup() {
         this.notification = useService("notification");
         this.state = useState({
-            mode: "voice",              // "voice" | "text"
+            mode: "text",               // "voice" | "text"
             isRecording: false,
             isProcessing: false,
             ttsEnabled: false,

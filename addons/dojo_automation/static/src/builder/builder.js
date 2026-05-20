@@ -9,9 +9,9 @@ import { _t } from "@web/core/l10n/translation";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STEP_KINDS = [
-    { kind: "email", label: "Send an Email", icon: "fa-paper-plane", color: "info" },
-    { kind: "task",  label: "Assign a Task", icon: "fa-check-square-o", color: "warning" },
-    { kind: "sms",   label: "Send an SMS",   icon: "fa-comment", color: "success" },
+    { kind: "email", label: "Send an Update", icon: "fa-paper-plane", color: "info" },
+    { kind: "task",  label: "Create a Follow-up Task", icon: "fa-check-square-o", color: "warning" },
+    { kind: "sms",   label: "Send a Text Alert",   icon: "fa-comment", color: "success" },
 ];
 
 const DEFAULT_DELAYS = [0, 1, 3, 7, 14, 30];
@@ -120,9 +120,9 @@ class StepCard extends Component {
 
     get summary() {
         const s = this.props.step;
-        if (s.kind === "email") return _t("Send: %s", s.name || _t("Email"));
-        if (s.kind === "task")  return _t("Assign: %s", s.name || _t("Task"));
-        if (s.kind === "sms")   return _t("SMS: %s", s.name || _t("Message"));
+        if (s.kind === "email") return _t("Update: %s", s.name || _t("Update"));
+        if (s.kind === "task")  return _t("Task: %s", s.name || _t("Task"));
+        if (s.kind === "sms")   return _t("Text: %s", s.name || _t("Message"));
         return s.name || "";
     }
 

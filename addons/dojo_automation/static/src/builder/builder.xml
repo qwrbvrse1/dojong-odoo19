@@ -7,7 +7,7 @@
 <t t-name="dojo_automation.TriggerPicker">
     <div class="dojo-builder-trigger-picker">
         <h5 class="dojo-builder-section-title">
-            What is the action that will trigger this Automation?
+            What event should start this care workflow?
         </h5>
         <t t-foreach="groupedTemplates" t-as="grp" t-key="grp.value">
             <div class="dojo-builder-trigger-group">
@@ -116,9 +116,9 @@
         <div t-if="props.steps.length" class="dojo-workflow-canvas__rail"/>
         <div t-if="!props.steps.length" class="dojo-workflow-canvas__empty">
             <i class="fa fa-magic fa-3x mb-2 text-muted"/>
-            <p class="text-muted">No steps yet — add the first action below.</p>
+            <p class="text-muted">No steps yet — add the first follow-up below.</p>
             <button class="btn btn-primary" t-on-click="onAddClick">
-                <i class="fa fa-plus me-1"/>Add first step
+                <i class="fa fa-plus me-1"/>Add first follow-up
             </button>
         </div>
         <t t-foreach="props.steps" t-as="step" t-key="step_index">
@@ -142,7 +142,7 @@
         <div t-if="props.steps.length" class="dojo-workflow-canvas__add-row">
             <button class="btn btn-sm btn-outline-primary"
                     t-on-click="onAddClick">
-                <i class="fa fa-plus me-1"/>Add next step
+                <i class="fa fa-plus me-1"/>Add next follow-up
             </button>
         </div>
     </div>
@@ -174,16 +174,16 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Step name</label>
+                    <label class="form-label">Step label</label>
                     <input type="text"
                            class="form-control"
                            t-att-value="state.step.name"
                            t-on-input="onNameInput"
-                           placeholder="e.g. Welcome email"/>
+                           placeholder="e.g. Family update"/>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Run on day</label>
+                    <label class="form-label">Timing</label>
                     <div class="dojo-delay-row">
                         <t t-foreach="delayPresets" t-as="d" t-key="d_index">
                             <button t-attf-class="btn btn-sm {{ state.step.delay_days === d ? 'btn-primary' : 'btn-outline-secondary' }}"
@@ -202,7 +202,7 @@
 
                 <!-- Email options -->
                 <div t-if="state.step.kind === 'email'" class="dojo-step-composer__section">
-                    <label class="form-label">Email Template</label>
+                    <label class="form-label">Update template</label>
                     <select class="form-select"
                             t-on-change="onMailTemplateChange">
                         <option value="">— pick a template —</option>
@@ -217,7 +217,7 @@
 
                 <!-- Task options -->
                 <div t-if="state.step.kind === 'task'" class="dojo-step-composer__section">
-                    <label class="form-label">Activity Type</label>
+                    <label class="form-label">Task type</label>
                     <select class="form-select"
                             t-on-change="onActivityTypeChange">
                         <option value="">— pick an activity type —</option>
@@ -228,13 +228,13 @@
                             </option>
                         </t>
                     </select>
-                    <label class="form-label mt-2">Summary</label>
+                    <label class="form-label mt-2">Task summary</label>
                     <input type="text"
                            class="form-control"
                            t-att-value="state.step.activity_summary"
                            t-on-input="onActivitySummaryInput"
-                           placeholder="e.g. Call student to confirm trial"/>
-                    <label class="form-label mt-2">Notes</label>
+                           placeholder="e.g. Call family contact to confirm next steps"/>
+                    <label class="form-label mt-2">Task notes</label>
                     <textarea class="form-control"
                               rows="3"
                               t-att-value="state.step.activity_note"
@@ -243,7 +243,7 @@
 
                 <!-- SMS options -->
                 <div t-if="state.step.kind === 'sms'" class="dojo-step-composer__section">
-                    <label class="form-label">SMS Template</label>
+                    <label class="form-label">Text template</label>
                     <select class="form-select"
                             t-on-change="onSmsTemplateChange">
                         <option value="">— pick a template —</option>
@@ -254,7 +254,7 @@
                             </option>
                         </t>
                     </select>
-                    <label class="form-label mt-2">Phone field on record (optional)</label>
+                    <label class="form-label mt-2">Contact field on record (optional)</label>
                     <input type="text"
                            class="form-control"
                            t-att-value="state.step.phone_field"
@@ -265,7 +265,7 @@
             <div class="dojo-step-composer__footer">
                 <button class="btn btn-secondary" t-on-click="cancel">Cancel</button>
                 <button class="btn btn-primary" t-on-click="save">
-                    <i class="fa fa-check me-1"/>Save step
+                    <i class="fa fa-check me-1"/>Save follow-up
                 </button>
             </div>
         </div>
@@ -279,25 +279,25 @@
     <div class="dojo-builder">
         <div t-if="state.loading" class="dojo-builder__loading">
             <i class="fa fa-spinner fa-spin fa-2x"/>
-            <p class="mt-2 text-muted">Loading builder...</p>
+            <p class="mt-2 text-muted">Loading workflow studio...</p>
         </div>
         <t t-if="!state.loading">
             <!-- Header -->
             <div class="dojo-builder__header">
                 <button class="btn btn-link" t-on-click="backToList">
-                    <i class="fa fa-arrow-left me-1"/>Automations
+                    <i class="fa fa-arrow-left me-1"/>Care Workflows
                 </button>
                 <input type="text"
                        class="dojo-builder__name"
                        t-att-value="state.doc.name"
                        t-on-input="onNameInput"
-                       placeholder="Name your Automation, example: Trial Welcome Series"/>
+                       placeholder="Name this workflow, example: Fall Incident Follow-up"/>
                 <div class="dojo-builder__header-actions">
                     <label class="dojo-builder__toggle">
                         <input type="checkbox"
                                t-att-checked="state.doc.active"
                                t-on-change="onActiveToggle"/>
-                        <span>Active</span>
+                        <span>Live</span>
                     </label>
                     <button class="btn btn-outline-primary"
                             t-att-disabled="!state.doc.id"
@@ -326,7 +326,7 @@
 
                     <t t-if="selectedTemplate and selectedTemplate.supports_contact_type">
                         <div class="dojo-builder-section mt-3">
-                            <h6 class="dojo-builder-section-title">Contact Type</h6>
+                            <h6 class="dojo-builder-section-title">Resident status</h6>
                             <select class="form-select"
                                     t-on-change="onContactTypeChange">
                                 <t t-foreach="state.contactTypes" t-as="ct" t-key="ct.value">
@@ -341,9 +341,9 @@
 
                     <t t-if="selectedTemplate and selectedTemplate.supports_tag_filter">
                         <div class="dojo-builder-section mt-3">
-                            <h6 class="dojo-builder-section-title">Refine by Tags</h6>
+                            <h6 class="dojo-builder-section-title">Refine by Cohort Tags</h6>
                             <p class="text-muted small">
-                                Members must carry an Include tag (if any) and may not carry an Exclude tag.
+                                Records must carry an Include tag (if any) and may not carry an Exclude tag.
                                 Leave both empty to target everyone matching the trigger.
                             </p>
                             <TagChipInput label="'Include'"
@@ -363,9 +363,9 @@
 
                 <!-- Right: Workflow canvas -->
                 <div class="dojo-builder__pane dojo-builder__pane--right">
-                    <h5 class="dojo-builder-section-title">Workflow Steps</h5>
+                    <h5 class="dojo-builder-section-title">Response Timeline</h5>
                     <p class="text-muted small">
-                        Each step runs in order on the day shown. Spark-style chain — Day 0 → Day 7 → ...
+                        Each step runs in order on the day shown. Follow-up chain — Day 0 → Day 7 → ...
                     </p>
                     <WorkflowCanvas steps="state.doc.steps"
                                     onAdd.bind="addStep"

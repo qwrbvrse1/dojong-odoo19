@@ -2,12 +2,12 @@ from odoo import api, fields, models
 
 
 CATEGORY_SELECTION = [
-    ("member", "Member Lifecycle"),
-    ("attendance", "Attendance"),
-    ("subscription", "Membership / Billing"),
-    ("belt", "Rank & Promotion"),
-    ("tag", "Tag Assignment"),
-    ("date", "Date / Birthday"),
+    ("member", "Resident Lifecycle"),
+    ("attendance", "Check-Ins"),
+    ("subscription", "Billing & Coverage"),
+    ("belt", "Progress Milestones"),
+    ("tag", "Cohort Tags"),
+    ("date", "Calendar Events"),
     ("system", "System"),
 ]
 

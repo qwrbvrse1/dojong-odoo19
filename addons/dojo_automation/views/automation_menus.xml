@@ -12,17 +12,16 @@
     <!-- ── Window action: list of configurations using the rebranded kanban
          (AutomationStatPanel + filter chips already injected). -->
     <record id="action_dojo_automations" model="ir.actions.act_window">
-        <field name="name">Automations</field>
+        <field name="name">Care Workflows</field>
         <field name="res_model">automation.configuration</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                Set up your first automation
+                Set up your first care workflow
             </p>
             <p>
-                Pick a pre-built trigger (welcome new members, send renewal reminders,
-                celebrate belt promotions) and chain Email, Task, and SMS steps in a
-                simple Day-N timeline.
+                Pick a pre-built care trigger and chain updates, follow-up tasks,
+                and outreach steps in a simple day-by-day response timeline.
             </p>
         </field>
     </record>
@@ -31,20 +30,20 @@
          Triggered from a per-card button on the kanban; opens with
          ``params={"config_id": <int>}`` or no params for create. -->
     <record id="action_open_builder" model="ir.actions.client">
-        <field name="name">Open Automation Builder</field>
+        <field name="name">Open Workflow Studio</field>
         <field name="tag">dojo_automation_builder</field>
         <field name="target">current</field>
     </record>
 
     <!-- ── Top-level menu, sibling to CRM / Contacts. -->
     <menuitem id="menu_root"
-              name="Automations"
+              name="Care Workflows"
               sequence="55"
               groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor,base.group_system"
               web_icon="dojo_automation,static/description/icon.png"/>
 
     <menuitem id="menu_automations"
-              name="Automations"
+              name="Care Workflows"
               parent="menu_root"
               action="action_dojo_automations"
               groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor,base.group_system"

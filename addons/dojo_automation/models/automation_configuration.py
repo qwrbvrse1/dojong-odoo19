@@ -12,12 +12,12 @@ from odoo import api, fields, models
 
 
 CONTACT_TYPE_SELECTION = [
-    ("any", "Any Contact Type"),
-    ("lead", "Lead"),
-    ("trial", "Trial"),
-    ("active", "Active Member"),
-    ("paused", "Paused Member"),
-    ("cancelled", "Cancelled Member"),
+    ("any", "Any Status"),
+    ("lead", "Prospect"),
+    ("trial", "Assessment"),
+    ("active", "Active Resident"),
+    ("paused", "Paused Services"),
+    ("cancelled", "Discharged"),
 ]
 
 

@@ -11,7 +11,7 @@
 
     <menuitem
         id="menu_dojo_core_root"
-        name="Dojang Management"
+        name="Care Operations"
         sequence="1"
         groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
 
@@ -19,7 +19,7 @@
 
     <menuitem
         id="menu_dojo_core_dashboard"
-        name="Dashboard"
+        name="Command Center"
         parent="menu_dojo_core_root"
         action="dojo_core.action_admin_dashboard_client"
         sequence="5"
@@ -29,41 +29,41 @@
 
     <menuitem
         id="menu_dojo_core_classes"
-        name="Classes"
+        name="Schedules"
         parent="menu_dojo_core_root"
         sequence="20"/>
 
     <menuitem
         id="menu_dojo_core_programs"
-        name="Programs"
+        name="Care Programs"
         parent="menu_dojo_core_classes"
         action="dojo_core.action_dojo_programs"
         sequence="10"/>
 
     <menuitem
         id="menu_dojo_core_courses"
-        name="Courses"
+        name="Service Templates"
         parent="menu_dojo_core_classes"
         action="dojo_core.action_dojo_class_templates"
         sequence="20"/>
 
     <menuitem
         id="menu_dojo_core_sessions"
-        name="Sessions"
+        name="Rounds"
         parent="menu_dojo_core_classes"
         action="dojo_core.action_dojo_class_sessions"
         sequence="30"/>
 
     <menuitem
         id="menu_dojo_core_enrollments"
-        name="Enrollments"
+        name="Assignments"
         parent="menu_dojo_core_classes"
         action="dojo_core.action_dojo_class_enrollments"
         sequence="40"/>
 
     <menuitem
         id="menu_dojo_core_auto_enroll"
-        name="Auto-Enroll"
+        name="Auto-Assignment"
         parent="menu_dojo_core_classes"
         action="dojo_core.action_dojo_auto_enroll"
         sequence="45"
@@ -73,34 +73,34 @@
 
     <menuitem
         id="menu_dojo_core_members"
-        name="Students"
+        name="Residents"
         parent="menu_dojo_core_root"
         sequence="30"/>
 
     <menuitem
         id="menu_dojo_core_all_members"
-        name="All Students"
+        name="Resident Directory"
         parent="menu_dojo_core_members"
         action="dojo_core.action_dojo_members"
         sequence="10"/>
 
     <menuitem
         id="menu_dojo_core_households"
-        name="Households"
+        name="Family Circles"
         parent="menu_dojo_core_members"
         action="dojo_core.action_dojo_households"
         sequence="20"/>
 
     <menuitem
         id="menu_dojo_core_emergency_contacts"
-        name="Emergency Contacts"
+        name="Care Contacts"
         parent="menu_dojo_core_members"
         action="dojo_core.action_dojo_emergency_contacts"
         sequence="50"/>
 
     <menuitem
         id="menu_dojo_core_instructor_profiles"
-        name="Instructors"
+        name="Staff"
         parent="menu_dojo_core_members"
         action="dojo_core.action_dojo_instructor_profiles"
         sequence="60"
@@ -113,6 +113,9 @@
         name="Belt Progression"
         parent="menu_dojo_core_root"
         sequence="40"/>
+    <record id="menu_dojo_core_belts" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
 
     <menuitem
         id="menu_dojo_core_belt_tests"
@@ -132,13 +135,13 @@
 
     <menuitem
         id="menu_dojo_core_frontdesk"
-        name="Attendance"
+        name="Check-Ins"
         parent="menu_dojo_core_root"
         sequence="50"/>
 
     <menuitem
         id="menu_dojo_core_attendance_log"
-        name="Attendance Log"
+        name="Check-In Log"
         parent="menu_dojo_core_frontdesk"
         action="dojo_core.action_dojo_attendance_logs"
         sequence="20"/>
@@ -147,7 +150,7 @@
 
     <menuitem
         id="menu_dojo_core_payments"
-        name="Payments"
+        name="Billing"
         parent="menu_dojo_core_root"
         action="account.action_account_payments"
         sequence="60"
@@ -157,7 +160,7 @@
 
     <menuitem
         id="menu_dojo_core_config"
-        name="Configuration"
+        name="Settings"
         parent="menu_dojo_core_root"
         sequence="100"
         groups="dojo_core.group_dojo_admin"/>

@@ -162,6 +162,7 @@ class AdminDashboard extends Component {
 
     // ── Navigation helpers ─────────────────────────────────────────────
     openAllStudents() { this.action.doAction("dojo_core.action_all_students"); }
+    openCopilotConsole() { this.action.doAction("ai_assistant.action_dojo_voice_assistant_page"); }
     openTodaysSessions() { this.action.doAction("dojo_core.action_all_sessions_today"); }
     openCalendar() { this.action.doAction("dojo_core.action_all_sessions_calendar"); }
     openInstructorKpis() { this.action.doAction("dojo_core.action_all_instructor_kpis"); }

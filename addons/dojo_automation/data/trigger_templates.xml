@@ -10,9 +10,9 @@
 
     <!-- ── Tag Assignment ───────────────────────────────────────────────── -->
     <record id="trigger_tag_assigned" model="dojo.automation.trigger.template">
-        <field name="name">When a tag is assigned to a contact</field>
+        <field name="name">When a cohort tag is added</field>
         <field name="code">tag_assigned</field>
-        <field name="description">Run when a member is tagged. Use the include/exclude tag pickers below to choose which tags qualify.</field>
+        <field name="description">Run when a resident record is tagged. Use the cohort filters below to control who qualifies.</field>
         <field name="icon">fa-tag</field>
         <field name="category">tag</field>
         <field name="sequence">10</field>
@@ -25,9 +25,9 @@
 
     <!-- ── Member becomes a contact type ────────────────────────────────── -->
     <record id="trigger_contact_type" model="dojo.automation.trigger.template">
-        <field name="name">They become a contact type</field>
+        <field name="name">When resident status changes</field>
         <field name="code">contact_type</field>
-        <field name="description">Run the moment a member moves into a specific stage (Lead, Trial, Active, Paused, Cancelled).</field>
+        <field name="description">Run the moment a resident moves into a selected care status.</field>
         <field name="icon">fa-user-plus</field>
         <field name="category">member</field>
         <field name="sequence">20</field>
@@ -41,9 +41,9 @@
 
     <!-- ── Based on a date ──────────────────────────────────────────────── -->
     <record id="trigger_date_anniversary" model="dojo.automation.trigger.template">
-        <field name="name">Based on a date</field>
+        <field name="name">Based on a scheduled date</field>
         <field name="code">date_anniversary</field>
-        <field name="description">Run on a specific calendar date for matching members (e.g. anniversary, holiday).</field>
+        <field name="description">Run on a specific calendar date for matching residents, visits, or care milestones.</field>
         <field name="icon">fa-calendar</field>
         <field name="category">date</field>
         <field name="sequence">30</field>
@@ -56,7 +56,7 @@
 
     <!-- ── Based on their birthday ──────────────────────────────────────── -->
     <record id="trigger_birthday" model="dojo.automation.trigger.template">
-        <field name="name">Based on their birthday</field>
+        <field name="name">Based on a resident birthday</field>
         <field name="code">birthday</field>
         <field name="description">Run for members whose birthday falls today (or with an offset configured in the first step).</field>
         <field name="icon">fa-birthday-cake</field>
@@ -72,9 +72,9 @@
 
     <!-- ── Based on when they last attended ─────────────────────────────── -->
     <record id="trigger_last_attended" model="dojo.automation.trigger.template">
-        <field name="name">Based on when they last attended</field>
+        <field name="name">Based on the last completed check-in</field>
         <field name="code">last_attended</field>
-        <field name="description">Re-engage members who have not attended class recently (inactive students).</field>
+        <field name="description">Re-engage residents who have missed their recent check-in cadence.</field>
         <field name="icon">fa-clock-o</field>
         <field name="category">attendance</field>
         <field name="sequence">50</field>
@@ -87,9 +87,9 @@
 
     <!-- ── Based on when they start attending ───────────────────────────── -->
     <record id="trigger_started_attending" model="dojo.automation.trigger.template">
-        <field name="name">Based on when they start attending</field>
+        <field name="name">Based on the first completed check-in</field>
         <field name="code">started_attending</field>
-        <field name="description">Welcome workflow for members logging their first attendance.</field>
+        <field name="description">Start a welcome or follow-up flow after a resident's first successful check-in.</field>
         <field name="icon">fa-play-circle</field>
         <field name="category">attendance</field>
         <field name="sequence">60</field>
@@ -102,9 +102,9 @@
 
     <!-- ── Based on when they earn a rank ───────────────────────────────── -->
     <record id="trigger_rank_earned" model="dojo.automation.trigger.template">
-        <field name="name">Based on when they earn a rank</field>
+        <field name="name">Based on a care milestone</field>
         <field name="code">rank_earned</field>
-        <field name="description">Celebrate belt promotions. Triggers when current_rank_id changes.</field>
+        <field name="description">Run when a resident reaches a documented milestone or care-plan progression point.</field>
         <field name="icon">fa-trophy</field>
         <field name="category">belt</field>
         <field name="sequence">70</field>
@@ -118,9 +118,9 @@
 
     <!-- ── Membership starts ────────────────────────────────────────────── -->
     <record id="trigger_membership_start" model="dojo.automation.trigger.template">
-        <field name="name">When they start a membership</field>
+        <field name="name">When services become active</field>
         <field name="code">membership_start</field>
-        <field name="description">First-paid-membership onboarding sequence (Active state).</field>
+        <field name="description">Start an activation sequence when resident services move into the active state.</field>
         <field name="icon">fa-id-card</field>
         <field name="category">subscription</field>
         <field name="sequence">80</field>
@@ -132,26 +132,11 @@
         <field name="supports_contact_type" eval="False"/>
     </record>
 
-    <!-- ── Membership expiring ──────────────────────────────────────────── -->
-    <record id="trigger_membership_expiring" model="dojo.automation.trigger.template">
-        <field name="name">When membership is expiring</field>
-        <field name="code">membership_expiring</field>
-        <field name="description">Renewal reminders for subscriptions approaching their end date.</field>
-        <field name="icon">fa-hourglass-end</field>
-        <field name="category">subscription</field>
-        <field name="sequence">90</field>
-        <field name="model_id" ref="subscription_oca.model_sale_subscription"/>
-        <field name="default_domain">[("end_date", "!=", False), ("stage_id.type", "in", ["progress", "draft"])]</field>
-        <field name="is_periodic_default" eval="True"/>
-        <field name="supports_tag_filter" eval="False"/>
-        <field name="supports_contact_type" eval="False"/>
-    </record>
-
     <!-- ── Attendance milestones ────────────────────────────────────────── -->
     <record id="trigger_attendance_milestone" model="dojo.automation.trigger.template">
-        <field name="name">Based on attendance milestones</field>
+        <field name="name">Based on check-in milestones</field>
         <field name="code">attendance_milestone</field>
-        <field name="description">Celebrate students hitting class-count milestones (10, 25, 50, 100, 200 classes).</field>
+        <field name="description">Run follow-up or recognition steps when residents hit configured check-in milestones.</field>
         <field name="icon">fa-flag-checkered</field>
         <field name="category">attendance</field>
         <field name="sequence">100</field>
@@ -162,26 +147,11 @@
         <field name="supports_contact_type" eval="False"/>
     </record>
 
-    <!-- ── New trial signup (CRM lead) ──────────────────────────────────── -->
-    <record id="trigger_new_trial_signup" model="dojo.automation.trigger.template">
-        <field name="name">A new trial signup arrives</field>
-        <field name="code">new_trial_signup</field>
-        <field name="description">Public /dojo/book-trial form creates a CRM lead. Run a welcome / waiver / first-class workflow.</field>
-        <field name="icon">fa-rocket</field>
-        <field name="category">member</field>
-        <field name="sequence">110</field>
-        <field name="model_id" ref="crm.model_crm_lead"/>
-        <field name="default_domain">[("type", "=", "lead")]</field>
-        <field name="is_periodic_default" eval="True"/>
-        <field name="supports_tag_filter" eval="False"/>
-        <field name="supports_contact_type" eval="False"/>
-    </record>
-
     <!-- ── Member paused / cancelled ────────────────────────────────────── -->
     <record id="trigger_member_paused_cancelled" model="dojo.automation.trigger.template">
-        <field name="name">Member is paused or cancelled</field>
+        <field name="name">Services are paused or discharged</field>
         <field name="code">member_paused_cancelled</field>
-        <field name="description">Win-back sequences for members who left or paused their membership.</field>
+        <field name="description">Launch continuity or outreach steps when services are paused or a resident is discharged.</field>
         <field name="icon">fa-user-times</field>
         <field name="category">member</field>
         <field name="sequence">120</field>

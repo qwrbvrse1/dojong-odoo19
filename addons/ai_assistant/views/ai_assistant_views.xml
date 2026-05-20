@@ -339,7 +339,7 @@
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
 
     <record id="action_dojo_voice_assistant_page" model="ir.actions.client">
-        <field name="name">AI Voice Assistant</field>
+        <field name="name">Care Copilot</field>
         <field name="tag">ai_assistant.voice_assistant_page</field>
     </record>
 
@@ -352,14 +352,14 @@
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
 
     <menuitem id="menu_ai_assistant_root"
-        name="AI Assistant"
+        name="Care Copilot"
         sequence="95"
         web_icon="ai_assistant,static/description/icon.png"
         groups="base.group_user"/>
 
     <!-- Voice Assistant (dojo AI widget — uses elevenlabs STT + dojo intent AI) -->
     <menuitem id="menu_ai_voice_assistant"
-        name="Voice Assistant"
+        name="Copilot Console"
         parent="menu_ai_assistant_root"
         action="action_dojo_voice_assistant_page"
         sequence="5"
