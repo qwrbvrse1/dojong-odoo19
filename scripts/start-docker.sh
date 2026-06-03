@@ -18,3 +18,6 @@ docker compose ps
 echo
 echo "Follow logs with:"
 echo "  docker compose logs -f web"
+echo
+echo "To install and verify the core Dojo modules on a VM, run:"
+echo "  ./scripts/prepare-vm.sh"
