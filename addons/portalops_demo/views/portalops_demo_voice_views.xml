@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="portalops_demo_voice_session_list" model="ir.ui.view">
+        <field name="name">portalops.demo.voice.session.list</field>
+        <field name="model">portalops.demo.voice.session</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="create_date"/>
+                <field name="location_id"/>
+                <field name="session_key"/>
+                <field name="state"/>
+                <field name="perspective"/>
+                <field name="is_low_vision_mode"/>
+                <field name="browser_status"/>
+                <field name="lead_id"/>
+                <field name="provider"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="portalops_demo_voice_session_form" model="ir.ui.view">
+        <field name="name">portalops.demo.voice.session.form</field>
+        <field name="model">portalops.demo.voice.session</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" icon="fa-bolt"
+                                name="action_trigger_test_webhook" type="object">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Run Test Webhook</span>
+                            </div>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-filter"
+                                name="action_view_lead" type="object"
+                                invisible="not lead_id">
+                            <field name="lead_id" widget="statinfo" string="Lead"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Session">
+                            <field name="location_id"/>
+                            <field name="session_key" readonly="1"/>
+                            <field name="external_session_key" readonly="1"/>
+                            <field name="provider"/>
+                            <field name="provider_run_id" readonly="1"/>
+                            <field name="state"/>
+                            <field name="browser_status"/>
+                        </group>
+                        <group string="Experience">
+                            <field name="perspective"/>
+                            <field name="is_low_vision_mode"/>
+                            <field name="started_at"/>
+                            <field name="stopped_at"/>
+                            <field name="completed_at"/>
+                            <field name="lead_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Preview Transcript">
+                            <field name="preview_transcript" nolabel="1"/>
+                        </page>
+                        <page string="Final Transcript">
+                            <field name="final_transcript" nolabel="1"/>
+                        </page>
+                        <page string="Summary">
+                            <field name="transcript_summary" nolabel="1"/>
+                        </page>
+                        <page string="Errors">
+                            <field name="error_message" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="portalops_demo_voice_session_action" model="ir.actions.act_window">
+        <field name="name">PortalOps Voice Sessions</field>
+        <field name="res_model">portalops.demo.voice.session</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="portalops_demo_menu_root"
+              name="PortalOps Demo"
+              parent="crm.crm_menu_root"
+              sequence="80"/>
+
+    <menuitem id="portalops_demo_voice_session_menu"
+              name="Voice Sessions"
+              parent="portalops_demo_menu_root"
+              action="portalops_demo_voice_session_action"
+              sequence="10"/>
+</odoo>

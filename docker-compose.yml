@@ -52,7 +52,175 @@ services:
       - ODOO_BASE_URL=http://web:8069
     restart: unless-stopped
 
+  dograh-postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - dograh-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  dograh-redis:
+    image: redis:7
+    command:
+      - redis-server
+      - --requirepass
+      - redissecret
+    volumes:
+      - dograh-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redissecret", "ping"]
+      interval: 3s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+  dograh-minio:
+    image: minio/minio
+    command:
+      - server
+      - /data
+      - --console-address
+      - :9001
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_API_CORS_ALLOW_ORIGIN=*
+    ports:
+      - "127.0.0.1:${DOGRAH_MINIO_API_HOST_PORT:-9000}:9000"
+      - "127.0.0.1:${DOGRAH_MINIO_CONSOLE_HOST_PORT:-9001}:9001"
+    volumes:
+      - dograh-minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  dograh-init:
+    image: bash:5.2
+    profiles:
+      - local-turn
+    environment:
+      - ENVIRONMENT=${DOGRAH_ENVIRONMENT:-local}
+      - BACKEND_API_ENDPOINT=${DOGRAH_BACKEND_API_ENDPOINT:-http://localhost:8000}
+      - MINIO_PUBLIC_ENDPOINT=${DOGRAH_MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+      - TURN_HOST=${DOGRAH_TURN_HOST:-192.168.1.182}
+      - TURN_SECRET=${DOGRAH_TURN_SECRET:-aa92c9de4ee2e76a4cfbf3d4a8c3cf81e980d61e5d0e404d7196c1cf2783443d}
+      - FASTAPI_WORKERS=${DOGRAH_FASTAPI_WORKERS:-1}
+    volumes:
+      - ./scripts:/workspace/scripts:ro
+      - ./deploy:/workspace/deploy:ro
+      - dograh-coturn-generated:/generated/coturn
+    command:
+      - /workspace/scripts/run_dograh_init.sh
+    restart: "no"
+
+  dograh-coturn:
+    image: coturn/coturn:4.8.0
+    profiles:
+      - local-turn
+    depends_on:
+      dograh-init:
+        condition: service_completed_successfully
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "5349:5349/udp"
+      - "5349:5349/tcp"
+      - "49152-49200:49152-49200/udp"
+    volumes:
+      - dograh-coturn-generated:/etc/coturn:ro
+    command:
+      - -c
+      - /etc/coturn/turnserver.conf
+    restart: unless-stopped
+
+  dograh-api:
+    image: ${DOGRAH_REGISTRY:-ghcr.io/dograh-hq}/dograh-api:latest
+    depends_on:
+      dograh-postgres:
+        condition: service_healthy
+      dograh-redis:
+        condition: service_healthy
+      dograh-minio:
+        condition: service_healthy
+    ports:
+      - "${DOGRAH_API_HOST_PORT:-8000}:8000"
+    volumes:
+      - dograh-shared-tmp:/tmp
+    environment:
+      - ENVIRONMENT=${DOGRAH_ENVIRONMENT:-local}
+      - LOG_LEVEL=INFO
+      - BACKEND_API_ENDPOINT=${DOGRAH_BACKEND_API_ENDPOINT:-http://localhost:8000}
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@dograh-postgres:5432/postgres
+      - REDIS_URL=redis://:redissecret@dograh-redis:6379
+      - ENABLE_AWS_S3=false
+      - MINIO_ENDPOINT=dograh-minio:9000
+      - MINIO_PUBLIC_ENDPOINT=${DOGRAH_MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET=voice-audio
+      - MINIO_SECURE=false
+      - FASTAPI_WORKERS=${DOGRAH_FASTAPI_WORKERS:-1}
+      - TURN_HOST=${DOGRAH_TURN_HOST:-192.168.1.182}
+      - TURN_SECRET=${DOGRAH_TURN_SECRET:-aa92c9de4ee2e76a4cfbf3d4a8c3cf81e980d61e5d0e404d7196c1cf2783443d}
+      - FORCE_TURN_RELAY=${DOGRAH_FORCE_TURN_RELAY:-false}
+      - OSS_JWT_SECRET=${DOGRAH_OSS_JWT_SECRET:-ChangeMeInProduction}
+      - ENABLE_TELEMETRY=${DOGRAH_ENABLE_TELEMETRY:-true}
+      - POSTHOG_API_KEY=phc_ItizB1dP6yv7ZYobbcqrpxTdbomDA8hJFSEmAMdYvIr
+      - POSTHOG_HOST=https://us.i.posthog.com
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health').read()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      default:
+        aliases:
+          - api
+    restart: unless-stopped
+
+  dograh-ui:
+    image: ${DOGRAH_REGISTRY:-ghcr.io/dograh-hq}/dograh-ui:latest
+    depends_on:
+      dograh-api:
+        condition: service_healthy
+    ports:
+      - "${DOGRAH_UI_HOST_PORT:-3010}:3010"
+    environment:
+      - BACKEND_URL=${DOGRAH_BACKEND_URL:-http://dograh-api:8000}
+      - NODE_ENV=oss
+      - ENABLE_TELEMETRY=${DOGRAH_ENABLE_TELEMETRY:-true}
+      - POSTHOG_KEY=phc_ItizB1dP6yv7ZYobbcqrpxTdbomDA8hJFSEmAMdYvIr
+      - POSTHOG_HOST=https://us.posthog.com
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3010 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      default:
+        aliases:
+          - ui
+    restart: unless-stopped
+
 volumes:
   odoo-db-data-19-2:
   odoo-web-data:
   n8n-data:
+  dograh-postgres-data:
+  dograh-redis-data:
+  dograh-minio-data:
+  dograh-shared-tmp:
+  dograh-coturn-generated:

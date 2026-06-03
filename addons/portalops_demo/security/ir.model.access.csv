@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_portalops_demo_location_user,portalops.demo.location user,model_portalops_demo_location,base.group_user,1,1,1,1
+access_portalops_demo_card_user,portalops.demo.card user,model_portalops_demo_card,base.group_user,1,1,1,1
+access_portalops_demo_audit_event_user,portalops.demo.audit_event user,model_portalops_demo_audit_event,base.group_user,1,1,1,1
+access_portalops_demo_voice_session_user,portalops.demo.voice.session user,model_portalops_demo_voice_session,base.group_user,1,1,1,1

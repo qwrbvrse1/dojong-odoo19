@@ -1,0 +1,393 @@
+.portalops-demo-page {
+    background:
+        radial-gradient(circle at top right, rgba(194, 76, 34, 0.14), transparent 28rem),
+        linear-gradient(180deg, #f4eee8 0%, #fcfaf8 55%, #f2ede7 100%);
+    color: #1f1a17;
+    min-height: 100vh;
+}
+
+.portalops-hero {
+    border-bottom: 1px solid rgba(63, 46, 35, 0.12);
+}
+
+.portalops-eyebrow {
+    color: #8b4f2d;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.portalops-title {
+    font-size: clamp(2.6rem, 5vw, 4.4rem);
+    font-weight: 700;
+    line-height: 1.02;
+    margin: 0.4rem 0 0.75rem;
+}
+
+.portalops-subtitle,
+.portalops-summary,
+.portalops-meta,
+.portalops-panel p,
+.portalops-voice-placeholder span,
+.portalops-timeline p {
+    color: #574a43;
+}
+
+.portalops-shell {
+    margin-top: -0.5rem;
+}
+
+.portalops-grounding-meta {
+    margin-top: 1rem;
+}
+
+.portalops-map-shell {
+    border: 1px solid rgba(86, 67, 53, 0.14);
+    border-radius: 1.8rem;
+    margin-top: 1.5rem;
+    min-height: 31rem;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 24px 50px rgba(82, 58, 40, 0.12);
+}
+
+.portalops-map-frame {
+    border: 0;
+    height: 100%;
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    width: 100%;
+}
+
+.portalops-map-marker {
+    border: 0;
+    border-radius: 999px;
+    bottom: 10rem;
+    color: #fff;
+    font-weight: 700;
+    background: linear-gradient(180deg, #c24c22 0%, #8d2b14 100%);
+    left: 50%;
+    padding: 0.7rem 1rem;
+    position: absolute;
+    transform: translateX(-50%);
+    z-index: 2;
+}
+
+.portalops-place-card {
+    background: rgba(255, 252, 249, 0.96);
+    border: 1px solid rgba(86, 67, 53, 0.12);
+    border-radius: 1.35rem;
+    box-shadow: 0 20px 50px rgba(82, 58, 40, 0.18);
+    max-width: 24rem;
+    padding: 1.2rem;
+    position: absolute;
+    right: 1.5rem;
+    top: 1.5rem;
+    z-index: 2;
+}
+
+.portalops-place-card-header {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.portalops-place-card.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(0.75rem);
+}
+
+.portalops-place-card:not(.is-hidden) {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.portalops-place-card h2 {
+    margin: 0.15rem 0 0.6rem;
+}
+
+.portalops-place-card-close {
+    align-items: center;
+    background: #efe0d4;
+    border: 0;
+    border-radius: 999px;
+    color: #6b3f24;
+    display: inline-flex;
+    font-size: 1.2rem;
+    font-weight: 700;
+    height: 2rem;
+    justify-content: center;
+    line-height: 1;
+    width: 2rem;
+}
+
+.portalops-place-card-eyebrow {
+    color: #8b4f2d;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.portalops-role-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.portalops-role-btn {
+    background: #8d2b14;
+    border: 1px solid rgba(107, 63, 36, 0.18);
+    border-radius: 999px;
+    color: #fff;
+    font-weight: 700;
+    padding: 0.65rem 0.95rem;
+}
+
+.portalops-role-btn.is-active {
+    background: #5f1708;
+    box-shadow: 0 0 0 3px rgba(141, 43, 20, 0.18);
+    color: #fff;
+}
+
+.portalops-map-link {
+    color: #8d2b14;
+    display: inline-block;
+    font-weight: 700;
+    margin-top: 1rem;
+}
+
+.portalops-panel {
+    background: rgba(255, 252, 249, 0.92);
+    border: 1px solid rgba(86, 67, 53, 0.12);
+    border-radius: 1.5rem;
+    box-shadow: 0 20px 50px rgba(82, 58, 40, 0.08);
+    padding: 1.5rem;
+}
+
+.portalops-panel-header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.portalops-panel-header h2,
+.portalops-card h3 {
+    margin: 0;
+}
+
+.portalops-chip {
+    background: #efe0d4;
+    border-radius: 999px;
+    color: #6b3f24;
+    display: inline-flex;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.3rem 0.7rem;
+    text-transform: uppercase;
+}
+
+.portalops-chip-button {
+    border: 0;
+    cursor: pointer;
+}
+
+.portalops-card-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.portalops-card {
+    background: #fff;
+    border: 1px solid rgba(86, 67, 53, 0.1);
+    border-radius: 1.2rem;
+    min-height: 100%;
+    padding: 1rem;
+}
+
+.portalops-card-kind,
+.portalops-timeline-type {
+    color: #9a5d38;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+}
+
+.portalops-voice-placeholder {
+    align-items: flex-start;
+    background: #fff;
+    border: 1px dashed rgba(107, 63, 36, 0.28);
+    border-radius: 1rem;
+    display: flex;
+    gap: 0.9rem;
+    padding: 1rem;
+}
+
+.portalops-grounding-list {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.portalops-voice-panel {
+    display: grid;
+    gap: 1rem;
+}
+
+.portalops-voice-panel.is-hidden {
+    display: none;
+}
+
+.portalops-voice-panel-compact {
+    margin-top: 1rem;
+}
+
+.portalops-voice-role {
+    display: none;
+}
+
+.portalops-voice-hint {
+    background: #fff4ea;
+    border: 1px solid rgba(141, 43, 20, 0.12);
+    border-radius: 1rem;
+    color: #6b3f24;
+    padding: 0.9rem 1rem;
+}
+
+.portalops-voice-hint.is-hidden {
+    display: none;
+}
+
+.portalops-place-card-tools {
+    display: flex;
+    justify-content: center;
+}
+
+.portalops-info-button {
+    align-items: center;
+    background: #efe0d4;
+    border: 0;
+    border-radius: 999px;
+    color: #6b3f24;
+    display: inline-flex;
+    font-size: 0.95rem;
+    font-style: italic;
+    font-weight: 700;
+    height: 2rem;
+    justify-content: center;
+    width: 2rem;
+}
+
+.portalops-voice-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.portalops-voice-btn {
+    background: #8d2b14;
+    border: 0;
+    border-radius: 999px;
+    color: #fff;
+    font-weight: 700;
+    padding: 0.7rem 1rem;
+}
+
+.portalops-voice-btn-secondary {
+    background: #e7d9cd;
+    color: #5b4638;
+}
+
+.portalops-voice-btn-danger {
+    background: #7a1f12;
+    color: #fff;
+}
+
+.portalops-voice-btn.is-hidden {
+    display: none;
+}
+
+.portalops-place-card-status {
+    background: #fff;
+    border: 1px solid rgba(86, 67, 53, 0.1);
+    border-radius: 1rem;
+    color: #574a43;
+    padding: 0.9rem 1rem;
+}
+
+.portalops-voice-transcript {
+    background: #fff;
+    border: 1px solid rgba(86, 67, 53, 0.1);
+    border-radius: 1rem;
+    padding: 0.9rem 1rem;
+}
+
+.portalops-shell-hidden {
+    display: none;
+}
+
+.portalops-voice-dot,
+.portalops-timeline-marker {
+    background: linear-gradient(180deg, #c24c22 0%, #8d2b14 100%);
+    border-radius: 999px;
+    flex: 0 0 auto;
+}
+
+.portalops-voice-dot {
+    height: 0.95rem;
+    margin-top: 0.25rem;
+    width: 0.95rem;
+}
+
+.portalops-timeline {
+    display: grid;
+    gap: 1rem;
+}
+
+.portalops-timeline-item {
+    display: grid;
+    gap: 0.8rem;
+    grid-template-columns: 0.9rem 1fr;
+}
+
+.portalops-timeline-marker {
+    height: 0.9rem;
+    margin-top: 0.35rem;
+    width: 0.9rem;
+}
+
+.portalops-timeline-title {
+    font-weight: 700;
+}
+
+@media (max-width: 767.98px) {
+    .portalops-map-shell {
+        min-height: 34rem;
+    }
+
+    .portalops-map-marker {
+        bottom: 12rem;
+    }
+
+    .portalops-place-card {
+        bottom: 1rem;
+        left: 1rem;
+        max-width: none;
+        right: 1rem;
+        top: auto;
+    }
+
+    .portalops-panel {
+        padding: 1.2rem;
+    }
+}

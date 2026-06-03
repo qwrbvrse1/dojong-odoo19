@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="location_page" name="PortalOps Demo Location Page">
+        <t t-call="website.layout">
+            <div id="wrap" class="portalops-demo-page">
+                <section class="portalops-hero">
+                    <div class="container py-5">
+                        <div class="portalops-eyebrow">Healthcare Voice Demo</div>
+                        <h1 class="portalops-title">Atlanta Midtown Care Access</h1>
+                        <p class="portalops-subtitle">Map-first role demo for Doctor, Nurse, and Patient voice services.</p>
+                        <p class="portalops-summary">
+                            Start from the map, open the Atlanta Midtown place card, choose a role, and run a tightly
+                            scripted voice interaction that stays reliable for the live demo.
+                        </p>
+                        <div class="portalops-map-shell" data-portalops-map-root="1">
+                            <iframe
+                                class="portalops-map-frame"
+                                src="https://www.google.com/maps?q=33.7971137,-84.3804888&amp;z=14&amp;output=embed"
+                                loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade"
+                                title="Atlanta Midtown map"/>
+                            <button type="button" class="portalops-map-marker" data-portalops-map-marker="1">
+                                Atlanta Midtown
+                            </button>
+                            <div class="portalops-place-card is-hidden" data-portalops-place-card="1">
+                                <div class="portalops-place-card-header">
+                                    <div>
+                                        <div class="portalops-place-card-eyebrow">Place Card</div>
+                                        <h2 t-out="location.name"/>
+                                    </div>
+                                    <button type="button" class="portalops-place-card-close" data-portalops-close-card="1" aria-label="Close place card">×</button>
+                                </div>
+                                <p>
+                                    Select a role to launch the voice agent for that experience.
+                                </p>
+                                <div class="portalops-role-buttons" data-portalops-role-root="1" t-att-data-slug="location.slug">
+                                    <button type="button" class="portalops-role-btn" data-portalops-role="doctor">Doctor</button>
+                                    <button type="button" class="portalops-role-btn" data-portalops-role="nurse">Nurse</button>
+                                    <button type="button" class="portalops-role-btn" data-portalops-role="patient">Patient</button>
+                                </div>
+                                <div class="portalops-place-card-tools">
+                                    <button
+                                        type="button"
+                                        class="portalops-info-button"
+                                        id="portalops-voice-hint-button"
+                                        aria-label="Show role question hint"
+                                        title="Show demo prompt hint">
+                                        i
+                                    </button>
+                                    <div class="portalops-voice-hint is-hidden" id="portalops-voice-hint">
+                                        Select Doctor, Nurse, or Patient to start the voice demo.
+                                    </div>
+                                </div>
+                                <div class="portalops-voice-panel portalops-voice-panel-compact is-hidden" data-portalops-voice-root="1" t-att-data-slug="location.slug">
+                                    <div class="portalops-voice-role">
+                                        <strong>Selected Role:</strong>
+                                        <span id="portalops-selected-role">Choose a role</span>
+                                    </div>
+                                    <div class="portalops-voice-actions">
+                                        <button type="button" class="portalops-voice-btn portalops-voice-btn-danger is-hidden" data-portalops-action="stop">☎ Hang up</button>
+                                    </div>
+                                    <div class="portalops-place-card-status">
+                                        <strong>Status:</strong>
+                                        <span id="portalops-voice-status">Not started</span><br/>
+                                        <span id="portalops-voice-status-detail">Waiting for role selection.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="portalops-shell portalops-shell-hidden container pb-5">
+                    <div class="row g-4">
+                        <div class="col-lg-8">
+                            <div class="portalops-panel mb-4">
+                                <div class="portalops-panel-header">
+                                    <h2>Demo Flow</h2>
+                                    <span class="portalops-chip">Scripted</span>
+                                </div>
+                                <p>
+                                    This demo is intentionally narrow: choose a healthcare role, ask the expected
+                                    operational question, and hear a clean voice response that matches the selected role.
+                                </p>
+                            </div>
+
+                            <div class="portalops-panel">
+                                <div class="portalops-panel-header">
+                                    <h2>Supported Role Prompts</h2>
+                                    <span class="portalops-chip">Today</span>
+                                </div>
+                                <div class="portalops-card-grid">
+                                    <article class="portalops-card">
+                                        <div class="portalops-card-kind">Doctor</div>
+                                        <h3>Daily remaining schedule</h3>
+                                        <p>“How many patients do I have left today?”</p>
+                                    </article>
+                                    <article class="portalops-card">
+                                        <div class="portalops-card-kind">Nurse</div>
+                                        <h3>Next appointment timing</h3>
+                                        <p>“When is the next patient appointment?”</p>
+                                    </article>
+                                    <article class="portalops-card">
+                                        <div class="portalops-card-kind">Patient</div>
+                                        <h3>Appointment and fasting questions</h3>
+                                        <p>“What time is my appointment?” and “Do I need to fast before my blood test?”</p>
+                                    </article>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="portalops-panel mb-4">
+                                <div class="portalops-panel-header">
+                                    <h2>Location Grounding</h2>
+                                    <span class="portalops-chip">Phase 2</span>
+                                </div>
+                                <t t-if="location.grounding_status == 'resolved'">
+                                    <p>This Midtown demo is grounded to a stable Google Maps place identity for later investor-safe display and linking.</p>
+                                    <div class="portalops-grounding-list">
+                                        <div><strong>Place ID:</strong> <span t-out="location.google_place_id"/></div>
+                                        <div><strong>Coordinates:</strong> <span t-out="location.latitude"/> , <span t-out="location.longitude"/></div>
+                                        <div t-if="location.plus_code"><strong>Plus code:</strong> <span t-out="location.plus_code"/></div>
+                                        <div>
+                                            <strong>Source:</strong>
+                                            <a t-att-href="location.google_maps_place_url" target="_blank" rel="noopener noreferrer">Google Maps</a>
+                                        </div>
+                                    </div>
+                                </t>
+                                <t t-if="location.grounding_status != 'resolved'">
+                                    <p>Grounding is not active yet for this demo location.</p>
+                                    <div class="portalops-voice-placeholder">
+                                        <div class="portalops-voice-dot"/>
+                                        <div>
+                                            <strong>Status:</strong> <span t-out="location.grounding_status"/><br/>
+                                            <span t-if="location.grounding_last_error" t-out="location.grounding_last_error"/>
+                                            <span t-if="not location.grounding_last_error">Configure a Maps Grounding Lite API key and run the internal resolve action for this slug.</span>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+
+                            <div class="portalops-panel mb-4" id="portalops-voice-panel">
+                                <div class="portalops-panel-header">
+                                    <h2>Voice Panel</h2>
+                                    <span class="portalops-chip" id="portalops-voice-state-chip">Ready</span>
+                                </div>
+                                <p>Use your browser microphone to run the role-based voice demo.</p>
+                                <div class="portalops-voice-panel" data-portalops-voice-root="1" t-att-data-slug="location.slug">
+                                    <div class="portalops-voice-role">
+                                        <strong>Selected Role:</strong>
+                                        <span id="portalops-selected-role">Doctor</span>
+                                    </div>
+                                    <div class="portalops-voice-hint" id="portalops-voice-hint">
+                                        Ask: “How many patients do I have left today?”
+                                    </div>
+                                    <div class="portalops-voice-placeholder">
+                                        <div class="portalops-voice-dot"/>
+                                        <div>
+                                            <strong>Status:</strong> <span id="portalops-voice-status">Not started</span><br/>
+                                            <span id="portalops-voice-status-detail">Grant microphone access to start a browser voice session.</span>
+                                        </div>
+                                    </div>
+                                    <div class="portalops-voice-actions">
+                                        <button type="button" class="portalops-voice-btn" data-portalops-action="start">Start Voice</button>
+                                        <button type="button" class="portalops-voice-btn portalops-voice-btn-secondary" data-portalops-action="stop">Stop Voice</button>
+                                    </div>
+                                    <div class="portalops-voice-transcript">
+                                        <strong>Transcript Preview</strong>
+                                        <p id="portalops-voice-transcript-preview">No transcript yet.</p>
+                                    </div>
+                                    <div class="portalops-voice-transcript">
+                                        <strong>Completion</strong>
+                                        <p id="portalops-voice-completion">Waiting for session start.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="portalops-panel">
+                                <div class="portalops-panel-header">
+                                    <h2>Audit Timeline</h2>
+                                    <span class="portalops-chip">Seeded</span>
+                                </div>
+                                <div class="portalops-timeline">
+                                    <t t-foreach="audit_events" t-as="event">
+                                        <div class="portalops-timeline-item">
+                                            <div class="portalops-timeline-marker"/>
+                                            <div>
+                                                <div class="portalops-timeline-title" t-out="event.title"/>
+                                                <div class="portalops-timeline-type" t-out="event.event_type"/>
+                                                <p t-out="event.detail"/>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+</odoo>

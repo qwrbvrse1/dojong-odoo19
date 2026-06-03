@@ -1,0 +1,21 @@
+{
+    email {$CADDY_EMAIL}
+}
+
+{$PUBLIC_DOMAIN} {
+    encode gzip zstd
+
+    @dograh_api path /api/v1/* /health /docs /openapi.json /redoc /ws/* /socket.io/*
+    handle @dograh_api {
+        reverse_proxy 127.0.0.1:8000
+    }
+
+    @dograh_ui path /dograh* /auth* /workflow* /telephony-configurations* /api-keys* /settings* /embed* /handler* /voice-agent* /agents*
+    handle @dograh_ui {
+        reverse_proxy 127.0.0.1:3010
+    }
+
+    handle {
+        reverse_proxy 127.0.0.1:8070
+    }
+}

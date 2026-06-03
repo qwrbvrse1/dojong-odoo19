@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="portalops_demo_location_atl_midtown" model="portalops.demo.location">
+        <field name="name">Atlanta Midtown</field>
+        <field name="slug">atl-midtown</field>
+        <field name="headline">PlaceTwin Avatar for the Atlanta Midtown investor story</field>
+        <field name="summary">A browser-first operating shell for location grounding, voice intake, CRM conversion, and investor-safe auditability.</field>
+        <field name="address_line">Midtown Atlanta</field>
+        <field name="city">Atlanta</field>
+        <field name="state_code">GA</field>
+        <field name="postal_code">30309</field>
+        <field name="country_code">US</field>
+        <field name="is_published">True</field>
+    </record>
+
+    <record id="portalops_demo_card_01" model="portalops.demo.card">
+        <field name="location_id" ref="portalops_demo_location_atl_midtown"/>
+        <field name="sequence">10</field>
+        <field name="kind">persona</field>
+        <field name="name">Identity</field>
+        <field name="visibility">customer</field>
+        <field name="headline">Investor-ready PlaceTwin shell</field>
+        <field name="body">A single public demo page that anchors the Atlanta Midtown narrative and leaves room for live grounding, voice, and CRM proof.</field>
+    </record>
+    <record id="portalops_demo_card_02" model="portalops.demo.card">
+        <field name="location_id" ref="portalops_demo_location_atl_midtown"/>
+        <field name="sequence">20</field>
+        <field name="kind">workflow</field>
+        <field name="name">Flow</field>
+        <field name="visibility">sales</field>
+        <field name="headline">Public route plus normalized state API</field>
+        <field name="body">The page is rendered server-side for reliability, while a companion JSON endpoint exposes the same location, card, and audit state for later enhancements.</field>
+    </record>
+    <record id="portalops_demo_card_03" model="portalops.demo.card">
+        <field name="location_id" ref="portalops_demo_location_atl_midtown"/>
+        <field name="sequence">30</field>
+        <field name="kind">proof</field>
+        <field name="name">Seeded Story</field>
+        <field name="visibility">customer</field>
+        <field name="headline">Seeded Midtown content for repeatable demos</field>
+        <field name="body">The first investor route is deterministic: one slug, one narrative shell, and a stable set of cards so the story starts in the same place every time.</field>
+    </record>
+    <record id="portalops_demo_card_04" model="portalops.demo.card">
+        <field name="location_id" ref="portalops_demo_location_atl_midtown"/>
+        <field name="sequence">40</field>
+        <field name="kind">insight</field>
+        <field name="name">Grounding</field>
+        <field name="visibility">manager</field>
+        <field name="headline">Reserved space for Google Maps grounding</field>
+        <field name="body">Phase 2 will replace placeholder geography with a resolved place identity, attribution-safe display fields, and canonical map linkage.</field>
+    </record>
+    <record id="portalops_demo_card_05" model="portalops.demo.card">
+        <field name="location_id" ref="portalops_demo_location_atl_midtown"/>
+        <field name="sequence">50</field>
+        <field name="kind">workflow</field>
+        <field name="name">Voice</field>
+        <field name="visibility">customer</field>
+        <field name="headline">Voice panel staged for browser microphone proof</field>
+        <field name="body">Phase 3 will activate browser mic intake, live session state, transcript preview, and Dograh-backed orchestration without changing the route contract.</field>
+    </record>
+    <record id="portalops_demo_card_06" model="portalops.demo.card">
+        <field name="location_id" ref="portalops_demo_location_atl_midtown"/>
+        <field name="sequence">60</field>
+        <field name="kind">proof</field>
+        <field name="name">CRM Outcome</field>
+        <field name="visibility">sales</field>
+        <field name="headline">CRM linkage path is already reserved</field>
+        <field name="body">The addon extends crm.lead now so voice sessions can later attach a location, session key, and transcript summary to a real sales artifact.</field>
+    </record>
+    <record id="portalops_demo_card_07" model="portalops.demo.card">
+        <field name="location_id" ref="portalops_demo_location_atl_midtown"/>
+        <field name="sequence">70</field>
+        <field name="kind">insight</field>
+        <field name="name">Auditability</field>
+        <field name="visibility">manager</field>
+        <field name="headline">Audit timeline starts on day one</field>
+        <field name="body">Even in the shell phase, the page shows ordered demo events so future maps, voice, and review flows can present one continuous operational history.</field>
+    </record>
+    <record id="portalops_demo_card_08" model="portalops.demo.card">
+        <field name="location_id" ref="portalops_demo_location_atl_midtown"/>
+        <field name="sequence">80</field>
+        <field name="kind">workflow</field>
+        <field name="name">Draft Safety</field>
+        <field name="visibility">manager</field>
+        <field name="headline">Later assist flows stay clearly non-destructive</field>
+        <field name="body">Review triage and browser assist will remain draft-only in later phases, preserving the live voice proof while keeping supporting actions investor-safe.</field>
+    </record>
+
+    <record id="portalops_demo_audit_01" model="portalops.demo.audit_event">
+        <field name="location_id" ref="portalops_demo_location_atl_midtown"/>
+        <field name="sequence">10</field>
+        <field name="event_type">seed</field>
+        <field name="title">Demo shell seeded</field>
+        <field name="detail">The Atlanta Midtown location, public slug, and initial demo cards were installed with the addon.</field>
+    </record>
+    <record id="portalops_demo_audit_02" model="portalops.demo.audit_event">
+        <field name="location_id" ref="portalops_demo_location_atl_midtown"/>
+        <field name="sequence">20</field>
+        <field name="event_type">maps</field>
+        <field name="title">Grounding placeholder ready</field>
+        <field name="detail">The model already has a stable identity record to receive place metadata in the next phase.</field>
+    </record>
+    <record id="portalops_demo_audit_03" model="portalops.demo.audit_event">
+        <field name="location_id" ref="portalops_demo_location_atl_midtown"/>
+        <field name="sequence">30</field>
+        <field name="event_type">voice</field>
+        <field name="title">Voice placeholder published</field>
+        <field name="detail">The public page includes a browser voice panel stub so later activation does not require a route redesign.</field>
+    </record>
+</odoo>

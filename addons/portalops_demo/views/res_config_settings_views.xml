@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_portalops_demo" model="ir.ui.view">
+        <field name="name">res.config.settings.view.portalops.demo</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <div class="app_settings_block"
+                     data-string="PortalOps Demo"
+                     string="PortalOps Demo"
+                     data-key="portalops_demo">
+                    <h2>PortalOps Demo</h2>
+                    <div class="text-muted mb16">
+                        Configure the API key used to resolve demo locations into stable Google Maps place metadata.
+                    </div>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="portalops_demo_google_maps_browser_api_key"/>
+                                <div class="text-muted">
+                                    Browser-facing key for the live Google Maps JavaScript demo surface.
+                                </div>
+                                <field name="portalops_demo_google_maps_browser_api_key" password="True"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="portalops_demo_google_maps_grounding_api_key"/>
+                                <div class="text-muted">
+                                    Used for the experimental Maps Grounding Lite `resolveNames` setup flow.
+                                </div>
+                                <field name="portalops_demo_google_maps_grounding_api_key" password="True"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="portalops_demo_dograh_api_key"/>
+                                <div class="text-muted">Used to start browser voice runs in Dograh.</div>
+                                <field name="portalops_demo_dograh_api_key" password="True"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="portalops_demo_dograh_api_base_url"/>
+                                <field name="portalops_demo_dograh_api_base_url"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="portalops_demo_dograh_ui_base_url"/>
+                                <field name="portalops_demo_dograh_ui_base_url"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="portalops_demo_dograh_auth_email"/>
+                                <field name="portalops_demo_dograh_auth_email"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="portalops_demo_dograh_auth_password"/>
+                                <field name="portalops_demo_dograh_auth_password" password="True"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="portalops_demo_dograh_start_url"/>
+                                <field name="portalops_demo_dograh_start_url"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="portalops_demo_dograh_webhook_secret"/>
+                                <field name="portalops_demo_dograh_webhook_secret" password="True"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="portalops_demo_dograh_flow_id"/>
+                                <field name="portalops_demo_dograh_flow_id"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="portalops_demo_dograh_low_vision_flow_id"/>
+                                <field name="portalops_demo_dograh_low_vision_flow_id"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="portalops_demo_dograh_embed_token"/>
+                                <field name="portalops_demo_dograh_embed_token"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

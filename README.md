@@ -70,6 +70,24 @@ docker compose up -d
 
 The first build takes several minutes as it compiles all system and Python dependencies.
 
+This stack now also includes the local Dograh services used by the browser-only
+`/p/atl-midtown` investor demo voice flow:
+
+- Dograh UI: [http://localhost:3010](http://localhost:3010)
+- Dograh API health: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
+- Dograh MinIO console: [http://127.0.0.1:9001](http://127.0.0.1:9001)
+
+If those host ports are already occupied on your machine, override them when
+starting Docker instead of editing the compose file:
+
+```bash
+DOGRAH_UI_HOST_PORT=3011 \
+DOGRAH_API_HOST_PORT=8001 \
+DOGRAH_MINIO_API_HOST_PORT=9100 \
+DOGRAH_MINIO_CONSOLE_HOST_PORT=9101 \
+docker compose up -d
+```
+
 ### 6. Initialize the database (first time only)
 
 The database container starts empty — you must install the Odoo schema before the web UI works:
@@ -92,6 +110,14 @@ Go to [http://localhost:8069](http://localhost:8069) — you should see the logi
 docker compose restart web          # restart after config or addon changes
 docker compose logs -f web          # tail logs
 docker compose down                 # stop everything
+```
+
+Dograh-specific commands:
+
+```bash
+docker compose ps dograh-postgres dograh-redis dograh-minio dograh-api dograh-ui
+docker compose logs -f dograh-api dograh-ui
+docker compose restart dograh-api dograh-ui
 ```
 
 ---
@@ -332,6 +358,60 @@ All endpoints accept JSON bodies and return JSON responses.
 | `POST` | `/api/v1/ai/execute`  | API Key | Intent execution — three modes: full parse (`text`), direct execute (`intent_type` + `resolved_data`), or confirm pending (`session_key`) |
 
 **Important:** From inside n8n's Docker container, Odoo is reachable at `http://web:8069` (not `localhost`). The environment variable `ODOO_BASE_URL` is pre-set to this value.
+
+---
+
+## Dograh Setup (Browser Voice Runtime)
+
+Dograh is now part of the primary `docker-compose.yml` so the local PlaceTwin
+demo can run browser voice without a separate sidecar compose project.
+
+### Services included
+
+- `dograh-postgres`
+- `dograh-redis`
+- `dograh-minio`
+- `dograh-api`
+- `dograh-ui`
+
+### Local URLs
+
+- Dograh UI: [http://localhost:3010](http://localhost:3010)
+- Dograh API: [http://localhost:8000](http://localhost:8000)
+- Dograh API health: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
+- Dograh MinIO API: [http://127.0.0.1:9000](http://127.0.0.1:9000)
+- Dograh MinIO console: [http://127.0.0.1:9001](http://127.0.0.1:9001)
+
+You can remap those host ports with:
+
+- `DOGRAH_UI_HOST_PORT`
+- `DOGRAH_API_HOST_PORT`
+- `DOGRAH_MINIO_API_HOST_PORT`
+- `DOGRAH_MINIO_CONSOLE_HOST_PORT`
+
+### Notes
+
+- The current primary compose intentionally includes the browser-only local
+  subset of Dograh. TURN, nginx, and remote tunnel services are not enabled
+  here because the investor demo scope is browser-first.
+- On first startup, Dograh runs its own migrations and image pulls, so the API
+  may take a minute or two before becoming healthy.
+- You may see a non-blocking `cloudflared` warning in `dograh-api` logs because
+  the local browser-only stack does not run the optional remote tunnel service.
+
+### Odoo demo wiring
+
+The Odoo investor demo addon stores Dograh config in system parameters:
+
+- `portalops_demo.dograh_api_key`
+- `portalops_demo.dograh_start_url`
+- `portalops_demo.dograh_webhook_secret`
+- `portalops_demo.dograh_flow_id`
+- `portalops_demo.dograh_low_vision_flow_id`
+
+Those values can be edited in **Settings -> PortalOps Demo**. The local Docker
+runtime is now present; the remaining work is to point `portalops_demo` at the
+correct Dograh local start route and webhook contract for live session startup.
 
 ### 6. Example: test the connection
 
