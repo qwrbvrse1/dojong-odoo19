@@ -408,7 +408,7 @@
     </t>
 
     <!-- ── AI Voice Assistant (floating) ──────────────── -->
-    <DojoVoiceAssistant/>
+    <!-- <DojoVoiceAssistant/> REMOVED: ai_assistant module not installed -->
 
 </div>
 </t>

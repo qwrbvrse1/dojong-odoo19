@@ -17,6 +17,14 @@ class DojoMember(models.Model):
     _inherit = ["mail.thread", "mail.activity.mixin"]
 
     partner_id = fields.Many2one("res.partner", required=True, ondelete="cascade")
+    name = fields.Char(
+        related="partner_id.name",
+        store=True,
+        index=True,
+        readonly=False,
+        string="Name",
+        help="Member's full name (stored for direct SQL queries).",
+    )
     active = fields.Boolean(default=True)
     company_id = fields.Many2one(
         "res.company", default=lambda self: self.env.company, index=True

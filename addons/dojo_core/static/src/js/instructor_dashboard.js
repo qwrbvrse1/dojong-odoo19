@@ -4,12 +4,11 @@ import { Component, useState, onWillStart, onMounted, useRef } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { user } from "@web/core/user";
-import { DojoVoiceAssistant } from "@ai_assistant/js/voice_assistant";
 import { MiniCalendar } from "@dojo_core/js/mini_calendar";
 
 class InstructorDashboard extends Component {
     static template = "dojo_core.InstructorDashboard";
-    static components = { DojoVoiceAssistant, MiniCalendar };
+    static components = { MiniCalendar };
 
     setup() {
         this.orm = useService("orm");
