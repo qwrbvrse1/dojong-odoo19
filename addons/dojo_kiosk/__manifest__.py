@@ -8,8 +8,6 @@
     "depends": [
         "dojo_core",
         "dojo_subscriptions",
-        "ai_assistant",
-        "dojo_crm",
     ],
     "data": [
         "security/ir.model.access.csv",

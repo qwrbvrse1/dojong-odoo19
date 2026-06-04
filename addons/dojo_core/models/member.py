@@ -1,8 +1,11 @@
 import logging
+import re
 import secrets
+import unicodedata
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
+from odoo.fields import Domain
 
 _logger = logging.getLogger(__name__)
 
@@ -64,6 +67,30 @@ class DojoMember(models.Model):
         readonly=True,
         index=True,
         help="Auto-generated unique member identifier (e.g. DJ-00001). Used for barcode/kiosk check-in.",
+    )
+    first_name = fields.Char(
+        string="First Name",
+        compute="_compute_name_parts",
+        inverse="_inverse_name_parts",
+        store=True,
+        index=True,
+        help="Derived from the member's full name for surname-first and partial-name search.",
+    )
+    last_name = fields.Char(
+        string="Last Name",
+        compute="_compute_name_parts",
+        inverse="_inverse_name_parts",
+        store=True,
+        index=True,
+        help="Derived from the member's full name for surname-first and partial-name search.",
+    )
+    search_name_normalized = fields.Char(
+        string="Normalized Member Search",
+        compute="_compute_search_name_normalized",
+        store=True,
+        index="trigram",
+        copy=False,
+        help="Normalized helper used by member lookup, kiosk search, and display-name search.",
     )
 
     # ── Emergency Contacts (from dojo_members) ────────────────────────────
@@ -153,6 +180,13 @@ class DojoMember(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            if not vals.get("name"):
+                split_name = self._compose_member_name(
+                    vals.get("first_name"),
+                    vals.get("last_name"),
+                )
+                if split_name:
+                    vals["name"] = split_name
             if not vals.get("partner_id"):
                 partner_vals = {}
                 for field_name in ("name", "email", "phone", "mobile", "company_id"):
@@ -174,7 +208,133 @@ class DojoMember(models.Model):
                 record.member_number = self.env["ir.sequence"].next_by_code("dojo.member") or "/"
         return records
 
+    @api.model
+    def _search_display_name(self, operator, value):
+        if operator in ("ilike", "like") and value:
+            return self._member_lookup_domain(value)
+        return super()._search_display_name(operator, value)
+
+    @api.model
+    @api.readonly
+    def name_search(self, name="", domain=None, operator="ilike", limit=100):
+        if not name or operator not in ("ilike", "like"):
+            return super().name_search(name, domain, operator, limit)
+        lookup_domain = self._member_lookup_domain(name)
+        records = self.search_fetch(
+            Domain(domain or Domain.TRUE) & lookup_domain,
+            ["display_name"],
+            limit=limit,
+        )
+        return [(record.id, record.display_name) for record in records.sudo()]
+
+    # ── Search Helpers ────────────────────────────────────────────────────
+
+    @api.model
+    def search_for_lookup(self, query, limit=20, active_only=True, order="name asc"):
+        """Unified member search used by kiosk and instructor lookup flows."""
+        if not query or len(query.strip()) < 2:
+            return self.browse()
+        domain = self._member_lookup_domain(query)
+        if active_only:
+            domain &= Domain("active", "=", True)
+        return self.search(domain, limit=limit, order=order)
+
+    @api.model
+    def _member_lookup_domain(self, query):
+        normalized = self._normalize_member_search_value(query)
+        if not normalized:
+            return Domain.FALSE
+        domains = [Domain("search_name_normalized", "ilike", normalized)]
+        compact = normalized.replace(" ", "")
+        if compact != normalized and any(char.isdigit() for char in compact):
+            domains.append(Domain("search_name_normalized", "ilike", compact))
+        return Domain.OR(domains)
+
+    @api.model
+    def _normalize_member_search_value(self, value):
+        text = str(value or "").strip().lower()
+        if not text:
+            return ""
+        text = unicodedata.normalize("NFKD", text)
+        text = "".join(char for char in text if not unicodedata.combining(char))
+        text = re.sub(r"[^a-z0-9]+", " ", text)
+        return re.sub(r"\s+", " ", text).strip()
+
+    @api.model
+    def _member_search_value_variants(self, value):
+        normalized = self._normalize_member_search_value(value)
+        if not normalized:
+            return []
+        variants = [normalized]
+        compact = normalized.replace(" ", "")
+        if compact != normalized and any(char.isdigit() for char in compact):
+            variants.append(compact)
+        return variants
+
+    @api.model
+    def _split_member_name(self, name):
+        clean = re.sub(r"\s+", " ", str(name or "")).strip()
+        if not clean:
+            return "", ""
+        if "," in clean:
+            last, first = clean.split(",", 1)
+            return first.strip(), last.strip()
+        parts = clean.split(" ")
+        if len(parts) == 1:
+            return parts[0], ""
+        return " ".join(parts[:-1]), parts[-1]
+
+    @api.model
+    def _compose_member_name(self, first_name, last_name):
+        return " ".join(
+            part.strip()
+            for part in (first_name or "", last_name or "")
+            if part and part.strip()
+        )
+
     # ── Computed Fields ───────────────────────────────────────────────────
+
+    @api.depends("name", "partner_id.name")
+    def _compute_name_parts(self):
+        for member in self:
+            member.first_name, member.last_name = member._split_member_name(member.name)
+
+    def _inverse_name_parts(self):
+        for member in self:
+            name = member._compose_member_name(member.first_name, member.last_name)
+            if name and member.name != name:
+                member.name = name
+
+    @api.depends(
+        "name", "partner_id.name",
+        "first_name", "last_name",
+        "email", "partner_id.email",
+        "phone", "partner_id.phone",
+        "member_number",
+    )
+    def _compute_search_name_normalized(self):
+        for member in self:
+            derived_first, derived_last = member._split_member_name(member.name)
+            first_name = member.first_name or derived_first
+            last_name = member.last_name or derived_last
+            candidates = [
+                member.name,
+                member._compose_member_name(first_name, last_name),
+                member._compose_member_name(last_name, first_name),
+                member._compose_member_name(first_name[:1], last_name),
+                member._compose_member_name(last_name, first_name[:1]),
+                member.email,
+                member.phone,
+                member.member_number,
+            ]
+            variants = []
+            seen = set()
+            for candidate in candidates:
+                for variant in member._member_search_value_variants(candidate):
+                    if variant not in seen:
+                        seen.add(variant)
+                        variants.append(variant)
+            member.search_name_normalized = " ".join(variants)
 
     @api.depends("partner_id.user_ids")
     def _compute_has_portal_login(self):

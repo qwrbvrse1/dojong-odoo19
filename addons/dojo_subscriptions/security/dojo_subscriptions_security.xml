@@ -15,10 +15,31 @@
     </record>
 
     <record id="rule_dojo_member_subscription_instructor_company" model="ir.rule">
-        <field name="name">Sale Subscription Instructor Company</field>
+        <field name="name">Sale Subscription Instructor Relevant Rosters</field>
         <field name="model_id" ref="subscription_oca.model_sale_subscription"/>
         <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
-        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[
+            '&amp;',
+                '|', ('company_id', '=', False), ('company_id', 'in', company_ids),
+                '|', '|',
+                    ('member_id.enrollment_ids.session_id.instructor_profile_id.user_id', '=', user.id),
+                    ('member_id.enrollment_ids.session_id.template_id.instructor_profile_ids.user_id', '=', user.id),
+                    ('member_id.enrollment_ids.session_id.template_id.recurrence_instructor_id.user_id', '=', user.id),
+        ]</field>
+    </record>
+
+    <record id="rule_dojo_program_enrollment_instructor_relevant" model="ir.rule">
+        <field name="name">Program Enrollment Instructor Relevant Rosters</field>
+        <field name="model_id" ref="model_dojo_program_enrollment"/>
+        <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
+        <field name="domain_force">[
+            '&amp;',
+                '|', ('company_id', '=', False), ('company_id', 'in', company_ids),
+                '|', '|',
+                    ('member_id.enrollment_ids.session_id.instructor_profile_id.user_id', '=', user.id),
+                    ('member_id.enrollment_ids.session_id.template_id.instructor_profile_ids.user_id', '=', user.id),
+                    ('member_id.enrollment_ids.session_id.template_id.recurrence_instructor_id.user_id', '=', user.id),
+        ]</field>
     </record>
 
     <record id="rule_dojo_member_subscription_parent_self_or_household" model="ir.rule">

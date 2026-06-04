@@ -11,6 +11,7 @@
     ],
     "data": [
         "security/ir.model.access.csv",
+        "security/dojo_credits_security.xml",
         "data/sequences.xml",
         "views/dojo_credit_transaction_views.xml",
         "views/dojo_subscription_plan_views.xml",

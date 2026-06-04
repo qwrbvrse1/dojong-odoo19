@@ -22,21 +22,33 @@
         name="Subscriptions"
         parent="dojo_core.menu_dojo_core_root"
         sequence="55"
+        groups="dojo_core.group_dojo_admin"
     />
+    <record id="menu_dojo_subscriptions_root" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('dojo_core.group_dojo_admin')])]"/>
+    </record>
     <menuitem
         id="menu_dojo_member_subscriptions"
         name="Member Subscriptions"
         parent="menu_dojo_subscriptions_root"
         action="action_dojo_member_subscriptions"
         sequence="10"
+        groups="dojo_core.group_dojo_admin"
     />
+    <record id="menu_dojo_member_subscriptions" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('dojo_core.group_dojo_admin')])]"/>
+    </record>
     <menuitem
         id="menu_dojo_subscription_plans"
         name="Subscription Plans"
         parent="menu_dojo_subscriptions_root"
         action="action_dojo_subscription_plans"
         sequence="20"
+        groups="dojo_core.group_dojo_admin"
     />
+    <record id="menu_dojo_subscription_plans" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('dojo_core.group_dojo_admin')])]"/>
+    </record>
 
 
 

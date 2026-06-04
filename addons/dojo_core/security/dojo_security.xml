@@ -13,9 +13,9 @@
         <field name="implied_ids" eval="[
             (4, ref('base.group_user')),
             (4, ref('base.group_partner_manager')),
-            (4, ref('account.group_account_invoice')),
-            (4, ref('hr.group_hr_user')),
             (4, ref('project.group_project_user')),
+            (3, ref('account.group_account_invoice')),
+            (3, ref('hr.group_hr_user')),
         ]"/>
     </record>
 
@@ -32,17 +32,28 @@
     <!-- ═══════════════ Record Rules — Members ═══════════════ -->
 
     <record id="rule_dojo_member_instructor_company" model="ir.rule">
-        <field name="name">Dojo Member Instructor Company</field>
+        <field name="name">Dojo Member Instructor Relevant Rosters</field>
         <field name="model_id" ref="model_dojo_member"/>
         <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
-        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[
+            '&amp;',
+                '|', ('company_id', '=', False), ('company_id', 'in', company_ids),
+                '|', '|',
+                    ('enrollment_ids.session_id.instructor_profile_id.user_id', '=', user.id),
+                    ('enrollment_ids.session_id.template_id.instructor_profile_ids.user_id', '=', user.id),
+                    ('enrollment_ids.session_id.template_id.recurrence_instructor_id.user_id', '=', user.id),
+        ]</field>
     </record>
 
     <record id="rule_dojo_instructor_profile_instructor_company" model="ir.rule">
-        <field name="name">Instructor Profile Company</field>
+        <field name="name">Instructor Profile Own Record</field>
         <field name="model_id" ref="model_dojo_instructor_profile"/>
         <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
-        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[
+            '&amp;',
+                '|', ('company_id', '=', False), ('company_id', 'in', company_ids),
+                ('user_id', '=', user.id),
+        ]</field>
     </record>
 
     <record id="rule_dojo_member_parent_self_or_household" model="ir.rule">
@@ -62,10 +73,17 @@
     <!-- ═══════════════ Record Rules — Emergency Contacts ═══════════════ -->
 
     <record id="rule_dojo_emergency_contact_instructor_company" model="ir.rule">
-        <field name="name">Emergency Contact Instructor Company</field>
+        <field name="name">Emergency Contact Instructor Relevant Rosters</field>
         <field name="model_id" ref="model_dojo_emergency_contact"/>
         <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
-        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[
+            '&amp;',
+                '|', ('company_id', '=', False), ('company_id', 'in', company_ids),
+                '|', '|',
+                    ('member_id.enrollment_ids.session_id.instructor_profile_id.user_id', '=', user.id),
+                    ('member_id.enrollment_ids.session_id.template_id.instructor_profile_ids.user_id', '=', user.id),
+                    ('member_id.enrollment_ids.session_id.template_id.recurrence_instructor_id.user_id', '=', user.id),
+        ]</field>
     </record>
 
     <record id="rule_dojo_emergency_contact_parent_self_or_household" model="ir.rule">
@@ -85,17 +103,46 @@
     </record>
 
     <record id="rule_dojo_class_session_instructor_company" model="ir.rule">
-        <field name="name">Class Session Instructor Company</field>
+        <field name="name">Class Session Instructor Assigned</field>
         <field name="model_id" ref="model_dojo_class_session"/>
         <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
-        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[
+            '&amp;',
+                '|', ('company_id', '=', False), ('company_id', 'in', company_ids),
+                '|', '|',
+                    ('instructor_profile_id.user_id', '=', user.id),
+                    ('template_id.instructor_profile_ids.user_id', '=', user.id),
+                    ('template_id.recurrence_instructor_id.user_id', '=', user.id),
+        ]</field>
     </record>
 
     <record id="rule_dojo_class_enrollment_instructor_company" model="ir.rule">
-        <field name="name">Class Enrollment Instructor Company</field>
+        <field name="name">Class Enrollment Instructor Assigned Sessions</field>
         <field name="model_id" ref="model_dojo_class_enrollment"/>
         <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
-        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[
+            '&amp;',
+                '|', ('company_id', '=', False), ('company_id', 'in', company_ids),
+                '|', '|',
+                    ('session_id.instructor_profile_id.user_id', '=', user.id),
+                    ('session_id.template_id.instructor_profile_ids.user_id', '=', user.id),
+                    ('session_id.template_id.recurrence_instructor_id.user_id', '=', user.id),
+        ]</field>
+    </record>
+
+    <record id="rule_dojo_auto_enroll_instructor_relevant" model="ir.rule">
+        <field name="name">Auto-Enroll Instructor Relevant Rosters</field>
+        <field name="model_id" ref="model_dojo_course_auto_enroll"/>
+        <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
+        <field name="domain_force">[
+            '&amp;',
+                '|', ('company_id', '=', False), ('company_id', 'in', company_ids),
+                '|', '|', '|',
+                    ('template_id.instructor_profile_ids.user_id', '=', user.id),
+                    ('template_id.recurrence_instructor_id.user_id', '=', user.id),
+                    ('member_id.enrollment_ids.session_id.instructor_profile_id.user_id', '=', user.id),
+                    ('member_id.enrollment_ids.session_id.template_id.instructor_profile_ids.user_id', '=', user.id),
+        ]</field>
     </record>
 
     <record id="rule_dojo_class_template_parent_company" model="ir.rule">
@@ -133,10 +180,17 @@
     <!-- ═══════════════ Record Rules — Attendance ═══════════════ -->
 
     <record id="rule_dojo_attendance_instructor_company" model="ir.rule">
-        <field name="name">Attendance Instructor Company</field>
+        <field name="name">Attendance Instructor Assigned Sessions</field>
         <field name="model_id" ref="model_dojo_attendance_log"/>
         <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
-        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[
+            '&amp;',
+                '|', ('company_id', '=', False), ('company_id', 'in', company_ids),
+                '|', '|',
+                    ('session_id.instructor_profile_id.user_id', '=', user.id),
+                    ('session_id.template_id.instructor_profile_ids.user_id', '=', user.id),
+                    ('session_id.template_id.recurrence_instructor_id.user_id', '=', user.id),
+        ]</field>
     </record>
 
     <record id="rule_dojo_attendance_parent_self_or_household" model="ir.rule">
@@ -160,16 +214,42 @@
         <field name="domain_force">[('company_id', '=', company_id)]</field>
     </record>
 
+    <record id="rule_dojo_member_rank_instructor_relevant" model="ir.rule">
+        <field name="name">Member Rank Instructor Relevant Rosters</field>
+        <field name="model_id" ref="model_dojo_member_rank"/>
+        <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
+        <field name="domain_force">[
+            '|', '|',
+                ('member_id.enrollment_ids.session_id.instructor_profile_id.user_id', '=', user.id),
+                ('member_id.enrollment_ids.session_id.template_id.instructor_profile_ids.user_id', '=', user.id),
+                ('member_id.enrollment_ids.session_id.template_id.recurrence_instructor_id.user_id', '=', user.id),
+        ]</field>
+    </record>
+
     <record id="rule_dojo_belt_test_company" model="ir.rule">
         <field name="name">Belt Test: own company</field>
         <field name="model_id" ref="model_dojo_belt_test"/>
         <field name="domain_force">[('company_id', '=', company_id)]</field>
     </record>
 
+    <record id="rule_dojo_belt_test_instructor_assigned" model="ir.rule">
+        <field name="name">Belt Test Instructor Assigned</field>
+        <field name="model_id" ref="model_dojo_belt_test"/>
+        <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
+        <field name="domain_force">[('instructor_profile_id.user_id', '=', user.id)]</field>
+    </record>
+
     <record id="rule_dojo_belt_test_registration_company" model="ir.rule">
         <field name="name">Belt Test Registration: own company</field>
         <field name="model_id" ref="model_dojo_belt_test_registration"/>
         <field name="domain_force">[('company_id', '=', company_id)]</field>
+    </record>
+
+    <record id="rule_dojo_belt_test_registration_instructor_assigned" model="ir.rule">
+        <field name="name">Belt Test Registration Instructor Assigned</field>
+        <field name="model_id" ref="model_dojo_belt_test_registration"/>
+        <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
+        <field name="domain_force">[('test_id.instructor_profile_id.user_id', '=', user.id)]</field>
     </record>
 
 </odoo>

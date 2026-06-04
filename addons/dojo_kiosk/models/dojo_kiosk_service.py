@@ -5,13 +5,23 @@ Methods are designed to be called from the kiosk HTTP controller via sudo().
 from datetime import datetime, timedelta
 
 import pytz
+from markupsafe import Markup
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError
-from odoo.tools import html2plaintext
+from odoo.tools import html2plaintext, html_escape
 
 _MAX_PIN_ATTEMPTS = 5
 _LOCKOUT_MINUTES = 15
+_UPCOMING_SESSION_WINDOW_MINUTES = 15
+
+_ONBOARDING_STEP_FIELDS = {
+    "member_info": ("step_member_info", "Member Info"),
+    "household": ("step_household", "Household"),
+    "enrollment": ("step_enrollment", "Class Enrollment"),
+    "subscription": ("step_subscription", "Subscription"),
+    "portal_access": ("step_portal_access", "Portal Access"),
+}
 
 
 class DojoKioskService(models.AbstractModel):
@@ -39,6 +49,7 @@ class DojoKioskService(models.AbstractModel):
         """Return device config and today's sessions for the initial app load."""
         config = self.validate_token(token)
         sessions = self.get_todays_sessions()
+        session_context = self.get_session_context_from_payload(sessions)
         announcements = [
             {"id": a.id, "title": a.title or "", "body": html2plaintext(a.body or "").strip()}
             for a in config.announcement_ids.filtered("active")
@@ -51,7 +62,21 @@ class DojoKioskService(models.AbstractModel):
             "show_title": config.show_title,
             "announcements": announcements,
             "sessions": sessions,
+            "session_context": session_context,
+            "ai_enabled": "ai.assistant.service" in self.env,
+            "trial_leads_enabled": self.is_trial_lead_adapter_available(),
         }
+
+    @api.model
+    def is_trial_lead_adapter_available(self):
+        """Whether CRM trial-lead fields from dojo_crm are installed."""
+        if "crm.lead" not in self.env:
+            return False
+        Lead = self.env["crm.lead"]
+        return all(
+            field_name in Lead._fields
+            for field_name in ("trial_session_id", "trial_attended", "dojo_member_id")
+        )
 
     @api.model
     def get_enrolled_sessions_today(self, member_id, date=None):
@@ -299,22 +324,89 @@ class DojoKioskService(models.AbstractModel):
             ("company_id", "in", [self.env.company.id, False]),
         ], order="start_datetime asc")
 
-        result = []
-        for s in sessions:
-            result.append({
-                "id": s.id,
-                "name": s.name,
-                "state": s.state,
-                "template_name": s.template_id.name if s.template_id else "",
-                "program_name": s.template_id.program_id.name if (s.template_id and s.template_id.program_id) else "",
-                "is_trial": s.template_id.program_id.is_trial if (s.template_id and s.template_id.program_id) else False,
-                "start": fields.Datetime.to_string(s.start_datetime),
-                "end": fields.Datetime.to_string(s.end_datetime),
-                "seats_taken": s.seats_taken,
-                "capacity": s.capacity,
-                "instructor": s.instructor_profile_id.name if s.instructor_profile_id else "",
-            })
-        return result
+        return [self._session_payload(s) for s in sessions]
+
+    @api.model
+    def get_todays_sessions_payload(self, date=None):
+        """Return today's sessions plus the kiosk's recommended class context."""
+        sessions = self.get_todays_sessions(date=date)
+        return {
+            "sessions": sessions,
+            "session_context": self.get_session_context_from_payload(sessions),
+        }
+
+    def _session_payload(self, session):
+        return {
+            "id": session.id,
+            "name": session.name,
+            "state": session.state,
+            "template_name": session.template_id.name if session.template_id else "",
+            "program_name": session.template_id.program_id.name if (session.template_id and session.template_id.program_id) else "",
+            "is_trial": session.template_id.program_id.is_trial if (session.template_id and session.template_id.program_id) else False,
+            "start": fields.Datetime.to_string(session.start_datetime),
+            "end": fields.Datetime.to_string(session.end_datetime),
+            "seats_taken": session.seats_taken,
+            "capacity": session.capacity,
+            "instructor": session.instructor_profile_id.name if session.instructor_profile_id else "",
+        }
+
+    @api.model
+    def get_session_context_from_payload(self, sessions, now=None):
+        """Choose the class context for kiosk/instructor mode.
+
+        Priority:
+        1. Open class currently in progress.
+        2. Nearest open class starting within the configured threshold.
+        3. Standby.
+        """
+        now = fields.Datetime.to_datetime(now) if now else fields.Datetime.now()
+        candidates = []
+        for session in sessions or []:
+            start = fields.Datetime.to_datetime(session.get("start"))
+            end = fields.Datetime.to_datetime(session.get("end"))
+            if not start or not end or session.get("state") != "open":
+                continue
+            candidates.append((session, start, end))
+
+        active = [
+            (session, start, end)
+            for session, start, end in candidates
+            if start <= now <= end
+        ]
+        if active:
+            active.sort(key=lambda item: (item[1], item[2], item[0].get("id") or 0))
+            return self._session_context(active[0][0], "active")
+
+        threshold_end = now + timedelta(minutes=_UPCOMING_SESSION_WINDOW_MINUTES)
+        upcoming = [
+            (session, start, end)
+            for session, start, end in candidates
+            if now <= start <= threshold_end
+        ]
+        if upcoming:
+            upcoming.sort(key=lambda item: (item[1], item[0].get("id") or 0))
+            return self._session_context(upcoming[0][0], "upcoming")
+
+        return {
+            "mode": "standby",
+            "selected_session_id": False,
+            "selected_session_name": "",
+            "threshold_minutes": _UPCOMING_SESSION_WINDOW_MINUTES,
+            "reason": "No active class or class starting within the next %d minutes." % _UPCOMING_SESSION_WINDOW_MINUTES,
+        }
+
+    def _session_context(self, session, mode):
+        return {
+            "mode": mode,
+            "selected_session_id": session.get("id") or False,
+            "selected_session_name": session.get("template_name") or session.get("name") or "",
+            "threshold_minutes": _UPCOMING_SESSION_WINDOW_MINUTES,
+            "reason": (
+                "Class is currently in progress."
+                if mode == "active"
+                else "Class starts within the next %d minutes." % _UPCOMING_SESSION_WINDOW_MINUTES
+            ),
+        }
 
     # -------------------------------------------------------------------------
     # Roster helpers
@@ -346,35 +438,42 @@ class DojoKioskService(models.AbstractModel):
             att_state = log_by_member.get(member.id) or enr.attendance_state
             result.append(self._member_roster_entry(member, enr, att_state))
 
-        # Append trial leads booked for this session
-        trial_leads = self.env["crm.lead"].search([
-            ("trial_session_id", "=", session_id),
-            ("dojo_member_id", "=", False),
-        ])
-        for lead in trial_leads:
-            program_name = ""
-            if session.template_id and session.template_id.program_id:
-                program_name = session.template_id.program_id.name
-            partner_id = lead.partner_id.id if lead.partner_id else False
-            result.append({
-                "member_id": None,
-                "lead_id": lead.id,
-                "name": lead.contact_name or lead.partner_name or "Unknown",
-                "is_trial": True,
-                "trial_program": program_name,
-                "partner_id": partner_id,
-                "attendance_state": "present" if lead.trial_attended else "pending",
-                "membership_state": "trial",
-                "belt_rank": "",
-                "belt_color": "",
-                "issues": [],
-            })
+        # Append trial leads booked for this session when the CRM adapter is installed.
+        if self.is_trial_lead_adapter_available():
+            trial_leads = self.env["crm.lead"].search([
+                ("trial_session_id", "=", session_id),
+                ("dojo_member_id", "=", False),
+            ])
+            for lead in trial_leads:
+                program_name = ""
+                if session.template_id and session.template_id.program_id:
+                    program_name = session.template_id.program_id.name
+                partner_id = lead.partner_id.id if lead.partner_id else False
+                result.append({
+                    "member_id": None,
+                    "lead_id": lead.id,
+                    "name": lead.contact_name or lead.partner_name or "Unknown",
+                    "is_trial": True,
+                    "trial_program": program_name,
+                    "partner_id": partner_id,
+                    "attendance_state": "present" if lead.trial_attended else "pending",
+                    "membership_state": "trial",
+                    "belt_rank": "",
+                    "belt_color": "",
+                    "issues": [],
+                    "workflow_status": {"alert_count": 0, "alerts": []},
+                })
         return result
 
     def _member_roster_entry(self, member, enrollment=None, attendance_state=None):
         """Compact dict for a roster tile."""
         if attendance_state is None:
             attendance_state = enrollment.attendance_state if enrollment else "pending"
+        workflow_status = self._member_workflow_status(
+            member,
+            session_id=enrollment.session_id.id if enrollment else None,
+            compact=True,
+        )
         return {
             "member_id": member.id,
             "name": member.name,
@@ -384,7 +483,8 @@ class DojoKioskService(models.AbstractModel):
             "belt_color": member.current_rank_id.color if member.current_rank_id else "",
             "attendance_state": attendance_state,
             "membership_state": member.membership_state if hasattr(member, "membership_state") else "",
-            "issues": self._compute_issue_flags(member),
+            "issues": workflow_status.get("alerts", []),
+            "workflow_status": workflow_status,
         }
 
     def _public_member_entry(self, member):
@@ -440,21 +540,16 @@ class DojoKioskService(models.AbstractModel):
 
     @api.model
     def search_members(self, query, limit=20):
-        """Search members by name, email, or phone for the kiosk search bar."""
-        if not query or len(query.strip()) < 2:
-            return []
-        domain = [
-            ("active", "=", True),
-            "|", "|",
-            ("name", "ilike", query.strip()),
-            ("email", "ilike", query.strip()),
-            ("phone", "ilike", query.strip()),
-        ]
-        members = self.env["dojo.member"].search(domain, limit=limit, order="name asc")
+        """Search members through the shared dojo.member lookup layer."""
+        members = self.env["dojo.member"].search_for_lookup(
+            query or "", limit=limit, active_only=True, order="name asc"
+        )
         return [self._public_member_entry(m) for m in members]
 
     def search_trial_leads(self, query, limit=10):
         """Search CRM leads with a booked trial session by name or email."""
+        if not self.is_trial_lead_adapter_available():
+            return []
         if not query or len(query.strip()) < 2:
             return []
         domain = [
@@ -501,6 +596,8 @@ class DojoKioskService(models.AbstractModel):
 
     def checkin_trial_lead(self, lead_id, session_id=None):
         """Mark a trial lead as attended and record attendance on their session."""
+        if not self.is_trial_lead_adapter_available():
+            return {"success": False, "error": "Trial lead support is not installed."}
         lead = self.env["crm.lead"].browse(lead_id)
         if not lead.exists():
             return {"success": False, "error": "Trial lead not found."}
@@ -539,7 +636,8 @@ class DojoKioskService(models.AbstractModel):
         return self._member_profile_dict(member, session_id=session_id)
 
     def _member_profile_dict(self, member, session_id=None):
-        issues = self._compute_issue_flags(member)
+        workflow_status = self._member_workflow_status(member, session_id=session_id)
+        issues = workflow_status.get("alerts", [])
 
         # Current enrollment in the requested session
         attendance_state = "pending"
@@ -684,6 +782,7 @@ class DojoKioskService(models.AbstractModel):
         if not guardians:
             guardians.append({
                 "member_id": member.id,
+                "partner_id": member.partner_id.id,
                 "name": member.name or "",
                 "relation": "self",
                 "is_primary": True,
@@ -716,9 +815,69 @@ class DojoKioskService(models.AbstractModel):
             "attendance_since_last_rank": att_since_rank,
             "programs": programs,
             "guardians": guardians,
+            "workflow_status": workflow_status,
         }
 
     def _compute_issue_flags(self, member):
+        return self._member_alerts(member)
+
+    def _member_workflow_status(self, member, session_id=None, compact=False):
+        onboarding = self._member_onboarding_status(member)
+        waiver = self._member_waiver_status(member)
+        subscription = self._member_subscription_status(member, compact=compact)
+        tasks = self._member_task_status(member, compact=compact)
+        grading = self._member_grading_status(member)
+
+        alerts = self._member_alerts(member)
+        if onboarding.get("available") and not onboarding.get("complete"):
+            alerts.append({
+                "code": "onboarding_incomplete",
+                "label": "Onboarding Incomplete",
+            })
+        if waiver.get("available") and not waiver.get("signed"):
+            alerts.append({
+                "code": "waiver_unsigned",
+                "label": "Waiver Unsigned",
+            })
+        if tasks.get("open_count"):
+            alerts.append({
+                "code": "instructor_tasks",
+                "label": "%d Instructor Task%s" % (
+                    tasks["open_count"],
+                    "" if tasks["open_count"] == 1 else "s",
+                ),
+            })
+
+        return {
+            "alert_count": len(alerts),
+            "alerts": alerts,
+            "onboarding": onboarding,
+            "waiver": waiver,
+            "subscription": subscription,
+            "attendance": {
+                "session_id": session_id,
+                "total": member.total_sessions or 0,
+                "rate": member.attendance_rate or 0.0,
+                "since_last_rank": member.attendance_since_last_rank or 0,
+            },
+            "grading": grading,
+            "tasks": tasks,
+        }
+
+    def _member_operational_subscription(self, member):
+        """Return the subscription most useful for instructor-facing status."""
+        sub = getattr(member, "active_subscription_id", False)
+        if sub:
+            return sub
+        if "sale.subscription" not in self.env:
+            return self.env["dojo.member"].browse()
+        return self.env["sale.subscription"].sudo().search(
+            [("member_id", "=", member.id)],
+            order="recurring_next_date desc, id desc",
+            limit=1,
+        )
+
+    def _member_alerts(self, member):
         flags = []
         if member.membership_state == "cancelled":
             flags.append({"code": "membership_cancelled", "label": "Membership Cancelled"})
@@ -727,11 +886,17 @@ class DojoKioskService(models.AbstractModel):
         elif member.membership_state == "lead":
             flags.append({"code": "membership_lead", "label": "Not Yet Active"})
 
-        sub = member.active_subscription_id
+        sub = self._member_operational_subscription(member)
         if not sub:
             flags.append({"code": "no_subscription", "label": "No Active Subscription"})
         elif sub.state in ("expired", "cancelled"):
             flags.append({"code": "membership_expired", "label": "Membership Expired"})
+        elif sub.state == "paused":
+            flags.append({"code": "membership_paused", "label": "Membership Paused"})
+        elif sub.state == "pending":
+            flags.append({"code": "pending_payment", "label": "Pending Payment"})
+        if sub and getattr(sub, "billing_failure_count", 0):
+            flags.append({"code": "billing_failures", "label": "Billing Attention"})
 
         # Flag credits exhausted when the plan has a credit limit and balance is zero.
         cpp = getattr(sub.plan_id, "credits_per_period", 0) if sub else 0
@@ -740,6 +905,163 @@ class DojoKioskService(models.AbstractModel):
             flags.append({"code": "credits_exhausted", "label": "Ran Out of Credits"})
 
         return flags
+
+    def _member_onboarding_status(self, member):
+        if "dojo.onboarding.record" not in self.env:
+            return {"available": False, "state": "not_installed", "complete": True, "progress_pct": None, "steps": []}
+
+        record = self.env["dojo.onboarding.record"].sudo().search(
+            [("member_id", "=", member.id)],
+            order="create_date desc, id desc",
+            limit=1,
+        )
+        steps = []
+        completed = 0
+        for key, (field_name, label) in _ONBOARDING_STEP_FIELDS.items():
+            done = bool(record and getattr(record, field_name, False))
+            completed += 1 if done else 0
+            steps.append({"key": key, "label": label, "complete": done})
+        progress = int(completed / len(_ONBOARDING_STEP_FIELDS) * 100) if _ONBOARDING_STEP_FIELDS else 0
+        if record:
+            progress = record.progress_pct if record.progress_pct is not None else progress
+        complete = bool(record and (record.state == "completed" or progress >= 100))
+        return {
+            "available": True,
+            "record_id": record.id if record else False,
+            "state": record.state if record else "not_started",
+            "complete": complete,
+            "progress_pct": progress,
+            "steps": steps,
+            "missing_steps": [step["label"] for step in steps if not step["complete"]],
+        }
+
+    def _member_waiver_status(self, member):
+        if "has_signed_waiver" not in member._fields:
+            return {"available": False, "state": "not_installed", "signed": True}
+        signed = bool(member.has_signed_waiver)
+        return {
+            "available": True,
+            "state": member.waiver_state or ("signed" if signed else "unsigned"),
+            "signed": signed,
+            "signed_on": fields.Datetime.to_string(member.waiver_signed_on) if member.waiver_signed_on else "",
+            "signed_by": member.waiver_signed_by or "",
+        }
+
+    def _member_subscription_status(self, member, compact=False):
+        sub = self._member_operational_subscription(member)
+        if not sub:
+            return {
+                "available": "active_subscription_id" in member._fields,
+                "state": "none",
+                "good_standing": False,
+                "plan_name": "",
+                "alerts": [{"code": "no_subscription", "label": "No Active Subscription"}],
+            }
+
+        credits_per_period = getattr(sub.plan_id, "credits_per_period", 0) or 0
+        credit_balance = getattr(sub, "credit_balance", 0) or 0
+        alerts = []
+        if sub.state in ("expired", "cancelled"):
+            alerts.append({"code": "membership_expired", "label": "Membership Expired"})
+        elif sub.state == "paused":
+            alerts.append({"code": "membership_paused", "label": "Membership Paused"})
+        elif sub.state == "pending":
+            alerts.append({"code": "pending_payment", "label": "Pending Payment"})
+        if credits_per_period > 0 and credit_balance <= 0:
+            alerts.append({"code": "credits_exhausted", "label": "Ran Out of Credits"})
+        if getattr(sub, "billing_failure_count", 0):
+            alerts.append({
+                "code": "billing_failures",
+                "label": "%d Billing Failure%s" % (
+                    sub.billing_failure_count,
+                    "" if sub.billing_failure_count == 1 else "s",
+                ),
+            })
+
+        result = {
+            "available": True,
+            "subscription_id": sub.id,
+            "state": sub.state or "",
+            "good_standing": sub.state == "active" and not alerts,
+            "plan_name": sub.plan_id.name if sub.plan_id else "",
+            "credit_balance": credit_balance,
+            "credits_per_period": credits_per_period,
+            "billing_failure_count": getattr(sub, "billing_failure_count", 0) or 0,
+            "alerts": alerts,
+        }
+        if not compact:
+            result["grace_period_end"] = fields.Date.to_string(sub.grace_period_end) if getattr(sub, "grace_period_end", False) else ""
+            result["next_billing_date"] = fields.Date.to_string(sub.recurring_next_date) if getattr(sub, "recurring_next_date", False) else ""
+        return result
+
+    def _member_task_status(self, member, compact=False):
+        if "project.task" not in self.env:
+            return {"available": False, "open_count": 0, "tasks": []}
+        if not member.name:
+            return {"available": True, "open_count": 0, "tasks": []}
+
+        domain = [
+            ("stage_id.fold", "=", False),
+            ("name", "ilike", member.name or ""),
+        ]
+        project = False
+        if hasattr(member, "_get_instructor_alert_project"):
+            project = member._get_instructor_alert_project()
+        if project:
+            domain.append(("project_id", "=", project.id))
+        tasks = self.env["project.task"].sudo().search(domain, limit=1 if compact else 5, order="date_deadline asc, id desc")
+        return {
+            "available": True,
+            "open_count": self.env["project.task"].sudo().search_count(domain),
+            "tasks": [] if compact else [
+                {
+                    "id": task.id,
+                    "name": task.name,
+                    "deadline": fields.Date.to_string(task.date_deadline) if task.date_deadline else "",
+                    "priority": task.priority or "0",
+                }
+                for task in tasks
+            ],
+        }
+
+    def _member_grading_status(self, member):
+        next_rank_data = self.get_next_belt_rank(member.id)
+        current_rank = next_rank_data.get("current_rank") or {}
+        next_rank = next_rank_data.get("next_rank") or {}
+        if next_rank_data.get("is_highest_rank"):
+            return {
+                "state": "highest_rank",
+                "label": "Highest Rank",
+                "current_rank": current_rank,
+                "next_rank": None,
+                "attendance_since_last_rank": member.attendance_since_last_rank or 0,
+                "attendance_threshold": 0,
+                "ready": False,
+            }
+
+        threshold = 0
+        if next_rank.get("id"):
+            rank = self.env["dojo.belt.rank"].browse(next_rank["id"])
+            threshold = rank.attendance_threshold or 0
+        attended = member.attendance_since_last_rank or 0
+        if threshold and attended >= threshold:
+            state = "ready"
+            label = "Ready for Grading"
+        elif threshold:
+            state = "building"
+            label = "%d/%d Classes" % (attended, threshold)
+        else:
+            state = "not_configured"
+            label = "No Threshold"
+        return {
+            "state": state,
+            "label": label,
+            "current_rank": current_rank,
+            "next_rank": next_rank or None,
+            "attendance_since_last_rank": attended,
+            "attendance_threshold": threshold,
+            "ready": state == "ready",
+        }
 
     # -------------------------------------------------------------------------
     # Check-in
@@ -883,7 +1205,7 @@ class DojoKioskService(models.AbstractModel):
         Instructor-side: mark a member present / late / absent / excused.
         Creates or updates the attendance log and enrollment state.
         """
-        valid = ("present", "late", "absent", "excused")
+        valid = ("present", "late", "absent", "excused", "pending")
         if attendance_status not in valid:
             return {"success": False, "error": "Invalid status."}
 
@@ -897,6 +1219,20 @@ class DojoKioskService(models.AbstractModel):
             ("member_id", "=", member_id),
         ], limit=1)
 
+        enrollment = self.env["dojo.class.enrollment"].search([
+            ("session_id", "=", session_id),
+            ("member_id", "=", member_id),
+            ("status", "=", "registered"),
+        ], limit=1)
+
+        if attendance_status == "pending":
+            if log:
+                log.unlink()
+            if enrollment:
+                enrollment.attendance_state = "pending"
+            member.invalidate_recordset()
+            return {"success": True, "log_id": False}
+
         if log:
             log.status = attendance_status
         else:
@@ -908,11 +1244,6 @@ class DojoKioskService(models.AbstractModel):
             })
 
         # Sync enrollment
-        enrollment = self.env["dojo.class.enrollment"].search([
-            ("session_id", "=", session_id),
-            ("member_id", "=", member_id),
-            ("status", "=", "registered"),
-        ], limit=1)
         if enrollment:
             enrollment.attendance_state = (
                 "present" if attendance_status in ("present", "late") else attendance_status
@@ -1367,8 +1698,9 @@ class DojoKioskService(models.AbstractModel):
     def send_parent_message(self, member_id, subject, message, send_sms=True, send_email=True, guardian_member_ids=None):
         """Send SMS/email to guardian(s) for a member.
 
-        If guardian_member_ids is provided, treats them as res.partner IDs
-        and sends to each. Falls back to the primary guardian or the
+        If guardian_member_ids is provided, it is treated as res.partner IDs
+        for backward compatibility with the existing kiosk payload name.
+        Falls back to the primary guardian or the
         member's own contact info.
         """
         import logging
@@ -1448,6 +1780,138 @@ class DojoKioskService(models.AbstractModel):
             "sent_via": summary,
             "recipient_name": ", ".join(recipient_names),
             "recipients": recipient_names,
+        }
+
+    # -------------------------------------------------------------------------
+    # Instructor — onboarding actions
+    # -------------------------------------------------------------------------
+
+    @api.model
+    def perform_onboarding_action(self, member_id, action, step_key=None, note=None, message=None):
+        """Instructor-safe kiosk actions for existing onboarding records."""
+        member = self.env["dojo.member"].browse(member_id)
+        if not member.exists():
+            return {"success": False, "error": "Member not found."}
+
+        action = (action or "").strip()
+        if action == "complete_step":
+            return self._kiosk_complete_onboarding_step(member, step_key)
+        if action == "add_note":
+            return self._kiosk_add_member_note(member, note)
+        if action == "send_reminder":
+            return self._kiosk_send_onboarding_reminder(member, message or note)
+        if action == "escalate_blocker":
+            return self._kiosk_escalate_onboarding_blocker(member, step_key=step_key, note=note)
+        return {"success": False, "error": "Unsupported onboarding action."}
+
+    def _get_or_create_onboarding_record(self, member):
+        if "dojo.onboarding.record" not in self.env:
+            return self.env["dojo.member"].browse()
+        record = self.env["dojo.onboarding.record"].sudo().search(
+            [("member_id", "=", member.id)],
+            order="create_date desc, id desc",
+            limit=1,
+        )
+        if record:
+            return record
+        return self.env["dojo.onboarding.record"].sudo().create({
+            "member_id": member.id,
+            "company_id": member.company_id.id or self.env.company.id,
+            "state": "in_progress",
+        })
+
+    def _kiosk_complete_onboarding_step(self, member, step_key):
+        if step_key not in _ONBOARDING_STEP_FIELDS:
+            return {"success": False, "error": "Invalid onboarding step."}
+        record = self._get_or_create_onboarding_record(member)
+        if not record:
+            return {"success": False, "error": "Onboarding is not installed."}
+
+        field_name, label = _ONBOARDING_STEP_FIELDS[step_key]
+        record.write({field_name: True})
+        if all(getattr(record, field_name) for field_name, _label in _ONBOARDING_STEP_FIELDS.values()):
+            record.state = "completed"
+        else:
+            record.state = "in_progress"
+        record.message_post(
+            body=Markup("<p>Kiosk update: <strong>%s</strong> marked complete.</p>") % html_escape(label)
+        )
+        return {
+            "success": True,
+            "workflow_status": self._member_workflow_status(member),
+        }
+
+    def _kiosk_add_member_note(self, member, note):
+        note = (note or "").strip()
+        if not note:
+            return {"success": False, "error": "A note is required."}
+        body = Markup("<p>Kiosk note: %s</p>") % html_escape(note)
+        member.sudo().message_post(body=body)
+        record = self._get_or_create_onboarding_record(member)
+        if record:
+            record.message_post(body=body)
+        return {
+            "success": True,
+            "workflow_status": self._member_workflow_status(member),
+        }
+
+    def _kiosk_send_onboarding_reminder(self, member, message):
+        message = (message or "").strip() or (
+            "Please complete the remaining onboarding items for %s before the next class." % member.name
+        )
+        result = self.send_parent_message(
+            member.id,
+            subject="Onboarding reminder for %s" % member.name,
+            message=message,
+            send_sms=True,
+            send_email=True,
+        )
+        if not result.get("success"):
+            return result
+        record = self._get_or_create_onboarding_record(member)
+        if record:
+            record.message_post(
+                body=Markup("<p>Kiosk reminder sent: %s</p>") % html_escape(message)
+            )
+        return {
+            "success": True,
+            "sent_via": result.get("sent_via", []),
+            "recipients": result.get("recipients", []),
+            "workflow_status": self._member_workflow_status(member),
+        }
+
+    def _kiosk_escalate_onboarding_blocker(self, member, step_key=None, note=None):
+        note = (note or "").strip()
+        if not note:
+            return {"success": False, "error": "A blocker note is required."}
+
+        step_label = ""
+        if step_key in _ONBOARDING_STEP_FIELDS:
+            step_label = _ONBOARDING_STEP_FIELDS[step_key][1]
+        users = member._get_instructor_users_for_member() if hasattr(member, "_get_instructor_users_for_member") else self.env["res.users"]
+        title = "Onboarding blocker: %s" % member.name
+        if step_label:
+            title += " - %s" % step_label
+        description = Markup("<p>%s</p>") % html_escape(note)
+        if hasattr(member, "_create_instructor_todo"):
+            member._create_instructor_todo(
+                users,
+                title,
+                deadline=fields.Date.today(),
+                description=description,
+                priority="1",
+            )
+        record = self._get_or_create_onboarding_record(member)
+        if record:
+            record.message_post(
+                body=Markup("<p>Kiosk escalation: <strong>%s</strong><br/>%s</p>") % (
+                    html_escape(step_label or "General"),
+                    html_escape(note),
+                )
+            )
+        return {
+            "success": True,
+            "workflow_status": self._member_workflow_status(member),
         }
 
     # -------------------------------------------------------------------------
@@ -1593,6 +2057,11 @@ class DojoKioskService(models.AbstractModel):
         _log = logging.getLogger(__name__)
 
         self.validate_token(token)
+        if "elevenlabs.service" not in self.env or "ai.processor" not in self.env:
+            return {
+                "success": False,
+                "error": "AI voice support is not installed.",
+            }
         member = self.env["dojo.member"].browse(member_id)
         if not member.exists():
             return {"success": False, "error": "Member not found."}
@@ -1626,7 +2095,10 @@ class DojoKioskService(models.AbstractModel):
 
         guardians_txt = ""
         for g in (profile.get("guardians") or []):
-            line = f"  - member_id={g['member_id']}: {g['name']} ({g['relation']})"
+            guardian_id = g.get("partner_id") or g.get("member_id")
+            if not guardian_id:
+                continue
+            line = f"  - guardian_partner_id={guardian_id}: {g['name']} ({g['relation']})"
             if g.get("phone"):
                 line += f" phone:{g['phone']}"
             if g.get("email"):
@@ -1649,7 +2121,7 @@ class DojoKioskService(models.AbstractModel):
             "IMPORTANT: Respond ONLY with valid JSON (no markdown, no extra text):\n"
             '{"action": "promote_rank" or "send_message" or "add_session" or "remove_session" or "info",\n'
             ' "params": {\n'
-            '   <for send_message>: "guardian_member_ids": [int,...], "message": "...", "send_sms": true, "send_email": false\n'
+            '   <for send_message>: "guardian_member_ids": [guardian_partner_id,...], "message": "...", "send_sms": true, "send_email": false\n'
             '   <for add_session or remove_session>: "session_id": int\n'
             '   <for promote_rank or info>: {}\n'
             ' },\n'
@@ -1658,8 +2130,8 @@ class DojoKioskService(models.AbstractModel):
             "Rules:\n"
             f"- promote_rank: awards next_rank_id={next_rank_id} to student (1 step up)\n"
             "- send_message: default to send_sms=true, send_email=false; compose a brief professional message\n"
-            "- If instructor says 'contact all' or 'message everyone', include ALL guardian member_ids\n"
-            "- If instructor names a specific guardian, map to their member_id from the list above\n"
+            "- If instructor says 'contact all' or 'message everyone', include ALL guardian_partner_id values\n"
+            "- If instructor names a specific guardian, map to their guardian_partner_id from the list above\n"
             "- For info queries, use action=info and put the answer in response_text\n"
             "- If unclear, use action=info"
         )

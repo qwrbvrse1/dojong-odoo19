@@ -87,7 +87,10 @@
         name="Credits"
         parent="dojo_core.menu_dojo_core_root"
         sequence="65"
-        groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
+        groups="dojo_core.group_dojo_admin"/>
+    <record id="menu_dojo_credits_root" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('dojo_core.group_dojo_admin')])]"/>
+    </record>
 
     <menuitem
         id="menu_dojo_credit_transaction"
@@ -95,5 +98,8 @@
         parent="menu_dojo_credits_root"
         action="action_dojo_credit_transaction"
         sequence="10"
-        groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
+        groups="dojo_core.group_dojo_admin"/>
+    <record id="menu_dojo_credit_transaction" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('dojo_core.group_dojo_admin')])]"/>
+    </record>
 </odoo>

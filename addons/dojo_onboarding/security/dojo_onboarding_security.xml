@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_dojo_onboarding_record_instructor_relevant" model="ir.rule">
+        <field name="name">Onboarding Record Instructor Relevant Rosters</field>
+        <field name="model_id" ref="model_dojo_onboarding_record"/>
+        <field name="groups" eval="[(4, ref('dojo_core.group_dojo_instructor'))]"/>
+        <field name="domain_force">[
+            '&amp;',
+                '|', ('company_id', '=', False), ('company_id', 'in', company_ids),
+                '|', '|',
+                    ('member_id.enrollment_ids.session_id.instructor_profile_id.user_id', '=', user.id),
+                    ('member_id.enrollment_ids.session_id.template_id.instructor_profile_ids.user_id', '=', user.id),
+                    ('member_id.enrollment_ids.session_id.template_id.recurrence_instructor_id.user_id', '=', user.id),
+        ]</field>
+    </record>
+</odoo>

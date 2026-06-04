@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_dojo_onboarding_record,dojo.onboarding.record user,model_dojo_onboarding_record,base.group_user,1,1,1,1
-access_dojo_onboarding_wizard,dojo.onboarding.wizard user,model_dojo_onboarding_wizard,base.group_user,1,1,1,0
+access_dojo_onboarding_record,dojo.onboarding.record admin,model_dojo_onboarding_record,dojo_core.group_dojo_admin,1,1,1,1
+access_dojo_onboarding_record_instructor,dojo.onboarding.record instructor,model_dojo_onboarding_record,dojo_core.group_dojo_instructor,1,1,0,0
+access_dojo_onboarding_wizard,dojo.onboarding.wizard admin,model_dojo_onboarding_wizard,dojo_core.group_dojo_admin,1,1,1,0

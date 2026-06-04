@@ -358,6 +358,67 @@ class MemberProfileCard extends Component {
                             </div>
                         </t>
 
+                        <div class="k-workflow-grid">
+                            <div t-attf-class="k-workflow-card #{workflow().onboarding and workflow().onboarding.complete ? 'k-workflow-card--ok' : 'k-workflow-card--warn'}">
+                                <div class="k-workflow-card__label">Onboarding</div>
+                                <div class="k-workflow-card__value">
+                                    <t t-if="workflow().onboarding and workflow().onboarding.available">
+                                        <t t-esc="workflow().onboarding.progress_pct"/>%
+                                    </t>
+                                    <t t-else="">N/A</t>
+                                </div>
+                                <t t-if="workflow().onboarding and workflow().onboarding.missing_steps and workflow().onboarding.missing_steps.length">
+                                    <div class="k-workflow-card__detail" t-esc="workflow().onboarding.missing_steps.slice(0, 2).join(', ')"/>
+                                </t>
+                            </div>
+                            <div t-attf-class="k-workflow-card #{workflow().waiver and workflow().waiver.signed ? 'k-workflow-card--ok' : 'k-workflow-card--warn'}">
+                                <div class="k-workflow-card__label">Waiver</div>
+                                <div class="k-workflow-card__value">
+                                    <t t-if="workflow().waiver and workflow().waiver.available">
+                                        <t t-esc="workflow().waiver.signed ? 'Signed' : 'Unsigned'"/>
+                                    </t>
+                                    <t t-else="">N/A</t>
+                                </div>
+                                <t t-if="workflow().waiver and workflow().waiver.signed_by">
+                                    <div class="k-workflow-card__detail" t-esc="workflow().waiver.signed_by"/>
+                                </t>
+                            </div>
+                            <div t-attf-class="k-workflow-card #{workflow().subscription and workflow().subscription.good_standing ? 'k-workflow-card--ok' : 'k-workflow-card--warn'}">
+                                <div class="k-workflow-card__label">Membership</div>
+                                <div class="k-workflow-card__value">
+                                    <t t-if="workflow().subscription" t-esc="workflow().subscription.state || 'none'"/>
+                                </div>
+                                <t t-if="workflow().subscription and workflow().subscription.plan_name">
+                                    <div class="k-workflow-card__detail" t-esc="workflow().subscription.plan_name"/>
+                                </t>
+                            </div>
+                            <div t-attf-class="k-workflow-card #{workflow().grading and workflow().grading.ready ? 'k-workflow-card--ok' : ''}">
+                                <div class="k-workflow-card__label">Grading</div>
+                                <div class="k-workflow-card__value">
+                                    <t t-if="workflow().grading" t-esc="workflow().grading.label"/>
+                                </div>
+                                <t t-if="workflow().grading and workflow().grading.next_rank">
+                                    <div class="k-workflow-card__detail" t-esc="'Next: ' + workflow().grading.next_rank.name"/>
+                                </t>
+                            </div>
+                        </div>
+
+                        <t t-if="workflow().tasks and workflow().tasks.open_count">
+                            <div class="k-workflow-tasks">
+                                <div class="k-workflow-tasks__title">
+                                    <t t-esc="workflow().tasks.open_count"/> Open Instructor Task<t t-if="workflow().tasks.open_count !== 1">s</t>
+                                </div>
+                                <t t-foreach="workflow().tasks.tasks || []" t-as="task" t-key="task.id">
+                                    <div class="k-workflow-task-row">
+                                        <span class="k-workflow-task-row__name" t-esc="task.name"/>
+                                        <t t-if="task.deadline">
+                                            <span class="k-workflow-task-row__deadline" t-esc="task.deadline"/>
+                                        </t>
+                                    </div>
+                                </t>
+                            </div>
+                        </t>
+
                         <div class="k-profile__stats">
                             <div class="k-stat">
                                 <span class="k-stat__value" t-esc="props.member.total_attendance"/>
@@ -559,6 +620,59 @@ class MemberProfileCard extends Component {
                 <t t-if="state.tab === 'manage' and props.instructorMode">
                     <div class="k-profile__scroll-body">
 
+                        <!-- ── Onboarding Workflow ── -->
+                        <div class="k-manage-section">
+                            <div class="k-manage-section__title">Onboarding Workflow</div>
+                            <t t-if="workflow().onboarding and workflow().onboarding.available">
+                                <div class="k-onboarding-steps">
+                                    <t t-foreach="workflow().onboarding.steps || []" t-as="step" t-key="step.key">
+                                        <div t-attf-class="k-onboarding-step #{step.complete ? 'k-onboarding-step--done' : ''}">
+                                            <span class="k-onboarding-step__label" t-esc="step.label"/>
+                                            <t t-if="step.complete">
+                                                <span class="k-onboarding-step__done">Done</span>
+                                            </t>
+                                            <t t-else="">
+                                                <button class="k-btn k-btn--secondary k-onboarding-step__btn"
+                                                    t-on-click="() => this.completeOnboardingStep(step.key)"
+                                                    t-att-disabled="state.onboardingBusy or undefined">
+                                                    Mark Done
+                                                </button>
+                                            </t>
+                                        </div>
+                                    </t>
+                                </div>
+                            </t>
+                            <t t-else="">
+                                <div class="k-empty" style="padding:10px 0;">
+                                    <div class="k-empty__text">Onboarding records unavailable</div>
+                                </div>
+                            </t>
+
+                            <div class="k-field" style="margin-top:10px;margin-bottom:8px;">
+                                <label class="k-field__label">Note / Reminder / Blocker</label>
+                                <textarea class="k-field__input k-field__textarea" rows="3"
+                                    t-model="state.onboardingNote"
+                                    placeholder="Add operational context…"/>
+                            </div>
+                            <div class="k-onboarding-actions">
+                                <button class="k-btn k-btn--secondary"
+                                    t-on-click="addOnboardingNote"
+                                    t-att-disabled="state.onboardingBusy or undefined">Add Note</button>
+                                <button class="k-btn k-btn--secondary"
+                                    t-on-click="sendOnboardingReminder"
+                                    t-att-disabled="state.onboardingBusy or undefined">Send Reminder</button>
+                                <button class="k-btn k-btn--danger"
+                                    t-on-click="escalateOnboardingBlocker"
+                                    t-att-disabled="state.onboardingBusy or undefined">Escalate</button>
+                            </div>
+                            <t t-if="state.onboardingSuccess">
+                                <div class="k-manage__success-banner"><t t-esc="state.onboardingSuccess"/></div>
+                            </t>
+                            <t t-if="state.onboardingError">
+                                <div class="k-field-error" style="margin-top:8px;" t-esc="state.onboardingError"/>
+                            </t>
+                        </div>
+
                         <!-- ── Belt Rank Promotion ── -->
                         <div class="k-manage-section">
                             <div class="k-manage-section__title">🥋 Belt Rank Promotion</div>
@@ -638,13 +752,13 @@ class MemberProfileCard extends Component {
                             <div class="k-manage-section__title">💬 Contact Guardians</div>
                             <t t-if="props.member.guardians and props.member.guardians.length">
                                 <div class="k-guardian-list">
-                                    <t t-foreach="props.member.guardians" t-as="g" t-key="g.member_id">
-                                        <div t-attf-class="k-guardian-item #{state.checkedGuardianIds.includes(g.member_id) ? 'k-guardian-item--checked' : ''}"
-                                            t-on-click="() => this.toggleGuardian(g.member_id)">
+                                    <t t-foreach="props.member.guardians" t-as="g" t-key="guardianPartnerId(g)">
+                                        <div t-attf-class="k-guardian-item #{state.checkedGuardianIds.includes(guardianPartnerId(g)) ? 'k-guardian-item--checked' : ''}"
+                                            t-on-click="() => this.toggleGuardian(guardianPartnerId(g))">
                                             <input type="checkbox"
                                                 class="k-guardian-item__check"
-                                                t-att-checked="state.checkedGuardianIds.includes(g.member_id) or undefined"
-                                                t-on-click.stop="() => this.toggleGuardian(g.member_id)"/>
+                                                t-att-checked="state.checkedGuardianIds.includes(guardianPartnerId(g)) or undefined"
+                                                t-on-click.stop="() => this.toggleGuardian(guardianPartnerId(g))"/>
                                             <div class="k-guardian-item__info">
                                                 <div class="k-guardian-item__name">
                                                     <t t-esc="g.name"/>
@@ -859,6 +973,11 @@ class MemberProfileCard extends Component {
             sessionsLoading: false,
             sessionsLoadError: "",
             sessionRemoveMsg: "",
+            // Manage tab — onboarding workflow
+            onboardingBusy: false,
+            onboardingNote: "",
+            onboardingSuccess: "",
+            onboardingError: "",
         });
         this.fileInputRef = useRef("fileInput");
         this.cameraVideoRef = useRef("cameraVideo");
@@ -869,6 +988,8 @@ class MemberProfileCard extends Component {
     initials(name) { return initials(name); }
     formatDateTime(dt) { return formatDateTime(dt); }
     computeContrast(hex) { return contrastColor(hex); }
+    workflow() { return this.props.member.workflow_status || {}; }
+    guardianPartnerId(guardian) { return guardian.partner_id || guardian.member_id; }
     onImgError(ev) { ev.target.style.display = "none"; }
 
     // ── Photo update ────────────────────────────────────────────
@@ -1032,9 +1153,77 @@ class MemberProfileCard extends Component {
 
     async switchToManage() {
         this.state.tab = "manage";
-        this.state.checkedGuardianIds = (this.props.member.guardians || []).map(g => g.member_id);
+        this.state.checkedGuardianIds = (this.props.member.guardians || []).map(g => this.guardianPartnerId(g)).filter(Boolean);
         if (!this.state.nextRankLoading && !this.state.currentRank && !this.state.nextRank && !this.state.isHighestRank) {
             await this._loadNextRank();
+        }
+    }
+
+    async _runOnboardingAction(action, extra = {}) {
+        this.state.onboardingBusy = true;
+        this.state.onboardingError = "";
+        this.state.onboardingSuccess = "";
+        try {
+            const result = await jsonPost("/kiosk/instructor/onboarding/action", {
+                member_id: this.props.member.member_id,
+                action,
+                ...extra,
+            });
+            if (result && result.success) {
+                if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
+                return result;
+            }
+            this.state.onboardingError = (result && result.error) || "Action failed.";
+            return result;
+        } catch {
+            this.state.onboardingError = "Network error.";
+            return { success: false };
+        } finally {
+            this.state.onboardingBusy = false;
+        }
+    }
+
+    async completeOnboardingStep(stepKey) {
+        const result = await this._runOnboardingAction("complete_step", { step_key: stepKey });
+        if (result && result.success) this.state.onboardingSuccess = "Step marked complete.";
+    }
+
+    async addOnboardingNote() {
+        const note = (this.state.onboardingNote || "").trim();
+        if (!note) {
+            this.state.onboardingError = "Enter a note first.";
+            return;
+        }
+        const result = await this._runOnboardingAction("add_note", { note });
+        if (result && result.success) {
+            this.state.onboardingSuccess = "Note added.";
+            this.state.onboardingNote = "";
+        }
+    }
+
+    async sendOnboardingReminder() {
+        const message = (this.state.onboardingNote || "").trim();
+        const result = await this._runOnboardingAction("send_reminder", { message });
+        if (result && result.success) {
+            this.state.onboardingSuccess = "Reminder sent.";
+            this.state.onboardingNote = "";
+        }
+    }
+
+    async escalateOnboardingBlocker() {
+        const note = (this.state.onboardingNote || "").trim();
+        if (!note) {
+            this.state.onboardingError = "Enter a blocker note first.";
+            return;
+        }
+        const incomplete = ((this.workflow().onboarding || {}).steps || []).find(step => !step.complete);
+        const result = await this._runOnboardingAction("escalate_blocker", {
+            step_key: incomplete ? incomplete.key : null,
+            note,
+        });
+        if (result && result.success) {
+            this.state.onboardingSuccess = "Blocker escalated.";
+            this.state.onboardingNote = "";
         }
     }
 
@@ -1437,6 +1626,13 @@ class InstructorRosterTile extends Component {
             </div>
 
             <div class="k-roster-tile__name" t-esc="props.entry.name"/>
+            <t t-if="workflowBadges().length">
+                <div class="k-roster-tile__badges">
+                    <t t-foreach="workflowBadges()" t-as="badge" t-key="badge.key">
+                        <span t-attf-class="k-roster-status k-roster-status--#{badge.kind}" t-esc="badge.label"/>
+                    </t>
+                </div>
+            </t>
         </div>
     `;
 
@@ -1458,6 +1654,33 @@ class InstructorRosterTile extends Component {
         if (this.props.entry.issues && this.props.entry.issues.length) return true;
         const state = this.props.entry.membership_state;
         return state && state !== "active" && state !== "trial";
+    }
+
+    workflowBadges() {
+        const wf = this.props.entry.workflow_status || {};
+        const badges = [];
+        const onboarding = wf.onboarding || {};
+        if (onboarding.available && !onboarding.complete) {
+            badges.push({ key: "onboarding", kind: "warn", label: `OB ${onboarding.progress_pct || 0}%` });
+        }
+        const waiver = wf.waiver || {};
+        if (waiver.available && !waiver.signed) {
+            badges.push({ key: "waiver", kind: "warn", label: "Waiver" });
+        }
+        const subscription = wf.subscription || {};
+        if (subscription.alerts && subscription.alerts.length) {
+            const code = subscription.alerts[0].code || "plan";
+            badges.push({ key: "subscription", kind: "danger", label: code === "credits_exhausted" ? "Credits" : "Plan" });
+        }
+        const grading = wf.grading || {};
+        if (grading.ready) {
+            badges.push({ key: "grading", kind: "ok", label: "Ready" });
+        }
+        const tasks = wf.tasks || {};
+        if (tasks.open_count) {
+            badges.push({ key: "tasks", kind: "info", label: `Tasks ${tasks.open_count}` });
+        }
+        return badges.slice(0, 3);
     }
 
     onTileTap(ev) {
@@ -2679,8 +2902,14 @@ class KioskApp extends Component {
                 <!-- Instructor mode: pill + session filter + date -->
                 <t t-if="state.instructorMode">
                     <span class="k-instructor-pill">🔓 Instructor Mode</span>
+                    <t t-if="state.sessionContext">
+                        <span t-attf-class="k-session-context-pill k-session-context-pill--#{state.sessionContext.mode || 'standby'}"
+                            t-esc="sessionContextLabel()"/>
+                    </t>
                     <div class="k-header__spacer"/>
-                    <select class="k-svh-select" t-on-change="onSessionViewFilter">
+                    <select class="k-svh-select"
+                        t-att-value="state.sessionViewId || ''"
+                        t-on-change="onSessionViewFilter">
                         <option value="">All Sessions</option>
                         <t t-foreach="state.sessions" t-as="s" t-key="s.id">
                             <option t-att-value="s.id"
@@ -2751,6 +2980,12 @@ class KioskApp extends Component {
 
                 <!-- ════ INSTRUCTOR VIEW ════ -->
                 <t t-else="">
+                    <t t-if="state.sessionContext and state.sessionContext.mode === 'standby' and state.sessions.length">
+                        <div class="k-session-context-banner">
+                            <div class="k-session-context-banner__title">Standby</div>
+                            <div class="k-session-context-banner__text" t-esc="state.sessionContext.reason"/>
+                        </div>
+                    </t>
                     <t t-if="!filteredSessions().length">
                         <div class="k-empty">
                             <div class="k-empty__icon">📅</div>
@@ -2885,7 +3120,7 @@ class KioskApp extends Component {
             </t>
 
             <!-- ── AI Voice Assistant ── -->
-            <t t-if="!state.idle">
+            <t t-if="!state.idle and state.aiEnabled">
                 <KioskVoiceAssistant instructorMode="state.instructorMode" kioskName="state.kioskName"/>
             </t>
 
@@ -2930,6 +3165,8 @@ class KioskApp extends Component {
             // Sessions (instructor)
             sessions: [],
             sessionViewId: null,
+            sessionViewManual: false,
+            sessionContext: null,
             filterDate: todayIso(),
             sessionRosters: {},
             loadingRosters: {},
@@ -2962,6 +3199,7 @@ class KioskApp extends Component {
             theme: "dark",
             idleMinutes: 3,
             kioskName: "",
+            aiEnabled: false,
         });
 
         this._searchTimer = null;
@@ -2989,6 +3227,13 @@ class KioskApp extends Component {
     }
 
     formatTime(dt) { return formatTime(dt); }
+
+    sessionContextLabel() {
+        const ctx = this.state.sessionContext || {};
+        if (ctx.mode === "active") return "Active: " + (ctx.selected_session_name || "Class");
+        if (ctx.mode === "upcoming") return "Next: " + (ctx.selected_session_name || "Class");
+        return "Standby";
+    }
 
     // ── Idle timer ─────────────────────────────────────────────
 
@@ -3018,28 +3263,62 @@ class KioskApp extends Component {
             if (data && !data.error) {
                 this.state.announcements = data.announcements || [];
                 this.state.marketing_cards = data.marketing_cards || [];
-                this.state.sessions = data.sessions || [];
+                this._applySessionsPayload(data, {
+                    applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
+                });
                 this.state.kioskName = data.name || "";
                 this.state.showTitle = data.show_title !== false;
+                this.state.aiEnabled = data.ai_enabled === true;
                 if (data.theme_mode && data.theme_mode !== this.state.theme) {
                     this.onTheme(data.theme_mode);
                 }
             } else {
-                await this._loadSessions();
+                await this._loadSessions(null, {
+                    applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
+                });
             }
         } catch (e) {
             console.error("Kiosk: bootstrap failed", e);
-            await this._loadSessions();
+            await this._loadSessions(null, {
+                applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
+            });
         }
     }
 
     // ── Sessions ───────────────────────────────────────────────
 
-    async _loadSessions(date = null) {
+    _applySessionsPayload(payload, { applyRecommended = false } = {}) {
+        if (Array.isArray(payload)) {
+            this.state.sessions = payload;
+            this.state.sessionContext = null;
+        } else {
+            this.state.sessions = (payload && payload.sessions) || [];
+            this.state.sessionContext = (payload && payload.session_context) || null;
+        }
+        if (this.state.sessionViewId && !this.state.sessions.some(s => s.id === this.state.sessionViewId)) {
+            this.state.sessionViewId = null;
+            this.state.sessionViewManual = false;
+        }
+        if (applyRecommended) {
+            this._applyRecommendedSessionContext(true);
+        }
+    }
+
+    _applyRecommendedSessionContext(force = false) {
+        const ctx = this.state.sessionContext || {};
+        const selectedId = ctx.selected_session_id || null;
+        if (selectedId && (force || !this.state.sessionViewId)) {
+            this.state.sessionViewId = selectedId;
+        } else if (force && !selectedId) {
+            this.state.sessionViewId = null;
+        }
+    }
+
+    async _loadSessions(date = null, options = {}) {
         try {
             const params = date ? { date } : {};
-            const sessions = await jsonPost("/kiosk/sessions", params);
-            this.state.sessions = sessions || [];
+            const payload = await jsonPost("/kiosk/sessions", params);
+            this._applySessionsPayload(payload, options);
         } catch (e) {
             console.error("Kiosk: failed to load sessions", e);
         }
@@ -3048,8 +3327,10 @@ class KioskApp extends Component {
     async reloadSessions() {
         this.state.reloading = true;
         try {
-            await this._loadSessions(this.state.filterDate || null);
-            if (this.state.instructorMode) this._loadAllSessionRosters();
+            await this._loadSessions(this.state.filterDate || null, {
+                applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
+            });
+            if (this.state.instructorMode) this._loadVisibleSessionRosters();
         } finally {
             this.state.reloading = false;
         }
@@ -3065,21 +3346,32 @@ class KioskApp extends Component {
     onSessionViewFilter(ev) {
         const val = ev.target.value;
         this.state.sessionViewId = val ? parseInt(val, 10) : null;
+        this.state.sessionViewManual = true;
+        this._loadVisibleSessionRosters();
     }
 
     async onDateChange(ev) {
         const date = ev.target.value;
         this.state.filterDate = date;
         this.state.sessionViewId = null;
+        this.state.sessionViewManual = false;
         this.state.sessionRosters = {};
-        await this._loadSessions(date || null);
-        this._loadAllSessionRosters();
+        await this._loadSessions(date || null, { applyRecommended: true });
+        this._loadVisibleSessionRosters();
     }
 
     // ── Rosters ────────────────────────────────────────────────
 
     _loadAllSessionRosters() {
         for (const session of this.state.sessions) {
+            if (!this.state.sessionRosters[session.id] && !this.state.loadingRosters[session.id]) {
+                this._loadSessionRoster(session.id);
+            }
+        }
+    }
+
+    _loadVisibleSessionRosters() {
+        for (const session of this.filteredSessions()) {
             if (!this.state.sessionRosters[session.id] && !this.state.loadingRosters[session.id]) {
                 this._loadSessionRoster(session.id);
             }
@@ -3448,7 +3740,9 @@ class KioskApp extends Component {
     async onRosterAssigned(sessionId) {
         this.state.assignRosterSession = null;
         await this._loadSessionRoster(sessionId);
-        await this._loadSessions(this.state.filterDate || null);
+        await this._loadSessions(this.state.filterDate || null, {
+            applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
+        });
     }
 
     // ── Instructor — session management ──────────────────────
@@ -3466,7 +3760,9 @@ class KioskApp extends Component {
                 return;
             }
             this.state.sessionDoneError = null;
-            await this._loadSessions(this.state.filterDate || null);
+            await this._loadSessions(this.state.filterDate || null, {
+                applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
+            });
         } catch (e) {
             console.error("Kiosk: close session failed", e);
         }
@@ -3482,7 +3778,9 @@ class KioskApp extends Component {
                 return;
             }
             this.state.sessionDoneError = null;
-            await this._loadSessions(this.state.filterDate || null);
+            await this._loadSessions(this.state.filterDate || null, {
+                applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
+            });
             this._loadSessionRoster(sessionId);
         } catch (e) {
             console.error("Kiosk: reopen session failed", e);
@@ -3499,8 +3797,13 @@ class KioskApp extends Component {
         try {
             await jsonPost("/kiosk/instructor/session/delete", { session_id: sessionId });
             delete this.state.sessionRosters[sessionId];
-            if (this.state.sessionViewId === sessionId) this.state.sessionViewId = null;
-            await this._loadSessions(this.state.filterDate || null);
+            if (this.state.sessionViewId === sessionId) {
+                this.state.sessionViewId = null;
+                this.state.sessionViewManual = false;
+            }
+            await this._loadSessions(this.state.filterDate || null, {
+                applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
+            });
         } catch (e) {
             console.error("Kiosk: delete session failed", e);
         }
@@ -3511,16 +3814,20 @@ class KioskApp extends Component {
 
     async onSessionSaved() {
         this.state.editingSession = null;
-        await this._loadSessions(this.state.filterDate || null);
-        this._loadAllSessionRosters();
+        await this._loadSessions(this.state.filterDate || null, {
+            applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
+        });
+        this._loadVisibleSessionRosters();
     }
 
     openCreateSession() { this.state.showCreateSession = true; }
 
     async onSessionCreated(session) {
         this.state.showCreateSession = false;
-        await this._loadSessions(this.state.filterDate || null);
-        this._loadAllSessionRosters();
+        await this._loadSessions(this.state.filterDate || null, {
+            applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
+        });
+        this._loadVisibleSessionRosters();
     }
 
     // ── PIN / instructor mode ─────────────────────────────────
@@ -3531,7 +3838,9 @@ class KioskApp extends Component {
     onPinSuccess() {
         this.state.showPin = false;
         this.state.instructorMode = true;
-        this._loadAllSessionRosters();
+        this.state.sessionViewManual = false;
+        this._applyRecommendedSessionContext(true);
+        this._loadVisibleSessionRosters();
     }
 
     onInstructorToggle() {

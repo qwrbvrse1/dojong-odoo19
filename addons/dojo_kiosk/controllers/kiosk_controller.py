@@ -153,7 +153,7 @@ class KioskController(http.Controller):
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
-        return svc.get_todays_sessions(date=date)
+        return svc.get_todays_sessions_payload(date=date)
 
     @http.route("/kiosk/roster", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
     def kiosk_roster(self, session_id=None, token=None, **kw):
@@ -449,6 +449,32 @@ class KioskController(http.Controller):
         return svc.update_member_photo(member_id, image_data)
 
     # ------------------------------------------------------------------
+    # Instructor -- onboarding workflow actions
+    # ------------------------------------------------------------------
+
+    @http.route(
+        "/kiosk/instructor/onboarding/action",
+        type="jsonrpc", auth="public", methods=["POST"], csrf=False,
+    )
+    def kiosk_onboarding_action(
+        self, member_id=None, action=None, step_key=None, note=None, message=None,
+        token=None, **kw
+    ):
+        if not member_id or not action:
+            return {"success": False, "error": "member_id and action are required."}
+        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        if guard is not None:
+            return guard
+        svc = request.env["dojo.kiosk.service"].sudo()
+        return svc.perform_onboarding_action(
+            member_id,
+            action,
+            step_key=step_key,
+            note=note,
+            message=message,
+        )
+
+    # ------------------------------------------------------------------
     # Instructor -- belt rank management
     # ------------------------------------------------------------------
 
@@ -546,6 +572,11 @@ class KioskController(http.Controller):
             return {"success": False, "error": "member_id and audio_data_b64 are required."}
         if not token:
             return {"success": False, "error": "token is required."}
+        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        if guard is not None:
+            return guard
+        if "ai.assistant.service" not in request.env or "elevenlabs.service" not in request.env:
+            return {"success": False, "error": "AI voice support is not installed."}
         svc = request.env["dojo.kiosk.service"].sudo()
         return svc.process_voice_command(token, member_id, session_id, audio_data_b64,
                                          dry_run=bool(dry_run))
@@ -563,6 +594,8 @@ class KioskController(http.Controller):
         guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
         if guard is not None:
             return guard
+        if "ai.assistant.service" not in request.env:
+            return {"success": False, "error": "AI action support is not installed."}
         svc = request.env["dojo.kiosk.service"].sudo()
         return svc.execute_voice_action(
             int(member_id), session_id, action, params or {}
@@ -583,8 +616,12 @@ class KioskController(http.Controller):
         """
         if not token:
             return {"success": False, "state": "error", "error": "token_required"}
-        if not self._require_token(token):
+        try:
+            self._require_token(token)
+        except AccessError:
             return {"success": False, "state": "error", "error": "invalid_token"}
+        if "ai.assistant.service" not in request.env:
+            return {"success": False, "state": "disabled", "error": "AI assistant is not installed."}
 
         text = (text or "").strip()
         if not text:
@@ -619,8 +656,12 @@ class KioskController(http.Controller):
 
         if not token:
             return _resp({"success": False, "state": "error", "error": "token_required"}, 400)
-        if not self._require_token(token):
+        try:
+            self._require_token(token)
+        except AccessError:
             return _resp({"success": False, "state": "error", "error": "invalid_token"}, 403)
+        if "ai.assistant.service" not in request.env or "elevenlabs.service" not in request.env:
+            return _resp({"success": False, "state": "disabled", "error": "AI voice support is not installed."}, 404)
 
         audio_file = request.httprequest.files.get("audio")
         if not audio_file:

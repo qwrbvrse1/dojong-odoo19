@@ -21,6 +21,7 @@
     ],
     'data': [
         'security/ir.model.access.csv',
+        'security/dojo_onboarding_security.xml',
         'views/dojo_onboarding_wizard_views.xml',
         'views/dojo_onboarding_views.xml',
     ],

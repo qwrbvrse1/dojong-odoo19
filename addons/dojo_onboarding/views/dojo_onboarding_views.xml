@@ -84,7 +84,10 @@
               parent="menu_dojo_onboarding_root"
               action="action_dojo_onboarding_wizard"
               sequence="2"
-              groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
+              groups="dojo_core.group_dojo_admin"/>
+    <record id="menu_dojo_onboarding_new" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('dojo_core.group_dojo_admin')])]"/>
+    </record>
 
     <!-- ── Smart button injected into the Member form ───────────────────── -->
     <record id="view_dojo_member_form_onboarding_btn" model="ir.ui.view">
@@ -100,7 +103,7 @@
                         icon="fa-magic"
                         string="Start Onboarding"
                         invisible="onboarding_count != 0 or membership_state != 'lead'"
-                        groups="dojo_core.group_dojo_admin,dojo_core.group_dojo_instructor"/>
+                        groups="dojo_core.group_dojo_admin"/>
                 <!-- Show onboarding record count when already onboarded -->
                 <button name="action_view_onboarding_records"
                         type="object"

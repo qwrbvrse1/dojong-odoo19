@@ -339,6 +339,33 @@ select {
     flex-shrink: 0;
 }
 
+.k-session-context-pill {
+    display: inline-flex;
+    align-items: center;
+    max-width: 240px;
+    padding: 5px 10px;
+    border-radius: var(--k-radius-pill);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--k-instr-text);
+    border: 1px solid rgba(255, 255, 255, .35);
+}
+
+.k-session-context-pill--active {
+    background: rgba(24, 128, 56, .32);
+}
+
+.k-session-context-pill--upcoming {
+    background: rgba(255, 183, 77, .28);
+}
+
+.k-session-context-pill--standby {
+    background: rgba(255, 255, 255, .14);
+}
+
 /* Instructor date/session controls */
 .k-svh-select {
     padding: 7px 10px;
@@ -1013,6 +1040,28 @@ select {
     gap: 20px;
 }
 
+.k-session-context-banner {
+    margin: 14px 16px 0;
+    padding: 12px 14px;
+    border: 1px solid var(--k-border);
+    border-radius: var(--k-radius);
+    background: var(--k-surface);
+}
+
+.k-session-context-banner__title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--k-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.k-session-context-banner__text {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--k-text-2);
+}
+
 /* ── Session card ── */
 .k-session-card {
     background: var(--k-surface);
@@ -1185,6 +1234,52 @@ select {
     line-height: 1.3;
     word-break: break-word;
     max-width: 100%;
+}
+
+.k-roster-tile__badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 3px;
+    min-height: 17px;
+    width: 100%;
+}
+
+.k-roster-status {
+    max-width: 100%;
+    padding: 1px 5px;
+    border-radius: var(--k-radius-sm);
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border: 1px solid var(--k-border);
+}
+
+.k-roster-status--ok {
+    color: var(--k-success);
+    background: var(--k-success-dim);
+    border-color: var(--k-success);
+}
+
+.k-roster-status--warn {
+    color: var(--k-warning);
+    background: var(--k-warning-dim);
+    border-color: var(--k-warning);
+}
+
+.k-roster-status--danger {
+    color: var(--k-danger);
+    background: var(--k-danger-dim);
+    border-color: var(--k-danger);
+}
+
+.k-roster-status--info {
+    color: var(--k-accent);
+    background: var(--k-accent-dim);
+    border-color: var(--k-accent);
 }
 
 /* ── Session card footer ── */
@@ -1706,6 +1801,93 @@ select {
     color: var(--k-warning);
     font-weight: 600;
     line-height: 1.5;
+}
+
+.k-workflow-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.k-workflow-card {
+    min-height: 82px;
+    padding: 10px;
+    border: 1px solid var(--k-border);
+    border-radius: var(--k-radius-sm);
+    background: var(--k-surface-2);
+}
+
+.k-workflow-card--ok {
+    border-color: var(--k-success);
+    background: var(--k-success-dim);
+}
+
+.k-workflow-card--warn {
+    border-color: var(--k-warning);
+    background: var(--k-warning-dim);
+}
+
+.k-workflow-card__label {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--k-text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.k-workflow-card__value {
+    margin-top: 5px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--k-text);
+    line-height: 1.2;
+    text-transform: capitalize;
+}
+
+.k-workflow-card__detail {
+    margin-top: 3px;
+    color: var(--k-text-2);
+    font-size: 11px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.k-workflow-tasks {
+    border: 1px solid var(--k-border);
+    border-radius: var(--k-radius-sm);
+    background: var(--k-surface-2);
+    padding: 10px 12px;
+}
+
+.k-workflow-tasks__title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--k-text);
+    margin-bottom: 6px;
+}
+
+.k-workflow-task-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 0;
+    border-top: 1px solid var(--k-border);
+}
+
+.k-workflow-task-row__name {
+    min-width: 0;
+    color: var(--k-text-2);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.k-workflow-task-row__deadline {
+    color: var(--k-text-3);
+    font-size: 11px;
+    white-space: nowrap;
 }
 
 /* Stats row */
@@ -3836,6 +4018,64 @@ body.kiosk-theme-light .k-spinner {
     display: flex;
     gap: 20px;
     margin-bottom: 4px;
+}
+
+.k-onboarding-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.k-onboarding-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--k-border);
+    border-radius: var(--k-radius-sm);
+    background: var(--k-surface-2);
+}
+
+.k-onboarding-step--done {
+    border-color: var(--k-success);
+    background: var(--k-success-dim);
+}
+
+.k-onboarding-step__label {
+    flex: 1;
+    min-width: 0;
+    color: var(--k-text);
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.k-onboarding-step__done {
+    color: var(--k-success);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.k-onboarding-step__btn {
+    flex-shrink: 0;
+    padding: 5px 8px;
+    font-size: 11px;
+}
+
+.k-onboarding-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.k-onboarding-actions .k-btn {
+    min-width: 0;
+    padding: 9px 6px;
+    font-size: 12px;
 }
 
 /* Textarea field */
