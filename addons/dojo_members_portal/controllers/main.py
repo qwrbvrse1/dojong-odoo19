@@ -189,6 +189,29 @@ class DojoMemberPortal(CustomerPortal):
         member_points = getattr(member.sudo(), 'total_points', None) if member else None
         member_points_tier = getattr(member.sudo(), 'points_tier', '') if member else ''
 
+        # Onboarding progress for household (S6 checklist)
+        onboarding_records = env['dojo.onboarding.record'].sudo().search([
+            ('member_id', 'in', household_member_ids),
+        ])
+        onboarding_map = {rec.member_id.id: rec for rec in onboarding_records}
+        onboarding_data = []
+        for m in household_members:
+            rec = onboarding_map.get(m.id)
+            if rec:
+                onboarding_data.append({
+                    'member': m,
+                    'progress_pct': rec.progress_pct or 0,
+                    'missing_steps': rec.missing_steps or '',
+                    'completed': rec.state == 'completed',
+                })
+            else:
+                onboarding_data.append({
+                    'member': m,
+                    'progress_pct': 0,
+                    'missing_steps': 'All steps pending',
+                    'completed': False,
+                })
+
         return request.render('dojo_members_portal.portal_dojo_home', {
             'member': member,
             'portal_partner': portal_partner,  # fallback for guardian-only (member=False)
@@ -209,6 +232,7 @@ class DojoMemberPortal(CustomerPortal):
             'member_points_tier': member_points_tier,
             # Belt context: hide rank card for parents who have no rank of their own
             'show_belt_card': is_student_only or bool(belt.get('current_rank')),
+            'onboarding_data': onboarding_data,
             **belt,
         })
 
@@ -765,6 +789,67 @@ class DojoMemberPortal(CustomerPortal):
                 'household_name': household.name if household else '',
                 'members': members_data,
             }),
+            headers=[('Content-Type', 'application/json')],
+        )
+
+    @http.route('/my/dojo/onboarding/summary', type='http', auth='user')
+    def portal_json_onboarding_summary(self, **kwargs):
+        """Return onboarding progress for household members (JSON).
+
+        Parents see all children in household; students see only themselves.
+        """
+        household_member_ids = self._get_household_member_ids()
+        if not household_member_ids:
+            return request.make_response(
+                json.dumps({'children': []}),
+                headers=[('Content-Type', 'application/json')],
+            )
+
+        # Fetch onboarding records for household members
+        onboarding_records = request.env['dojo.onboarding.record'].sudo().search([
+            ('member_id', 'in', household_member_ids),
+        ])
+
+        # Build a map: member_id -> onboarding_record
+        onboarding_map = {rec.member_id.id: rec for rec in onboarding_records}
+
+        # Step label mapping (must match dojo_onboarding_record._compute_missing_steps)
+        step_definitions = [
+            ('step_trial_booked', 'Trial Booked'),
+            ('step_waiver_signed', 'Waiver Signed'),
+            ('step_intro_completed', 'Intro Completed'),
+            ('step_membership_activated', 'Membership Activated'),
+            ('step_uniform_issued', 'Uniform Issued'),
+        ]
+
+        # Build result structure
+        members = request.env['dojo.member'].sudo().browse(household_member_ids)
+        children = []
+        for member in members:
+            onboarding = onboarding_map.get(member.id)
+            if not onboarding:
+                # No onboarding record yet — all steps incomplete
+                steps = [{'key': key, 'label': label, 'complete': False} for key, label in step_definitions]
+                progress_pct = 0
+                missing_steps = ', '.join([label for _, label in step_definitions])
+            else:
+                steps = [
+                    {'key': key, 'label': label, 'complete': bool(getattr(onboarding, key, False))}
+                    for key, label in step_definitions
+                ]
+                progress_pct = onboarding.progress_pct or 0
+                missing_steps = onboarding.missing_steps or ''
+
+            children.append({
+                'member_id': member.id,
+                'name': member.name or '',
+                'progress_pct': progress_pct,
+                'steps': steps,
+                'missing_steps': missing_steps,
+            })
+
+        return request.make_response(
+            json.dumps({'children': children}),
             headers=[('Content-Type', 'application/json')],
         )
 

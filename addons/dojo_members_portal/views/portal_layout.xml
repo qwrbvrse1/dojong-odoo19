@@ -182,6 +182,46 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"/>
                 </div>
             </t>
+
+            <!-- ── Onboarding Progress Checklist (S6) ──────────────────────── -->
+            <t t-if="onboarding_data is not None">
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fa fa-check-square-o me-2"/>Onboarding Progress</h5>
+                    </div>
+                    <div class="card-body">
+                        <t t-if="not onboarding_data">
+                            <p class="text-muted mb-0">No household members found.</p>
+                        </t>
+                        <t t-else="">
+                            <t t-foreach="onboarding_data" t-as="item">
+                                <div class="mb-3 pb-3" t-att-class="'border-bottom' if not item_last else ''">
+                                    <h6 class="mb-2"><t t-esc="item['member'].name"/></h6>
+                                    <div class="progress mb-2" style="height: 24px;">
+                                        <div class="progress-bar" role="progressbar"
+                                             t-att-style="'width: %s%%%%' % item['progress_pct']"
+                                             t-att-aria-valuenow="item['progress_pct']"
+                                             aria-valuemin="0" aria-valuemax="100">
+                                            <span class="fw-semibold"><t t-esc="item['progress_pct']"/>%</span>
+                                        </div>
+                                    </div>
+                                    <t t-if="not item['completed']">
+                                        <small class="text-muted d-block">
+                                            <i class="fa fa-info-circle me-1"/>Remaining: <t t-esc="item['missing_steps']"/>
+                                        </small>
+                                    </t>
+                                    <t t-else="">
+                                        <small class="text-success d-block">
+                                            <i class="fa fa-check-circle me-1"/>Onboarding Complete
+                                        </small>
+                                    </t>
+                                </div>
+                            </t>
+                        </t>
+                    </div>
+                </div>
+            </t>
+
             <!-- ── JS activities mount ─────────────────────────────────────── -->
             <div id="dojo_activities_mount"
                  t-att-data-tab="initial_tab or 'programs'"
