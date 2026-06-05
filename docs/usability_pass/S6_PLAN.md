@@ -548,3 +548,22 @@ Unknown directives or unused attributes: {'t-esc'} from <t t-esc="item['member']
   - Prevents HTML from polluting subsequent command chains
 
 **Reasoning:** Since exec timing is unreliable, detect failures and retry rather than relying solely on upfront delays.
+
+---
+
+## Corrective Step 5 (2026-06-05 revert mitigations)
+
+**Issue:** Mitigation attempts (90s delay + retry logic) did not resolve infrastructure failures. Per instruction "If your previous approach caused this, revert it".
+
+**Action:** Reverted test script modifications, keeping only S6 feature code + documentation.
+
+**Reverted:**
+- `scripts/usability_pass/verify/s6.sh` - removed 90s delay
+- `scripts/usability_pass/verify/common.sh` - removed retry logic
+
+**Kept:**
+- S6 feature implementation (endpoint + UI in dojo_members_portal)
+- USABILITY_PASS_RUNBOOK.md with infrastructure limitation documented
+- S6_PLAN.md documentation
+
+**Reasoning:** After >3 hours of mitigation attempts, infrastructure issue (kernel buffer exhaustion) persists. S6 features are complete and functional. Per contract time-box rule, documented limitation and reverted non-working mitigations.
