@@ -83,7 +83,7 @@ WARNING: Error loading config file: open <!DOCTYPE html>
         <link type="text/css" rel="stylesheet" href="/web/assets/cd2eb1e/web.assets_frontend.min.css"/>
         <script id="web.layout.odooscript" type="text/javascript">
             var odoo = {
-                csrf_token: "28ea54715013df4394e7891f59e055adacac4d57o1812163716",
+                csrf_token: "98ba979cfe1ac4a2773f3566b9a4ba127abe29c4o1812168376",
                 debug: "",
             };
         </script>
@@ -118,7 +118,7 @@ WARNING: Error loading config file: open <!DOCTYPE html>
             </a>
                 <div id="o_logout_divider" class="dropdown-divider"></div>
                 <form method="POST" action="/web/session/logout?redirect=/" role="menuitem" class="dropdown-item p-0">
-                    <input type="hidden" name="csrf_token" value="28ea54715013df4394e7891f59e055adacac4d57o1812163716"/>
+                    <input type="hidden" name="csrf_token" value="98ba979cfe1ac4a2773f3566b9a4ba127abe29c4o1812168376"/>
                     <button id="o_logout" type="submit" class="btn w-100 ps-3 text-start">
                         <i class="fa fa-fw fa-sign-out small text-primary-emphasis"></i> Logout
                     </button>
@@ -171,7 +171,7 @@ WARNING: Error loading config file: open <!DOCTYPE html>
                         
                         <div class="d-flex flex-wrap gap-2">
                             <span class="dojo-stat-chip">
-                                <span class="dojo-stat-chip__val">0</span>
+                                <span class="dojo-stat-chip__val">4</span>
                                 <span class="dojo-stat-chip__lbl">Sessions</span>
                             </span>
                             <span class="dojo-stat-chip">
@@ -222,7 +222,7 @@ WARNING: Error loading config file: open <!DOCTYPE html>
                 </div>
 
             
-            <div id="dojo_activities_mount" class="dojo-portal-root mt-3" data-tab="programs" data-is-parent="true" data-is-student-only="false" data-members="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}]" data-students="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;}]" data-csrf="28ea54715013df4394e7891f59e055adacac4d57o1812163716"></div>
+            <div id="dojo_activities_mount" class="dojo-portal-root mt-3" data-tab="programs" data-is-parent="true" data-is-student-only="false" data-members="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}]" data-students="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;}]" data-csrf="98ba979cfe1ac4a2773f3566b9a4ba127abe29c4o1812168376"></div>
         
                 </div>
             </div>
@@ -316,7 +316,7 @@ WARNING: Error loading config file: open <!DOCTYPE html>
         <link type="text/css" rel="stylesheet" href="/web/assets/cd2eb1e/web.assets_frontend.min.css"/>
         <script id="web.layout.odooscript" type="text/javascript">
             var odoo = {
-                csrf_token: "28ea54715013df4394e7891f59e055adacac4d57o1812163716",
+                csrf_token: "98ba979cfe1ac4a2773f3566b9a4ba127abe29c4o1812168376",
                 debug: "",
             };
         </script>
@@ -351,7 +351,7 @@ WARNING: Error loading config file: open <!DOCTYPE html>
             </a>
                 <div id="o_logout_divider" class="dropdown-divider"></div>
                 <form method="POST" action="/web/session/logout?redirect=/" role="menuitem" class="dropdown-item p-0">
-                    <input type="hidden" name="csrf_token" value="28ea54715013df4394e7891f59e055adacac4d57o1812163716"/>
+                    <input type="hidden" name="csrf_token" value="98ba979cfe1ac4a2773f3566b9a4ba127abe29c4o1812168376"/>
                     <button id="o_logout" type="submit" class="btn w-100 ps-3 text-start">
                         <i class="fa fa-fw fa-sign-out small text-primary-emphasis"></i> Logout
                     </button>
@@ -404,7 +404,7 @@ WARNING: Error loading config file: open <!DOCTYPE html>
                         
                         <div class="d-flex flex-wrap gap-2">
                             <span class="dojo-stat-chip">
-                                <span class="dojo-stat-chip__val">0</span>
+                                <span class="dojo-stat-chip__val">4</span>
                                 <span class="dojo-stat-chip__lbl">Sessions</span>
                             </span>
                             <span class="dojo-stat-chip">
@@ -455,7 +455,7 @@ WARNING: Error loading config file: open <!DOCTYPE html>
                 </div>
 
             
-            <div id="dojo_activities_mount" class="dojo-portal-root mt-3" data-tab="programs" data-is-parent="true" data-is-student-only="false" data-members="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}]" data-students="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;}]" data-csrf="28ea54715013df4394e7891f59e055adacac4d57o1812163716"></div>
+            <div id="dojo_activities_mount" class="dojo-portal-root mt-3" data-tab="programs" data-is-parent="true" data-is-student-only="false" data-members="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}]" data-students="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;}]" data-csrf="98ba979cfe1ac4a2773f3566b9a4ba127abe29c4o1812168376"></div>
         
                 </div>
             </div>

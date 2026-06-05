@@ -83,12 +83,12 @@ WARNING: Error loading config file: open <!DOCTYPE html>
         <link type="text/css" rel="stylesheet" href="/web/assets/cd2eb1e/web.assets_frontend.min.css"/>
         <script id="web.layout.odooscript" type="text/javascript">
             var odoo = {
-                csrf_token: "a41e26d5f5883fa04d0e10eec230323d5234fc58o1812163522",
+                csrf_token: "201fdd1bcd87d8a40cc71a9d254220f2f36c9c24o1812167896",
                 debug: "",
             };
         </script>
         <script type="text/javascript">
-            odoo.__session_info__ = {"is_admin": false, "is_system": false, "is_public": false, "is_internal_user": false, "is_website_user": false, "uid": 28, "registry_hash": "eed067e724ecad315638428fd354c980b379d62214ff007312fabdda535268a3", "is_frontend": true, "profile_session": null, "profile_collectors": null, "profile_params": null, "show_effect": true, "currencies": {"1": {"name": "USD", "symbol": "$", "position": "before", "digits": [69, 2]}}, "quick_login": true, "bundle_params": {"lang": "en_US"}, "server_version": "saas~19.2", "server_version_info": ["saas~19", 2, 0, "final", 0, ""], "test_mode": false, "websocket_worker_version": "19.0-2", "translationURL": "/website/translations", "tour_enabled": false};
+            odoo.__session_info__ = {"is_admin": false, "is_system": false, "is_public": false, "is_internal_user": false, "is_website_user": false, "uid": 28, "registry_hash": "feb0a3e7a71bbd9350c3cc46b30f9f7a42d86d2e6ab046487fdff4c91c304036", "is_frontend": true, "profile_session": null, "profile_collectors": null, "profile_params": null, "show_effect": true, "currencies": {"1": {"name": "USD", "symbol": "$", "position": "before", "digits": [69, 2]}}, "quick_login": true, "bundle_params": {"lang": "en_US"}, "server_version": "saas~19.2", "server_version_info": ["saas~19", 2, 0, "final", 0, ""], "test_mode": false, "websocket_worker_version": "19.0-2", "translationURL": "/website/translations", "tour_enabled": false};
             if (!/(^|;\s)tz=/.test(document.cookie)) {
                 const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
                 document.cookie = `tz=${userTZ}; path=/`;
@@ -118,7 +118,7 @@ WARNING: Error loading config file: open <!DOCTYPE html>
             </a>
                 <div id="o_logout_divider" class="dropdown-divider"></div>
                 <form method="POST" action="/web/session/logout?redirect=/" role="menuitem" class="dropdown-item p-0">
-                    <input type="hidden" name="csrf_token" value="a41e26d5f5883fa04d0e10eec230323d5234fc58o1812163522"/>
+                    <input type="hidden" name="csrf_token" value="201fdd1bcd87d8a40cc71a9d254220f2f36c9c24o1812167896"/>
                     <button id="o_logout" type="submit" class="btn w-100 ps-3 text-start">
                         <i class="fa fa-fw fa-sign-out small text-primary-emphasis"></i> Logout
                     </button>
@@ -171,7 +171,7 @@ WARNING: Error loading config file: open <!DOCTYPE html>
                         
                         <div class="d-flex flex-wrap gap-2">
                             <span class="dojo-stat-chip">
-                                <span class="dojo-stat-chip__val">0</span>
+                                <span class="dojo-stat-chip__val">4</span>
                                 <span class="dojo-stat-chip__lbl">Sessions</span>
                             </span>
                             <span class="dojo-stat-chip">
@@ -197,10 +197,10 @@ WARNING: Error loading config file: open <!DOCTYPE html>
                     </div>
                     <div class="card-body">
                                 <div class="border-bottom">
-                                    <h6 class="mb-2"></h6>
+                                    <h6 class="mb-2">Demo Student One</h6>
                                     <div class="progress mb-2" style="height: 24px;">
                                         <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-                                            <span class="fw-semibold">%</span>
+                                            <span class="fw-semibold">0%</span>
                                         </div>
                                     </div>
                                         <small class="text-success d-block">
@@ -208,21 +208,21 @@ WARNING: Error loading config file: open <!DOCTYPE html>
                                         </small>
                                 </div>
                                 <div class="">
-                                    <h6 class="mb-2"></h6>
+                                    <h6 class="mb-2">Demo Student Two</h6>
                                     <div class="progress mb-2" style="height: 24px;">
                                         <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-                                            <span class="fw-semibold">%</span>
+                                            <span class="fw-semibold">0%</span>
                                         </div>
                                     </div>
                                         <small class="text-muted d-block">
-                                            <i class="fa fa-info-circle me-1"></i>Remaining: 
+                                            <i class="fa fa-info-circle me-1"></i>Remaining: Trial Booked, Waiver Signed, Intro Completed, Membership Activated, Uniform Issued
                                         </small>
                                 </div>
                     </div>
                 </div>
 
             
-            <div id="dojo_activities_mount" class="dojo-portal-root mt-3" data-tab="programs" data-is-parent="true" data-is-student-only="false" data-members="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}]" data-students="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;}]" data-csrf="a41e26d5f5883fa04d0e10eec230323d5234fc58o1812163522"></div>
+            <div id="dojo_activities_mount" class="dojo-portal-root mt-3" data-tab="programs" data-is-parent="true" data-is-student-only="false" data-members="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}]" data-students="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;}]" data-csrf="201fdd1bcd87d8a40cc71a9d254220f2f36c9c24o1812167896"></div>
         
                 </div>
             </div>
@@ -316,12 +316,12 @@ WARNING: Error loading config file: open <!DOCTYPE html>
         <link type="text/css" rel="stylesheet" href="/web/assets/cd2eb1e/web.assets_frontend.min.css"/>
         <script id="web.layout.odooscript" type="text/javascript">
             var odoo = {
-                csrf_token: "a41e26d5f5883fa04d0e10eec230323d5234fc58o1812163522",
+                csrf_token: "201fdd1bcd87d8a40cc71a9d254220f2f36c9c24o1812167896",
                 debug: "",
             };
         </script>
         <script type="text/javascript">
-            odoo.__session_info__ = {"is_admin": false, "is_system": false, "is_public": false, "is_internal_user": false, "is_website_user": false, "uid": 28, "registry_hash": "eed067e724ecad315638428fd354c980b379d62214ff007312fabdda535268a3", "is_frontend": true, "profile_session": null, "profile_collectors": null, "profile_params": null, "show_effect": true, "currencies": {"1": {"name": "USD", "symbol": "$", "position": "before", "digits": [69, 2]}}, "quick_login": true, "bundle_params": {"lang": "en_US"}, "server_version": "saas~19.2", "server_version_info": ["saas~19", 2, 0, "final", 0, ""], "test_mode": false, "websocket_worker_version": "19.0-2", "translationURL": "/website/translations", "tour_enabled": false};
+            odoo.__session_info__ = {"is_admin": false, "is_system": false, "is_public": false, "is_internal_user": false, "is_website_user": false, "uid": 28, "registry_hash": "feb0a3e7a71bbd9350c3cc46b30f9f7a42d86d2e6ab046487fdff4c91c304036", "is_frontend": true, "profile_session": null, "profile_collectors": null, "profile_params": null, "show_effect": true, "currencies": {"1": {"name": "USD", "symbol": "$", "position": "before", "digits": [69, 2]}}, "quick_login": true, "bundle_params": {"lang": "en_US"}, "server_version": "saas~19.2", "server_version_info": ["saas~19", 2, 0, "final", 0, ""], "test_mode": false, "websocket_worker_version": "19.0-2", "translationURL": "/website/translations", "tour_enabled": false};
             if (!/(^|;\s)tz=/.test(document.cookie)) {
                 const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
                 document.cookie = `tz=${userTZ}; path=/`;
@@ -351,7 +351,7 @@ WARNING: Error loading config file: open <!DOCTYPE html>
             </a>
                 <div id="o_logout_divider" class="dropdown-divider"></div>
                 <form method="POST" action="/web/session/logout?redirect=/" role="menuitem" class="dropdown-item p-0">
-                    <input type="hidden" name="csrf_token" value="a41e26d5f5883fa04d0e10eec230323d5234fc58o1812163522"/>
+                    <input type="hidden" name="csrf_token" value="201fdd1bcd87d8a40cc71a9d254220f2f36c9c24o1812167896"/>
                     <button id="o_logout" type="submit" class="btn w-100 ps-3 text-start">
                         <i class="fa fa-fw fa-sign-out small text-primary-emphasis"></i> Logout
                     </button>
@@ -404,7 +404,7 @@ WARNING: Error loading config file: open <!DOCTYPE html>
                         
                         <div class="d-flex flex-wrap gap-2">
                             <span class="dojo-stat-chip">
-                                <span class="dojo-stat-chip__val">0</span>
+                                <span class="dojo-stat-chip__val">4</span>
                                 <span class="dojo-stat-chip__lbl">Sessions</span>
                             </span>
                             <span class="dojo-stat-chip">
@@ -430,10 +430,10 @@ WARNING: Error loading config file: open <!DOCTYPE html>
                     </div>
                     <div class="card-body">
                                 <div class="border-bottom">
-                                    <h6 class="mb-2"></h6>
+                                    <h6 class="mb-2">Demo Student One</h6>
                                     <div class="progress mb-2" style="height: 24px;">
                                         <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-                                            <span class="fw-semibold">%</span>
+                                            <span class="fw-semibold">0%</span>
                                         </div>
                                     </div>
                                         <small class="text-success d-block">
@@ -441,21 +441,21 @@ WARNING: Error loading config file: open <!DOCTYPE html>
                                         </small>
                                 </div>
                                 <div class="">
-                                    <h6 class="mb-2"></h6>
+                                    <h6 class="mb-2">Demo Student Two</h6>
                                     <div class="progress mb-2" style="height: 24px;">
                                         <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-                                            <span class="fw-semibold">%</span>
+                                            <span class="fw-semibold">0%</span>
                                         </div>
                                     </div>
                                         <small class="text-muted d-block">
-                                            <i class="fa fa-info-circle me-1"></i>Remaining: 
+                                            <i class="fa fa-info-circle me-1"></i>Remaining: Trial Booked, Waiver Signed, Intro Completed, Membership Activated, Uniform Issued
                                         </small>
                                 </div>
                     </div>
                 </div>
 
             
-            <div id="dojo_activities_mount" class="dojo-portal-root mt-3" data-tab="programs" data-is-parent="true" data-is-student-only="false" data-members="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}]" data-students="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;}]" data-csrf="a41e26d5f5883fa04d0e10eec230323d5234fc58o1812163522"></div>
+            <div id="dojo_activities_mount" class="dojo-portal-root mt-3" data-tab="programs" data-is-parent="true" data-is-student-only="false" data-members="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;, &#34;is_student&#34;: true, &#34;is_guardian&#34;: false}]" data-students="[{&#34;id&#34;: 153, &#34;name&#34;: &#34;Demo Student One&#34;}, {&#34;id&#34;: 154, &#34;name&#34;: &#34;Demo Student Two&#34;}]" data-csrf="201fdd1bcd87d8a40cc71a9d254220f2f36c9c24o1812167896"></div>
         
                 </div>
             </div>

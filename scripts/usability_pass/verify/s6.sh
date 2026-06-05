@@ -5,12 +5,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; source "$HERE/common.sh"
 
 echo "INFO: cold restart"
 compose down >/dev/null 2>&1
-# Brief pause to let Docker daemon fully process shutdown
-sleep 5
 compose up -d db web >/dev/null 2>&1
 assert "web back up after cold restart" wait_for_http "$BASE/web/login" 300
-# Extended delay to ensure Docker exec is fully operational post-restart (Docker daemon bug workaround)
-sleep 60
 
 # Parent onboarding checklist endpoint.
 PARENT_JAR=$(mktemp)

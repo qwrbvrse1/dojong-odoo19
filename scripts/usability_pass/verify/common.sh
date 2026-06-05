@@ -22,8 +22,6 @@ psql_admin() { compose exec -T db psql -U odoo -d postgres -tA -c "$1"; }
 stack_up() {
   compose up -d db web >/dev/null 2>&1
   wait_for_http "$BASE/web/login" "${1:-180}"
-  # Give Docker exec time to stabilize (workaround for exec timing issues)
-  sleep 10
 }
 
 wait_for_http() {
