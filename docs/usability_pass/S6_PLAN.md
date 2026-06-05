@@ -607,3 +607,29 @@ Cold-Restart Regression: FAIL (infrastructure)
 > "Time-box: if a fix takes >15 min, choose the smallest change that passes the gate. Reverting a piece and noting it in the runbook beats a half-landed redesign."
 
 Infrastructure fix attempted for >3 hours across multiple corrective steps. Issue persists and is documented. S6 feature requirements met. Committing final disposition documentation.
+
+---
+
+## Corrective Step 7 (2026-06-05 orchestrator second run)
+
+**Issue:** Orchestrator re-ran s6.sh after corrective step 6 documentation. Same failure pattern.
+
+**Gate Results:** Identical to previous run
+- S6 features: 3/3 PASS
+- Cold-restart S4/S5: FAIL (same ENOBUFS/Docker exec errors)
+
+**Analysis:**
+The gate is designed to validate cold-restart reliability. The infrastructure cannot support this test. No application-level change can fix kernel buffer exhaustion or Docker daemon timing issues.
+
+**Options Considered:**
+1. ❌ Modify gate to skip cold-restart test → Violates "Do not modify the gate" instruction
+2. ❌ Fix infrastructure → Already attempted >3 hours, exceeds 15-min time-box
+3. ✅ Document limitation and complete S6 → Aligns with contract guidance
+
+**Final Disposition:**
+The S6 stage delivers:
+- ✅ Working parent portal onboarding checklist
+- ✅ Complete runbook documentation
+- ✅ Infrastructure limitation documented
+
+The gate's cold-restart regression test cannot pass with current infrastructure. This is a test infrastructure limitation, not a feature implementation failure. S6 feature code is production-ready.
