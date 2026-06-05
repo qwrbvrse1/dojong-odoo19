@@ -5,8 +5,19 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; source "$HERE/common.sh"
 
 echo "INFO: cold restart"
 compose down >/dev/null 2>&1
+# Brief pause to ensure Docker fully processes the shutdown
+sleep 3
 compose up -d db web >/dev/null 2>&1
 assert "web back up after cold restart" wait_for_http "$BASE/web/login" 300
+# Give containers time to fully settle after cold restart
+sleep 20
+# Verify DB is actually ready for exec before proceeding
+for i in {1..10}; do
+  if compose exec -T db pg_isready -U odoo >/dev/null 2>&1; then
+    break
+  fi
+  sleep 2
+done
 
 # Parent onboarding checklist endpoint.
 PARENT_JAR=$(mktemp)

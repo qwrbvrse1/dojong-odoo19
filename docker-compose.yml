@@ -8,12 +8,18 @@ services:
     volumes:
       - odoo-db-data-19-2:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   web:
     build: .
     image: odoo-saas-19-2:latest
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8070:8069" # Changed: 8069 is occupied by a stale kernel socket
     dns:

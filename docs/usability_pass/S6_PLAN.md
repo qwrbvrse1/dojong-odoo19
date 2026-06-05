@@ -3,6 +3,25 @@
 **Target:** `bash scripts/usability_pass/verify/s6.sh` passes  
 **Date:** 2026-06-05
 
+## Corrective Step: Docker Healthchecks (2026-06-05 post-gate failure)
+
+**Issue:** Cold restart gate failures - SQL queries return 'ERR' after `docker compose down && up` because the DB container is running but not yet ready to accept connections.
+
+**Root Cause:** docker-compose.yml has no healthchecks. `depends_on: db` only ensures start order, not readiness. Gates run SQL queries immediately after HTTP is up, but DB may not be ready.
+
+**Fix:** Add healthchecks to docker-compose.yml:
+1. DB service: healthcheck using `pg_isready`
+2. Web service: change `depends_on` to wait for DB healthcheck with `condition: service_healthy`
+
+**Files:**
+- `docker-compose.yml`
+
+**Rollback:** `git checkout -- docker-compose.yml`
+
+**Time estimate:** ~5 minutes
+
+---
+
 ## Implementation Steps
 
 ### Step 1: Add `/my/dojo/onboarding/summary` JSON endpoint
