@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="config_session_auto_close_grace" model="ir.config_parameter">
+        <field name="key">dojo_core.session_auto_close_grace_minutes</field>
+        <field name="value">60</field>
+    </record>
+</odoo>

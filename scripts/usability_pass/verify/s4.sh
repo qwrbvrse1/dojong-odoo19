@@ -6,7 +6,7 @@ stack_up || { echo "FAIL: web not up"; GATE_FAILED=1; finish; }
 # 1. Cron record exists.
 assert_sql_gte "auto-close ir.cron exists" \
   "SELECT count(*) FROM ir_cron c JOIN ir_act_server s ON c.ir_actions_server_id=s.id
-    WHERE c.active AND s.name ILIKE '%auto-close%'" 1
+    WHERE c.active AND s.name::text ILIKE '%auto-close%'" 1
 
 # 2. Behavior: past open session with a pending enrollment gets closed, attendance -> absent.
 run_shell_test "_cron_auto_close_sessions closes ended sessions and resolves pending to absent" "

@@ -26,6 +26,8 @@
         'data/dojo_class_recurrence_cron.xml',
         'data/ir_cron.xml',
         'data/instructor_todos_data.xml',
+        'data/dojo_config_parameters.xml',
+        'data/dojo_core_cron.xml',
         # Views
         'views/res_partner_views.xml',
         'views/household_views.xml',

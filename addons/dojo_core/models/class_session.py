@@ -234,3 +234,30 @@ class DojoClassSession(models.Model):
                     })
                     enr.attendance_state = "absent"
         return result
+
+    @api.model
+    def _cron_auto_close_sessions(self):
+        """Cron job: auto-close sessions that have ended more than GRACE minutes ago.
+
+        Finds sessions with state='open' whose end_datetime is more than GRACE
+        minutes in the past (GRACE from ir.config_parameter
+        'dojo_core.session_auto_close_grace_minutes', default 60).
+
+        For each session:
+        - Resolves all pending enrollments to absent (via the write() method)
+        - Sets the session state to 'done'
+        """
+        grace_minutes = self.env['ir.config_parameter'].sudo().get_int(
+            'dojo_core.session_auto_close_grace_minutes', 60
+        )
+
+        from datetime import timedelta
+        cutoff = fields.Datetime.now() - timedelta(minutes=grace_minutes)
+
+        sessions = self.search([
+            ('state', '=', 'open'),
+            ('end_datetime', '<', cutoff),
+        ])
+
+        for session in sessions:
+            session.write({'state': 'done'})

@@ -1413,31 +1413,65 @@ class DojoKioskService(models.AbstractModel):
     # -------------------------------------------------------------------------
 
     @api.model
-    def close_session(self, session_id):
+    def close_session(self, session_id, mark_remaining_absent=False):
         """Mark a session as done.
-        
-        Requires all enrolled members to have attendance recorded (no pending).
-        Empty sessions (zero enrollments) are always allowed to close.
+
+        Args:
+            session_id: ID of the session to close
+            mark_remaining_absent: If True, mark all pending enrollments as absent
+                                   before closing. If False (default), block close
+                                   if any pending enrollments exist.
+
+        Returns:
+            dict with success flag and optional error details
         """
         session = self.env["dojo.class.session"].browse(session_id)
         if not session.exists():
             return {"success": False, "error": "Session not found."}
 
-        # Guard: block close if any enrolled member still has attendance_state = pending
+        # Find pending enrollments
         pending_enrollments = session.enrollment_ids.filtered(
             lambda e: e.status == "registered" and e.attendance_state == "pending"
         )
+
         if pending_enrollments:
-            count = len(pending_enrollments)
-            return {
-                "success": False,
-                "error": "pending_attendance",
-                "count": count,
-                "message": (
-                    f"{count} member(s) still have attendance pending. "
-                    "Please record attendance for all members before marking done."
-                ),
-            }
+            if mark_remaining_absent:
+                # Mark all pending enrollments as absent
+                AttLog = self.env["dojo.attendance.log"]
+                existing_member_ids = set(
+                    AttLog.search([("session_id", "=", session_id)]).mapped("member_id").ids
+                )
+                for enr in pending_enrollments:
+                    if enr.member_id.id in existing_member_ids:
+                        continue
+                    AttLog.create({
+                        "session_id": session_id,
+                        "member_id": enr.member_id.id,
+                        "enrollment_id": enr.id,
+                        "status": "absent",
+                        "checkin_datetime": session.end_datetime or fields.Datetime.now(),
+                    })
+                    enr.attendance_state = "absent"
+                    # Log kiosk action
+                    self._log_action(
+                        "attendance_mark",
+                        member_id=enr.member_id.id,
+                        session_id=session_id,
+                        is_instructor=True,
+                        summary="Marked absent (bulk close)"
+                    )
+            else:
+                # Block close if pending and not marking absent
+                count = len(pending_enrollments)
+                return {
+                    "success": False,
+                    "error": "pending_attendance",
+                    "count": count,
+                    "message": (
+                        f"{count} member(s) still have attendance pending. "
+                        "Please record attendance for all members before marking done."
+                    ),
+                }
 
         session.state = "done"
         return {"success": True}

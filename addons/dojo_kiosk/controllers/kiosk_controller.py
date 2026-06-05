@@ -368,14 +368,14 @@ class KioskController(http.Controller):
         "/kiosk/instructor/session/close",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_session_close(self, session_id=None, token=None, instructor_key=None, **kw):
+    def kiosk_session_close(self, session_id=None, token=None, instructor_key=None, mark_remaining_absent=False, **kw):
         if not session_id:
             return {"success": False, "error": "session_id is required."}
         guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
-        return svc.close_session(session_id)
+        return svc.close_session(session_id, mark_remaining_absent=mark_remaining_absent)
 
     @http.route(
         "/kiosk/instructor/session/reopen",
