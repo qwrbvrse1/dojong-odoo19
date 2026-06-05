@@ -18,6 +18,7 @@ def _looks_like_password_hash(value):
 class DojoKioskConfig(models.Model):
     _name = "dojo.kiosk.config"
     _description = "Dojang Kiosk Configuration"
+    _inherit = ["mail.thread"]
     _order = "name"
 
     name = fields.Char(string="Kiosk Name", required=True)
@@ -46,6 +47,20 @@ class DojoKioskConfig(models.Model):
         string="Kiosk URL",
         compute="_compute_kiosk_url",
         help="Open this URL on the kiosk tablet.",
+    )
+
+    # ── Instructor session key ─────────────────────────────────────────
+    instructor_key = fields.Char(
+        string="Instructor Session Key",
+        readonly=True,
+        index=True,
+        copy=False,
+        help="Temporary key issued after successful PIN unlock; expires in 8 hours.",
+    )
+    instructor_key_expires_at = fields.Datetime(
+        string="Key Expires At",
+        readonly=True,
+        help="Expiry timestamp for the current instructor key.",
     )
 
     # ── Theming & announcements ────────────────────────────────────────
@@ -87,8 +102,16 @@ class DojoKioskConfig(models.Model):
 
     def action_regenerate_token(self):
         """Regenerate the kiosk token (invalidates any open tablet sessions)."""
+        return self.action_rotate_token()
+
+    def action_rotate_token(self):
+        """Rotate the kiosk token (invalidates open tablet sessions) and log to chatter."""
         for cfg in self:
+            old_token = cfg.kiosk_token or ""
             cfg.kiosk_token = secrets.token_urlsafe(32)
+            cfg.message_post(
+                body=f"Kiosk token rotated by {self.env.user.name}. Old token prefix: {old_token[:8]}..."
+            )
 
     def action_open_kiosk_url(self):
         """Open this kiosk's URL in a new browser tab."""
@@ -189,3 +212,23 @@ class DojoKioskConfig(models.Model):
                 raise ValidationError(
                     "Instructor PIN must be exactly 6 digits (numbers only)."
                 )
+
+    def _generate_instructor_key(self):
+        """Generate a new 8h instructor key and store it."""
+        self.ensure_one()
+        self.sudo().write({
+            "instructor_key": secrets.token_urlsafe(32),
+            "instructor_key_expires_at": fields.Datetime.now() + timedelta(hours=8),
+        })
+        return self.instructor_key
+
+    def _validate_instructor_key(self, key):
+        """Return True if key matches and hasn't expired."""
+        self.ensure_one()
+        if not key or not self.instructor_key:
+            return False
+        if key != self.instructor_key:
+            return False
+        if not self.instructor_key_expires_at:
+            return False
+        return fields.Datetime.now() < self.instructor_key_expires_at

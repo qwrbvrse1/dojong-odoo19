@@ -29,6 +29,27 @@ class DojoKioskService(models.AbstractModel):
     _description = "Dojang Kiosk Service"
 
     # -------------------------------------------------------------------------
+    # Action logging
+    # -------------------------------------------------------------------------
+
+    def _log_action(self, action, member_id=None, session_id=None, is_instructor=False, summary=None):
+        """Write a kiosk action log entry."""
+        try:
+            config = self.env["dojo.kiosk.config"].search([("active", "=", True)], limit=1)
+            if config:
+                self.env["dojo.kiosk.action.log"].sudo().create({
+                    "config_id": config.id,
+                    "action": action,
+                    "member_id": member_id or False,
+                    "session_id": session_id or False,
+                    "is_instructor_action": is_instructor,
+                    "summary": summary or "",
+                })
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning("Kiosk action log failed: %s", e)
+
+    # -------------------------------------------------------------------------
     # Token + bootstrap
     # -------------------------------------------------------------------------
 
@@ -230,6 +251,7 @@ class DojoKioskService(models.AbstractModel):
                     skipped.append({"member_id": member_id, "reason": str(e)})
                     continue
                 added.append(member_id)
+                self._log_action("roster_add", member_id=member_id, session_id=session_id, is_instructor=True, summary=f"Bulk add ({enroll_type})")
 
             # ── 3. Auto-enroll preference (multiday / permanent) ───────────────────
             if enroll_type in ("multiday", "permanent") and template:
@@ -628,12 +650,48 @@ class DojoKioskService(models.AbstractModel):
     # -------------------------------------------------------------------------
 
     @api.model
-    def get_member_profile(self, member_id, session_id=None):
-        """Full member profile for the profile card modal."""
+    def get_member_profile(self, member_id, session_id=None, instructor_key=None):
+        """Return minimal profile pre-PIN; full profile with valid instructor_key."""
         member = self.env["dojo.member"].browse(member_id)
         if not member.exists():
             return None
-        return self._member_profile_dict(member, session_id=session_id)
+
+        # Validate instructor_key if provided
+        if instructor_key:
+            config = self.env["dojo.kiosk.config"].search([("active", "=", True)], limit=1)
+            if config and config._validate_instructor_key(instructor_key):
+                return self._member_profile_dict(member, session_id=session_id)
+
+        # Pre-PIN: minimal payload
+        return self._member_profile_minimal(member, session_id=session_id)
+
+    def _member_profile_minimal(self, member, session_id=None):
+        """Minimal member profile safe for pre-PIN kiosk search/display."""
+        attendance_state = "pending"
+        if session_id:
+            enr = self.env["dojo.class.enrollment"].search([
+                ("session_id", "=", session_id),
+                ("member_id", "=", member.id),
+                ("status", "=", "registered"),
+            ], limit=1)
+            if enr:
+                log = self.env["dojo.attendance.log"].search([
+                    ("session_id", "=", session_id),
+                    ("member_id", "=", member.id),
+                ], limit=1)
+                attendance_state = log.status if log else enr.attendance_state
+
+        enrolled_sessions = self.get_enrolled_sessions_today(member.id)
+
+        return {
+            "member_id": member.id,
+            "name": member.name,
+            "image_url": "/web/image/dojo.member/%d/image_128" % member.id,
+            "belt_rank": member.current_rank_id.name if member.current_rank_id else "",
+            "belt_color": member.current_rank_id.color if member.current_rank_id else "",
+            "attendance_state": attendance_state,
+            "enrolled_sessions": enrolled_sessions,
+        }
 
     def _member_profile_dict(self, member, session_id=None):
         workflow_status = self._member_workflow_status(member, session_id=session_id)
@@ -1151,6 +1209,9 @@ class DojoKioskService(models.AbstractModel):
         # Sync enrollment
         enrollment.attendance_state = "present"
 
+        # Log kiosk action
+        self._log_action("checkin", member_id=member_id, session_id=session_id, summary=f"Self check-in: {status}")
+
         # Invalidate cached computed fields so the returned profile reflects
         # the newly created enrollment / attendance log.
         member.invalidate_recordset()
@@ -1249,6 +1310,9 @@ class DojoKioskService(models.AbstractModel):
                 "present" if attendance_status in ("present", "late") else attendance_status
             )
 
+        # Log kiosk action
+        self._log_action("attendance_mark", member_id=member_id, session_id=session_id, is_instructor=True, summary=f"Marked {attendance_status}")
+
         # Invalidate cached computed fields so any subsequent profile read is fresh
         member.invalidate_recordset()
 
@@ -1329,6 +1393,7 @@ class DojoKioskService(models.AbstractModel):
         except _VE as e:
             return {"success": False, "error": str(e)}
 
+        self._log_action("roster_add", member_id=member_id, session_id=session_id, is_instructor=True, summary="Added to roster")
         return {"success": True, "enrollment_id": enr.id}
 
     @api.model
@@ -1340,6 +1405,7 @@ class DojoKioskService(models.AbstractModel):
         ], limit=1)
         if enrollment:
             enrollment.status = "cancelled"
+            self._log_action("roster_remove", member_id=member_id, session_id=session_id, is_instructor=True, summary="Removed from roster")
         return {"success": True}
 
     # -------------------------------------------------------------------------
@@ -1543,7 +1609,8 @@ class DojoKioskService(models.AbstractModel):
 
         if config_record._verify_pin_value(pin):
             config_record._clear_pin_attempts()
-            return {"success": True}
+            instructor_key = config_record._generate_instructor_key()
+            return {"success": True, "instructor_key": instructor_key}
 
         failure = config_record._register_pin_failure(
             _MAX_PIN_ATTEMPTS,
@@ -1577,6 +1644,7 @@ class DojoKioskService(models.AbstractModel):
         if log.status not in ("present", "late"):
             return {"success": False, "error": "Member is not marked present or late."}
         log.checkout_datetime = fields.Datetime.now()
+        self._log_action("checkout", member_id=member_id, session_id=session_id, summary="Member checkout")
         return {
             "success": True,
             "checkout_datetime": fields.Datetime.to_string(log.checkout_datetime),
@@ -1836,6 +1904,7 @@ class DojoKioskService(models.AbstractModel):
         record.message_post(
             body=Markup("<p>Kiosk update: <strong>%s</strong> marked complete.</p>") % html_escape(label)
         )
+        self._log_action("onboarding_action", member_id=member.id, is_instructor=True, summary=f"Complete step: {label}")
         return {
             "success": True,
             "workflow_status": self._member_workflow_status(member),
@@ -1850,6 +1919,7 @@ class DojoKioskService(models.AbstractModel):
         record = self._get_or_create_onboarding_record(member)
         if record:
             record.message_post(body=body)
+        self._log_action("onboarding_action", member_id=member.id, is_instructor=True, summary="Add note")
         return {
             "success": True,
             "workflow_status": self._member_workflow_status(member),
@@ -1873,6 +1943,7 @@ class DojoKioskService(models.AbstractModel):
             record.message_post(
                 body=Markup("<p>Kiosk reminder sent: %s</p>") % html_escape(message)
             )
+        self._log_action("onboarding_action", member_id=member.id, is_instructor=True, summary="Send reminder")
         return {
             "success": True,
             "sent_via": result.get("sent_via", []),
@@ -1909,6 +1980,7 @@ class DojoKioskService(models.AbstractModel):
                     html_escape(note),
                 )
             )
+        self._log_action("onboarding_action", member_id=member.id, is_instructor=True, summary=f"Escalate blocker: {step_label or 'General'}")
         return {
             "success": True,
             "workflow_status": self._member_workflow_status(member),

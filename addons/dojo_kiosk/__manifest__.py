@@ -13,6 +13,7 @@
         "security/ir.model.access.csv",
         "views/dojo_kiosk_views.xml",
         "views/dojo_kiosk_announcement_views.xml",
+        "views/dojo_kiosk_action_log_views.xml",
     ],
     "assets": {
         "web.assets_backend": [

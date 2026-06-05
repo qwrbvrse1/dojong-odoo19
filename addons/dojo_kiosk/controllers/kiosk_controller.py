@@ -56,6 +56,22 @@ class KioskController(http.Controller):
         except AccessError:
             return fail_return
 
+    def _guard_instructor(self, token, instructor_key, fail_return):
+        """Validate token + instructor_key. Returns None on success; fail_return on failure."""
+        guard = self._guard_token(token, fail_return)
+        if guard is not None:
+            return guard
+        if not instructor_key:
+            return {"success": False, "error": "instructor_auth_required"}
+        try:
+            svc = request.env["dojo.kiosk.service"].sudo()
+            config = svc.validate_token(token)
+            if not config._validate_instructor_key(instructor_key):
+                return {"success": False, "error": "instructor_auth_required"}
+            return None
+        except AccessError:
+            return {"success": False, "error": "instructor_auth_required"}
+
     # ------------------------------------------------------------------
     # SPA shell  --  GET /kiosk/<token>
     # ------------------------------------------------------------------
@@ -82,7 +98,7 @@ class KioskController(http.Controller):
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
     <meta name="robots" content="noindex,nofollow"/>
     <title>Dojo Kiosk</title>
-    <link rel="stylesheet" href="/dojo_kiosk/static/src/kiosk.css?v={_static_ver('static/src/kiosk.css')}"/>
+    <link rel="stylesheet" href="/dojo_kiosk/static/src/kiosk.css?v={_static_ver('static/src/kiosk.css')}_s2"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"/>
 </head>
 <body class="dojo-kiosk-body {theme_class}">
@@ -97,7 +113,7 @@ class KioskController(http.Controller):
         }};
     </script>
     <script src="/web/static/lib/owl/owl.js"></script>
-    <script src="/dojo_kiosk/static/src/kiosk_app.js?v={_static_ver('static/src/kiosk_app.js')}"></script>
+    <script src="/dojo_kiosk/static/src/kiosk_app.js?v={_static_ver('static/src/kiosk_app.js')}_s2"></script>
 </body>
 </html>"""
         return request.make_response(
@@ -201,14 +217,14 @@ class KioskController(http.Controller):
         return svc.checkin_trial_lead(lead_id, session_id=session_id)
 
     @http.route("/kiosk/member/profile", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
-    def kiosk_member_profile(self, member_id=None, session_id=None, token=None, **kw):
+    def kiosk_member_profile(self, member_id=None, session_id=None, token=None, instructor_key=None, **kw):
         if not member_id:
             return None
         guard = self._guard_token(token, None)
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
-        return svc.get_member_profile(member_id, session_id=session_id)
+        return svc.get_member_profile(member_id, session_id=session_id, instructor_key=instructor_key)
 
     @http.route("/kiosk/member/enrolled_sessions", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
     def kiosk_enrolled_sessions(self, member_id=None, date=None, token=None, **kw):
@@ -263,10 +279,10 @@ class KioskController(http.Controller):
         "/kiosk/instructor/attendance",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_mark_attendance(self, session_id=None, member_id=None, status=None, token=None, **kw):
+    def kiosk_mark_attendance(self, session_id=None, member_id=None, status=None, token=None, instructor_key=None, **kw):
         if not all([session_id, member_id, status]):
             return {"success": False, "error": "session_id, member_id, and status are required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -283,11 +299,11 @@ class KioskController(http.Controller):
     def kiosk_roster_add(
         self, session_id=None, member_id=None,
         override_settings=False, override_capacity=False,
-        token=None, **kw
+        token=None, instructor_key=None, **kw
     ):
         if not session_id or not member_id:
             return {"success": False, "error": "session_id and member_id are required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -307,11 +323,11 @@ class KioskController(http.Controller):
         enroll_type="single", date_from=None, date_to=None,
         pref_mon=False, pref_tue=False, pref_wed=False, pref_thu=False,
         pref_fri=False, pref_sat=False, pref_sun=False,
-        token=None, **kw
+        token=None, instructor_key=None, **kw
     ):
         if not session_id or not member_ids:
             return {"success": False, "error": "session_id and member_ids are required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -335,10 +351,10 @@ class KioskController(http.Controller):
         "/kiosk/instructor/roster/remove",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_roster_remove(self, session_id=None, member_id=None, token=None, **kw):
+    def kiosk_roster_remove(self, session_id=None, member_id=None, token=None, instructor_key=None, **kw):
         if not session_id or not member_id:
             return {"success": False, "error": "session_id and member_id are required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -352,10 +368,10 @@ class KioskController(http.Controller):
         "/kiosk/instructor/session/close",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_session_close(self, session_id=None, token=None, **kw):
+    def kiosk_session_close(self, session_id=None, token=None, instructor_key=None, **kw):
         if not session_id:
             return {"success": False, "error": "session_id is required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -365,10 +381,10 @@ class KioskController(http.Controller):
         "/kiosk/instructor/session/reopen",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_session_reopen(self, session_id=None, token=None, **kw):
+    def kiosk_session_reopen(self, session_id=None, token=None, instructor_key=None, **kw):
         if not session_id:
             return {"success": False, "error": "session_id is required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -378,10 +394,10 @@ class KioskController(http.Controller):
         "/kiosk/instructor/session/delete",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_session_delete(self, session_id=None, token=None, **kw):
+    def kiosk_session_delete(self, session_id=None, token=None, instructor_key=None, **kw):
         if not session_id:
             return {"success": False, "error": "session_id is required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -391,10 +407,10 @@ class KioskController(http.Controller):
         "/kiosk/instructor/session/update",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_session_update(self, session_id=None, capacity=None, token=None, **kw):
+    def kiosk_session_update(self, session_id=None, capacity=None, token=None, instructor_key=None, **kw):
         if not session_id:
             return {"success": False, "error": "session_id is required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -404,9 +420,9 @@ class KioskController(http.Controller):
         "/kiosk/instructor/templates",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_templates(self, token=None, **kw):
+    def kiosk_templates(self, token=None, instructor_key=None, **kw):
         """Return active class templates for use in the Create Session modal."""
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -416,11 +432,11 @@ class KioskController(http.Controller):
         "/kiosk/instructor/session/create",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_session_create(self, template_id=None, start_time=None, capacity=None, date=None, token=None, **kw):
+    def kiosk_session_create(self, template_id=None, start_time=None, capacity=None, date=None, token=None, instructor_key=None, **kw):
         """Create a new open session for today (or a given date) from a template."""
         if not template_id or not start_time:
             return {"success": False, "error": "template_id and start_time are required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -439,10 +455,10 @@ class KioskController(http.Controller):
         "/kiosk/instructor/update_photo",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_update_photo(self, member_id=None, image_data=None, token=None, **kw):
+    def kiosk_update_photo(self, member_id=None, image_data=None, token=None, instructor_key=None, **kw):
         if not member_id or not image_data:
             return {"success": False, "error": "member_id and image_data are required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -458,11 +474,11 @@ class KioskController(http.Controller):
     )
     def kiosk_onboarding_action(
         self, member_id=None, action=None, step_key=None, note=None, message=None,
-        token=None, **kw
+        token=None, instructor_key=None, **kw
     ):
         if not member_id or not action:
             return {"success": False, "error": "member_id and action are required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -482,10 +498,10 @@ class KioskController(http.Controller):
         "/kiosk/instructor/belt_ranks",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_belt_ranks(self, member_id=None, program_id=None, token=None, **kw):
+    def kiosk_belt_ranks(self, member_id=None, program_id=None, token=None, instructor_key=None, **kw):
         if not member_id:
             return {"success": False, "error": "member_id is required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -495,10 +511,10 @@ class KioskController(http.Controller):
         "/kiosk/instructor/award_rank",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_award_rank(self, member_id=None, rank_id=None, program_id=None, notes="", token=None, **kw):
+    def kiosk_award_rank(self, member_id=None, rank_id=None, program_id=None, notes="", token=None, instructor_key=None, **kw):
         if not member_id or not rank_id:
             return {"success": False, "error": "member_id and rank_id are required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -514,11 +530,11 @@ class KioskController(http.Controller):
     )
     def kiosk_send_message(
         self, member_id=None, subject=None, message=None,
-        send_sms=True, send_email=True, guardian_member_ids=None, token=None, **kw
+        send_sms=True, send_email=True, guardian_member_ids=None, token=None, instructor_key=None, **kw
     ):
         if not member_id or not message:
             return {"success": False, "error": "member_id and message are required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -539,10 +555,10 @@ class KioskController(http.Controller):
         "/kiosk/instructor/next_rank",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_next_rank(self, member_id=None, program_id=None, token=None, **kw):
+    def kiosk_next_rank(self, member_id=None, program_id=None, token=None, instructor_key=None, **kw):
         if not member_id:
             return {"success": False, "error": "member_id is required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
@@ -552,10 +568,10 @@ class KioskController(http.Controller):
         "/kiosk/instructor/available_sessions",
         type="jsonrpc", auth="public", methods=["POST"], csrf=False,
     )
-    def kiosk_available_sessions(self, member_id=None, token=None, **kw):
+    def kiosk_available_sessions(self, member_id=None, token=None, instructor_key=None, **kw):
         if not member_id:
             return {"success": False, "error": "member_id is required."}
-        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
         if guard is not None:
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()

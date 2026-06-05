@@ -139,7 +139,7 @@ class PinModal extends Component {
         try {
             const result = await jsonPost("/kiosk/auth/pin", { pin: this.state.pin });
             if (result.success) {
-                this.props.onSuccess();
+                this.props.onSuccess(result);
             } else if (result.error === "locked") {
                 const mins = result.retry_in_minutes || 15;
                 this.state.error = `Too many attempts. Locked for ${mins} min.`;
@@ -3077,7 +3077,7 @@ class KioskApp extends Component {
 
             <!-- ── PIN modal ── -->
             <t t-if="state.showPin">
-                <PinModal onClose="() => this.closePin()" onSuccess="() => this.onPinSuccess()"/>
+                <PinModal onClose="() => this.closePin()" onSuccess="(result) => this.onPinSuccess(result)"/>
             </t>
 
             <!-- ── Edit session modal ── -->
@@ -3176,6 +3176,7 @@ class KioskApp extends Component {
 
             // Instructor
             instructorMode: false,
+            instructorKey: null,
             showPin: false,
             sessionDoneError: null,
             reloading: false,
@@ -3554,6 +3555,7 @@ class KioskApp extends Component {
             const profile = await jsonPost("/kiosk/member/profile", {
                 member_id: memberId,
                 session_id: sessionId,
+                instructor_key: this.state.instructorKey,
             });
             this.state.profileMember = profile;
             this.state.profileSessionId = sessionId;
@@ -3628,6 +3630,7 @@ class KioskApp extends Component {
                     session_id: sessionId,
                     member_id: memberId,
                     status,
+                    instructor_key: this.state.instructorKey,
                 });
             }
             this._updateSessionRosterEntry(sessionId, memberId, { attendance_state: status });
@@ -3835,9 +3838,10 @@ class KioskApp extends Component {
     openPin() { this.state.showPin = true; }
     closePin() { this.state.showPin = false; }
 
-    onPinSuccess() {
+    onPinSuccess(result) {
         this.state.showPin = false;
         this.state.instructorMode = true;
+        this.state.instructorKey = result.instructor_key || null;
         this.state.sessionViewManual = false;
         this._applyRecommendedSessionContext(true);
         this._loadVisibleSessionRosters();
