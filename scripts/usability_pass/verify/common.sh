@@ -16,35 +16,14 @@ odoo_shell() {
     -c /etc/odoo/odoo.conf -d "$DB" --no-http 2>/dev/null
 }
 
-psql_db() {
-  local container_id
-  container_id=$(compose ps -q db 2>/dev/null)
-  if [ -n "$container_id" ]; then
-    docker exec -i "$container_id" psql -U odoo -d "$DB" -v ON_ERROR_STOP=1 -tA -c "$1"
-  else
-    compose exec -T db psql -U odoo -d "$DB" -v ON_ERROR_STOP=1 -tA -c "$1"
-  fi
-}
+psql_db() { compose exec -T db psql -U odoo -d "$DB" -v ON_ERROR_STOP=1 -tA -c "$1"; }
 psql_admin() { compose exec -T db psql -U odoo -d postgres -tA -c "$1"; }
 
 stack_up() {
   compose up -d db web >/dev/null 2>&1
   wait_for_http "$BASE/web/login" "${1:-180}"
-  # After cold restart, give containers time to fully settle
-  echo "[$(date +%H:%M:%S)] stack_up: waiting for DB settlement..."
-  sleep 20
-  # Verify containers are actually running and healthy
-  local retries=5
-  while [ $retries -gt 0 ]; do
-    if compose exec -T db pg_isready -U odoo >/dev/null 2>&1; then
-      echo "[$(date +%H:%M:%S)] stack_up: DB ready"
-      return 0
-    fi
-    echo "[$(date +%H:%M:%S)] stack_up: DB not ready, waiting..."
-    sleep 3
-    retries=$((retries - 1))
-  done
-  echo "[$(date +%H:%M:%S)] stack_up: WARNING - DB readiness check failed"
+  # Give Docker exec time to stabilize (workaround for exec timing issues)
+  sleep 10
 }
 
 wait_for_http() {
@@ -105,15 +84,12 @@ assert_sql_gte() { # assert_sql_gte "<description>" "<sql returning one int>" <m
 }
 
 assert_sql_eq() { # assert_sql_eq "<description>" "<sql returning one int>" <expected>
-  local desc="$1" sql="$2" want="$3" val err
-  val=$(psql_db "$sql" 2>&1 | tee /tmp/sql_debug.txt | tr -d '[:space:]')
-  err=$(cat /tmp/sql_debug.txt 2>/dev/null)
+  local desc="$1" sql="$2" want="$3" val
+  val=$(psql_db "$sql" 2>/dev/null | tr -d '[:space:]')
   if [ "$val" = "$want" ]; then
     echo "PASS: $desc ($val == $want)"
   else
-    echo "FAIL: $desc (got '${val:-ERR}', want $want)"
-    [ -z "$val" ] && echo "  SQL error: $(echo "$err" | head -c 200)"
-    GATE_FAILED=1
+    echo "FAIL: $desc (got '${val:-ERR}', want $want)"; GATE_FAILED=1
   fi
 }
 
