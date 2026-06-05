@@ -1,3 +1,1 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_dojo_social_post,dojo.social.post user,model_dojo_social_post,base.group_user,1,1,1,1
-access_dojo_social_account,dojo.social.account user,model_dojo_social_account,base.group_user,1,1,1,1

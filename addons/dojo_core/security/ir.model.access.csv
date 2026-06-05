@@ -8,7 +8,7 @@ access_dojo_martial_art_style_admin,dojo.martial.art.style admin,model_dojo_mart
 access_dojo_martial_art_style_instructor,dojo.martial.art.style instructor,model_dojo_martial_art_style,dojo_core.group_dojo_instructor,1,0,0,0
 access_dojo_emergency_contact_admin,dojo.emergency.contact admin,model_dojo_emergency_contact,dojo_core.group_dojo_admin,1,1,1,1
 access_dojo_emergency_contact_instructor,dojo.emergency.contact instructor,model_dojo_emergency_contact,dojo_core.group_dojo_instructor,1,0,0,0
-access_dojo_emergency_contact_parent,dojo.emergency.contact parent,model_dojo_emergency_contact,dojo_core.group_dojo_parent_student,1,1,1,1
+access_dojo_emergency_contact_parent,dojo.emergency.contact parent,model_dojo_emergency_contact,dojo_core.group_dojo_parent_student,1,1,1,0
 access_dojo_program_admin,dojo.program admin,model_dojo_program,dojo_core.group_dojo_admin,1,1,1,1
 access_dojo_program_instructor,dojo.program instructor,model_dojo_program,dojo_core.group_dojo_instructor,1,0,0,0
 access_dojo_class_template_admin,dojo.class.template admin,model_dojo_class_template,dojo_core.group_dojo_admin,1,1,1,1
@@ -22,7 +22,7 @@ access_dojo_class_enrollment_instructor,dojo.class.enrollment instructor,model_d
 access_dojo_class_enrollment_parent,dojo.class.enrollment parent,model_dojo_class_enrollment,dojo_core.group_dojo_parent_student,1,1,0,0
 access_dojo_auto_enroll_admin,dojo.course.auto.enroll admin,model_dojo_course_auto_enroll,dojo_core.group_dojo_admin,1,1,1,1
 access_dojo_auto_enroll_instructor,dojo.course.auto.enroll instructor,model_dojo_course_auto_enroll,dojo_core.group_dojo_instructor,1,1,1,0
-access_dojo_auto_enroll_parent,dojo.course.auto.enroll parent,model_dojo_course_auto_enroll,dojo_core.group_dojo_parent_student,1,1,1,1
+access_dojo_auto_enroll_parent,dojo.course.auto.enroll parent,model_dojo_course_auto_enroll,dojo_core.group_dojo_parent_student,1,1,0,0
 access_dojo_attendance_log_admin,dojo.attendance.log admin,model_dojo_attendance_log,dojo_core.group_dojo_admin,1,1,1,1
 access_dojo_attendance_log_instructor,dojo.attendance.log instructor,model_dojo_attendance_log,dojo_core.group_dojo_instructor,1,1,1,0
 access_dojo_attendance_log_parent,dojo.attendance.log parent,model_dojo_attendance_log,dojo_core.group_dojo_parent_student,1,0,0,0
@@ -42,5 +42,7 @@ access_dojo_belt_promotion_wizard_admin,dojo.belt.promotion.wizard admin,model_d
 access_dojo_belt_promotion_wizard_belt_manager,dojo.belt.promotion.wizard belt_manager,model_dojo_belt_promotion_wizard,dojo_core.group_dojo_belt_manager,1,1,1,0
 access_dojo_belt_promotion_wizard_line_admin,dojo.belt.promotion.wizard.line admin,model_dojo_belt_promotion_wizard_line,dojo_core.group_dojo_admin,1,1,1,1
 access_dojo_belt_promotion_wizard_line_belt_manager,dojo.belt.promotion.wizard.line belt_manager,model_dojo_belt_promotion_wizard_line,dojo_core.group_dojo_belt_manager,1,1,1,0
-access_dojo_attendance_quick_wizard,dojo.attendance.quick.wizard user,model_dojo_attendance_quick_wizard,base.group_user,1,1,1,0
-access_dojo_attendance_quick_line,dojo.attendance.quick.line user,model_dojo_attendance_quick_line,base.group_user,1,1,1,1
+access_dojo_attendance_quick_wizard_admin,dojo.attendance.quick.wizard admin,model_dojo_attendance_quick_wizard,dojo_core.group_dojo_admin,1,1,1,1
+access_dojo_attendance_quick_wizard_instructor,dojo.attendance.quick.wizard instructor,model_dojo_attendance_quick_wizard,dojo_core.group_dojo_instructor,1,1,1,1
+access_dojo_attendance_quick_line_admin,dojo.attendance.quick.line admin,model_dojo_attendance_quick_line,dojo_core.group_dojo_admin,1,1,1,1
+access_dojo_attendance_quick_line_instructor,dojo.attendance.quick.line instructor,model_dojo_attendance_quick_line,dojo_core.group_dojo_instructor,1,1,1,1

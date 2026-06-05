@@ -1,4 +1,1 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_dojo_member_user,dojo.member user,model_dojo_member,base.group_user,1,1,1,1
-access_dojo_instructor_profile_user,dojo.instructor.profile user,model_dojo_instructor_profile,base.group_user,1,1,1,1
-access_dojo_martial_art_style_user,dojo.martial.art.style user,model_dojo_martial_art_style,base.group_user,1,1,1,1

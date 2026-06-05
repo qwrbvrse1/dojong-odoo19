@@ -1,6 +1,1 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_dojo_program_user,dojo.program user,model_dojo_program,base.group_user,1,1,1,1
-access_dojo_class_template_user,dojo.class.template user,model_dojo_class_template,base.group_user,1,1,1,1
-access_dojo_class_session_user,dojo.class.session user,model_dojo_class_session,base.group_user,1,1,1,1
-access_dojo_class_enrollment_user,dojo.class.enrollment user,model_dojo_class_enrollment,base.group_user,1,1,1,1
-access_dojo_course_auto_enroll_user,dojo.course.auto.enroll user,model_dojo_course_auto_enroll,base.group_user,1,1,1,1

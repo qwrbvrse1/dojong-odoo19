@@ -1,11 +1,1 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_dojo_migration_log,dojo.migration.log user,model_dojo_migration_log,base.group_user,1,1,1,1
-access_dojo_migration_log_line,dojo.migration.log.line user,model_dojo_migration_log_line,base.group_user,1,1,1,1
-access_dojo_migration_import_attendance,dojo.migration.import.attendance user,model_dojo_migration_import_attendance,base.group_user,1,1,1,1
-access_dojo_migration_import_belt_rank_defs,dojo.migration.import.belt.rank.defs user,model_dojo_migration_import_belt_rank_defs,base.group_user,1,1,1,1
-access_dojo_migration_import_members,dojo.migration.import.members user,model_dojo_migration_import_members,base.group_user,1,1,1,1
-access_dojo_migration_import_member_stripes,dojo.migration.import.member.stripes user,model_dojo_migration_import_member_stripes,base.group_user,1,1,1,1
-access_dojo_migration_import_odoo_csv,dojo.migration.import.odoo.csv user,model_dojo_migration_import_odoo_csv,base.group_user,1,1,1,1
-access_dojo_migration_import_programs,dojo.migration.import.programs user,model_dojo_migration_import_programs,base.group_user,1,1,1,1
-access_dojo_migration_import_ranks,dojo.migration.import.ranks user,model_dojo_migration_import_ranks,base.group_user,1,1,1,1
-access_dojo_migration_import_subscriptions,dojo.migration.import.subscriptions user,model_dojo_migration_import_subscriptions,base.group_user,1,1,1,1
