@@ -325,6 +325,7 @@ def seed_demo_data():
     enroll_members = [demo1, demo2] + [m for m in seeded_members if m not in [demo1, demo2]][:5]
     enroll_members = [m for m in enroll_members if m]  # Filter None
 
+    pricelist = env["product.pricelist"].sudo().search([], limit=1) or env["product.pricelist"].sudo().create({"name": "Demo Pricelist"})
     subscription_map = {}
     for idx, member in enumerate(enroll_members):
         existing = Subscription.search([("member_id", "=", member.id)], limit=1)
@@ -335,6 +336,7 @@ def seed_demo_data():
                 "name": f"Subscription for {member.name}",
                 "member_id": member.id,
                 "plan_id": plan.id,
+                "pricelist_id": pricelist.id,
                 # State is computed - will default to appropriate value
             })
             subscription_map[member.id] = sub
