@@ -509,3 +509,42 @@ Unknown directives or unused attributes: {'t-esc'} from <t t-esc="item['member']
 - `<t t-esc="item['missing_steps']"/>` → `<t t-out="item['missing_steps']"/>`
 
 **Files:** `addons/dojo_members_portal/views/portal_layout.xml`
+
+---
+
+## Corrective Step 3 (2026-06-05 orchestrator gate failure)
+
+**Issue:** S1-S5 gates fail when run immediately after cold restart. psql commands return HTML or 'ERR'.
+
+**Root cause:** Docker exec commands unreliable in first ~60-90s after container start, even though web returns 200.
+
+**Fix:** Add explicit 90-second settling delay in s6.sh between web-up confirmation and S1-S5 gate execution.
+
+**Changes:**
+- `scripts/usability_pass/verify/s6.sh` line 39 (after web confirmed up, before gate loop):
+  ```bash
+  # Give Docker 90s to fully settle before running exec-heavy gates
+  echo "INFO: waiting 90s for Docker to settle post-restart"
+  sleep 90
+  ```
+
+**Reasoning:** Web service can respond while Docker daemon is still stabilizing exec infrastructure. Explicit delay allows full stack settlement before SQL-heavy gate operations.
+
+---
+
+## Corrective Step 4 (2026-06-05 retry logic for psql_db)
+
+**Issue:** 90s delay insufficient - psql_db still returns HTML intermittently, causing subsequent commands to fail with "file name too long" errors.
+
+**Root cause:** Docker exec timing issue persists even with delays. HTML responses from failed exec pollute command chains.
+
+**Fix:** Add retry logic to `psql_db` function to detect HTML responses and retry with backoff.
+
+**Changes:**
+- `scripts/usability_pass/verify/common.sh` psql_db function:
+  - Detect HTML responses (<!DOCTYPE or <html tags)
+  - Retry up to 5 times with 5s delay between attempts
+  - Return 'ERR' only after all retries exhausted
+  - Prevents HTML from polluting subsequent command chains
+
+**Reasoning:** Since exec timing is unreliable, detect failures and retry rather than relying solely on upfront delays.

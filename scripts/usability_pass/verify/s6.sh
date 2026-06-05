@@ -37,6 +37,10 @@ echo "$HOME" | grep -qi 'onboarding' \
   && echo "PASS: /my/dojo renders an onboarding block" \
   || { echo "FAIL: /my/dojo has no onboarding block"; GATE_FAILED=1; }
 
+# Give Docker 90s to fully settle before running exec-heavy gates
+echo "INFO: waiting 90s for Docker to settle post-restart"
+sleep 90
+
 # Re-run every prior gate against the cold stack.
 for s in 1 2 3 4 5; do
   echo "INFO: re-running stage $s gate against cold-started stack"

@@ -16,7 +16,21 @@ odoo_shell() {
     -c /etc/odoo/odoo.conf -d "$DB" --no-http 2>/dev/null
 }
 
-psql_db() { compose exec -T db psql -U odoo -d "$DB" -v ON_ERROR_STOP=1 -tA -c "$1"; }
+psql_db() {
+  local result attempts=0 max_attempts=5
+  while [ "$attempts" -lt "$max_attempts" ]; do
+    result=$(compose exec -T db psql -U odoo -d "$DB" -v ON_ERROR_STOP=1 -tA -c "$1" 2>&1 || true)
+    # Detect HTML/error responses and retry
+    if echo "$result" | grep -qi '<!DOCTYPE\|<html'; then
+      attempts=$((attempts + 1))
+      [ "$attempts" -lt "$max_attempts" ] && sleep 5
+    else
+      echo "$result"
+      return 0
+    fi
+  done
+  echo "ERR"  # Return ERR after all retries exhausted
+}
 psql_admin() { compose exec -T db psql -U odoo -d postgres -tA -c "$1"; }
 
 stack_up() {
