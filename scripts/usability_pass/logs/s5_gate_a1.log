@@ -1,0 +1,13 @@
+PASS: dojo_onboarding_record.step_trial_booked exists (1 >= 1)
+PASS: dojo_onboarding_record.step_waiver_signed exists (1 >= 1)
+PASS: dojo_onboarding_record.step_intro_completed exists (1 >= 1)
+PASS: dojo_onboarding_record.step_membership_activated exists (1 >= 1)
+PASS: dojo_onboarding_record.step_uniform_issued exists (1 >= 1)
+PASS: dojo_member.converted_from_trial exists (1 >= 1)
+PASS: dojo_member.trial_converted_on exists (1 >= 1)
+PASS: new record defaults in_progress; waiver derivation works
+PASS: waiver derivation flips step_waiver_signed
+PASS: action_set_active from trial sets conversion fields
+PASS: kiosk complete_step accepts lifecycle key intro_completed
+PASS: onboarding wizard no longer hard-codes state='completed'
+GATE: PASSED

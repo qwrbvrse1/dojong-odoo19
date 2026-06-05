@@ -1,0 +1,263 @@
+INFO: cold restart
+PASS: web back up after cold restart
+PASS: /my/dojo/onboarding/summary returns steps for parent
+PASS: onboarding summary includes progress_pct
+PASS: student onboarding summary returns 200
+FAIL: /my/dojo has no onboarding block
+INFO: re-running stage 1 gate against cold-started stack
+PASS: no base.group_user W/C/U ACL rows on dojo.* models (0 == 0)
+PASS: parent group has no create/unlink on enrollment + auto-enroll (0 == 0)
+PASS: parent group has no unlink on emergency contacts (0 == 0)
+PASS: probe@qa.local authenticates
+PASS: probe user blocked from dojo.member (AccessError)
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+browserType.launch: Executable doesn't exist at /opt/worktrees/dojong-odoo19/core-dojo-realignment/
+        
+        
+        
+        
+        
+        <html>
+            <head>
+                <title>Internal Server Error</title>
+
+                <link rel="stylesheet" href="/web/static/lib/bootstrap/dist/css/bootstrap.css"/>
+                <script src="/web/static/lib/jquery/jquery.js" type="text/javascript"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/util/index.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/dom/data.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/dom/event-handler.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/dom/manipulator.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/dom/selector-engine.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/util/config.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/base-component.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/collapse.js"></script>
+                <style>
+                    html {
+                        font-size: 14px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div id="wrapwrap">
+                    <header>
+                        <div class="navbar navbar-expand-md navbar-light bg-light">
+                            <div class="container">
+                                <div class="collapse navbar-collapse navbar-top-collapse">
+                                    <ul class="navbar-nav ms-auto" id="top_menu">
+                                        <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+                                        <li class="nav-item"><a href="javascript: window.history.back()" class="nav-link">Back</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+                    <main>
+                        <div id="error_message" class="oe_structure">
+                            <h2 class="container mt32">500: Internal Server Error</h2>
+                        </div>
+
+                    </main>
+                </div>
+            </body>
+        </html>/.cache/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-linux64/chrome-headless-shell
+╔════════════════════════════════════════════════════════════╗
+║ Looks like Playwright was just installed or updated.       ║
+║ Please run the following command to download new browsers: ║
+║                                                            ║
+║     npx playwright install                                 ║
+║                                                            ║
+║ <3 Playwright Team                                         ║
+╚════════════════════════════════════════════════════════════╝
+    at /home/ainzellan/usability_pass/verify/admin_smoke.mjs:11:32
+
+Node.js v22.22.3
+FAIL: browser smoke: admin UI loads, no JS errors
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+browserType.launch: Executable doesn't exist at /opt/worktrees/dojong-odoo19/core-dojo-realignment/
+        
+        
+        
+        
+        
+        <html>
+            <head>
+                <title>Internal Server Error</title>
+
+                <link rel="stylesheet" href="/web/static/lib/bootstrap/dist/css/bootstrap.css"/>
+                <script src="/web/static/lib/jquery/jquery.js" type="text/javascript"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/util/index.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/dom/data.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/dom/event-handler.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/dom/manipulator.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/dom/selector-engine.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/util/config.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/base-component.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/collapse.js"></script>
+                <style>
+                    html {
+                        font-size: 14px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div id="wrapwrap">
+                    <header>
+                        <div class="navbar navbar-expand-md navbar-light bg-light">
+                            <div class="container">
+                                <div class="collapse navbar-collapse navbar-top-collapse">
+                                    <ul class="navbar-nav ms-auto" id="top_menu">
+                                        <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+                                        <li class="nav-item"><a href="javascript: window.history.back()" class="nav-link">Back</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+                    <main>
+                        <div id="error_message" class="oe_structure">
+                            <h2 class="container mt32">500: Internal Server Error</h2>
+                        </div>
+
+                    </main>
+                </div>
+            </body>
+        </html>/.cache/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-linux64/chrome-headless-shell
+╔════════════════════════════════════════════════════════════╗
+║ Looks like Playwright was just installed or updated.       ║
+║ Please run the following command to download new browsers: ║
+║                                                            ║
+║     npx playwright install                                 ║
+║                                                            ║
+║ <3 Playwright Team                                         ║
+╚════════════════════════════════════════════════════════════╝
+    at /home/ainzellan/usability_pass/verify/admin_smoke.mjs:11:32
+
+Node.js v22.22.3
+FAIL: browser smoke: instructor UI loads, no JS errors
+FAIL: parent portal /my/dojo returned 500
+GATE: FAILED
+FAIL: stage 1 gate after cold restart
+INFO: re-running stage 2 gate against cold-started stack
+PASS: kiosk page loads (HTTP 200)
+PASS: pre-PIN profile omits "date_of_birth"
+PASS: pre-PIN profile omits "email"
+PASS: pre-PIN profile omits "phone"
+PASS: pre-PIN profile omits "household"
+PASS: pre-PIN profile omits "guardians"
+PASS: pre-PIN profile omits "credit_balance"
+PASS: pre-PIN profile omits "billing_failure_count"
+PASS: pre-PIN profile omits "workflow_status"
+PASS: pre-PIN profile still returns the minimal card (name present)
+PASS: /kiosk/auth/pin returns instructor_key
+PASS: instructor profile includes workflow_status
+PASS: instructor route without key returns instructor_auth_required
+PASS: action_rotate_token() changes the kiosk token
+PASS: kiosk mutations write dojo.kiosk.action.log rows
+GATE: PASSED
+PASS: stage 2 gate (cold)
+INFO: re-running stage 3 gate against cold-started stack
+PASS: dojo.member search view exists and references last_name (1 >= 1)
+PASS: dojo.member list view references last_name (1 >= 1)
+PASS: search arch offers a Last Name group_by (1 >= 1)
+PASS: addons/dojo_instructor_dashboard removed
+PASS: no broken ir_module_module row for dojo_instructor_dashboard (0 == 0)
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+browserType.launch: Executable doesn't exist at /opt/worktrees/dojong-odoo19/core-dojo-realignment/
+        
+        
+        
+        
+        
+        <html>
+            <head>
+                <title>Internal Server Error</title>
+
+                <link rel="stylesheet" href="/web/static/lib/bootstrap/dist/css/bootstrap.css"/>
+                <script src="/web/static/lib/jquery/jquery.js" type="text/javascript"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/util/index.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/dom/data.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/dom/event-handler.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/dom/manipulator.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/dom/selector-engine.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/util/config.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/base-component.js"></script>
+                <script type="text/javascript" src="/web/static/lib/bootstrap/js/dist/collapse.js"></script>
+                <style>
+                    html {
+                        font-size: 14px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div id="wrapwrap">
+                    <header>
+                        <div class="navbar navbar-expand-md navbar-light bg-light">
+                            <div class="container">
+                                <div class="collapse navbar-collapse navbar-top-collapse">
+                                    <ul class="navbar-nav ms-auto" id="top_menu">
+                                        <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+                                        <li class="nav-item"><a href="javascript: window.history.back()" class="nav-link">Back</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+                    <main>
+                        <div id="error_message" class="oe_structure">
+                            <h2 class="container mt32">500: Internal Server Error</h2>
+                        </div>
+
+                    </main>
+                </div>
+            </body>
+        </html>/.cache/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-linux64/chrome-headless-shell
+╔════════════════════════════════════════════════════════════╗
+║ Looks like Playwright was just installed or updated.       ║
+║ Please run the following command to download new browsers: ║
+║                                                            ║
+║     npx playwright install                                 ║
+║                                                            ║
+║ <3 Playwright Team                                         ║
+╚════════════════════════════════════════════════════════════╝
+    at /home/ainzellan/usability_pass/verify/admin_smoke.mjs:11:32
+
+Node.js v22.22.3
+FAIL: browser smoke: admin UI loads, no JS errors
+GATE: FAILED
+FAIL: stage 3 gate after cold restart
+INFO: re-running stage 4 gate against cold-started stack
+PASS: auto-close ir.cron exists (1 >= 1)
+PASS: _cron_auto_close_sessions closes ended sessions and resolves pending to absent
+PASS: pending enrollment resolved to absent by the cron
+PASS: close endpoint gated behind instructor_key (param accepted, auth enforced)
+PASS: auto-close grace config parameter exists (1 >= 1)
+GATE: PASSED
+PASS: stage 4 gate (cold)
+INFO: re-running stage 5 gate against cold-started stack
+PASS: dojo_onboarding_record.step_trial_booked exists (1 >= 1)
+PASS: dojo_onboarding_record.step_waiver_signed exists (1 >= 1)
+PASS: dojo_onboarding_record.step_intro_completed exists (1 >= 1)
+PASS: dojo_onboarding_record.step_membership_activated exists (1 >= 1)
+PASS: dojo_onboarding_record.step_uniform_issued exists (1 >= 1)
+PASS: dojo_member.converted_from_trial exists (1 >= 1)
+PASS: dojo_member.trial_converted_on exists (1 >= 1)
+PASS: new record defaults in_progress; waiver derivation works
+PASS: waiver derivation flips step_waiver_signed
+PASS: action_set_active from trial sets conversion fields
+PASS: kiosk complete_step accepts lifecycle key intro_completed
+PASS: onboarding wizard no longer hard-codes state='completed'
+GATE: PASSED
+PASS: stage 5 gate (cold)
+PASS: USABILITY_PASS_RUNBOOK.md exists
+PASS: runbook documents instructor_key
+PASS: runbook documents token rotation
+GATE: FAILED

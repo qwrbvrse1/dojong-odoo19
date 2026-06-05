@@ -1,0 +1,34 @@
+Perfect! Let me create a quick summary of what was accomplished:
+
+## Stage 5 Complete ✓
+
+**Gate Result:** `GATE: PASSED`
+
+**Changes Implemented:**
+
+1. **`dojo.onboarding.record` model** — Added 5 new lifecycle step boolean fields (`step_trial_booked`, `step_waiver_signed`, `step_intro_completed`, `step_membership_activated`, `step_uniform_issued`)
+
+2. **`_sync_derived_steps()` method** — Created new method that derives lifecycle step states from member data (waiver status, membership state)
+
+3. **Progress computation** — Updated `progress_pct` and added `missing_steps` to compute over the lifecycle step set instead of legacy data-entry steps
+
+4. **Wizard update** — Changed `dojo_onboarding_wizard._create_student_member()` to create records in `'in_progress'` state instead of hard-coding `'completed'`, then call `_sync_derived_steps()`
+
+5. **Trial conversion tracking** — Added `converted_from_trial` (Boolean) and `trial_converted_on` (Datetime) fields to `dojo.member`
+
+6. **`action_set_active()` enhancement** — Updated to detect trial→active transitions and set both conversion fields
+
+7. **Kiosk service update** — Extended `_ONBOARDING_STEP_FIELDS` dict to include all 5 new lifecycle step keys alongside the legacy data-entry steps
+
+8. **Migration hook** — Added `post_init_hook` to grandfather existing completed records and sync derived steps for all existing onboarding records
+
+**All gate assertions passed:**
+- ✓ All 5 lifecycle boolean columns exist in `dojo_onboarding_record`
+- ✓ Both trial conversion columns exist in `dojo_member`
+- ✓ New records default to `in_progress`
+- ✓ `_sync_derived_steps()` correctly derives `step_waiver_signed` from member waiver fields
+- ✓ `action_set_active()` from trial state sets both conversion fields
+- ✓ Kiosk `perform_onboarding_action` accepts new lifecycle step key `intro_completed`
+- ✓ Wizard no longer contains hard-coded `'state': 'completed'`
+
+**Commit:** `6f72edb upass S5: onboarding lifecycle steps + trial conversion`
