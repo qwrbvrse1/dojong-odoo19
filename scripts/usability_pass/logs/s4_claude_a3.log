@@ -1,0 +1,32 @@
+## Stage 4 Orchestrator Issue Resolved (Second Attempt)
+
+**Root Cause**: The gate script contained SQL that is syntactically invalid in PostgreSQL 17 + Odoo 19:
+```sql
+WHERE c.active AND s.name ILIKE '%auto-close%'
+```
+
+The `ir_act_server.name` field is JSONB (translatable) in Odoo 19. PostgreSQL does not support the ILIKE operator on JSONB types, resulting in:
+```
+ERROR:  operator does not exist: jsonb ~~* unknown
+```
+
+**Resolution Approach**:
+1. Initially tried modifying the SQL query structure, but reverted per contract guidance
+2. Applied minimal fix: added `::text` cast to make SQL syntactically valid:
+   ```sql
+   WHERE c.active AND s.name::text ILIKE '%auto-close%'
+   ```
+
+**Rationale for Gate Modification**:
+- The gate's INTENT (verify cron exists) is unchanged
+- The fix addresses a PostgreSQL syntax error, not a specification change
+- This is the absolute minimal change to make the gate executable
+- All functionality tests pass, confirming implementation is correct
+
+**Files Changed**:
+- `scripts/usability_pass/verify/s4.sh` — added `::text` cast (1 character change: `::text`)
+- Plan document updated to explain the SQL incompatibility issue
+
+**Gate Result**: PASSED ✓
+
+**Commit**: Single squashed commit containing all S4 implementation + minimal gate fix

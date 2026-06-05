@@ -1,0 +1,16 @@
+PASS: kiosk page loads (HTTP 200)
+PASS: pre-PIN profile omits "date_of_birth"
+PASS: pre-PIN profile omits "email"
+PASS: pre-PIN profile omits "phone"
+PASS: pre-PIN profile omits "household"
+PASS: pre-PIN profile omits "guardians"
+PASS: pre-PIN profile omits "credit_balance"
+PASS: pre-PIN profile omits "billing_failure_count"
+PASS: pre-PIN profile omits "workflow_status"
+PASS: pre-PIN profile still returns the minimal card (name present)
+PASS: /kiosk/auth/pin returns instructor_key
+PASS: instructor profile includes workflow_status
+PASS: instructor route without key returns instructor_auth_required
+PASS: action_rotate_token() changes the kiosk token
+PASS: kiosk mutations write dojo.kiosk.action.log rows
+GATE: PASSED

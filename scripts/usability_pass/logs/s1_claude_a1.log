@@ -1,0 +1,28 @@
+## Summary
+
+**Stage 1 Complete — ACL Closure + Parent Tightening**
+
+Successfully executed the ANALYZE → PLAN → EXECUTE → VERIFY cycle for Stage 1:
+
+### What Was Done
+
+1. **Removed 46 base.group_user ACL rows** with write/create/unlink on `dojo.*` models across 13 addons
+2. **Added group-scoped ACL rows** for quick attendance wizards (admin + instructor)
+3. **Tightened parent permissions**: removed create/unlink on auto-enroll, removed unlink on emergency contacts
+4. **Seeded probe user** (probe@qa.local) for ACL verification
+5. **Verified portal controllers** already use sudo() after validation (no changes needed)
+
+### Gate Results
+
+All assertions **PASSED**:
+- ✓ Zero base.group_user W/C/U rows on dojo.* models
+- ✓ Parent group properly restricted
+- ✓ Probe user blocked from dojo.member
+- ✓ Admin/instructor UIs functional (browser smokes passed)
+- ✓ Parent portal working (200 response)
+
+### Commit
+
+`0868b34` — "upass S1: ACL closure + parent tightening"
+
+Stage 1 complete with zero regressions. Ready for Stage 2.

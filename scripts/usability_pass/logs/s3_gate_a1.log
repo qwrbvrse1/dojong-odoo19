@@ -1,0 +1,8 @@
+PASS: dojo.member search view exists and references last_name (1 >= 1)
+PASS: dojo.member list view references last_name (1 >= 1)
+PASS: search arch offers a Last Name group_by (1 >= 1)
+PASS: addons/dojo_instructor_dashboard removed
+PASS: no broken ir_module_module row for dojo_instructor_dashboard (0 == 0)
+SMOKE PASSED for admin@demo.com (screenshot in /tmp)
+PASS: browser smoke: admin UI loads, no JS errors
+GATE: PASSED

@@ -1,0 +1,12 @@
+PASS: database odoo19 exists
+INFO: pg_trgm ensured
+INFO: running module upgrade across all modules this pass touches
+PASS: upgrade clean (rc=0, no ERROR/CRITICAL/Traceback)
+PASS: no stuck modules
+PASS: web responds 200 on /web/login
+PASS: admin@demo.com logs in
+PASS: instructor1@demo.com logs in
+PASS: demo1@demo.com logs in
+PASS: demo2@demo.com logs in
+PASS: DemoParent@demo.com logs in
+GATE: PASSED

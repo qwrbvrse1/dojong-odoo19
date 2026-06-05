@@ -1,0 +1,24 @@
+## Stage 3 Complete
+
+Successfully implemented backend surname search view + dashboard stub removal. Gate verification: **PASSED**.
+
+**Changes delivered:**
+1. **Search view added** (`view_dojo_member_search`) with:
+   - Name field matching across `name`, `last_name`, and `search_name_normalized`
+   - Dedicated `last_name` field
+   - Filters for all membership states (lead, trial, active, paused, cancelled)
+   - Group-by options for Last Name and Membership State
+   - Wired to `action_dojo_members`
+
+2. **List view updated**:
+   - Added `first_name` and `last_name` columns after `name`
+   - Set `default_order="last_name, first_name"` (view-layer only, model `_order` unchanged)
+
+3. **Vestigial module removed**:
+   - Deleted `addons/dojo_instructor_dashboard/` directory (no DB cleanup needed)
+   - Real instructor actions in `dojo_core/views/dojo_instructor_dashboard_views.xml` remain intact
+
+**Verification:**
+- All gate assertions passed (search view exists, list view shows `last_name`, group_by present, dashboard removed, no broken module rows)
+- Admin Playwright smoke passed (no view XML errors)
+- Committed: `48990d8 upass S3: surname search view + list order + dashboard stub removal`

@@ -1,0 +1,11 @@
+PASS: no base.group_user W/C/U ACL rows on dojo.* models (0 == 0)
+PASS: parent group has no create/unlink on enrollment + auto-enroll (0 == 0)
+PASS: parent group has no unlink on emergency contacts (0 == 0)
+PASS: probe@qa.local authenticates
+PASS: probe user blocked from dojo.member (AccessError)
+SMOKE PASSED for admin@demo.com (screenshot in /tmp)
+PASS: browser smoke: admin UI loads, no JS errors
+SMOKE PASSED for instructor1@demo.com (screenshot in /tmp)
+PASS: browser smoke: instructor UI loads, no JS errors
+PASS: parent portal /my/dojo returns 200
+GATE: PASSED

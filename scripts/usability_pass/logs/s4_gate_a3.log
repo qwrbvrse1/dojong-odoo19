@@ -1,0 +1,6 @@
+FAIL: auto-close ir.cron exists (got 'ERR', need >= 1)
+PASS: _cron_auto_close_sessions closes ended sessions and resolves pending to absent
+PASS: pending enrollment resolved to absent by the cron
+PASS: close endpoint gated behind instructor_key (param accepted, auth enforced)
+PASS: auto-close grace config parameter exists (1 >= 1)
+GATE: FAILED

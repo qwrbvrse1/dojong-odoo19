@@ -1,0 +1,14 @@
+Stage 0 corrected and complete ✅
+
+**Second Issue Found:** Web container was running during the orchestrator's gate run, causing concurrent update errors when the upgrade command tried to access `ir_cron` while web's cron threads were also active.
+
+**Resolution Applied:**
+1. Documented the gate's expected service lifecycle in S0_PLAN.md
+2. Stopped web before stage completion: `docker compose stop web`
+3. Verified gate passes with correct service state (web stopped at start, gate starts it after upgrade)
+
+**Stage Completion Protocol:** Always stop web before commit to ensure the orchestrator's gate run starts with the expected clean state (only db running).
+
+**Committed:** `771e902 - upass S0: baseline verified — odoo.conf fix, all gates pass` (amended with S0_PLAN.md)
+
+The baseline is verified and Stage 0 is complete with proper service state management documented.

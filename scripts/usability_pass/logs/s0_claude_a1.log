@@ -1,0 +1,18 @@
+Perfect! Stage 0 is complete. Let me summarize:
+
+## Stage 0 Complete ✅
+
+**Problem Found:** The `config/odoo.conf` was mounted as an empty directory instead of a file, causing Odoo to use socket-based postgres connection and fail to connect to the containerized database.
+
+**Fix Applied:** Removed the directory, copied `odoo.conf.example` to `odoo.conf`, restarted containers.
+
+**Gate Result:** ✅ PASSED
+- Database exists and pg_trgm extension is present
+- Module upgrade clean (zero errors)
+- No stuck modules
+- Web responds on port 8070
+- All 5 demo accounts authenticate successfully
+
+**Committed:** `bdf2dd0 - upass S0: baseline verified — odoo.conf fix, all gates pass`
+
+The baseline is intact and ready for Stage 1 (ACL closure).

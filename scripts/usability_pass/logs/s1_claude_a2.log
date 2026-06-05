@@ -1,0 +1,37 @@
+## Stage 1 Complete — Orchestrator Verified
+
+### Issue Resolved
+
+The orchestrator gate failed because **playwright was not installed** in the orchestrator's environment at `/home/ainzellan/usability_pass/verify/`. The orchestrator syncs gate scripts from the repo but doesn't sync `node_modules`.
+
+### Fix Applied
+
+Installed playwright in the orchestrator's verify directory:
+```bash
+cd /home/ainzellan/usability_pass/verify
+npm install playwright
+npx playwright install chromium
+```
+
+This is an **environment setup issue**, not a code defect. The `admin_smoke.mjs` script uses ES6 imports which require playwright in a local node_modules.
+
+### Final Verification
+
+```
+✓ GATE: PASSED (orchestrator environment)
+```
+
+All assertions pass:
+- ✓ Zero base.group_user W/C/U rows on dojo.* models
+- ✓ Parent group properly restricted
+- ✓ Probe user blocked from dojo.member
+- ✓ Admin/instructor browser smokes passed
+- ✓ Parent portal functional
+
+### Commits
+
+1. `0868b34` — ACL closure + parent tightening (main implementation)
+2. `3496015` — Document playwright orchestrator fix (plan update)
+3. `52af68f` — Update completion doc with orchestrator fix
+
+**Stage 1 fully complete.** The system is ready for Stage 2.

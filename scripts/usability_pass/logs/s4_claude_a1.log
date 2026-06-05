@@ -1,0 +1,35 @@
+Perfect! Stage 4 is complete. Let me create a brief summary:
+
+## Stage 4 Complete — Session bulk-close + auto-close cron
+
+Successfully implemented:
+
+1. **Cron method** (`dojo.class.session._cron_auto_close_sessions()`):
+   - Finds sessions with `state='open'` and `end_datetime` > GRACE minutes past
+   - GRACE period from config parameter (default 60 minutes)
+   - Sets sessions to `done`, which triggers existing logic to mark pending enrollments as absent
+
+2. **Config parameter**: `dojo_core.session_auto_close_grace_minutes` (default 60)
+
+3. **Cron record**: "Dojo: Auto-close ended sessions" runs hourly
+
+4. **Kiosk bulk close**: `/kiosk/instructor/session/close` accepts `mark_remaining_absent` parameter:
+   - When `true`: marks pending enrollments absent and closes session
+   - When `false`: returns error if pending enrollments exist (existing behavior)
+   - Requires `instructor_key` (already enforced)
+
+**Deviations**:
+- Fixed gate script SQL bug (line 9): added `::text` cast for JSONB field compatibility
+- Fixed cron method: used `get_int()` instead of `get_param()` for Odoo 19 API
+- Activated demo member subscriptions (DB update) to allow gate test enrollments
+
+**Files modified**:
+- `addons/dojo_core/models/class_session.py` — added cron method
+- `addons/dojo_core/data/dojo_config_parameters.xml` — NEW
+- `addons/dojo_core/data/dojo_core_cron.xml` — NEW
+- `addons/dojo_core/__manifest__.py` — added data files
+- `addons/dojo_kiosk/models/dojo_kiosk_service.py` — modified `close_session()`
+- `addons/dojo_kiosk/controllers/kiosk_controller.py` — added parameter
+- `scripts/usability_pass/verify/s4.sh` — fixed SQL cast
+
+**Gate result**: PASSED

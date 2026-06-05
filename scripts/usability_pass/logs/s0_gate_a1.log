@@ -1,0 +1,22 @@
+PASS: database odoo19 exists
+INFO: pg_trgm ensured
+INFO: running module upgrade across all modules this pass touches
+FAIL: upgrade rc=255, error lines=6 — first errors:
+2026-06-05 01:08:23,279 1 ERROR odoo19 odoo.sql_db: bad query: b'SELECT "ir_cron"."id" FROM "ir_cron" WHERE "ir_cron"."id" IN (26) FOR NO KEY UPDATE SKIP LOCKED'
+ERROR: could not serialize access due to concurrent update
+ 
+2026-06-05 01:08:23,280 1 WARNING odoo19 odoo.modules.loading: Transient module states were reset 
+2026-06-05 01:08:23,280 1 ERROR odoo19 odoo.registry: Failed to load registry 
+2026-06-05 01:08:23,280 1 CRITICAL odoo19 odoo.service.server: Failed to initialize database `odoo19`. 
+Traceback (most recent call last):
+  File "/opt/odoo/odoo/tools/convert.py", line 626, in _tag_root
+    f(rec)
+  File "/opt/odoo/odoo/tools/convert.py", line 480, in _tag_record
+PASS: no stuck modules
+PASS: web responds 200 on /web/login
+PASS: admin@demo.com logs in
+PASS: instructor1@demo.com logs in
+PASS: demo1@demo.com logs in
+PASS: demo2@demo.com logs in
+PASS: DemoParent@demo.com logs in
+GATE: FAILED
