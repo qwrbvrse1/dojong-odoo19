@@ -470,3 +470,21 @@ t-att-style="'width: %s%%' % item['progress_pct']"
 3. Restart web
 4. Re-run S6 gate
 5. Commit fix
+
+---
+
+## Corrective Step 2 (2026-06-05 QWeb directive fix)
+
+**Issue:** Template rendering empty values - QWeb warnings show `t-esc` directive not recognized on `<t>` tags:
+```
+Unknown directives or unused attributes: {'t-esc'} from <t t-esc="item['member'].name"/>
+```
+
+**Root cause:** Odoo 19 QWeb requires `t-out` for content output on `<t>` tags, or `t-esc`/`t-field` on real HTML elements.
+
+**Fix:** Replace all `<t t-esc="..."/>` with `t-out` or move directive to HTML elements:
+- `<t t-esc="item['member'].name"/>` → `<t t-out="item['member'].name"/>`
+- `<t t-esc="item['progress_pct']"/>` → `<t t-out="item['progress_pct']"/>`
+- `<t t-esc="item['missing_steps']"/>` → `<t t-out="item['missing_steps']"/>`
+
+**Files:** `addons/dojo_members_portal/views/portal_layout.xml`

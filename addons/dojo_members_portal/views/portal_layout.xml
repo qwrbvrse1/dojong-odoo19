@@ -196,18 +196,18 @@
                         <t t-else="">
                             <t t-foreach="onboarding_data" t-as="item">
                                 <div class="mb-3 pb-3" t-att-class="'border-bottom' if not item_last else ''">
-                                    <h6 class="mb-2"><t t-esc="item['member'].name"/></h6>
+                                    <h6 class="mb-2"><t t-out="item['member'].name"/></h6>
                                     <div class="progress mb-2" style="height: 24px;">
                                         <div class="progress-bar" role="progressbar"
                                              t-att-style="'width: %s%%%%' % item['progress_pct']"
                                              t-att-aria-valuenow="item['progress_pct']"
                                              aria-valuemin="0" aria-valuemax="100">
-                                            <span class="fw-semibold"><t t-esc="item['progress_pct']"/>%</span>
+                                            <span class="fw-semibold"><t t-out="item['progress_pct']"/>%</span>
                                         </div>
                                     </div>
                                     <t t-if="not item['completed']">
                                         <small class="text-muted d-block">
-                                            <i class="fa fa-info-circle me-1"/>Remaining: <t t-esc="item['missing_steps']"/>
+                                            <i class="fa fa-info-circle me-1"/>Remaining: <t t-out="item['missing_steps']"/>
                                         </small>
                                     </t>
                                     <t t-else="">
