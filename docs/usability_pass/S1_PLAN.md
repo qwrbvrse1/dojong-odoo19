@@ -234,3 +234,27 @@ git commit -m "upass S1: ACL closure + parent tightening"
 - Manual testing: ~10 minutes
 - Gate debugging: ~15 minutes (if issues)
 - **Total: ~45 minutes** (within stage budget)
+
+---
+
+## CORRECTIVE STEP (Post-Commit)
+
+### Issue: Orchestrator gate failed - playwright not found
+
+The orchestrator runs gates from `/home/ainzellan/usability_pass/verify/`, which is a sync of the repo's `scripts/usability_pass/verify/` directory. The orchestrator syncs shell scripts and .mjs files but NOT node_modules.
+
+The `admin_smoke.mjs` script uses ES6 imports (`import { chromium } from 'playwright'`), which requires playwright to be in a local node_modules directory.
+
+### Fix: Install playwright in orchestrator's verify directory
+
+```bash
+cd /home/ainzellan/usability_pass/verify
+npm install playwright
+npx playwright install chromium
+```
+
+This creates package.json and installs playwright in the orchestrator's environment, allowing the gate scripts to import it.
+
+**Verified:** Orchestrator gate now passes when run from `/home/ainzellan/usability_pass/verify/s1.sh`
+
+**Note:** This is an environment setup issue, not a code change. No git commit needed. The orchestrator's environment now has the required dependency for browser smoke tests.
