@@ -25,4 +25,5 @@
         'views/dojo_onboarding_wizard_views.xml',
         'views/dojo_onboarding_views.xml',
     ],
+    'post_init_hook': 'post_init_hook',
 }

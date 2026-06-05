@@ -68,6 +68,18 @@ class DojoMember(models.Model):
         string="Membership State",
     )
 
+    converted_from_trial = fields.Boolean(
+        string='Converted from Trial',
+        default=False,
+        copy=False,
+        help='Set to True when member transitions from trial to active membership.'
+    )
+    trial_converted_on = fields.Datetime(
+        string='Trial Conversion Date',
+        copy=False,
+        help='Timestamp when member was converted from trial to active.'
+    )
+
     # ── Member Number (from dojo_members) ─────────────────────────────────
     member_number = fields.Char(
         string="Member Number",
@@ -168,7 +180,12 @@ class DojoMember(models.Model):
         self.membership_state = "trial"
 
     def action_set_active(self):
-        self.membership_state = "active"
+        for rec in self:
+            was_trial = (rec.membership_state == 'trial')
+            rec.membership_state = "active"
+            if was_trial:
+                rec.converted_from_trial = True
+                rec.trial_converted_on = fields.Datetime.now()
 
     def action_set_paused(self):
         self.membership_state = "paused"

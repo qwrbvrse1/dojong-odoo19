@@ -610,16 +610,17 @@ class DojoOnboardingWizard(models.TransientModel):
                     self._send_welcome_sms_to_partner(partner)
 
         # Onboarding record
-        self.env['dojo.onboarding.record'].create({
+        onboarding_record = self.env['dojo.onboarding.record'].create({
             'member_id': member.id,
             'step_member_info': True,
             'step_household': bool(household),
             'step_enrollment': bool(self.program_id),
             'step_subscription': bool(self.plan_id),
             'step_portal_access': self.create_portal_login,
-            'state': 'completed',
+            'state': 'in_progress',
             'company_id': self.env.company.id,
         })
+        onboarding_record._sync_derived_steps()
 
         return member
 

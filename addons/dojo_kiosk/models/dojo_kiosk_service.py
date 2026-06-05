@@ -16,11 +16,18 @@ _LOCKOUT_MINUTES = 15
 _UPCOMING_SESSION_WINDOW_MINUTES = 15
 
 _ONBOARDING_STEP_FIELDS = {
+    # Legacy data-entry steps (kept for compatibility)
     "member_info": ("step_member_info", "Member Info"),
     "household": ("step_household", "Household"),
     "enrollment": ("step_enrollment", "Class Enrollment"),
     "subscription": ("step_subscription", "Subscription"),
     "portal_access": ("step_portal_access", "Portal Access"),
+    # New lifecycle steps
+    "trial_booked": ("step_trial_booked", "Trial Booked"),
+    "waiver_signed": ("step_waiver_signed", "Waiver Signed"),
+    "intro_completed": ("step_intro_completed", "Intro Session Completed"),
+    "membership_activated": ("step_membership_activated", "Membership Activated"),
+    "uniform_issued": ("step_uniform_issued", "Uniform Issued"),
 }
 
 
