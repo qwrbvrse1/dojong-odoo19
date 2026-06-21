@@ -31,4 +31,4 @@ Pillow
 babel
 
 # pgvector — Python client for PostgreSQL vector similarity search
-pgvector>=0.3.0
+pgvector>=0.3.0anthropic>=0.25.0
