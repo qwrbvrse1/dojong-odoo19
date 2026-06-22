@@ -490,6 +490,36 @@ class KioskController(http.Controller):
             message=message,
         )
 
+    @http.route(
+        "/kiosk/api/onboarding/complete_step",
+        type="jsonrpc", auth="public", methods=["POST"], csrf=False,
+    )
+    def kiosk_onboarding_complete_step(
+        self, member_id=None, step_key=None, token=None, instructor_key=None, **kw
+    ):
+        if not member_id or not step_key:
+            return {"success": False, "error": "member_id and step_key are required."}
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
+        if guard is not None:
+            return guard
+        svc = request.env["dojo.kiosk.service"].sudo()
+        return svc.perform_onboarding_action(member_id, "complete_step", step_key=step_key)
+
+    @http.route(
+        "/kiosk/api/onboarding/send_reminder",
+        type="jsonrpc", auth="public", methods=["POST"], csrf=False,
+    )
+    def kiosk_onboarding_send_reminder(
+        self, member_id=None, message=None, token=None, instructor_key=None, **kw
+    ):
+        if not member_id:
+            return {"success": False, "error": "member_id is required."}
+        guard = self._guard_instructor(token, instructor_key, {"success": False, "error": "instructor_auth_required"})
+        if guard is not None:
+            return guard
+        svc = request.env["dojo.kiosk.service"].sudo()
+        return svc.perform_onboarding_action(member_id, "send_reminder", message=message)
+
     # ------------------------------------------------------------------
     # Instructor -- belt rank management
     # ------------------------------------------------------------------

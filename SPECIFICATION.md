@@ -257,6 +257,37 @@ The kiosk is a full-screen tablet application running in Odoo's web client, serv
 
 **Photo display**: Member photos are stored in Odoo's `ir.attachment` (binary field on `dojo.member`). The design prototype (`UFT_SUPABASE_STORAGE_PHOTOS.html`) used Supabase Storage as a reference design; production implementation stores photos in Odoo.
 
+### 6.1 Kiosk API Endpoints
+
+All kiosk endpoints require a valid `token` (per-tablet kiosk token from `dojo.kiosk.config`) and `instructor_key` (session key from PIN verification).
+
+**Member Profile** — `get_member_profile(member_id, session_id=None, instructor_key=None)`
+
+Returns member profile data including onboarding status. When called without `instructor_key`, returns a minimal profile. With valid `instructor_key`, returns the full profile including:
+
+- `workflow_status`: Dict containing:
+  - `onboarding`: Dict with keys:
+    - `available` (bool): Whether onboarding module is installed
+    - `record_id` (int|False): ID of the onboarding record
+    - `state` (str): One of `not_started`, `in_progress`, `completed`, `not_installed`
+    - `complete` (bool): Whether all onboarding steps are complete
+    - `progress_pct` (int): Percentage of legacy data-entry steps complete (0-100)
+    - `steps` (list): List of dicts with `key`, `label`, `complete` for each step
+    - `missing_steps` (list): Labels of incomplete steps
+  - `waiver`, `subscription`, `attendance`, `grading`, `tasks`: Status dicts for other workflows
+  - `alerts` (list): List of alert dicts with `code` and `label`
+  - `alert_count` (int): Total number of alerts
+
+**Onboarding Actions** — POST endpoints:
+
+- `/kiosk/api/onboarding/complete_step` — Mark an onboarding step as complete
+  - Params: `member_id` (int), `step_key` (str), `token`, `instructor_key`
+  - Returns: `{"success": bool, "workflow_status": dict}`
+
+- `/kiosk/api/onboarding/send_reminder` — Send onboarding reminder to guardians
+  - Params: `member_id` (int), `message` (str, optional), `token`, `instructor_key`
+  - Returns: `{"success": bool, "sent_via": list, "recipients": list, "workflow_status": dict}`
+
 ---
 
 ## 7. AI Layer

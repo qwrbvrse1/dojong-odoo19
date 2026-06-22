@@ -175,7 +175,9 @@ class TestKioskWorkflowActions(TransactionCase):
 
         self.assertTrue(result["success"])
         self.assertTrue(record.step_member_info)
-        self.assertEqual(result["workflow_status"]["onboarding"]["progress_pct"], record.progress_pct)
+        # Kiosk progress is based on legacy data-entry steps, not lifecycle steps
+        # member_info is 1 of 5 legacy steps = 20%
+        self.assertEqual(result["workflow_status"]["onboarding"]["progress_pct"], 20)
 
     def test_add_note_persists_to_member_chatter(self):
         result = self.KioskService.perform_onboarding_action(

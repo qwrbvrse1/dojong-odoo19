@@ -689,6 +689,7 @@ class DojoKioskService(models.AbstractModel):
                 attendance_state = log.status if log else enr.attendance_state
 
         enrolled_sessions = self.get_enrolled_sessions_today(member.id)
+        workflow_status = self._member_workflow_status(member, session_id=session_id)
 
         return {
             "member_id": member.id,
@@ -698,6 +699,7 @@ class DojoKioskService(models.AbstractModel):
             "belt_color": member.current_rank_id.color if member.current_rank_id else "",
             "attendance_state": attendance_state,
             "enrolled_sessions": enrolled_sessions,
+            "workflow_status": workflow_status,
         }
 
     def _member_profile_dict(self, member, session_id=None):
@@ -982,13 +984,15 @@ class DojoKioskService(models.AbstractModel):
         )
         steps = []
         completed = 0
+        # Only count the first 5 legacy data-entry steps for progress calculation
+        legacy_step_keys = ["member_info", "household", "enrollment", "subscription", "portal_access"]
         for key, (field_name, label) in _ONBOARDING_STEP_FIELDS.items():
             done = bool(record and getattr(record, field_name, False))
-            completed += 1 if done else 0
+            if key in legacy_step_keys:
+                completed += 1 if done else 0
             steps.append({"key": key, "label": label, "complete": done})
-        progress = int(completed / len(_ONBOARDING_STEP_FIELDS) * 100) if _ONBOARDING_STEP_FIELDS else 0
-        if record:
-            progress = record.progress_pct if record.progress_pct is not None else progress
+        # Calculate progress based on legacy data-entry steps
+        progress = int(completed / len(legacy_step_keys) * 100) if legacy_step_keys else 0
         complete = bool(record and (record.state == "completed" or progress >= 100))
         return {
             "available": True,
