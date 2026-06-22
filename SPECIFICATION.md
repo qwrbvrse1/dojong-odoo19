@@ -97,6 +97,7 @@ Modules are organized by category. All custom/UFTKD modules use `saas~19.2.x.x.x
 | `subscription_oca` | saas~19.2.1.0.0 | Generate recurring invoices (OCA) |
 | `bi_all_digital_sign` | — | Digital signature support (BI Solutions) |
 | `connect` | 1.0.2 | Twilio and Odoo integration |
+| `sms_twilio` | — | Send SMS messages using Twilio (now version-tracked) |
 
 ### 3.4 MuK IT Theme (Active — Scheduled for Replacement)
 
