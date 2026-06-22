@@ -10,6 +10,30 @@ TESTENV="$(dirname "$0")"
 ODOO_IMAGE="odoo-saas-19-2:latest"
 CORE_MODULES="dojo_core,subscription_oca,dojo_subscriptions,dojo_onboarding,bi_all_digital_sign,dojo_sign"
 
+# Ensure dev odoo.conf exists (gitignored; must be created per-VM)
+if [ ! -f config/odoo.conf ]; then
+  echo "bootstrap: config/odoo.conf not found — generating dev default"
+  mkdir -p config
+  cat > config/odoo.conf << 'CONF'
+[options]
+addons_path = /mnt/extra-addons,/opt/odoo/addons
+data_dir = /var/lib/odoo
+
+db_host = db
+db_port = 5432
+db_name = odoo19
+db_user = odoo
+db_password = odoo
+
+http_port = 8069
+workers = 0
+
+logfile = False
+log_level = info
+CONF
+  echo "bootstrap: config/odoo.conf created (dev defaults — do not copy to production)"
+fi
+
 echo "bootstrap: building Odoo image"
 docker compose build --quiet
 

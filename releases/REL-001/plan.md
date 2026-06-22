@@ -3,6 +3,8 @@
 > Prose sections are for humans. Fenced `yaml` blocks are parsed by `apev-run.sh`.
 > Block 1 = release config. Each subsequent block = one increment, in execution order.
 > Do not put status in this file — execution state lives in the run log.
+>
+> **Deviation from UnattendedBuild template:** This project uses a single `SPECIFICATION.md` at the repo root rather than the `specifications/<domain>.md` per-domain convention. All increment touchpoints and deliverables reference `SPECIFICATION.md`. When running the audit, treat `SPECIFICATION.md` as the equivalent of `specifications/`.
 
 ## Release configuration
 
@@ -32,7 +34,7 @@ baseline_gate:
 
 ## Dependency analysis
 
-M0 increments (INC-01–02) have no inter-dependencies and run in file order. INC-01 (`dojo_theme`) is listed first because M1+ increments that reference theme assets need it installed first; for safety all M1 increments declare `depends_on: [INC-02]` (the last M0 increment), ensuring M0 fully passes before any backend work begins.
+M0 increments (INC-01–02) have no inter-dependencies and run in file order. INC-01 (`dojo_theme`) runs first (file order). All M1 increments declare `depends_on: [INC-01, INC-02]`, ensuring both M0 increments pass before any backend work begins. This is intentional: if the theme module fails to install, backend increments that reference its assets must not run.
 
 Within M1, INC-03–06 have no hard inter-dependencies and can fail independently (each is a self-contained backend change). M2 begins at INC-07 and all M2 increments declare `depends_on: [INC-06]` (the last M1 increment).
 
@@ -81,7 +83,7 @@ reset:
 gate:
   - docker compose run --rm --entrypoint /opt/odoo/odoo-bin web -c /etc/odoo/odoo.conf -d odoo19 --workers=0 --no-http -i dojo_theme --stop-after-init
   - curl -sf http://127.0.0.1:8070/web/login -o /dev/null
-  - docker compose run --rm --entrypoint /opt/odoo/odoo-bin web -c /etc/odoo/odoo.conf -d odoo19 --workers=0 --no-http --stop-after-init -e "print(env['ir.module.module'].search([('name','=','dojo_theme'),('state','=','installed')]).name)"
+  - docker compose exec -T db psql -U odoo -d odoo19 -qtAc "SELECT state FROM ir_module_module WHERE name='dojo_theme'" | grep -q "^installed$"
 regression_gate:
   - bash testenv/verify.sh
 ```
@@ -122,7 +124,7 @@ gate:
   - curl -sf http://127.0.0.1:8070/web/login -o /dev/null
 regression_gate:
   - bash testenv/verify.sh
-  - docker compose run --rm --entrypoint /opt/odoo/odoo-bin web -c /etc/odoo/odoo.conf -d odoo19 --workers=0 --no-http -u dojo_theme --stop-after-init
+  - docker compose exec -T db psql -U odoo -d odoo19 -qtAc "SELECT state FROM ir_module_module WHERE name='dojo_core'" | grep -q "^installed$"
 ```
 
 ---
@@ -141,7 +143,7 @@ Override `_name_search` on `dojo.member` to parse the search query, identify the
 ```yaml
 id: INC-03
 title: dojo.member surname-first name search
-depends_on: [INC-02]
+depends_on: [INC-01, INC-02]
 touchpoints:
   - addons/dojo_core/models/member.py
   - addons/dojo_core/tests/test_member_search.py
@@ -182,7 +184,7 @@ Extend `get_member_profile()` in `dojo_kiosk/services/dojo_kiosk_service.py` to 
 ```yaml
 id: INC-04
 title: onboarding data in kiosk member profile API
-depends_on: [INC-02]
+depends_on: [INC-01, INC-02]
 touchpoints:
   - addons/dojo_kiosk/services/dojo_kiosk_service.py
   - addons/dojo_kiosk/controllers/kiosk_controller.py
@@ -228,7 +230,7 @@ Add a `time_state` computed value to the `get_todays_sessions()` response in `do
 ```yaml
 id: INC-05
 title: time_state field on kiosk session list
-depends_on: [INC-02]
+depends_on: [INC-01, INC-02]
 touchpoints:
   - addons/dojo_kiosk/services/dojo_kiosk_service.py
   - addons/dojo_kiosk/tests/test_session_time_state.py
@@ -268,7 +270,7 @@ Add a stored computed `expdate` (Date) field to `dojo.member`. Field derives fro
 ```yaml
 id: INC-06
 title: dojo.member.expdate stored computed field
-depends_on: [INC-02]
+depends_on: [INC-01, INC-02]
 touchpoints:
   - addons/dojo_core/models/member.py
   - addons/dojo_core/tests/test_member_expdate.py
