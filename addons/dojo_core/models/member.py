@@ -118,6 +118,16 @@ class DojoMember(models.Model):
         "dojo.emergency.contact", "member_id", string="Emergency Contacts"
     )
 
+    # ── Membership Expiry ─────────────────────────────────────────────────
+    expdate = fields.Date(
+        string="Membership Expiry Date",
+        compute="_compute_expdate",
+        store=True,
+        index=True,
+        help="Expiry date derived from the linked subscription state. "
+             "Computed from the latest active subscription end date.",
+    )
+
     # ── Belt Progression (from dojo_belt_progression) ─────────────────────
     rank_history_ids = fields.One2many(
         "dojo.member.rank", "member_id", string="Belt History"
@@ -400,6 +410,24 @@ class DojoMember(models.Model):
             member.has_portal_login = any(
                 user.share for user in member.partner_id.user_ids
             )
+
+    @api.depends_context('force_company')
+    def _compute_expdate(self):
+        """Compute membership expiry date from active subscription end date.
+
+        Searches for the latest active subscription and uses its end date.
+        The field will be False if no active subscription exists or if
+        dojo_subscriptions is not installed.
+        """
+        for member in self:
+            if 'sale.subscription' not in self.env:
+                member.expdate = False
+                continue
+            active_sub = self.env['sale.subscription'].search([
+                ('member_id', '=', member.id),
+                ('state', '=', 'active'),
+            ], order='date desc', limit=1)
+            member.expdate = active_sub.date if active_sub else False
 
     @api.depends("rank_history_ids.date_awarded", "rank_history_ids.rank_id")
     def _compute_current_rank(self):
