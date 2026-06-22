@@ -17,35 +17,32 @@ workproducts: ~/workproducts/dojong-odoo19/REL-001
 baseline_gate:
   - bash testenv/verify.sh
   - test -d addons/sms_twilio && test -f addons/sms_twilio/__manifest__.py
-  - test -d addons/special_dates && test -f addons/special_dates/__manifest__.py
-  - test -d addons/ai_reply_drafter && test -f addons/ai_reply_drafter/__manifest__.py
-  - docker compose run --rm --entrypoint python3 web -c "import anthropic; print(anthropic.__version__)"
 ```
 
 ## Milestone map
 
 | Milestone | Increments | First depends on |
 |---|---|---|
-| M0 — Infrastructure | INC-01 – INC-04 | baseline_gate |
-| M1 — Backend Logic | INC-05 – INC-08 | INC-01 (theme must exist before backend that references its assets) |
-| M2 — Daily Operations UI | INC-09 – INC-14 | INC-08 (all M1 backend changes must be present) |
-| M3 — Instructor Tools | INC-15 – INC-19 | INC-09 (dashboard module provides shared OWL patterns) |
-| M4 — Communication & Automation | INC-20 – INC-23 | INC-18 (Inactive Report feeds follow-up email) |
-| M5 — MuK Retirement | INC-24 – INC-25 | INC-23 (all UI work done before retiring MuK) |
+| M0 — Infrastructure | INC-01 – INC-02 | baseline_gate |
+| M1 — Backend Logic | INC-03 – INC-06 | INC-01 (theme must exist before backend that references its assets) |
+| M2 — Daily Operations UI | INC-07 – INC-12 | INC-06 (all M1 backend changes must be present) |
+| M3 — Instructor Tools | INC-13 – INC-17 | INC-07 (dashboard module provides shared OWL patterns) |
+| M4 — Communication & Automation | INC-18 – INC-21 | INC-16 (Inactive Report feeds follow-up email) |
+| M5 — MuK Retirement | INC-22 – INC-23 | INC-21 (all UI work done before retiring MuK) |
 
 ## Dependency analysis
 
-M0 increments (INC-01–04) have no inter-dependencies and run in file order. INC-01 (`dojo_theme`) is listed first because M1+ increments that reference theme assets need it installed first; for safety all M1 increments declare `depends_on: [INC-04]` (the last M0 increment), ensuring M0 fully passes before any backend work begins.
+M0 increments (INC-01–02) have no inter-dependencies and run in file order. INC-01 (`dojo_theme`) is listed first because M1+ increments that reference theme assets need it installed first; for safety all M1 increments declare `depends_on: [INC-02]` (the last M0 increment), ensuring M0 fully passes before any backend work begins.
 
-Within M1, INC-05–08 have no hard inter-dependencies and can fail independently (each is a self-contained backend change). M2 begins at INC-09 and all M2 increments declare `depends_on: [INC-08]` (the last M1 increment).
+Within M1, INC-03–06 have no hard inter-dependencies and can fail independently (each is a self-contained backend change). M2 begins at INC-07 and all M2 increments declare `depends_on: [INC-06]` (the last M1 increment).
 
-Within M2, the three-panel kiosk layout (INC-10) is a prerequisite for INC-11, INC-12, INC-13, INC-14 which all modify the same kiosk OWL component tree. INC-09 (dashboard) is independent of the kiosk changes and is declared first.
+Within M2, the three-panel kiosk layout (INC-08) is a prerequisite for INC-09, INC-10, INC-11, INC-12 which all modify the same kiosk OWL component tree. INC-07 (dashboard) is independent of the kiosk changes and is declared first.
 
-M3 increments declare `depends_on: [INC-09]`. Within M3, INC-19 (CSV export) depends on INC-17 and INC-18 (the data it exports must exist).
+M3 increments declare `depends_on: [INC-07]`. Within M3, INC-17 (CSV export) depends on INC-15 and INC-16 (the data it exports must exist).
 
-M4 increments declare `depends_on: [INC-18]`. INC-21 (inactive follow-up) depends on INC-20 (Email Center must exist). INC-22 and INC-23 depend on INC-20.
+M4 increments declare `depends_on: [INC-16]`. INC-19 (inactive follow-up) depends on INC-18 (Email Center must exist). INC-20 and INC-21 depend on INC-18.
 
-M5 starts at INC-24 (MuK audit) which depends on INC-23 (all M4 done). INC-25 (MuK retire) depends on INC-24.
+M5 starts at INC-22 (MuK audit) which depends on INC-21 (all M4 done). INC-23 (MuK retire) depends on INC-22.
 
 ---
 
@@ -130,83 +127,7 @@ regression_gate:
 
 ---
 
-## INC-03 — special_dates: install plugin
-
-Install the Special Dates plugin (pre-obtained by operator, present at `addons/special_dates/`) into the `odoo19` database.
-
-**Decision rules:**
-- The module source must already be at `addons/special_dates/` — if it is not, gate step 1 will fail; classify `environmental`, stop, notify operator.
-- Do not patch or modify the plugin source.
-- If install fails with a license/activation error, classify `environmental` — the OPL-1 license key must be activated on the production instance, not the dev instance. Record in failure report and continue.
-
-```yaml
-id: INC-03
-title: special_dates plugin installed
-depends_on: []
-touchpoints:
-  - addons/special_dates/**
-  - SPECIFICATION.md
-deliverables:
-  - addons/special_dates/ present with source files
-  - Module installed in odoo19 without error
-  - SPECIFICATION.md §3.3 updated to list special_dates
-test_data:
-  seed: n/a
-  migration_before_state: n/a
-  external_stubs: n/a
-  credentials: n/a
-reset:
-  - bash testenv/reset.sh
-gate:
-  - test -f addons/special_dates/__manifest__.py
-  - docker compose run --rm --entrypoint /opt/odoo/odoo-bin web -c /etc/odoo/odoo.conf -d odoo19 --workers=0 --no-http -i special_dates --stop-after-init
-  - curl -sf http://127.0.0.1:8070/web/login -o /dev/null
-regression_gate:
-  - bash testenv/verify.sh
-```
-
----
-
-## INC-04 — ai_reply_drafter: install plugin and pip dep
-
-Install the AI Reply Drafter plugin and verify the `anthropic` Python SDK is available in the container (added to requirements by operator as a prerequisite).
-
-**Decision rules:**
-- The module source must already be at `addons/ai_reply_drafter/` — if not, classify `environmental`.
-- Do not configure the plugin (provider, API key, model, system prompt) — configuration is a manual operator step post-release. Gate only verifies installation succeeds and `anthropic` is importable.
-- If `anthropic` is not importable inside the container (step 1 fails), the operator did not rebuild the image after adding it to requirements. Classify `environmental`.
-
-```yaml
-id: INC-04
-title: ai_reply_drafter installed with anthropic SDK
-depends_on: []
-touchpoints:
-  - addons/ai_reply_drafter/**
-  - SPECIFICATION.md
-deliverables:
-  - addons/ai_reply_drafter/ present with source files
-  - anthropic Python package importable inside web container
-  - Module installed in odoo19 without error
-  - SPECIFICATION.md §3.3 updated to list ai_reply_drafter
-test_data:
-  seed: n/a
-  migration_before_state: n/a
-  external_stubs: n/a
-  credentials: n/a
-reset:
-  - bash testenv/reset.sh
-gate:
-  - docker compose run --rm --entrypoint python3 web -c "import anthropic; print('anthropic', anthropic.__version__)"
-  - test -f addons/ai_reply_drafter/__manifest__.py
-  - docker compose run --rm --entrypoint /opt/odoo/odoo-bin web -c /etc/odoo/odoo.conf -d odoo19 --workers=0 --no-http -i ai_reply_drafter --stop-after-init
-  - curl -sf http://127.0.0.1:8070/web/login -o /dev/null
-regression_gate:
-  - bash testenv/verify.sh
-```
-
----
-
-## INC-05 — lastname-search: surname-first name lookup
+## INC-03 — lastname-search: surname-first name lookup
 
 Override `_name_search` on `dojo.member` to parse the search query, identify the last whitespace-delimited token as a probable surname, and rank surname-first matches above mid-name matches using SQL `ORDER BY CASE`.
 
@@ -218,9 +139,9 @@ Override `_name_search` on `dojo.member` to parse the search query, identify the
 - If `res.partner` has a conflicting `_name_search`, the `dojo.member` override takes precedence — do not modify `res.partner`.
 
 ```yaml
-id: INC-05
+id: INC-03
 title: dojo.member surname-first name search
-depends_on: [INC-04]
+depends_on: [INC-02]
 touchpoints:
   - addons/dojo_core/models/member.py
   - addons/dojo_core/tests/test_member_search.py
@@ -247,7 +168,7 @@ regression_gate:
 
 ---
 
-## INC-06 — onboarding-kiosk-api: expose onboarding in member profile
+## INC-04 — onboarding-kiosk-api: expose onboarding in member profile
 
 Extend `get_member_profile()` in `dojo_kiosk/services/dojo_kiosk_service.py` to include onboarding record data. Add two new kiosk API endpoints for onboarding step actions.
 
@@ -259,9 +180,9 @@ Extend `get_member_profile()` in `dojo_kiosk/services/dojo_kiosk_service.py` to 
 - Write tests in `addons/dojo_kiosk/tests/test_kiosk_onboarding_api.py` covering: profile includes onboarding dict, complete_step marks step done, send_reminder with email, send_reminder without email returns error.
 
 ```yaml
-id: INC-06
+id: INC-04
 title: onboarding data in kiosk member profile API
-depends_on: [INC-04]
+depends_on: [INC-02]
 touchpoints:
   - addons/dojo_kiosk/services/dojo_kiosk_service.py
   - addons/dojo_kiosk/controllers/kiosk_controller.py
@@ -290,7 +211,7 @@ regression_gate:
 
 ---
 
-## INC-07 — session-time-tagging: time-state field on today's sessions
+## INC-05 — session-time-tagging: time-state field on today's sessions
 
 Add a `time_state` computed value to the `get_todays_sessions()` response in `dojo_kiosk_service.py`. State is one of: `active`, `upcoming_soon`, `upcoming`, `done`.
 
@@ -305,9 +226,9 @@ Add a `time_state` computed value to the `get_todays_sessions()` response in `do
 - If `freeze_time` is not available in the container, implement time injection via a keyword argument `_now=None` on the service method (defaults to `fields.Datetime.now()`). Tests pass a fixed datetime.
 
 ```yaml
-id: INC-07
+id: INC-05
 title: time_state field on kiosk session list
-depends_on: [INC-04]
+depends_on: [INC-02]
 touchpoints:
   - addons/dojo_kiosk/services/dojo_kiosk_service.py
   - addons/dojo_kiosk/tests/test_session_time_state.py
@@ -333,7 +254,7 @@ regression_gate:
 
 ---
 
-## INC-08 — member-expdate: stored computed expiration date field
+## INC-06 — member-expdate: stored computed expiration date field
 
 Add a stored computed `expdate` (Date) field to `dojo.member`. Field derives from the linked subscription plan's next invoice / expiry date. Indexed for list view filtering.
 
@@ -345,9 +266,9 @@ Add a stored computed `expdate` (Date) field to `dojo.member`. Field derives fro
 - Write tests in `addons/dojo_core/tests/test_member_expdate.py` covering: member with active enrollment has expdate set, member without enrollment has expdate False, expdate updates when enrollment state changes.
 
 ```yaml
-id: INC-08
+id: INC-06
 title: dojo.member.expdate stored computed field
-depends_on: [INC-04]
+depends_on: [INC-02]
 touchpoints:
   - addons/dojo_core/models/member.py
   - addons/dojo_core/tests/test_member_expdate.py
@@ -374,12 +295,12 @@ regression_gate:
 
 ---
 
-## INC-09 — dashboard: instructor dashboard module
+## INC-07 — dashboard: instructor dashboard module
 
 Implement `dojo_instructor_dashboard` as a full Odoo module (manifest, OWL views, controllers). Provides a backend view with stat cards, belt distribution, upcoming birthdays, and expiring memberships.
 
 **Decision rules:**
-- Module depends on: `dojo_core`, `dojo_theme`, `web`. Do not depend on `dojo_subscriptions` directly — use `expdate` from `dojo.member` (INC-08) for expiry filtering.
+- Module depends on: `dojo_core`, `dojo_theme`, `web`. Do not depend on `dojo_subscriptions` directly — use `expdate` from `dojo.member` (INC-06) for expiry filtering.
 - Four stat cards: total active members (`dojo.member` where `active=True`), today's check-in count (`dojo.attendance.log` where `date=today`), birthdays in 7 days (members where birthday within next 7 calendar days), expiring in 30 days (members where `expdate` within next 30 days and `expdate` is set).
 - Belt distribution: group `dojo.member` by current belt rank, return count per rank. Use existing `dojo.member.rank` or `member_rank_ids` relation — pick the most recent rank per member.
 - Data served via a single JSON controller at `/instructor_dashboard/data` (GET, require login). OWL component fetches on mount and on a 60-second polling interval.
@@ -388,9 +309,9 @@ Implement `dojo_instructor_dashboard` as a full Odoo module (manifest, OWL views
 - Write Python tests in `addons/dojo_instructor_dashboard/tests/test_dashboard_controller.py` covering: controller returns expected keys, stat counts are non-negative integers.
 
 ```yaml
-id: INC-09
+id: INC-07
 title: dojo_instructor_dashboard OWL module
-depends_on: [INC-08]
+depends_on: [INC-06]
 touchpoints:
   - addons/dojo_instructor_dashboard/**
   - SPECIFICATION.md
@@ -421,7 +342,7 @@ regression_gate:
 
 ---
 
-## INC-10 — kiosk-three-panel: instructor three-panel layout
+## INC-08 — kiosk-three-panel: instructor three-panel layout
 
 Restructure the instructor kiosk view in `dojo_kiosk` to a three-panel CSS grid layout: left panel (active session info + countdown timer), main panel (member roster), right panel (instructor notes + alerts).
 
@@ -434,9 +355,9 @@ Restructure the instructor kiosk view in `dojo_kiosk` to a three-panel CSS grid 
 - Write tests in `addons/dojo_kiosk/tests/test_session_summary.py` covering: `get_session_summary()` returns issue_count and onboarding_incomplete_count as integers.
 
 ```yaml
-id: INC-10
+id: INC-08
 title: kiosk instructor three-panel layout
-depends_on: [INC-08]
+depends_on: [INC-06]
 touchpoints:
   - addons/dojo_kiosk/static/src/css/kiosk_instructor.css
   - addons/dojo_kiosk/static/src/js/kiosk_instructor.js
@@ -468,7 +389,7 @@ regression_gate:
 
 ---
 
-## INC-11 — checkin-overlay: check-in success overlay and chime
+## INC-09 — checkin-overlay: check-in success overlay and chime
 
 Add a full-screen success overlay to the student self-serve check-in flow and a Web Audio API chime on successful check-in.
 
@@ -481,9 +402,9 @@ Add a full-screen success overlay to the student self-serve check-in flow and a 
 - No Python test needed for this increment. Gate is module upgrade + health check.
 
 ```yaml
-id: INC-11
+id: INC-09
 title: check-in success overlay and chime
-depends_on: [INC-10]
+depends_on: [INC-08]
 touchpoints:
   - addons/dojo_kiosk/static/src/js/kiosk_app.js
   - addons/dojo_kiosk/static/src/css/kiosk.css
@@ -511,9 +432,9 @@ regression_gate:
 
 ---
 
-## INC-12 — session-auto-select: time-aware session selection and visual states
+## INC-10 — session-auto-select: time-aware session selection and visual states
 
-Wire the `time_state` field (INC-07) into the kiosk instructor UI: auto-select on load and apply CSS state classes to session cards.
+Wire the `time_state` field (INC-05) into the kiosk instructor UI: auto-select on load and apply CSS state classes to session cards.
 
 **Decision rules:**
 - On `KioskApp` mount, call `get_todays_sessions()`. If exactly one session has `time_state === 'active'`, auto-select it. If none active, auto-select the first `upcoming_soon`. If neither, do not auto-select.
@@ -523,9 +444,9 @@ Wire the `time_state` field (INC-07) into the kiosk instructor UI: auto-select o
 - No Python tests needed. Gate is upgrade + health check.
 
 ```yaml
-id: INC-12
+id: INC-10
 title: time-aware session auto-select and visual states
-depends_on: [INC-10]
+depends_on: [INC-08]
 touchpoints:
   - addons/dojo_kiosk/static/src/js/kiosk_instructor.js
   - addons/dojo_kiosk/static/src/css/kiosk_instructor.css
@@ -553,7 +474,7 @@ regression_gate:
 
 ---
 
-## INC-13 — roster-badges: onboarding and task badges on roster tiles
+## INC-11 — roster-badges: onboarding and task badges on roster tiles
 
 Add `onboarding_pct` and `open_task_count` to the `_roster_entry_dict()` payload. Render as a progress bar and count badge on `InstructorRosterTile`.
 
@@ -564,9 +485,9 @@ Add `onboarding_pct` and `open_task_count` to the `_roster_entry_dict()` payload
 - Write tests in `addons/dojo_kiosk/tests/test_roster_badges.py` covering: member with onboarding record < 100% has onboarding_pct < 100, member with open activity has open_task_count > 0.
 
 ```yaml
-id: INC-13
+id: INC-11
 title: onboarding and task badges on roster tiles
-depends_on: [INC-10]
+depends_on: [INC-08]
 touchpoints:
   - addons/dojo_kiosk/services/dojo_kiosk_service.py
   - addons/dojo_kiosk/static/src/js/kiosk_instructor.js
@@ -596,22 +517,22 @@ regression_gate:
 
 ---
 
-## INC-14 — onboarding-profile-modal: onboarding section in MemberProfileCard
+## INC-12 — onboarding-profile-modal: onboarding section in MemberProfileCard
 
-Add an Onboarding tab (or Manage tab sub-section) to `MemberProfileCard` in the kiosk, showing step statuses and action buttons wired to the INC-06 endpoints.
+Add an Onboarding tab (or Manage tab sub-section) to `MemberProfileCard` in the kiosk, showing step statuses and action buttons wired to the INC-04 endpoints.
 
 **Decision rules:**
 - Add a new "Onboarding" tab to `MemberProfileCard` if the member profile already has tabs (Profile, Progress, Household, Manage). If the component uses a different pattern, add a collapsible section inside the Manage tab.
-- Show each of the 5 onboarding steps with: step name, status icon (✓ or ○), and action buttons (Mark Complete, Send Reminder). Buttons call the INC-06 endpoints.
+- Show each of the 5 onboarding steps with: step name, status icon (✓ or ○), and action buttons (Mark Complete, Send Reminder). Buttons call the INC-04 endpoints.
 - If `profile.onboarding === null`, render "No onboarding record" — do not show buttons.
 - Progress bar at top of onboarding section showing `progress_pct` percentage.
 - On button click: disable button during request, re-fetch profile on success, show inline error text on failure — do not alert().
 - No new Python tests needed. Gate is module upgrade + health check.
 
 ```yaml
-id: INC-14
+id: INC-12
 title: onboarding tab in kiosk MemberProfileCard
-depends_on: [INC-10]
+depends_on: [INC-08]
 touchpoints:
   - addons/dojo_kiosk/static/src/js/kiosk_member_profile.js
   - addons/dojo_kiosk/views/kiosk_templates.xml
@@ -639,7 +560,7 @@ regression_gate:
 
 ---
 
-## INC-15 — mass-promote: belt promotion with undo and history
+## INC-13 — mass-promote: belt promotion with undo and history
 
 Implement `dojo_belt_progression` module (currently a stub): OWL view for mass belt promotion, in-session undo, and a promotion history log per member.
 
@@ -652,9 +573,9 @@ Implement `dojo_belt_progression` module (currently a stub): OWL view for mass b
 - Write tests in `addons/dojo_belt_progression/tests/test_mass_promote.py` covering: promote one member advances rank, promote multiple members, undo reverts last promotion.
 
 ```yaml
-id: INC-15
+id: INC-13
 title: dojo_belt_progression mass promote and history
-depends_on: [INC-09]
+depends_on: [INC-07]
 touchpoints:
   - addons/dojo_belt_progression/**
   - SPECIFICATION.md
@@ -684,7 +605,7 @@ regression_gate:
 
 ---
 
-## INC-16 — belt-test-roster: test roster with print view and saved records
+## INC-14 — belt-test-roster: test roster with print view and saved records
 
 Add belt test roster functionality to `dojo_belt_progression`: filterable roster view, print-ready CSS, and roster persistence via `dojo.belt.test` records.
 
@@ -696,9 +617,9 @@ Add belt test roster functionality to `dojo_belt_progression`: filterable roster
 - Write tests in `addons/dojo_belt_progression/tests/test_belt_test_roster.py` covering: filtering by class group returns correct members, save roster creates dojo.belt.test record with correct registrations.
 
 ```yaml
-id: INC-16
+id: INC-14
 title: belt test roster with print view and saved records
-depends_on: [INC-15]
+depends_on: [INC-13]
 touchpoints:
   - addons/dojo_belt_progression/controllers/roster.py
   - addons/dojo_belt_progression/static/src/js/belt_test_roster.js
@@ -730,7 +651,7 @@ regression_gate:
 
 ---
 
-## INC-17 — attendance-analytics: analytics views
+## INC-15 — attendance-analytics: analytics views
 
 Add attendance analytics to `dojo_instructor_dashboard`: busiest sessions, top attending members, inactive members.
 
@@ -742,9 +663,9 @@ Add attendance analytics to `dojo_instructor_dashboard`: busiest sessions, top a
 - Write Python tests in `addons/dojo_instructor_dashboard/tests/test_analytics.py` covering: controller returns expected keys, inactive list excludes members with recent attendance.
 
 ```yaml
-id: INC-17
+id: INC-15
 title: attendance analytics views
-depends_on: [INC-09]
+depends_on: [INC-07]
 touchpoints:
   - addons/dojo_instructor_dashboard/controllers/analytics.py
   - addons/dojo_instructor_dashboard/static/src/js/analytics.js
@@ -773,7 +694,7 @@ regression_gate:
 
 ---
 
-## INC-18 — reports: Inactive Student, Contact, and Family reports
+## INC-16 — reports: Inactive Student, Contact, and Family reports
 
 Implement `dojo_members` module (currently a stub) with three report views: Inactive Student, Contact, Family.
 
@@ -786,9 +707,9 @@ Implement `dojo_members` module (currently a stub) with three report views: Inac
 - Write tests in `addons/dojo_members/tests/test_reports.py` covering: inactive report excludes member with recent attendance, contact report flags member with no email.
 
 ```yaml
-id: INC-18
+id: INC-16
 title: dojo_members Inactive, Contact, and Family reports
-depends_on: [INC-09]
+depends_on: [INC-07]
 touchpoints:
   - addons/dojo_members/**
   - SPECIFICATION.md
@@ -817,7 +738,7 @@ regression_gate:
 
 ---
 
-## INC-19 — csv-export: data export wizard
+## INC-17 — csv-export: data export wizard
 
 Add a CSV export transient wizard accessible from the dashboard and reports. Exports: students, attendance log, promotion history, belt test rosters.
 
@@ -831,9 +752,9 @@ Add a CSV export transient wizard accessible from the dashboard and reports. Exp
 - Write tests in `addons/dojo_instructor_dashboard/tests/test_export.py` covering: students export returns CSV with header row, attendance export respects date range.
 
 ```yaml
-id: INC-19
+id: INC-17
 title: CSV export wizard
-depends_on: [INC-18]
+depends_on: [INC-16]
 touchpoints:
   - addons/dojo_instructor_dashboard/models/export_wizard.py
   - addons/dojo_instructor_dashboard/controllers/export.py
@@ -863,7 +784,7 @@ regression_gate:
 
 ---
 
-## INC-20 — email-center: mass email and history in dojo_communications
+## INC-18 — email-center: mass email and history in dojo_communications
 
 Add an Email Center view to `dojo_communications`: audience segment selector, email composer, send action, and email history log.
 
@@ -876,9 +797,9 @@ Add an Email Center view to `dojo_communications`: audience segment selector, em
 - Write tests in `addons/dojo_communications/tests/test_email_center.py` covering: audience by class group returns correct member count, send creates dojo.email.history record with correct recipient_count. Use Odoo test mail mode (no real sends).
 
 ```yaml
-id: INC-20
+id: INC-18
 title: Email Center with audience segmentation and history
-depends_on: [INC-18]
+depends_on: [INC-16]
 touchpoints:
   - addons/dojo_communications/models/email_history.py
   - addons/dojo_communications/controllers/email_center.py
@@ -911,9 +832,9 @@ regression_gate:
 
 ---
 
-## INC-21 — inactive-followup: follow-up email from Inactive Report
+## INC-19 — inactive-followup: follow-up email from Inactive Report
 
-Add a "Send Follow-up" action to the Inactive Student report (INC-18) that pre-populates and sends an email to selected members.
+Add a "Send Follow-up" action to the Inactive Student report (INC-16) that pre-populates and sends an email to selected members.
 
 **Decision rules:**
 - Follow-up action in `dojo_members` Inactive Report: a "Send Follow-up Email" button that activates when members are selected. Opens a simple confirmation dialog (member count, preview of template subject).
@@ -923,9 +844,9 @@ Add a "Send Follow-up" action to the Inactive Student report (INC-18) that pre-p
 - Write tests in `addons/dojo_members/tests/test_followup_email.py` covering: send_followup endpoint creates dojo.email.history for given member IDs.
 
 ```yaml
-id: INC-21
+id: INC-19
 title: follow-up email action in Inactive Student report
-depends_on: [INC-20]
+depends_on: [INC-18]
 touchpoints:
   - addons/dojo_members/controllers/followup.py
   - addons/dojo_members/static/src/js/reports.js
@@ -954,7 +875,7 @@ regression_gate:
 
 ---
 
-## INC-22 — birthday-automation: automated birthday email via OCA automation
+## INC-20 — birthday-automation: automated birthday email via OCA automation
 
 Add an OCA automation rule that fires daily, finds members with a birthday today (or within N configured days), and sends a templated birthday email.
 
@@ -966,9 +887,9 @@ Add an OCA automation rule that fires daily, finds members with a birthday today
 - Write tests in `addons/dojo_automation/tests/test_birthday_automation.py` covering: birthday detection method returns correct members for today's date.
 
 ```yaml
-id: INC-22
+id: INC-20
 title: birthday email automation rule
-depends_on: [INC-20]
+depends_on: [INC-18]
 touchpoints:
   - addons/dojo_automation/data/birthday_automation.xml
   - addons/dojo_automation/data/birthday_template.xml
@@ -997,21 +918,21 @@ regression_gate:
 
 ---
 
-## INC-23 — expiry-automation: automated membership expiry warning email
+## INC-21 — expiry-automation: automated membership expiry warning email
 
 Add an OCA automation rule (or `ir.cron`) that fires daily, finds members with `expdate` within N days, and sends a templated expiry warning email.
 
 **Decision rules:**
-- Same implementation pattern as INC-22. Model: `dojo.member`, filter: `expdate` between today and today + N days.
+- Same implementation pattern as INC-20. Model: `dojo.member`, filter: `expdate` between today and today + N days.
 - Configuration: `ir.config_parameter` key `dojo.expiry_warning_days` (default 14).
 - Email template: subject "Your United Family Taekwondo membership is expiring soon". Body configurable via the template.
 - Do not send to members whose `expdate` has already passed (only future-expiring).
 - Write tests in `addons/dojo_automation/tests/test_expiry_automation.py` covering: expiry detection method returns members expiring within N days and excludes already-expired members.
 
 ```yaml
-id: INC-23
+id: INC-21
 title: membership expiry warning automation rule
-depends_on: [INC-20]
+depends_on: [INC-18]
 touchpoints:
   - addons/dojo_automation/data/expiry_automation.xml
   - addons/dojo_automation/data/expiry_template.xml
@@ -1040,28 +961,28 @@ regression_gate:
 
 ---
 
-## INC-24 — muk-audit: document MuK replacement coverage
+## INC-22 — muk-audit: document MuK replacement coverage
 
-Audit which MuK modules have equivalent coverage in `dojo_theme` and the new OWL components. Produce the uninstall order for INC-25. This is a documentation-and-verification increment — no production code changes.
+Audit which MuK modules have equivalent coverage in `dojo_theme` and the new OWL components. Produce the uninstall order for INC-23. This is a documentation-and-verification increment — no production code changes.
 
 **Decision rules:**
 - Produce `releases/REL-001/muk-audit.md` documenting: for each of the 7 MuK modules, what functionality it provides and what in `dojo_theme` or new OWL components replaces it.
-- Identify any MuK functionality not yet replaced. If gaps exist, add implementation to INC-25 scope (worker updates this plan entry's INC-25 deliverables).
+- Identify any MuK functionality not yet replaced. If gaps exist, add implementation to INC-23 scope (worker updates this plan entry's INC-23 deliverables).
 - Verify that no installed non-MuK module lists a `muk_web_*` module in its `depends` list. Command: `grep -r "muk_web_" addons/*/\_\_manifest\_\_.py`.
-- If any custom module depends on MuK, that dependency must be removed in INC-25 before uninstalling MuK. Document all such modules.
-- Gate: audit document exists and the grep finds no MuK dependencies in custom modules (or documents them for INC-25 to resolve).
+- If any custom module depends on MuK, that dependency must be removed in INC-23 before uninstalling MuK. Document all such modules.
+- Gate: audit document exists and the grep finds no MuK dependencies in custom modules (or documents them for INC-23 to resolve).
 
 ```yaml
-id: INC-24
+id: INC-22
 title: MuK audit — replacement coverage check
-depends_on: [INC-23]
+depends_on: [INC-21]
 touchpoints:
   - releases/REL-001/muk-audit.md
   - SPECIFICATION.md
 deliverables:
   - releases/REL-001/muk-audit.md documenting per-module replacement status
   - List of any custom modules depending on muk_web_* (empty is fine)
-  - INC-25 deliverables updated if gaps found
+  - INC-23 deliverables updated if gaps found
   - SPECIFICATION.md §3.4 annotated with retirement status
 test_data:
   seed: n/a
@@ -1080,7 +1001,7 @@ regression_gate:
 
 ---
 
-## INC-25 — muk-retire: uninstall and remove all MuK modules
+## INC-23 — muk-retire: uninstall and remove all MuK modules
 
 Uninstall all 7 `muk_web_*` modules from the `odoo19` database and remove their directories from `addons/`. Update `docs/ui-ux-guide.md` to document the `dojo_theme` token system.
 
@@ -1093,9 +1014,9 @@ Uninstall all 7 `muk_web_*` modules from the `odoo19` database and remove their 
 - Gate must confirm: no `muk_web_*` in installed modules, no `muk_web_*` dirs in `addons/`, Odoo backend loads cleanly.
 
 ```yaml
-id: INC-25
+id: INC-23
 title: MuK theme modules uninstalled and removed
-depends_on: [INC-24]
+depends_on: [INC-22]
 touchpoints:
   - addons/muk_web_theme/**
   - addons/muk_web_chatter/**

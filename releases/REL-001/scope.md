@@ -11,18 +11,13 @@ The release is structured across five Milestones executed as ordered Increments 
 The following must be completed by the operator before `apev-run.sh` is invoked. The `baseline_gate` verifies they are in place.
 
 1. **`sms_twilio` source obtained** — copy the module from the production VM (`dojo-solution:/custom-addons/addons/sms_twilio/`) into `addons/sms_twilio/` in the repo. Required before INC-02.
-2. **Special Dates plugin purchased and downloaded** — purchase on apps.odoo.com and place the extracted module directory at `addons/special_dates/`. Required before INC-03.
-3. **AI Reply Drafter module obtained** — download from apps.odoo.com (free LGPL-3) and place at `addons/ai_reply_drafter/`. Required before INC-04.
-4. **`anthropic` pip package added to `requirements.txt`** — add `anthropic>=0.25.0` to the repo's Python requirements file so `docker compose build` picks it up. Required before INC-04.
-5. **Docker image rebuilt** — run `docker compose build` after step 4 so the pip dep is available inside the container.
+2. **Docker image built** — run `docker compose build` to ensure the container image is current before the harness run.
 
 ## In scope
 
 **Milestone 0 — Infrastructure**
 - A new `dojo_theme` Odoo module exists in `addons/dojo_theme/` containing all brand design tokens (CSS custom properties) from the prototype: `--bg`, `--surface`, `--surface2`, `--surface3`, `--border`, `--red`, `--red-dim`, `--gold`, `--gold-light`, `--text`, `--text-muted`, `--text-dim`, `--green`, `--orange`, `--blue`. Fonts (Bebas Neue, Barlow, Barlow Condensed) loaded via Google Fonts asset override.
 - `sms_twilio` module is present in `addons/` and tracked in version control.
-- `special_dates` module is installed in the `odoo19` database.
-- `ai_reply_drafter` module is installed and the `anthropic` Python SDK is available in the container.
 
 **Milestone 1 — Backend Logic**
 - `dojo.member` has a `name_search` override that parses the query, identifies the last token as a probable surname, and ranks surname-first matches above mid-name matches. Searching "Smith" returns members whose last name starts with Smith ranked above those with Smith elsewhere in the name.
@@ -98,7 +93,6 @@ The following must be completed by the operator before `apev-run.sh` is invoked.
 | If… | Then… (never ask) |
 |---|---|
 | `sms_twilio` source cannot be copied from production VM before harness run | INC-02 fails baseline prerequisite check; operator must obtain source before running |
-| Special Dates or AI Reply Drafter module is not present in `addons/` at harness start | Corresponding INC fails gate; classify as `environmental`; operator must obtain module before rerun |
 | Module upgrade fails with `ValueError` or `psycopg2` error during a gate | Classify `code_defect`; do not alter migration logic to suppress — fix the root cause |
 | MuK module uninstall in INC-25 causes a `UserError` (dependency conflict) | Identify the blocking dependent module, uninstall it first; if it is a custom module, add its uninstall to INC-25's scope; never leave MuK partially uninstalled |
 | OWL component causes a JS console error that does not fail the Python gate | Note in failure report; do not mark gate as passed; add a `curl` check for a `/web/dataset/call_kw` response that confirms the component renders, or classify `plan_defect` and add a JS gate |
@@ -108,7 +102,7 @@ The following must be completed by the operator before `apev-run.sh` is invoked.
 
 ## Success criteria (release level)
 
-- All 25 increments reach PASS status (gate exits 0, no regression_gate failures).
+- All 23 increments reach PASS status (gate exits 0, no regression_gate failures).
 - `bash testenv/verify.sh` exits 0 on the final commit of `rel/REL-001`.
 - All 7 `muk_web_*` modules absent from `addons/` and not installed in `odoo19`.
 - `dojo_theme` installs cleanly with no errors on a fresh `odoo19` database.
