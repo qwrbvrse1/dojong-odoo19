@@ -1763,7 +1763,7 @@ class InstructorRosterTile extends Component {
 
 class InstructorSessionCard extends Component {
     static template = xml`
-        <div t-attf-class="k-session-card #{props.session.state === 'done' ? 'k-session-card--done' : ''}">
+        <div t-attf-class="k-session-card #{props.session.state === 'done' ? 'k-session-card--done' : ''} #{timeStateClass()}">
             <div class="k-session-card__header">
                 <div class="k-session-card__title">
                     <t t-esc="props.session.template_name"/>
@@ -1847,6 +1847,14 @@ class InstructorSessionCard extends Component {
     static props = ["session", "roster", "loading", "onMark", "onProfile", "onRemoveAttendance", "onManage", "onClose", "onReopen", "onDelete", "onEdit", "onAssignRoster"];
     static components = { InstructorRosterTile };
     formatTime(dt) { return formatTime(dt); }
+
+    timeStateClass() {
+        const ts = this.props.session.time_state;
+        if (ts === "active") return "k-session--active";
+        if (ts === "upcoming_soon") return "k-session--soon";
+        if (ts === "done") return "k-session--done";
+        return "k-session--upcoming";
+    }
 
     hasPending() {
         if (!this.props.roster.length) return false;
@@ -3240,11 +3248,13 @@ class KioskApp extends Component {
         this._barcodeTimer = null;
         this._idleTimer = null;
         this._doneErrorTimer = null;
+        this._sessionPollInterval = null;
         this._interactionHandler = this._resetIdleTimer.bind(this);
 
         onMounted(() => {
             this._bootstrap();
             this._startBarcodeListener();
+            this._startSessionPoll();
             document.addEventListener("click", this._interactionHandler, true);
             document.addEventListener("keydown", this._interactionHandler, true);
             document.addEventListener("touchstart", this._interactionHandler, true);
@@ -3252,6 +3262,7 @@ class KioskApp extends Component {
         });
         onWillUnmount(() => {
             this._stopBarcodeListener();
+            this._stopSessionPoll();
             document.removeEventListener("click", this._interactionHandler, true);
             document.removeEventListener("keydown", this._interactionHandler, true);
             document.removeEventListener("touchstart", this._interactionHandler, true);
@@ -3338,6 +3349,22 @@ class KioskApp extends Component {
     }
 
     _applyRecommendedSessionContext(force = false) {
+        if (!force && this.state.sessionViewManual) {
+            return;
+        }
+
+        const activeSession = this.state.sessions.find(s => s.time_state === "active");
+        if (activeSession) {
+            this.state.sessionViewId = activeSession.id;
+            return;
+        }
+
+        const soonSession = this.state.sessions.find(s => s.time_state === "upcoming_soon");
+        if (soonSession) {
+            this.state.sessionViewId = soonSession.id;
+            return;
+        }
+
         const ctx = this.state.sessionContext || {};
         const selectedId = ctx.selected_session_id || null;
         if (selectedId && (force || !this.state.sessionViewId)) {
@@ -3929,6 +3956,23 @@ class KioskApp extends Component {
 
     _stopBarcodeListener() {
         if (this._barcodeHandler) document.removeEventListener("keypress", this._barcodeHandler);
+    }
+
+    _startSessionPoll() {
+        this._sessionPollInterval = setInterval(() => {
+            if (this.state.instructorMode && !this.state.reloading) {
+                this._loadSessions(this.state.filterDate || null, {
+                    applyRecommended: !this.state.sessionViewManual,
+                });
+            }
+        }, 60000);
+    }
+
+    _stopSessionPoll() {
+        if (this._sessionPollInterval) {
+            clearInterval(this._sessionPollInterval);
+            this._sessionPollInterval = null;
+        }
     }
 
     _onKeyPress(ev) {

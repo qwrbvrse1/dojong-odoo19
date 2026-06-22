@@ -365,6 +365,21 @@ class DojoKioskService(models.AbstractModel):
         }
 
     def _session_payload(self, session):
+        now = fields.Datetime.now()
+        start = session.start_datetime
+        end = session.end_datetime
+
+        time_state = "upcoming"
+        if start and end:
+            if now >= start and now <= end:
+                time_state = "active"
+            elif now > end:
+                time_state = "done"
+            elif start > now:
+                minutes_until = (start - now).total_seconds() / 60
+                if minutes_until <= _UPCOMING_SESSION_WINDOW_MINUTES:
+                    time_state = "upcoming_soon"
+
         return {
             "id": session.id,
             "name": session.name,
@@ -377,6 +392,7 @@ class DojoKioskService(models.AbstractModel):
             "seats_taken": session.seats_taken,
             "capacity": session.capacity,
             "instructor": session.instructor_profile_id.name if session.instructor_profile_id else "",
+            "time_state": time_state,
         }
 
     @api.model

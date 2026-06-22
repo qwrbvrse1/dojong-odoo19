@@ -1405,6 +1405,26 @@ select {
     letter-spacing: 0.03em;
 }
 
+/* ── Time state variants ── */
+
+.k-session--active {
+    border-left: 4px solid var(--k-accent);
+    background: var(--k-surface-2);
+}
+
+.k-session--soon {
+    border-left: 4px solid var(--k-warning);
+}
+
+.k-session--upcoming {
+    /* Default state, no special styling */
+}
+
+.k-session--done {
+    opacity: 0.6;
+    border-left: 4px solid var(--k-border);
+}
+
 .k-session-action--reopen {
     background: var(--k-accent-dim);
     color: var(--k-accent);

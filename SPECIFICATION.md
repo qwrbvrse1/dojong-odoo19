@@ -267,6 +267,8 @@ The kiosk is a full-screen tablet application running in Odoo's web client, serv
 
 The countdown timer updates every second via `setInterval` and displays `MM:SS` format. The session summary data (attendance counts, session info) is fetched via `/kiosk/api/session_summary` which calls `get_session_summary()` on `dojo.kiosk.service`.
 
+**Session auto-select and visual states**: Each session in the instructor view has a `time_state` field computed relative to the current server time: `active` (session is currently in progress), `upcoming_soon` (session starts within 15 minutes), `upcoming` (session starts later), or `done` (session end time has passed). On page load and every 60 seconds, the kiosk automatically selects the first `active` or `upcoming_soon` session. Session cards render with CSS state classes `k-session--active`, `k-session--soon`, `k-session--upcoming`, `k-session--done` to visually distinguish their time state via border color and opacity.
+
 ### 6.1 Kiosk API Endpoints
 
 All kiosk endpoints require a valid `token` (per-tablet kiosk token from `dojo.kiosk.config`) and `instructor_key` (session key from PIN verification).
