@@ -76,6 +76,7 @@ Modules are organized by category. All custom/UFTKD modules use `saas~19.2.x.x.x
 | `dojo_firebase` | saas~19.2.1.0.0 | Email relay via Gmail/Firebase Cloud Functions + FCM web push notifications for the member portal |
 | `dojo_management` | saas~19.2.1.0.0 | Comprehensive martial arts school management with belt ranking and analytics |
 | `dojo_migration` | saas~19.2.1.0.0 | SparkMembership → Odoo CSV migration tool (admin only) |
+| `dojo_theme` | saas~19.2.1.0.0 | UFTKD brand theme — design tokens, fonts, and visual styling |
 
 ### 3.2 AI Layer — UFTKD Custom Modules
 

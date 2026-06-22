@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Override base web template to inject Google Fonts -->
+    <template id="dojo_fonts_override" name="Dojo Theme - Google Fonts" inherit_id="web.layout">
+        <xpath expr="//head" position="inside">
+            <!-- Preconnect to Google Fonts for performance -->
+            <link rel="preconnect" href="https://fonts.googleapis.com"/>
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+
+            <!-- Load Bebas Neue, Barlow, and Barlow Condensed -->
+            <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Barlow:wght@400;500;600;700&amp;family=Barlow+Condensed:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+        </xpath>
+    </template>
+</odoo>

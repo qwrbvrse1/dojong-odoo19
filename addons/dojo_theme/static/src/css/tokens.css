@@ -1,0 +1,41 @@
+/* ============================================================
+   Dojo Theme — CSS Design Tokens
+   UFTKD Brand Design System
+   ============================================================ */
+
+:root {
+    /* ━━━ Surfaces ━━━ */
+    --bg: #000000;                /* True black background */
+    --surface: #0c0c0c;           /* Elevated surface */
+    --surface2: #141414;          /* Secondary surface */
+    --surface3: #1c1c1c;          /* Tertiary surface */
+    --border: #272727;            /* Border color */
+
+    /* ━━━ Brand Colors ━━━ */
+    --red: #b41e16;               /* Dojo red (primary brand) */
+    --red-dim: #fce8e6;           /* Muted red background */
+    --gold: #eab308;              /* Gold accent */
+    --gold-light: #fef3c7;        /* Light gold background */
+
+    /* ━━━ Typography ━━━ */
+    --text: #e8eaed;              /* Primary text (light on dark) */
+    --text-muted: #9aa0a6;        /* Secondary text */
+    --text-dim: #5f6368;          /* Tertiary/disabled text */
+
+    /* ━━━ Status Colors ━━━ */
+    --green: #188038;             /* Success/active state */
+    --orange: #e37400;            /* Warning/upcoming state */
+    --blue: #1a73e8;              /* Info state */
+
+    /* ━━━ Belt Rank Colors ━━━ */
+    --belt-white: #ffffff;
+    --belt-yellow: #fbbf24;
+    --belt-green: #16a34a;
+    --belt-blue: #1a73e8;
+    --belt-red: #b41e16;
+    --belt-black: #000000;
+    --belt-brown: #92400e;
+    --belt-purple: #7c3aed;
+    --belt-orange: #e37400;
+    --belt-camo: linear-gradient(135deg, #4b5320 0%, #3a4115 25%, #4b5320 50%, #3a4115 75%, #4b5320 100%);
+}

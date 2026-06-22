@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="dojo_theme_assets_backend" model="ir.asset">
+        <field name="name">Dojo Theme - Backend Assets</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">dojo_theme/static/src/css/tokens.css</field>
+    </record>
+</odoo>
