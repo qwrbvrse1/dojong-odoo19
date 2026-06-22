@@ -1,3 +1,4 @@
+name: dojong-odoo19
 services:
   db:
     image: pgvector/pgvector:pg17
