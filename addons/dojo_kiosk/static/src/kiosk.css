@@ -957,7 +957,33 @@ select {
     margin-top: 8px;
 }
 
-/* ── Check-in success ── */
+/* ── Check-in success overlay ── */
+.k-checkin-success-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--k-surface);
+    padding: 40px 24px;
+    text-align: center;
+    animation: k-fade-in 0.3s ease-out;
+}
+
+@keyframes k-fade-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
 .k-success-view {
     position: fixed;
     inset: 0;
@@ -978,6 +1004,21 @@ select {
 
 .k-success-icon {
     font-size: 72px;
+    animation: k-icon-bounce 0.5s ease-out;
+}
+
+@keyframes k-icon-bounce {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .k-success-name {

@@ -25,6 +25,32 @@ async function jsonPost(url, params = {}, { signal } = {}) {
     return data.result;
 }
 
+// Play check-in success chime using Web Audio API
+function playCheckinChime() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        // Pleasant confirmation tone: 800 Hz
+        oscillator.frequency.value = 800;
+        oscillator.type = "sine";
+
+        // Volume envelope: fade in/out
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.4);
+    } catch (e) {
+        console.warn("Kiosk: could not play chime", e);
+    }
+}
+
 // Cache-bust map: memberId → timestamp, set after a photo upload so roster tiles & profile modal reload fresh
 const _photoBust = {};
 
@@ -162,7 +188,7 @@ class PinModal extends Component {
 
 class CheckinSuccessView extends Component {
     static template = xml`
-        <div t-attf-class="k-success-view #{!props.success ? 'k-success-view--error' : ''}">
+        <div t-attf-class="k-checkin-success-overlay k-success-view #{!props.success ? 'k-success-view--error' : ''}">
             <div class="k-success-icon">
                 <t t-if="props.success">✅</t>
                 <t t-else="">❌</t>
@@ -192,7 +218,13 @@ class CheckinSuccessView extends Component {
     static props = ["success", "memberName", "sessionName", "programName", "status", "errorMessage", "onDone"];
 
     setup() {
-        onMounted(() => { this._timer = setTimeout(() => this.props.onDone(), 4000); });
+        onMounted(() => {
+            // Play chime on successful check-in
+            if (this.props.success) {
+                playCheckinChime();
+            }
+            this._timer = setTimeout(() => this.props.onDone(), 4000);
+        });
         onWillUnmount(() => clearTimeout(this._timer));
     }
 }

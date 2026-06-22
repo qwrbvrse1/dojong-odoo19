@@ -251,7 +251,7 @@ Admin-only tool. Imports SparkMembership CSV exports into the dojo data model. O
 
 The kiosk is a full-screen tablet application running in Odoo's web client, served from `dojo_kiosk`.
 
-**Check-in flow**: Member enters PIN or scans QR code → kiosk resolves identity via `dojo.kiosk.service` → creates `dojo.attendance.log` record → fires `dojo_communications` SMS to parent (configurable) → shows confirmation screen with member photo, name, and belt rank.
+**Check-in flow**: Member enters PIN or scans QR code → kiosk resolves identity via `dojo.kiosk.service` → creates `dojo.attendance.log` record → fires `dojo_communications` SMS to parent (configurable) → shows confirmation overlay with member photo, name, and belt rank. The confirmation overlay displays full-screen for 3 seconds with a fade-in animation, plays an audio chime (800 Hz tone via Web Audio API), and auto-dismisses back to the kiosk home screen.
 
 **Carousel**: Marketing announcements from `dojo.kiosk.announcement` rotate between check-ins.
 
