@@ -240,17 +240,50 @@ class DojoMember(models.Model):
         return super()._search_display_name(operator, value)
 
     @api.model
-    @api.readonly
-    def name_search(self, name="", domain=None, operator="ilike", limit=100):
+    def _name_search(self, name="", domain=None, operator="ilike", limit=None, order=None):
+        """Override _name_search to implement surname-first ranking.
+
+        Searches "Smith" will rank members whose last_name starts with "Smith"
+        above those with "Smith" elsewhere in the name.
+        """
         if not name or operator not in ("ilike", "like"):
-            return super().name_search(name, domain, operator, limit)
+            return super()._name_search(name, domain, operator, limit, order)
+
+        base_domain = Domain(domain or Domain.TRUE)
         lookup_domain = self._member_lookup_domain(name)
-        records = self.search_fetch(
-            Domain(domain or Domain.TRUE) & lookup_domain,
-            ["display_name"],
-            limit=limit,
-        )
-        return [(record.id, record.display_name) for record in records.sudo()]
+        combined = base_domain & lookup_domain
+
+        # Parse query to extract probable surname (last token)
+        tokens = name.strip().split()
+        if not tokens:
+            records = self.search_fetch(combined, ["display_name"], limit=limit, order=order)
+            return records.ids
+
+        probable_surname = tokens[-1].strip()
+        if not probable_surname:
+            records = self.search_fetch(combined, ["display_name"], limit=limit, order=order)
+            return records.ids
+
+        # Fetch all matching records
+        all_records = self.search_fetch(combined, ["display_name", "last_name"], limit=None, order=order)
+
+        # Partition into surname-first and others
+        surname_matches = []
+        other_matches = []
+        for record in all_records:
+            if record.last_name and record.last_name.lower().startswith(probable_surname.lower()):
+                surname_matches.append(record.id)
+            else:
+                other_matches.append(record.id)
+
+        # Combine: surname-first, then others
+        ranked_ids = surname_matches + other_matches
+
+        # Apply limit if specified
+        if limit and len(ranked_ids) > limit:
+            ranked_ids = ranked_ids[:limit]
+
+        return ranked_ids
 
     # ── Search Helpers ────────────────────────────────────────────────────
 

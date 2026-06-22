@@ -177,6 +177,8 @@ The following directories exist in `addons/` but contain only an `access_rights`
 
 Full member lifecycle: create member, assign belt rank, enroll in classes, log attendance. Belt promotion wizard supports bulk processing of test results. Emergency contacts and instructor profiles are first-class records. Auto-enrollment rules drive members into programs based on rank or age group.
 
+**Surname-first search**: `dojo.member._name_search` override parses the search query, identifies the last token as a probable surname, and ranks members whose `last_name` starts with that token above members with the query elsewhere in their name. For example, searching "Smith" returns members with surname "Smith" ranked above members with "Smith" in their first or middle name. Multi-token queries (e.g., "John Smith") use the last token ("Smith") as the probable surname. The `last_name` field is stored, computed from the full name, and indexed for performance.
+
 ### 5.2 Kiosk (dojo_kiosk)
 
 Tablet check-in interface. Members check in via PIN or QR code. Action log tracks every check-in/check-out event. Kiosk carousel displays marketing announcements. Parent SMS alerts fire on check-in via `dojo_communications`. Config record is per-location. See Section 7 for full kiosk detail.
