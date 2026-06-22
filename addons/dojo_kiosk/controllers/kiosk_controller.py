@@ -99,6 +99,7 @@ class KioskController(http.Controller):
     <meta name="robots" content="noindex,nofollow"/>
     <title>Dojo Kiosk</title>
     <link rel="stylesheet" href="/dojo_kiosk/static/src/kiosk.css?v={_static_ver('static/src/kiosk.css')}_s2"/>
+    <link rel="stylesheet" href="/dojo_kiosk/static/src/css/kiosk_instructor.css?v={_static_ver('static/src/css/kiosk_instructor.css')}"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"/>
 </head>
 <body class="dojo-kiosk-body {theme_class}">
@@ -114,6 +115,7 @@ class KioskController(http.Controller):
     </script>
     <script src="/web/static/lib/owl/owl.js"></script>
     <script src="/dojo_kiosk/static/src/kiosk_app.js?v={_static_ver('static/src/kiosk_app.js')}_s2"></script>
+    <script src="/dojo_kiosk/static/src/js/kiosk_instructor.js?v={_static_ver('static/src/js/kiosk_instructor.js')}"></script>
 </body>
 </html>"""
         return request.make_response(
@@ -180,6 +182,16 @@ class KioskController(http.Controller):
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
         return svc.get_session_roster(session_id)
+
+    @http.route("/kiosk/api/session_summary", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    def kiosk_session_summary(self, session_id=None, token=None, **kw):
+        if not session_id:
+            return {"success": False, "error": "session_id is required."}
+        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        if guard is not None:
+            return guard
+        svc = request.env["dojo.kiosk.service"].sudo()
+        return svc.get_session_summary(session_id)
 
     # ------------------------------------------------------------------
     # Member lookup / search

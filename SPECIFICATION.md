@@ -259,6 +259,14 @@ The kiosk is a full-screen tablet application running in Odoo's web client, serv
 
 **Photo display**: Member photos are stored in Odoo's `ir.attachment` (binary field on `dojo.member`). The design prototype (`UFT_SUPABASE_STORAGE_PHOTOS.html`) used Supabase Storage as a reference design; production implementation stores photos in Odoo.
 
+**Instructor three-panel layout**: When the kiosk is in instructor mode, the view is organized as a three-column grid:
+
+- **Left panel**: Active session card with session name, time range, countdown timer (showing minutes:seconds remaining until session end), and attendance summary showing present/late/absent counts.
+- **Main panel**: Member roster displayed as a grid of cards, one per enrolled member.
+- **Right panel**: Alerts and notes organized into sections: onboarding incomplete, membership issues, and instructor tasks. Each alert shows the member name and a brief detail.
+
+The countdown timer updates every second via `setInterval` and displays `MM:SS` format. The session summary data (attendance counts, session info) is fetched via `/kiosk/api/session_summary` which calls `get_session_summary()` on `dojo.kiosk.service`.
+
 ### 6.1 Kiosk API Endpoints
 
 All kiosk endpoints require a valid `token` (per-tablet kiosk token from `dojo.kiosk.config`) and `instructor_key` (session key from PIN verification).

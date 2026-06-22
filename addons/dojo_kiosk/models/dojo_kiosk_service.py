@@ -437,6 +437,36 @@ class DojoKioskService(models.AbstractModel):
             ),
         }
 
+    @api.model
+    def get_session_summary(self, session_id):
+        """Return session details and attendance counts for the instructor three-panel layout."""
+        session = self.env["dojo.class.session"].browse(session_id)
+        if not session.exists():
+            return {"success": False, "error": "Session not found."}
+
+        logs = self.env["dojo.attendance.log"].search([("session_id", "=", session_id)])
+        present_count = logs.filtered(lambda log: log.status == "present").mapped("member_id")
+        late_count = logs.filtered(lambda log: log.status == "late").mapped("member_id")
+        absent_count = logs.filtered(lambda log: log.status == "absent").mapped("member_id")
+
+        enrollments = self.env["dojo.class.enrollment"].search_count([
+            ("session_id", "=", session_id),
+            ("status", "=", "registered"),
+        ])
+
+        return {
+            "success": True,
+            "session_id": session.id,
+            "session_name": session.name,
+            "template_name": session.template_id.name if session.template_id else "",
+            "start_datetime": fields.Datetime.to_string(session.start_datetime) if session.start_datetime else "",
+            "end_datetime": fields.Datetime.to_string(session.end_datetime) if session.end_datetime else "",
+            "present_count": len(present_count),
+            "late_count": len(late_count),
+            "absent_count": len(absent_count),
+            "total_enrolled": enrollments,
+        }
+
     # -------------------------------------------------------------------------
     # Roster helpers
     # -------------------------------------------------------------------------

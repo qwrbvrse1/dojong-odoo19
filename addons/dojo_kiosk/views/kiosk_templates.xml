@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!--
+        Kiosk Instructor Three-Panel Layout Templates
+        OWL templates are embedded inline in the JavaScript files for the kiosk SPA.
+        This file is reserved for future Odoo backend QWeb templates if needed.
+    -->
+</odoo>

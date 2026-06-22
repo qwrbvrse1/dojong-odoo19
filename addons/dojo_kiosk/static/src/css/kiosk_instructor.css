@@ -1,0 +1,183 @@
+/**
+ * Kiosk Instructor Three-Panel Layout
+ * Left: Active session + countdown timer + attendance summary
+ * Main: Member roster cards
+ * Right: Instructor notes, onboarding alerts, membership issues
+ */
+
+.k-instructor-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    grid-template-rows: 1fr;
+    gap: 16px;
+    height: 100vh;
+    padding: 16px;
+    background: var(--bg, #0a0a0a);
+    color: var(--text, #f5f5f5);
+}
+
+/* ─── Left Panel: Active Session ────────────────────────────────────────── */
+
+.k-instructor-left {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+}
+
+.k-session-card {
+    background: var(--surface, #1a1a1a);
+    border: 1px solid var(--border, #333);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.k-session-card__name {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text, #f5f5f5);
+}
+
+.k-session-card__time {
+    font-size: 14px;
+    color: var(--text-muted, #999);
+    margin-bottom: 12px;
+}
+
+.k-session-card__countdown {
+    font-size: 32px;
+    font-weight: bold;
+    font-family: 'Bebas Neue', 'Barlow Condensed', sans-serif;
+    text-align: center;
+    margin: 16px 0;
+    color: var(--gold, #d4af37);
+}
+
+.k-session-card__summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.k-summary-stat {
+    text-align: center;
+}
+
+.k-summary-stat__count {
+    font-size: 24px;
+    font-weight: 700;
+    display: block;
+}
+
+.k-summary-stat__label {
+    font-size: 12px;
+    color: var(--text-muted, #999);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.k-summary-stat--present .k-summary-stat__count {
+    color: var(--green, #22c55e);
+}
+
+.k-summary-stat--late .k-summary-stat__count {
+    color: var(--orange, #f59e0b);
+}
+
+.k-summary-stat--absent .k-summary-stat__count {
+    color: var(--red, #ef4444);
+}
+
+/* ─── Main Panel: Roster Grid ───────────────────────────────────────────── */
+
+.k-instructor-main {
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.k-roster-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+/* ─── Right Panel: Alerts & Notes ───────────────────────────────────────── */
+
+.k-instructor-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+}
+
+.k-alert-section {
+    background: var(--surface2, #222);
+    border: 1px solid var(--border, #333);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.k-alert-section__title {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    color: var(--text-muted, #999);
+}
+
+.k-alert-item {
+    background: var(--surface3, #2a2a2a);
+    border-left: 3px solid var(--red, #ef4444);
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.k-alert-item__name {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.k-alert-item__detail {
+    font-size: 13px;
+    color: var(--text-muted, #999);
+}
+
+.k-alert-item--onboarding {
+    border-left-color: var(--orange, #f59e0b);
+}
+
+.k-alert-item--membership {
+    border-left-color: var(--red, #ef4444);
+}
+
+.k-alert-item--task {
+    border-left-color: var(--blue, #3b82f6);
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 1200px) {
+    .k-instructor-layout {
+        grid-template-columns: 240px 1fr 280px;
+    }
+}
+
+@media (max-width: 900px) {
+    .k-instructor-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr;
+    }
+
+    .k-instructor-left,
+    .k-instructor-right {
+        overflow-y: visible;
+    }
+
+    .k-roster-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+}
