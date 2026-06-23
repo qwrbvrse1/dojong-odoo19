@@ -1,0 +1,22 @@
+/**
+ * Kiosk Member Profile — Onboarding Tab Styles
+ *
+ * This file is a placeholder for any onboarding-tab-specific CSS.
+ * All onboarding UI styles are defined in the main kiosk.css file
+ * under the .k-onboarding-* class hierarchy.
+ *
+ * Current onboarding styles in kiosk.css:
+ * - .k-manage-section (container for onboarding workflow section)
+ * - .k-onboarding-steps (step list wrapper)
+ * - .k-onboarding-step (individual step row)
+ * - .k-onboarding-step--done (completed step modifier)
+ * - .k-onboarding-step__label (step label text)
+ * - .k-onboarding-step__done (done indicator)
+ * - .k-onboarding-step__btn (Mark Done button)
+ * - .k-onboarding-actions (action button row)
+ *
+ * The onboarding section is rendered in the Manage tab of MemberProfileCard
+ * (kiosk_app.js lines 655-706).
+ */
+
+/* No additional styles required - all styles are in kiosk.css */

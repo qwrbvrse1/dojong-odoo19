@@ -1191,33 +1191,31 @@ class MemberProfileCard extends Component {
         }
     }
 
-    async _runOnboardingAction(action, extra = {}) {
+    // ── Onboarding workflow actions ──────────────────────────────
+    // Per SPECIFICATION.md §6.1, onboarding actions use dedicated endpoints:
+    // - POST /kiosk/api/onboarding/complete_step (params: member_id, step_key)
+    // - POST /kiosk/api/onboarding/send_reminder (params: member_id, message)
+
+    async completeOnboardingStep(stepKey) {
         this.state.onboardingBusy = true;
         this.state.onboardingError = "";
         this.state.onboardingSuccess = "";
         try {
-            const result = await jsonPost("/kiosk/instructor/onboarding/action", {
+            const result = await jsonPost("/kiosk/api/onboarding/complete_step", {
                 member_id: this.props.member.member_id,
-                action,
-                ...extra,
+                step_key: stepKey,
             });
             if (result && result.success) {
+                this.state.onboardingSuccess = "Step marked complete.";
                 if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
-                return result;
+            } else {
+                this.state.onboardingError = (result && result.error) || "Could not mark step complete.";
             }
-            this.state.onboardingError = (result && result.error) || "Action failed.";
-            return result;
-        } catch {
+        } catch (e) {
             this.state.onboardingError = "Network error.";
-            return { success: false };
         } finally {
             this.state.onboardingBusy = false;
         }
-    }
-
-    async completeOnboardingStep(stepKey) {
-        const result = await this._runOnboardingAction("complete_step", { step_key: stepKey });
-        if (result && result.success) this.state.onboardingSuccess = "Step marked complete.";
     }
 
     async addOnboardingNote() {
@@ -1226,19 +1224,53 @@ class MemberProfileCard extends Component {
             this.state.onboardingError = "Enter a note first.";
             return;
         }
-        const result = await this._runOnboardingAction("add_note", { note });
-        if (result && result.success) {
-            this.state.onboardingSuccess = "Note added.";
-            this.state.onboardingNote = "";
+        this.state.onboardingBusy = true;
+        this.state.onboardingError = "";
+        this.state.onboardingSuccess = "";
+        try {
+            // Note: add_note not in §6.1 spec; using legacy instructor/onboarding/action endpoint
+            const result = await jsonPost("/kiosk/instructor/onboarding/action", {
+                member_id: this.props.member.member_id,
+                action: "add_note",
+                note,
+            });
+            if (result && result.success) {
+                this.state.onboardingSuccess = "Note added.";
+                this.state.onboardingNote = "";
+                if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
+            } else {
+                this.state.onboardingError = (result && result.error) || "Could not add note.";
+            }
+        } catch {
+            this.state.onboardingError = "Network error.";
+        } finally {
+            this.state.onboardingBusy = false;
         }
     }
 
     async sendOnboardingReminder() {
         const message = (this.state.onboardingNote || "").trim();
-        const result = await this._runOnboardingAction("send_reminder", { message });
-        if (result && result.success) {
-            this.state.onboardingSuccess = "Reminder sent.";
-            this.state.onboardingNote = "";
+        this.state.onboardingBusy = true;
+        this.state.onboardingError = "";
+        this.state.onboardingSuccess = "";
+        try {
+            const result = await jsonPost("/kiosk/api/onboarding/send_reminder", {
+                member_id: this.props.member.member_id,
+                message: message || undefined,
+            });
+            if (result && result.success) {
+                const sentVia = (result.sent_via || []).join(", ");
+                const recipientCount = (result.recipients || []).length;
+                this.state.onboardingSuccess = `Reminder sent${sentVia ? " via " + sentVia : ""}${recipientCount ? " to " + recipientCount + " recipient" + (recipientCount === 1 ? "" : "s") : ""}.`;
+                this.state.onboardingNote = "";
+                if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
+            } else {
+                this.state.onboardingError = (result && result.error) || "Could not send reminder.";
+            }
+        } catch {
+            this.state.onboardingError = "Network error.";
+        } finally {
+            this.state.onboardingBusy = false;
         }
     }
 
@@ -1249,13 +1281,28 @@ class MemberProfileCard extends Component {
             return;
         }
         const incomplete = ((this.workflow().onboarding || {}).steps || []).find(step => !step.complete);
-        const result = await this._runOnboardingAction("escalate_blocker", {
-            step_key: incomplete ? incomplete.key : null,
-            note,
-        });
-        if (result && result.success) {
-            this.state.onboardingSuccess = "Blocker escalated.";
-            this.state.onboardingNote = "";
+        this.state.onboardingBusy = true;
+        this.state.onboardingError = "";
+        this.state.onboardingSuccess = "";
+        try {
+            // Note: escalate_blocker not in §6.1 spec; using legacy instructor/onboarding/action endpoint
+            const result = await jsonPost("/kiosk/instructor/onboarding/action", {
+                member_id: this.props.member.member_id,
+                action: "escalate_blocker",
+                step_key: incomplete ? incomplete.key : null,
+                note,
+            });
+            if (result && result.success) {
+                this.state.onboardingSuccess = "Blocker escalated.";
+                this.state.onboardingNote = "";
+                if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
+            } else {
+                this.state.onboardingError = (result && result.error) || "Could not escalate blocker.";
+            }
+        } catch {
+            this.state.onboardingError = "Network error.";
+        } finally {
+            this.state.onboardingBusy = false;
         }
     }
 

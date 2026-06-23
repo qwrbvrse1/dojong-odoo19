@@ -300,6 +300,30 @@ Returns member profile data including onboarding status. When called without `in
   - Params: `member_id` (int), `message` (str, optional), `token`, `instructor_key`
   - Returns: `{"success": bool, "sent_via": list, "recipients": list, "workflow_status": dict}`
 
+### 6.2 Member Profile Card — Onboarding Workflow
+
+The `MemberProfileCard` component includes an **Onboarding Workflow** section in the Manage tab (instructor mode only). This section provides real-time onboarding status and action controls.
+
+**Display:**
+- Step checklist: Shows each onboarding step with label and completion status
+- Progress indicator: Each incomplete step shows a "Mark Done" button
+- Completed steps: Display a "Done" indicator instead of action buttons
+- Loading states: All action buttons disable while an API call is in progress
+- Error/success messages: Displayed inline below the action buttons
+
+**Actions:**
+- **Mark Complete**: Calls `/kiosk/api/onboarding/complete_step` with `member_id` and `step_key`
+- **Send Reminder**: Calls `/kiosk/api/onboarding/send_reminder` with `member_id` and optional `message` from the note field
+- **Add Note**: Adds operational context to the onboarding record (legacy endpoint)
+- **Escalate**: Creates an escalation task for the first incomplete step (legacy endpoint)
+
+**Behavior:**
+- All actions set `state.onboardingBusy` flag to disable UI during the request
+- Successful actions trigger a profile refresh via `onRefreshProfile()` callback
+- Send Reminder reports sent channels (SMS/email) and recipient count in success message
+- Note/message field clears on successful Add Note or Send Reminder
+- Error states persist until next action or field edit
+
 ---
 
 ## 7. AI Layer
