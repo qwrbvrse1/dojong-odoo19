@@ -14,7 +14,7 @@
 release: REL-001
 branch: rel/REL-001
 worker_model: claude
-alternate_model: codex
+alternate_model: claude
 max_shots: 3
 halt_on_fail: downstream
 workproducts: ~/workproducts/dojong-odoo19/REL-001
