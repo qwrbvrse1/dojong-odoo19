@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="dojo_instructor_dashboard.Dashboard">
+    <div class="instructor-dashboard">
+
+        <!-- Stats Cards -->
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-value"><t t-esc="state.active_students"/></div>
+                <div class="stat-label">Active Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value"><t t-esc="state.todays_checkins"/></div>
+                <div class="stat-label">Today's Check-ins</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value"><t t-esc="state.upcoming_birthdays"/></div>
+                <div class="stat-label">Upcoming Birthdays</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value"><t t-esc="state.expiring_memberships"/></div>
+                <div class="stat-label">Expiring Memberships</div>
+            </div>
+        </div>
+
+        <!-- Belt Distribution Chart -->
+        <div class="dashboard-section">
+            <h3>Belt Distribution</h3>
+            <div class="belt-chart">
+                <t t-foreach="state.belt_distribution" t-as="belt" t-key="belt.rank">
+                    <div class="belt-bar-row">
+                        <div class="belt-label"><t t-esc="belt.rank"/></div>
+                        <div class="belt-bar-container">
+                            <div class="belt-bar"
+                                 t-att-style="`width: ${belt.count * 20}px; background-color: ${belt.color};`">
+                            </div>
+                        </div>
+                        <div class="belt-count"><t t-esc="belt.count"/></div>
+                    </div>
+                </t>
+            </div>
+        </div>
+
+        <!-- Two Column Layout: Birthday List + Expiring Memberships -->
+        <div class="dashboard-lists">
+
+            <!-- Birthday List -->
+            <div class="dashboard-section">
+                <h3>Upcoming Birthdays (Next 7 Days)</h3>
+                <div class="member-list">
+                    <t t-if="state.birthday_list.length === 0">
+                        <div class="empty-state">No upcoming birthdays</div>
+                    </t>
+                    <t t-foreach="state.birthday_list" t-as="member" t-key="member.id">
+                        <div class="member-row" t-on-click="() => this.openMemberRecord(member.id)">
+                            <div class="member-info">
+                                <div class="member-name"><t t-esc="member.name"/></div>
+                                <div class="member-belt badge"><t t-esc="member.belt"/></div>
+                            </div>
+                            <div class="member-meta">
+                                <div class="member-dob"><t t-esc="member.dob"/></div>
+                                <div class="member-countdown"><t t-esc="formatCountdown(member.days_until)"/></div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+
+            <!-- Expiring Memberships List -->
+            <div class="dashboard-section">
+                <h3>Expiring Memberships (Next 30 Days)</h3>
+                <div class="member-list">
+                    <t t-if="state.expiring_list.length === 0">
+                        <div class="empty-state">No expiring memberships</div>
+                    </t>
+                    <t t-foreach="state.expiring_list" t-as="member" t-key="member.id">
+                        <div class="member-row" t-on-click="() => this.openMemberRecord(member.id)">
+                            <div class="member-info">
+                                <div class="member-name"><t t-esc="member.name"/></div>
+                                <div class="member-belt badge"><t t-esc="member.belt"/></div>
+                            </div>
+                            <div class="member-meta">
+                                <div class="member-expdate">Expires: <t t-esc="member.expdate"/></div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</t>
+
+</templates>

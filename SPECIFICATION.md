@@ -54,6 +54,7 @@ Modules are organized by category. All custom/UFTKD modules use `saas~19.2.x.x.x
 | Module | Version | Summary |
 |---|---|---|
 | `dojo_core` | saas~19.2.4.0.0 | Core martial arts school management: members, classes, attendance, belt progression, instructor dashboard |
+| `dojo_instructor_dashboard` | saas~19.2.1.0.0 | OWL-based instructor dashboard with stats, belt distribution, birthdays, and expiring memberships |
 | `dojo_kiosk` | saas~19.2.1.1.0 | Tablet check-in kiosk for dojang members and instructors |
 | `dojo_subscriptions` | saas~19.2.6.0.0 | Membership plans and subscriptions |
 | `dojo_onboarding` | saas~19.2.1.0.0 | Step-by-step member onboarding wizard |
@@ -181,67 +182,85 @@ Full member lifecycle: create member, assign belt rank, enroll in classes, log a
 
 **Membership expiry tracking**: `dojo.member.expdate` is a stored, indexed Date field computed from the linked subscription state. The field holds the end date of the latest active subscription (ordered by `date` descending). When no active subscription exists, or when `dojo_subscriptions` is not installed, the field is `False`. This allows efficient filtering and sorting of members by membership expiry date in list views and reports (e.g., "expiring within 30 days").
 
-### 5.2 Kiosk (dojo_kiosk)
+### 5.2 Instructor Dashboard (dojo_instructor_dashboard)
+
+OWL-based instructor dashboard providing at-a-glance metrics and action lists. Accessed via menu under "Dojang Management" → "Instructor Dashboard". The dashboard is rendered as a client action using Odoo Web Framework components and styled exclusively with `dojo_theme` design tokens.
+
+**Features:**
+
+1. **Four stat cards** — Active students count, today's check-ins (present + late), upcoming birthdays (next 7 days), expiring memberships (next 30 days).
+2. **Belt distribution bar chart** — Horizontal bar chart showing active member breakdown by belt rank. Each rank is color-coded using `dojo.belt.rank.color`. Includes an "Unranked" category for members without a current rank. Sorted by rank sequence.
+3. **Birthday list** — Members with birthdays in the next 7 days, calculated year-agnostically (handles year boundaries correctly). Each entry shows member name, belt rank badge, date of birth, and countdown ("in X days" or "Today!"). Sorted by days until birthday. Clicking a member opens their form view.
+4. **Expiring memberships list** — Active members with `expdate` within 30 days. Each entry shows member name, belt rank badge, and expiry date. Sorted by expiry date ascending. Clicking a member opens their form view.
+
+**Technical implementation:**
+
+- **Controller**: `/instructor_dashboard/data` JSON-RPC endpoint (`addons/dojo_instructor_dashboard/controllers/dashboard.py`) computes all metrics and lists server-side, returns JSON payload.
+- **OWL component**: `InstructorDashboardApp` (`addons/dojo_instructor_dashboard/static/src/js/dashboard.js`) registered in the action registry as `dojo_instructor_dashboard.action`.
+- **Template**: QWeb template `dojo_instructor_dashboard.Dashboard` (`addons/dojo_instructor_dashboard/static/src/xml/dashboard.xml`).
+- **Styling**: All CSS uses `dojo_theme` tokens (`--bg`, `--surface`, `--text`, `--gold`, `--red`, etc.) defined in `addons/dojo_theme/static/src/css/tokens.css`.
+
+### 5.3 Kiosk (dojo_kiosk)
 
 Tablet check-in interface. Members check in via PIN or QR code. Action log tracks every check-in/check-out event. Kiosk carousel displays marketing announcements. Parent SMS alerts fire on check-in via `dojo_communications`. Config record is per-location. See Section 7 for full kiosk detail.
 
-### 5.3 Subscriptions (dojo_subscriptions + subscription_oca)
+### 5.4 Subscriptions (dojo_subscriptions + subscription_oca)
 
 Subscription plans map to Odoo recurring invoices via `subscription_oca`. `dojo_subscriptions` adds the dojo-specific plan definitions and program enrollment records. Stripe integration via `dojo_stripe` handles payment collection.
 
-### 5.4 Onboarding (dojo_onboarding + dojo_onboarding_stripe + dojo_sign)
+### 5.5 Onboarding (dojo_onboarding + dojo_onboarding_stripe + dojo_sign)
 
 Multi-step wizard: collect member info → sign waiver (`dojo_sign`) → select subscription plan → collect Stripe payment method (`dojo_onboarding_stripe`) → create member record. Wizard state persisted in `dojo.onboarding.record` to allow resume on disconnection.
 
-### 5.5 CRM (dojo_crm)
+### 5.6 CRM (dojo_crm)
 
 Pipeline stages, lead scoring, trial lesson booking. Leads sourced from website trial forms (`dojo_website`), AI phone calls (`dojo_connect_ai`), and manual entry. Convert-to-member action promotes a won lead directly into the onboarding flow. Automation rules managed via `dojo_automation`.
 
-### 5.6 Communications (dojo_communications + dojo_firebase + connect)
+### 5.7 Communications (dojo_communications + dojo_firebase + connect)
 
 Automated SMS via Twilio (`connect` module). Email relay via Firebase Cloud Functions / Gmail (`dojo_firebase`). FCM web push to the member portal. Triggers: check-in parent alerts, class session reminders, instructor messages.
 
-### 5.7 Marketing (dojo_marketing)
+### 5.8 Marketing (dojo_marketing)
 
 Promotional cards with embedded QR codes. Cards appear in the kiosk carousel and member portal. QR codes deep-link to website pages or trial forms.
 
-### 5.8 Points and Credits (dojo_points + dojo_credits)
+### 5.9 Points and Credits (dojo_points + dojo_credits)
 
 `dojo_points`: auto-award points on attendance (streak bonuses), belt promotions, and configured events. `dojo_credits`: class credit ledger for drop-in and prepaid class packs. Both integrate with the member portal.
 
-### 5.9 Calendar (dojo_calendar + dojo_events)
+### 5.10 Calendar (dojo_calendar + dojo_events)
 
 Class sessions sync to `calendar.event` for visibility in the Odoo calendar view. `dojo_events` links members to Odoo native Events (tournaments, seminars).
 
-### 5.10 Automation Builder (dojo_automation)
+### 5.11 Automation Builder (dojo_automation)
 
 Spark-Membership-style visual automation builder: trigger → condition → action chains. Drives communications and points awards without code changes.
 
-### 5.11 Social (dojo_social)
+### 5.12 Social (dojo_social)
 
 Facebook/Instagram post scheduling from inside Odoo. Allows dojos to schedule social media content around events and promotions.
 
-### 5.12 Member Portal (dojo_members_portal)
+### 5.13 Member Portal (dojo_members_portal)
 
 Self-service portal for parents and students. Shows attendance history, belt rank, points, credits, upcoming classes. Receives FCM push notifications. Public checkout flow via `dojo_checkout`.
 
-### 5.13 Website (dojo_website)
+### 5.14 Website (dojo_website)
 
 Custom dojang public website with trial lesson booking forms. Forms submit leads into `dojo_crm`.
 
-### 5.14 Stripe (dojo_stripe)
+### 5.15 Stripe (dojo_stripe)
 
 Stripe Billing for subscription recurring payments. Stripe Issuing for dojo employee/instructor cards. Payment method collection during onboarding via `dojo_onboarding_stripe`.
 
-### 5.15 API Bridge (dojo_bridge)
+### 5.16 API Bridge (dojo_bridge)
 
 Headless REST API. Exposes versioned, stateless endpoints secured by HS256 JWTs. Intended to allow a NestJS Control Plane or other external clients to drive Odoo as the Business Plane without coupling to Odoo's web client.
 
-### 5.16 Checkout (dojo_checkout)
+### 5.17 Checkout (dojo_checkout)
 
 Public-facing checkout pages: plan selection, day picker, optional upsells, invoice or pay-now flow, portal account upgrade. Operates without requiring a logged-in Odoo session.
 
-### 5.17 Data Migration (dojo_migration)
+### 5.18 Data Migration (dojo_migration)
 
 Admin-only tool. Imports SparkMembership CSV exports into the dojo data model. One-time use per operator onboarding.
 

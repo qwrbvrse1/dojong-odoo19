@@ -1,0 +1,181 @@
+/* Instructor Dashboard — OWL Component Styles */
+/* Uses dojo_theme design tokens exclusively */
+
+.instructor-dashboard {
+    padding: 24px;
+    background-color: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+/* ━━━ Stats Cards ━━━ */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 36px;
+    font-weight: bold;
+    color: var(--gold);
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ━━━ Dashboard Section ━━━ */
+.dashboard-section {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.dashboard-section h3 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 2px solid var(--red);
+    padding-bottom: 8px;
+}
+
+/* ━━━ Belt Distribution Chart ━━━ */
+.belt-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.belt-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.belt-label {
+    min-width: 120px;
+    font-size: 14px;
+    color: var(--text);
+}
+
+.belt-bar-container {
+    flex: 1;
+    height: 28px;
+    background-color: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.belt-bar {
+    height: 100%;
+    border-radius: 4px;
+    min-width: 4px;
+    transition: width 0.3s ease;
+}
+
+.belt-count {
+    min-width: 40px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* ━━━ Two Column Lists ━━━ */
+.dashboard-lists {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-lists {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ━━━ Member Lists ━━━ */
+.member-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.member-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background-color: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.member-row:hover {
+    background-color: var(--surface3);
+    border-color: var(--red);
+}
+
+.member-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.member-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.member-belt.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background-color: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.member-meta {
+    text-align: right;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.member-dob, .member-expdate {
+    margin-bottom: 4px;
+}
+
+.member-countdown {
+    color: var(--gold);
+    font-weight: 600;
+}
+
+.empty-state {
+    padding: 32px;
+    text-align: center;
+    color: var(--text-dim);
+    font-style: italic;
+}
