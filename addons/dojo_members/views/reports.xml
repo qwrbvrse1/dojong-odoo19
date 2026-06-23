@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inactive Student Report Action -->
+    <record id="action_inactive_student_report" model="ir.actions.client">
+        <field name="name">Inactive Student Report</field>
+        <field name="tag">dojo_members.inactive_report_action</field>
+    </record>
+
+    <!-- Contact Report Action -->
+    <record id="action_contact_report" model="ir.actions.client">
+        <field name="name">Contact Report</field>
+        <field name="tag">dojo_members.contact_report_action</field>
+    </record>
+
+    <!-- Family Report Action -->
+    <record id="action_family_report" model="ir.actions.client">
+        <field name="name">Family Report</field>
+        <field name="tag">dojo_members.family_report_action</field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem id="menu_dojo_members_root"
+              name="Member Reports"
+              parent="dojo_core.menu_dojo_core_root"
+              sequence="50"/>
+
+    <menuitem id="menu_inactive_report"
+              name="Inactive Students"
+              parent="menu_dojo_members_root"
+              action="action_inactive_student_report"
+              sequence="10"/>
+
+    <menuitem id="menu_contact_report"
+              name="Contact Report"
+              parent="menu_dojo_members_root"
+              action="action_contact_report"
+              sequence="20"/>
+
+    <menuitem id="menu_family_report"
+              name="Family Report"
+              parent="menu_dojo_members_root"
+              action="action_family_report"
+              sequence="30"/>
+
+</odoo>

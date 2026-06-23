@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+
+    <!-- Inactive Student Report Template -->
+    <t t-name="dojo_members.InactiveStudentReport">
+        <div class="dojo-report-container">
+            <div class="dojo-report-header">
+                <h2>Inactive Student Report</h2>
+                <div class="dojo-report-controls">
+                    <label>Days:
+                        <input type="number"
+                               t-model="state.days"
+                               t-on-change="onDaysChange"
+                               min="1"
+                               class="o_input"/>
+                    </label>
+                    <button class="btn btn-primary" t-on-click="onRefresh">
+                        Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="dojo-report-content">
+                <t t-if="state.loading">
+                    <div class="text-center p-3">Loading...</div>
+                </t>
+                <t t-else="">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Member #</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Last Attendance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-if="state.members.length === 0">
+                                <tr>
+                                    <td colspan="5" class="text-center">No inactive students found</td>
+                                </tr>
+                            </t>
+                            <t t-else="">
+                                <tr t-foreach="state.members" t-as="member" t-key="member.id">
+                                    <td><t t-esc="member.member_number"/></td>
+                                    <td><t t-esc="member.name"/></td>
+                                    <td><t t-esc="member.email"/></td>
+                                    <td><t t-esc="member.phone"/></td>
+                                    <td><t t-esc="member.last_attendance"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </t>
+            </div>
+        </div>
+    </t>
+
+    <!-- Contact Report Template -->
+    <t t-name="dojo_members.ContactReport">
+        <div class="dojo-report-container">
+            <div class="dojo-report-header">
+                <h2>Contact Report</h2>
+                <div class="dojo-report-controls">
+                    <button class="btn btn-primary" t-on-click="onRefresh">
+                        Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="dojo-report-content">
+                <t t-if="state.loading">
+                    <div class="text-center p-3">Loading...</div>
+                </t>
+                <t t-else="">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Member #</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Missing Fields</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-if="state.members.length === 0">
+                                <tr>
+                                    <td colspan="5" class="text-center">All contacts complete</td>
+                                </tr>
+                            </t>
+                            <t t-else="">
+                                <tr t-foreach="state.members" t-as="member" t-key="member.id">
+                                    <td><t t-esc="member.member_number"/></td>
+                                    <td><t t-esc="member.name"/></td>
+                                    <td><t t-esc="member.email"/></td>
+                                    <td><t t-esc="member.phone"/></td>
+                                    <td class="text-danger"><t t-esc="member.missing_fields"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </t>
+            </div>
+        </div>
+    </t>
+
+    <!-- Family Report Template -->
+    <t t-name="dojo_members.FamilyReport">
+        <div class="dojo-report-container">
+            <div class="dojo-report-header">
+                <h2>Family Report</h2>
+                <div class="dojo-report-controls">
+                    <button class="btn btn-primary" t-on-click="onRefresh">
+                        Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="dojo-report-content">
+                <t t-if="state.loading">
+                    <div class="text-center p-3">Loading...</div>
+                </t>
+                <t t-else="">
+                    <t t-if="state.families.length === 0">
+                        <div class="text-center p-3">No families found</div>
+                    </t>
+                    <t t-else="">
+                        <div t-foreach="state.families" t-as="family" t-key="family.household_id" class="dojo-family-group mb-4">
+                            <div class="dojo-family-header bg-light p-2 border">
+                                <strong><t t-esc="family.household_name"/></strong>
+                                <span class="text-muted ms-3">
+                                    Primary Guardian: <t t-esc="family.primary_guardian"/>
+                                </span>
+                                <span class="badge bg-primary ms-2">
+                                    <t t-esc="family.member_count"/> members
+                                </span>
+                            </div>
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Member #</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="family.members" t-as="member" t-key="member.id">
+                                        <td><t t-esc="member.member_number"/></td>
+                                        <td><t t-esc="member.name"/></td>
+                                        <td><t t-esc="member.email"/></td>
+                                        <td><t t-esc="member.phone"/></td>
+                                        <td><t t-esc="member.membership_state"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </t>
+                </t>
+            </div>
+        </div>
+    </t>
+
+</templates>

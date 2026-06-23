@@ -56,6 +56,7 @@ Modules are organized by category. All custom/UFTKD modules use `saas~19.2.x.x.x
 | `dojo_core` | saas~19.2.4.0.0 | Core martial arts school management: members, classes, attendance, belt progression, instructor dashboard |
 | `dojo_instructor_dashboard` | saas~19.2.1.0.0 | OWL-based instructor dashboard with stats, belt distribution, birthdays, and expiring memberships |
 | `dojo_belt_progression` | saas~19.2.1.0.0 | OWL-based mass belt promotion with multi-select, single-click promote-all, undo, and promotion history |
+| `dojo_members` | saas~19.2.1.0.0 | Member reports: inactive students, contact validation, family groupings |
 | `dojo_kiosk` | saas~19.2.1.1.0 | Tablet check-in kiosk for dojang members and instructors |
 | `dojo_subscriptions` | saas~19.2.6.0.0 | Membership plans and subscriptions |
 | `dojo_onboarding` | saas~19.2.1.0.0 | Step-by-step member onboarding wizard |
@@ -121,7 +122,6 @@ The following directories exist in `addons/` but contain only an `access_rights`
 
 - `dojo_attendance`
 - `dojo_classes`
-- `dojo_members`
 - `dojo_base`
 
 ---
@@ -277,7 +277,17 @@ Spark-Membership-style visual automation builder: trigger → condition → acti
 
 Facebook/Instagram post scheduling from inside Odoo. Allows dojos to schedule social media content around events and promotions.
 
-### 5.14 Member Portal (dojo_members_portal)
+### 5.14 Member Reports (dojo_members)
+
+Three OWL-based member reports accessible from the backend:
+
+- **Inactive Student Report** — lists members with no attendance in the last N days (configurable, default 30). Shows member number, name, email, phone, and last attendance date.
+- **Contact Report** — lists members missing parent/guardian email or phone. Highlights missing fields to drive contact data completeness.
+- **Family Report** — groups members by household, showing primary guardian and all household members. Useful for family billing and communication.
+
+All reports are OWL components with refresh controls, filterable data, and JSON API endpoints. Reports are read-only views; they do not modify member data.
+
+### 5.15 Member Portal (dojo_members_portal)
 
 Self-service portal for parents and students. Shows attendance history, belt rank, points, credits, upcoming classes. Receives FCM push notifications. Public checkout flow via `dojo_checkout`.
 
@@ -524,7 +534,7 @@ curl -f http://127.0.0.1:8070/web/login
 | **MuK IT theme** | High | 7 `muk_web_*` modules active. Replace with custom OWL/plain-CSS theme. Planned for Milestone 5 (MuK Retirement). |
 | **`theme_liquid_glass`** | Medium | Cybrosys Technologies glassmorphism theme (v1.0) present in `addons/`. Not active in production. **Clean up — remove from addons directory.** Added to addons in error; conflicts with planned custom theme direction. |
 | **`portalops_demo`** | Low | Dev artifact with controllers and models, no `__manifest__.py`. Not installed in production. Remove or properly manifest before next production deploy. |
-| **Stub modules** | Low | `dojo_attendance`, `dojo_classes`, `dojo_members`, `dojo_base` — security-only directories, no manifests. Clarify intent: implement or remove. |
+| **Stub modules** | Low | `dojo_attendance`, `dojo_classes`, `dojo_base` — security-only directories, no manifests. Clarify intent: implement or remove. |
 | **No git on production** | High | Code manually deployed to production VM; no version tracking. Cloud SQL backups **DISABLED**. Production has no rollback path. Address in infrastructure phase. |
 | **Cloud SQL backups disabled** | Critical | `free-trial-first-project` Cloud SQL instance has backups disabled. No backup = no recovery from data loss. Enable immediately outside of any release cycle. |
 | **ui-ux-guide.md** | Medium | `docs/ui-ux-guide.md` documents MuK design tokens. Must be updated to reflect new token system as part of the theme migration release. |
