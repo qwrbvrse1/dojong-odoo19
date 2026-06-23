@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        ════════════════════════════════════════════════════════════════════════
+        Membership Expiry Warning Email Automation
+
+        Fires daily at 7:00 AM server time.
+        Finds members with membership expiring within N days (configurable).
+        Sends the membership expiry warning email template.
+
+        Configuration:
+        - dojo_automation.expiry_days_ahead (default: 30 = within 30 days)
+        - Enable/disable via the cron record's active field
+        ════════════════════════════════════════════════════════════════════════
+    -->
+
+    <!-- Configuration Parameter: Days Ahead -->
+    <record id="config_expiry_days_ahead" model="ir.config_parameter">
+        <field name="key">dojo_automation.expiry_days_ahead</field>
+        <field name="value">30</field>
+    </record>
+
+    <!-- Daily Membership Expiry Warning Email Cron -->
+    <record id="ir_cron_expiry_warning_emails" model="ir.cron">
+        <field name="name">Dojo Automation: Send Membership Expiry Warning Emails</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_send_expiry_warning_emails()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="True"/>
+        <field name="doall" eval="False"/>
+    </record>
+
+</odoo>

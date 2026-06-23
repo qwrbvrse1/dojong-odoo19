@@ -619,6 +619,66 @@ class DojoMember(models.Model):
             days_ahead,
         )
 
+    def _cron_send_expiry_warning_emails(self):
+        """Daily cron job to send membership expiry warning emails to members.
+
+        Finds members whose membership expiry date (expdate) is within N days ahead.
+        Sends the expiry warning email template to each matching member.
+
+        Configuration:
+        - dojo_automation.expiry_days_ahead (ir.config_parameter): how many days
+          ahead to check (default: 30 = within 30 days).
+        """
+        days_ahead = int(
+            self.env['ir.config_parameter'].sudo().get_param(
+                'dojo_automation.expiry_days_ahead', '30'
+            )
+        )
+
+        template = self.env.ref(
+            'dojo_automation.email_tpl_expiry_warning',
+            raise_if_not_found=False,
+        )
+        if not template:
+            _logger.warning(
+                "Expiry warning email template 'dojo_automation.email_tpl_expiry_warning' not found. "
+                "Skipping expiry warning email cron."
+            )
+            return
+
+        today = fields.Date.today()
+        threshold_date = today + timedelta(days=days_ahead)
+
+        members = self.sudo().search([
+            ('active', '=', True),
+            ('expdate', '!=', False),
+            ('expdate', '<=', threshold_date),
+            ('expdate', '>=', today),
+            ('partner_id.email', '!=', False),
+        ])
+
+        for member in members:
+            try:
+                template.send_mail(member.id, force_send=False, raise_exception=False)
+                _logger.info(
+                    "Expiry warning email queued for %s (expdate: %s, email: %s)",
+                    member.name,
+                    member.expdate,
+                    member.partner_id.email,
+                )
+            except Exception as e:
+                _logger.error(
+                    "Failed to send expiry warning email to %s: %s",
+                    member.name,
+                    str(e),
+                )
+
+        _logger.info(
+            "Expiry warning email cron completed: %d emails queued (days_ahead=%d).",
+            len(members),
+            days_ahead,
+        )
+
     # ── Deletion ──────────────────────────────────────────────────────────
 
     def unlink(self):

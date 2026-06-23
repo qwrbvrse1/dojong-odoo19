@@ -330,6 +330,23 @@ Daily automated birthday emails are sent to members via an `ir.cron` scheduled a
 - **Template**: `email_tpl_birthday` (`addons/dojo_automation/data/birthday_template.xml`) — Mako template targeting `dojo.member` model.
 - **Config parameter**: `dojo_automation.birthday_days_ahead` (`addons/dojo_automation/data/birthday_automation.xml`) — default value `0`.
 
+**Membership Expiry Warning Automation:**
+
+Daily automated membership expiry warning emails are sent to members via an `ir.cron` scheduled action that runs at 7:00 AM server time. The automation finds members whose membership is expiring within N days (configurable) and sends the "Dojo – Membership Expiry Warning" email template to each matching member.
+
+**Features:**
+1. **Daily Cron Job** — `ir_cron_expiry_warning_emails` runs daily, calling `dojo.member._cron_send_expiry_warning_emails()`. Active by default.
+2. **Configuration** — `dojo_automation.expiry_days_ahead` ir.config_parameter controls how many days ahead to check (default: 30 = within 30 days). Set to 7 to send warnings only to members expiring within a week; set to 60 to send warnings up to two months in advance.
+3. **Email Template** — `email_tpl_expiry_warning` (`dojo_automation.email_tpl_expiry_warning`) provides a branded expiry warning message with the member's expiry date prominently displayed, current rank (if set), and a call-to-action encouraging renewal.
+4. **Filtering** — Only active members with an `expdate` set within the configured threshold and a valid `partner_id.email` receive the warning email. Members without expiry dates, members whose membership already expired (expdate < today), members expiring beyond the threshold, and members without email are excluded.
+5. **Logging** — Each sent email is logged via `_logger.info` with the member name, expiry date, and email address. Send failures are logged as errors but do not halt the cron job.
+
+**Technical implementation:**
+- **Cron record**: `ir_cron_expiry_warning_emails` (`addons/dojo_automation/data/expiry_automation.xml`) — daily interval, runs `dojo.member._cron_send_expiry_warning_emails()`.
+- **Method**: `_cron_send_expiry_warning_emails()` (`addons/dojo_core/models/member.py`) — queries members by expdate range (today <= expdate <= today + days_ahead), calls `mail.template.send_mail()` for each.
+- **Template**: `email_tpl_expiry_warning` (`addons/dojo_automation/data/expiry_template.xml`) — Mako template targeting `dojo.member` model.
+- **Config parameter**: `dojo_automation.expiry_days_ahead` (`addons/dojo_automation/data/expiry_automation.xml`) — default value `30`.
+
 ### 5.13 Social (dojo_social)
 
 Facebook/Instagram post scheduling from inside Odoo. Allows dojos to schedule social media content around events and promotions.

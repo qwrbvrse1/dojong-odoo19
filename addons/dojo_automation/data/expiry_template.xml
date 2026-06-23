@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!--
+        ════════════════════════════════════════════════════════════════════════
+        Membership Expiry Warning Email Template
+        Targets: dojo.member model
+        Sent by: expiry warning automation cron (expiry_automation.xml)
+        ════════════════════════════════════════════════════════════════════════
+    -->
+
+    <record id="email_tpl_expiry_warning" model="mail.template">
+        <field name="name">Dojo – Membership Expiry Warning</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="subject">⏰ Your ${object.company_id.name or 'Dojo'} Membership is Expiring Soon</field>
+        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
+
+    <!-- Header -->
+    <div style="background: #1a1a2e; padding: 40px 24px; text-align: center;">
+        <div style="font-size: 64px; margin-bottom: 8px;">⏰</div>
+        <h1 style="color: #f0a500; margin: 0; font-size: 28px;">Membership Expiring Soon</h1>
+    </div>
+
+    <!-- Body -->
+    <div style="padding: 32px 24px;">
+        <p style="font-size: 18px; color: #1a1a2e; margin: 0 0 16px 0;">
+            Hi <strong>${object.partner_id.name or 'there'}</strong>,
+        </p>
+        <p style="color: #444; line-height: 1.7;">
+            We wanted to remind you that your membership at <strong>${object.company_id.name or 'the dojo'}</strong>
+            is expiring soon.
+        </p>
+
+        % if object.expdate:
+        <div style="background: #fff3cd; border-left: 4px solid #f0a500; padding: 20px; margin: 24px 0; border-radius: 4px;">
+            <p style="margin: 0 0 8px 0; color: #856404; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Expiry Date</p>
+            <p style="margin: 0; font-size: 28px; font-weight: bold; color: #1a1a2e;">${object.expdate.strftime('%B %d, %Y')}</p>
+        </div>
+        % endif
+
+        % if object.current_rank_id:
+        <div style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 16px; margin: 24px 0; border-radius: 8px;">
+            <p style="margin: 0 0 4px 0; color: #6c757d; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Your Current Rank</p>
+            <p style="margin: 0; font-size: 18px; font-weight: bold; color: #1a1a2e;">${object.current_rank_id.name}</p>
+        </div>
+        % endif
+
+        <p style="color: #444; line-height: 1.7;">
+            Don't let your training momentum stop! Renew your membership today to continue your martial arts journey
+            and keep working toward your next goal.
+        </p>
+
+        <p style="color: #444; line-height: 1.7;">
+            If you have any questions about renewing your membership or would like to discuss your training plan,
+            please don't hesitate to reach out to us.
+        </p>
+
+        <div style="text-align: center; margin: 32px 0;">
+            <p style="font-size: 16px; color: #1a1a2e; margin: 0 0 16px 0; font-weight: bold;">
+                We look forward to seeing you on the mat!
+            </p>
+            <p style="font-size: 14px; color: #6c757d; margin: 0;">
+                🥋 Keep training strong 🥋
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background: #f5f5f5; padding: 16px 24px; text-align: center; border-top: 1px solid #e0e0e0;">
+        <p style="color: #888; font-size: 12px; margin: 0;">
+            ${object.company_id.name or 'Your Dojo'} &bull; Sent to ${object.partner_id.email or ''}
+        </p>
+    </div>
+
+</div>
+        ]]></field>
+    </record>
+
+</odoo>

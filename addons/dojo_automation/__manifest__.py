@@ -18,6 +18,8 @@
         "data/mail_sms_templates.xml",
         "data/birthday_template.xml",
         "data/birthday_automation.xml",
+        "data/expiry_template.xml",
+        "data/expiry_automation.xml",
         "views/automation_views_inherit.xml",
         "views/automation_menus.xml",
         "views/automation_builder_views.xml",
