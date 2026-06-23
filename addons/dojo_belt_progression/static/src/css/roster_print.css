@@ -1,0 +1,275 @@
+/* Belt Test Roster Styles */
+
+.belt-test-roster {
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.roster-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.roster-header h2 {
+    margin: 0;
+    color: var(--text, #e0e0e0);
+}
+
+.roster-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.roster-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--surface, #1e1e1e);
+    border-radius: 4px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+    color: var(--text-muted, #b0b0b0);
+}
+
+.filter-group select,
+.filter-group input[type="text"] {
+    padding: 0.5rem;
+    border: 1px solid var(--border, #333);
+    border-radius: 4px;
+    background: var(--bg, #121212);
+    color: var(--text, #e0e0e0);
+}
+
+.roster-metadata {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--surface, #1e1e1e);
+    border-radius: 4px;
+}
+
+.metadata-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.metadata-group label {
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+    color: var(--text-muted, #b0b0b0);
+}
+
+.metadata-group input {
+    padding: 0.5rem;
+    border: 1px solid var(--border, #333);
+    border-radius: 4px;
+    background: var(--bg, #121212);
+    color: var(--text, #e0e0e0);
+}
+
+.roster-selection {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.selection-count {
+    margin-left: auto;
+    font-size: 0.9rem;
+    color: var(--text-muted, #b0b0b0);
+}
+
+.roster-save {
+    margin-bottom: 2rem;
+}
+
+.roster-list {
+    margin-top: 1rem;
+}
+
+.roster-member {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: var(--surface, #1e1e1e);
+    border: 1px solid var(--border, #333);
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.roster-member.selected {
+    background: var(--surface2, #252525);
+    border-color: var(--gold, #ffd700);
+}
+
+.roster-member:hover {
+    background: var(--surface2, #252525);
+}
+
+.member-checkbox {
+    display: flex;
+    align-items: center;
+}
+
+.member-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.member-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.member-name {
+    font-weight: 500;
+    color: var(--text, #e0e0e0);
+    font-size: 1rem;
+}
+
+.member-rank {
+    font-size: 0.85rem;
+    color: var(--text-muted, #b0b0b0);
+    margin-top: 0.25rem;
+}
+
+.no-members {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-dim, #888);
+}
+
+.print-only {
+    display: none;
+}
+
+/* Print Styles */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+
+    .belt-test-roster {
+        padding: 0;
+        max-width: 100%;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    .print-only {
+        display: block !important;
+    }
+
+    .roster-controls {
+        display: none;
+    }
+
+    .roster-print {
+        display: block;
+    }
+
+    .print-header {
+        margin-bottom: 2rem;
+        text-align: center;
+        border-bottom: 2px solid black;
+        padding-bottom: 1rem;
+    }
+
+    .print-header h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.8rem;
+        color: black;
+    }
+
+    .print-date,
+    .print-count {
+        margin: 0.25rem 0;
+        font-size: 0.95rem;
+        color: black;
+    }
+
+    .roster-list {
+        margin-top: 1.5rem;
+    }
+
+    .roster-member {
+        display: grid;
+        grid-template-columns: 3fr 2fr;
+        align-items: center;
+        padding: 0.5rem;
+        margin-bottom: 0.25rem;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 0;
+        page-break-inside: avoid;
+    }
+
+    .roster-member.selected {
+        background: white;
+        border-color: #ddd;
+    }
+
+    .member-checkbox {
+        display: none;
+    }
+
+    .member-info {
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+    }
+
+    .member-name {
+        font-weight: 600;
+        color: black;
+        font-size: 1rem;
+    }
+
+    .member-rank {
+        font-size: 0.9rem;
+        color: #555;
+        margin-top: 0;
+    }
+
+    .member-signature {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.25rem;
+    }
+
+    .signature-line {
+        width: 150px;
+        border-bottom: 1px solid black;
+        height: 20px;
+        text-align: center;
+    }
+
+    .signature-label {
+        font-size: 0.75rem;
+        color: #555;
+        text-align: center;
+    }
+}

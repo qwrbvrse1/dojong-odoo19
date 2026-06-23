@@ -17,12 +17,16 @@
         'security/ir.model.access.csv',
         'views/mass_promote.xml',
         'views/promotion_history.xml',
+        'views/belt_test_roster.xml',
     ],
     'assets': {
         'web.assets_backend': [
             'dojo_belt_progression/static/src/css/mass_promote.css',
+            'dojo_belt_progression/static/src/css/roster_print.css',
             'dojo_belt_progression/static/src/xml/mass_promote.xml',
+            'dojo_belt_progression/static/src/xml/belt_test_roster.xml',
             'dojo_belt_progression/static/src/js/mass_promote.js',
+            'dojo_belt_progression/static/src/js/belt_test_roster.js',
         ],
     },
 }

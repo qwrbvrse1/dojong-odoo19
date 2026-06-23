@@ -202,9 +202,9 @@ OWL-based instructor dashboard providing at-a-glance metrics and action lists. A
 
 ### 5.3 Belt Progression (dojo_belt_progression)
 
-OWL-based mass belt promotion with multi-select member grid, single-click promote-all, and in-session undo. Accessed via menu under "Dojang Management" → "Mass Promote". The mass promotion view is rendered as a client action using Odoo Web Framework components and styled exclusively with `dojo_theme` design tokens.
+OWL-based mass belt promotion with multi-select member grid, single-click promote-all, and in-session undo. Belt test roster builder with print-ready layout and saved records. Accessed via menu under "Dojang Management" → "Mass Promote" and "Belt Test Roster". All views are rendered as client actions using Odoo Web Framework components and styled exclusively with `dojo_theme` design tokens.
 
-**Features:**
+**Mass Promotion Features:**
 
 1. **Member selection grid** — Grid of member cards showing name and current belt rank (color-coded). Click to toggle selection. Filter by name (text search) or current belt rank (dropdown). "Select All" and "Deselect All" buttons. Selection count display.
 2. **Target rank selector** — Buttons for each belt rank ordered by sequence. Click to select target rank. Selected rank is highlighted.
@@ -212,12 +212,21 @@ OWL-based mass belt promotion with multi-select member grid, single-click promot
 4. **Undo stack** — In-memory stack of promotion actions within the current session. "Undo Last Promotion" button deletes the most recent batch of `dojo.member.rank` records created by the last promote action. Undo is only available within the same browser session; closing the page clears the stack.
 5. **Promotion History** — Read-only list view of all `dojo.member.rank` records showing date awarded, member, rank, awarded by, program, stripe count, and notes. Ordered by `date_awarded` descending (most recent first). Accessible via menu under "Dojang Management" → "Promotion History".
 
+**Belt Test Roster Features:**
+
+1. **Filterable member list** — Filter members by class group (course template), belt rank, and name search. All filters update the displayed member list in real-time.
+2. **Member selection** — Click individual members to toggle selection or use "Select All" / "Deselect All" buttons. Selection count display shows total selected members.
+3. **Roster metadata** — Input fields for roster name (defaults to "Belt Test [date]") and test date (defaults to today). Both are editable before saving.
+4. **Print-ready layout** — Print button triggers `@media print` CSS that hides screen-only controls and displays a formatted roster with member names, current ranks, and signature lines for Pass/Fail results. Print layout is optimized for physical paper with page-break-inside avoidance.
+5. **Save to database** — "Save Roster" button creates a `dojo.belt.test` record with the roster name, test date, and program (derived from the class group filter if set). For each selected member, a `dojo.belt.test.registration` record is created with `target_rank_id` set to either: the filtered rank (if rank filter is active), the next rank in sequence after the member's current rank, or the first rank in sequence for unranked members.
+6. **View saved rosters** — "View Saved Rosters" button opens the standard Odoo list view of `dojo.belt.test` records, showing all previously saved rosters with their names, dates, states, and programs. Each record can be opened in form view to see registrations, update test results, or add notes.
+
 **Technical implementation:**
 
-- **Controllers**: `/belt_progression/data` (returns members and ranks), `/belt_progression/promote` (creates rank records, returns record IDs for undo), `/belt_progression/undo` (deletes specified rank records).
-- **OWL component**: `MassPromoteApp` (`addons/dojo_belt_progression/static/src/js/mass_promote.js`) registered in the action registry as `dojo_belt_progression.action`.
-- **Template**: QWeb template `dojo_belt_progression.MassPromote` (`addons/dojo_belt_progression/static/src/xml/mass_promote.xml`).
-- **Styling**: All CSS uses `dojo_theme` tokens defined in `addons/dojo_theme/static/src/css/tokens.css`.
+- **Controllers**: `/belt_progression/data` (returns members and ranks), `/belt_progression/promote` (creates rank records, returns record IDs for undo), `/belt_progression/undo` (deletes specified rank records), `/belt_test/roster/data` (returns members with class enrollments, class templates, and ranks), `/belt_test/roster/save` (creates `dojo.belt.test` record with registrations).
+- **OWL components**: `MassPromoteApp` (`addons/dojo_belt_progression/static/src/js/mass_promote.js`) registered as `dojo_belt_progression.action`; `BeltTestRosterApp` (`addons/dojo_belt_progression/static/src/js/belt_test_roster.js`) registered as `dojo_belt_progression.roster_action`.
+- **Templates**: QWeb templates `dojo_belt_progression.MassPromote` (`addons/dojo_belt_progression/static/src/xml/mass_promote.xml`) and `dojo_belt_progression.BeltTestRosterTemplate` (`addons/dojo_belt_progression/static/src/xml/belt_test_roster.xml`).
+- **Styling**: All CSS uses `dojo_theme` tokens defined in `addons/dojo_theme/static/src/css/tokens.css`. Print-specific styles in `addons/dojo_belt_progression/static/src/css/roster_print.css`.
 
 ### 5.4 Kiosk (dojo_kiosk)
 

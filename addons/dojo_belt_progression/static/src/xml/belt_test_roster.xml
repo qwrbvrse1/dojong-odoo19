@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="dojo_belt_progression.BeltTestRosterTemplate">
+        <div class="belt-test-roster">
+            <!-- Screen-only controls -->
+            <div class="roster-controls no-print">
+                <div class="roster-header">
+                    <h2>Belt Test Roster</h2>
+                    <div class="roster-actions">
+                        <button class="btn btn-secondary" t-on-click="viewSavedRosters">
+                            View Saved Rosters
+                        </button>
+                        <button class="btn btn-primary" t-on-click="printRoster">
+                            Print Roster
+                        </button>
+                    </div>
+                </div>
+
+                <div class="roster-filters">
+                    <div class="filter-group">
+                        <label>Class Group:</label>
+                        <select t-on-change="(ev) => this.updateFilter('template', ev)">
+                            <option value="">All Classes</option>
+                            <option t-foreach="state.templates" t-as="template" t-key="template.id"
+                                    t-att-value="template.id">
+                                <t t-esc="template.name"/>
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Belt Rank:</label>
+                        <select t-on-change="(ev) => this.updateFilter('rank', ev)">
+                            <option value="">All Ranks</option>
+                            <option t-foreach="state.ranks" t-as="rank" t-key="rank.id"
+                                    t-att-value="rank.id">
+                                <t t-esc="rank.name"/>
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Search Name:</label>
+                        <input type="text"
+                               placeholder="Search by name..."
+                               t-on-input="(ev) => this.updateFilter('text', ev)"/>
+                    </div>
+                </div>
+
+                <div class="roster-metadata">
+                    <div class="metadata-group">
+                        <label>Roster Name:</label>
+                        <input type="text"
+                               t-att-value="state.rosterName"
+                               t-on-input="updateRosterName"
+                               placeholder="Belt Test [date]"/>
+                    </div>
+
+                    <div class="metadata-group">
+                        <label>Test Date:</label>
+                        <input type="date"
+                               t-att-value="state.testDate"
+                               t-on-input="updateTestDate"/>
+                    </div>
+                </div>
+
+                <div class="roster-selection">
+                    <button class="btn btn-sm btn-secondary" t-on-click="selectAll">
+                        Select All (<t t-esc="this.filteredMembers.length"/>)
+                    </button>
+                    <button class="btn btn-sm btn-secondary" t-on-click="deselectAll">
+                        Deselect All
+                    </button>
+                    <span class="selection-count">
+                        Selected: <strong><t t-esc="state.selectedMembers.size"/></strong>
+                    </span>
+                </div>
+
+                <div class="roster-save">
+                    <button class="btn btn-success btn-lg" t-on-click="saveRoster">
+                        Save Roster (<t t-esc="state.selectedMembers.size"/> members)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Printable roster -->
+            <div class="roster-print">
+                <div class="print-header">
+                    <h1><t t-esc="state.rosterName || 'Belt Test Roster'"/></h1>
+                    <p class="print-date">Test Date: <t t-esc="state.testDate"/></p>
+                    <p class="print-count">Total Members: <t t-esc="state.selectedMembers.size"/></p>
+                </div>
+
+                <div class="roster-list">
+                    <t t-if="this.filteredMembers.length === 0">
+                        <p class="no-members">No members match the current filters.</p>
+                    </t>
+
+                    <t t-else="">
+                        <div t-foreach="this.filteredMembers" t-as="member" t-key="member.id"
+                             class="roster-member"
+                             t-att-class="state.selectedMembers.has(member.id) ? 'selected' : ''">
+                            <div class="member-checkbox no-print">
+                                <input type="checkbox"
+                                       t-att-checked="state.selectedMembers.has(member.id)"
+                                       t-on-click="() => this.toggleMember(member.id)"/>
+                            </div>
+                            <div class="member-info">
+                                <div class="member-name"><t t-esc="member.name"/></div>
+                                <div class="member-rank"><t t-esc="member.current_rank_name"/></div>
+                            </div>
+                            <div class="member-signature print-only">
+                                <div class="signature-line">_________________</div>
+                                <div class="signature-label">Pass / Fail</div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

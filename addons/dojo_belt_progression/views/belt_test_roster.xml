@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- Client Action for Belt Test Roster -->
+    <record id="action_belt_test_roster" model="ir.actions.client">
+        <field name="name">Belt Test Roster</field>
+        <field name="tag">dojo_belt_progression.roster_action</field>
+    </record>
+
+    <!-- Menu Entry -->
+    <menuitem
+        id="menu_belt_test_roster"
+        name="Belt Test Roster"
+        parent="dojo_core.menu_dojo_core_root"
+        action="action_belt_test_roster"
+        sequence="16"/>
+
+    <!-- List View for Saved Belt Tests -->
+    <record id="view_belt_test_list" model="ir.ui.view">
+        <field name="name">dojo.belt.test.list</field>
+        <field name="model">dojo.belt.test</field>
+        <field name="arch" type="xml">
+            <list string="Belt Test Rosters">
+                <field name="name"/>
+                <field name="test_date"/>
+                <field name="state"/>
+                <field name="program_id"/>
+                <field name="instructor_profile_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View for Belt Tests -->
+    <record id="view_belt_test_form" model="ir.ui.view">
+        <field name="name">dojo.belt.test.form</field>
+        <field name="model">dojo.belt.test</field>
+        <field name="arch" type="xml">
+            <form string="Belt Test">
+                <header>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="test_date"/>
+                            <field name="program_id"/>
+                        </group>
+                        <group>
+                            <field name="instructor_profile_id"/>
+                            <field name="location"/>
+                            <field name="max_participants"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Registrations">
+                            <field name="registration_ids">
+                                <list>
+                                    <field name="member_id"/>
+                                    <field name="target_rank_id"/>
+                                    <field name="result"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>
