@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="dojo_communications.EmailCenter">
+        <div class="dojo-email-center">
+            <div class="email-center-header">
+                <h1>Email Center</h1>
+            </div>
+
+            <div class="email-center-body">
+                <div class="email-center-filters">
+                    <h3>Audience</h3>
+
+                    <div class="filter-group">
+                        <label>Membership Status</label>
+                        <div class="filter-options">
+                            <t t-foreach="state.membershipStates" t-as="ms" t-key="ms.value">
+                                <label class="filter-checkbox">
+                                    <input
+                                        type="checkbox"
+                                        t-att-checked="state.filters.membership_state.includes(ms.value)"
+                                        t-on-change="() => this.toggleMembershipState(ms.value)"
+                                    />
+                                    <t t-esc="ms.label"/>
+                                </label>
+                            </t>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Class Groups</label>
+                        <div class="filter-options">
+                            <t t-foreach="state.classGroups" t-as="group" t-key="group.id">
+                                <label class="filter-checkbox">
+                                    <input
+                                        type="checkbox"
+                                        t-att-checked="state.filters.class_group_ids.includes(group.id)"
+                                        t-on-change="() => this.toggleClassGroup(group.id)"
+                                    />
+                                    <t t-esc="group.name"/>
+                                </label>
+                            </t>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="belt-rank-select">Belt Rank</label>
+                        <select id="belt-rank-select" t-on-change="this.onBeltRankChange">
+                            <option value="">All Ranks</option>
+                            <t t-foreach="state.beltRanks" t-as="rank" t-key="rank.id">
+                                <option t-att-value="rank.id">
+                                    <t t-esc="rank.name"/>
+                                </option>
+                            </t>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-checkbox">
+                            <input
+                                type="checkbox"
+                                t-att-checked="state.filters.expiring_soon"
+                                t-on-change="this.toggleExpiringFilter"
+                            />
+                            Expiring memberships (next
+                            <input
+                                type="number"
+                                class="days-input"
+                                t-model.number="state.filters.expiring_days"
+                                min="1"
+                                max="90"
+                            /> days)
+                        </label>
+                    </div>
+
+                    <button class="btn btn-primary" t-on-click="this.loadMembers">
+                        Load Members
+                    </button>
+                </div>
+
+                <div class="email-center-composer">
+                    <h3>Compose</h3>
+
+                    <div class="form-group">
+                        <label for="email-subject">Subject</label>
+                        <input
+                            id="email-subject"
+                            type="text"
+                            class="form-control"
+                            t-model="state.subject"
+                            placeholder="Email subject"
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email-body">Body</label>
+                        <textarea
+                            id="email-body"
+                            class="form-control"
+                            rows="10"
+                            t-model="state.body"
+                            placeholder="Email body (plain text or HTML)"
+                        />
+                    </div>
+
+                    <div class="recipient-list">
+                        <h4>
+                            Recipients (<t t-esc="state.selectedMemberIds.length"/>/<t t-esc="state.members.length"/>)
+                        </h4>
+                        <t t-if="state.members.length">
+                            <div class="recipient-items">
+                                <t t-foreach="state.members" t-as="member" t-key="member.id">
+                                    <label class="recipient-item">
+                                        <input
+                                            type="checkbox"
+                                            t-att-checked="state.selectedMemberIds.includes(member.id)"
+                                            t-on-change="() => this.toggleMember(member.id)"
+                                        />
+                                        <span class="member-name"><t t-esc="member.name"/></span>
+                                        <span class="member-email"><t t-esc="member.email"/></span>
+                                    </label>
+                                </t>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <p class="text-muted">No members loaded. Select filters and click "Load Members".</p>
+                        </t>
+                    </div>
+
+                    <button
+                        class="btn btn-success btn-lg"
+                        t-on-click="this.sendEmail"
+                        t-att-disabled="state.sending or !state.selectedMemberIds.length"
+                    >
+                        <t t-if="state.sending">Sending...</t>
+                        <t t-else="">Send Email</t>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

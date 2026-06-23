@@ -21,7 +21,15 @@
         "views/dojo_send_message_wizard_view.xml",
         "views/dojo_member_view_inherit.xml",
         "views/dojo_class_session_view_inherit.xml",
+        "views/email_center.xml",
+        "views/assets.xml",
     ],
+    "assets": {
+        "web.assets_backend": [
+            "dojo_communications/static/src/js/email_center.js",
+            "dojo_communications/static/src/xml/email_center.xml",
+        ],
+    },
     "installable": True,
     "auto_install": False,
 }

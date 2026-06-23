@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Email History List View -->
+    <record id="view_dojo_email_history_tree" model="ir.ui.view">
+        <field name="name">dojo.email.history.tree</field>
+        <field name="model">dojo.email.history</field>
+        <field name="arch" type="xml">
+            <list string="Email History">
+                <field name="sent_date"/>
+                <field name="subject"/>
+                <field name="sender_id"/>
+                <field name="recipient_count"/>
+                <field name="audience_filter"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Email History Form View -->
+    <record id="view_dojo_email_history_form" model="ir.ui.view">
+        <field name="name">dojo.email.history.form</field>
+        <field name="model">dojo.email.history</field>
+        <field name="arch" type="xml">
+            <form string="Email History" create="false" edit="false" delete="false">
+                <sheet>
+                    <group>
+                        <field name="sent_date"/>
+                        <field name="sender_id"/>
+                        <field name="subject"/>
+                        <field name="recipient_count"/>
+                        <field name="audience_filter"/>
+                    </group>
+                    <group>
+                        <field name="body" widget="html"/>
+                    </group>
+                    <notebook>
+                        <page string="Recipients">
+                            <field name="member_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="email"/>
+                                    <field name="membership_state"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Email Center Action (Client Action for OWL) -->
+    <record id="action_email_center" model="ir.actions.client">
+        <field name="name">Email Center</field>
+        <field name="tag">dojo_communications.email_center</field>
+    </record>
+
+    <!-- Email History Action -->
+    <record id="action_email_history" model="ir.actions.act_window">
+        <field name="name">Email History</field>
+        <field name="res_model">dojo.email.history</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem
+        id="menu_dojo_communications_root"
+        name="Communications"
+        sequence="60"
+        web_icon="dojo_communications,static/description/icon.png"
+    />
+
+    <menuitem
+        id="menu_email_center"
+        name="Email Center"
+        parent="menu_dojo_communications_root"
+        action="action_email_center"
+        sequence="10"
+    />
+
+    <menuitem
+        id="menu_email_history"
+        name="Email History"
+        parent="menu_dojo_communications_root"
+        action="action_email_history"
+        sequence="20"
+    />
+
+</odoo>

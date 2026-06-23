@@ -269,6 +269,34 @@ Pipeline stages, lead scoring, trial lesson booking. Leads sourced from website 
 
 Automated SMS via Twilio (`connect` module). Email relay via Firebase Cloud Functions / Gmail (`dojo_firebase`). FCM web push to the member portal. Triggers: check-in parent alerts, class session reminders, instructor messages.
 
+**Email Center**: OWL-based interface for composing and sending mass emails to member segments. Accessed via menu under "Communications" → "Email Center". The Email Center provides audience segmentation by membership status, class groups, belt rank, and expiring memberships. All sent emails are logged in the Email History.
+
+**Email Center Features:**
+
+1. **Audience Segmentation** — Filter members by:
+   - Membership status (active, trial, paused, cancelled) with multi-select checkboxes
+   - Class groups (multi-select checkboxes)
+   - Belt rank (single-select dropdown, with "All Ranks" option)
+   - Expiring memberships (checkbox to include members with `expdate` within a configurable number of days, default 30)
+
+2. **Member Loading** — "Load Members" button fetches members matching the selected filters via `/dojo/email_center/members` JSON-RPC endpoint. Returns member list with name, email, membership state, and current rank.
+
+3. **Recipient Selection** — Loaded members appear in a recipient list with checkboxes. Individual members can be toggled, or all/none selected. Shows count of selected recipients vs total loaded members.
+
+4. **Email Composer** — Subject (text input) and body (textarea supporting plain text or HTML). Both are required before sending.
+
+5. **Send Action** — "Send Email" button creates `mail.mail` records for each selected member (routing to guardian email via `_mail_get_partners()` when applicable), sends the emails via Odoo's mail system, and creates a `dojo.email.history` record logging the subject, body, recipient count, audience filter description, and recipient member IDs.
+
+6. **Email History** — Read-only list view of all sent emails (`dojo.email.history`) showing sent date, subject, sender, recipient count, and audience filter description. Form view displays the full email body (HTML widget) and a notebook tab showing the recipient member list. History records cannot be edited or deleted by regular users (only managers with `base.group_system`).
+
+**Technical implementation:**
+
+- **Model**: `dojo.email.history` (`addons/dojo_communications/models/email_history.py`) with fields: `subject`, `body`, `sent_date`, `sender_id`, `recipient_count`, `audience_filter`, `member_ids`.
+- **Controllers**: `/dojo/email_center/send` (sends emails and creates history record), `/dojo/email_center/members` (returns filtered member list), both JSON-RPC endpoints in `addons/dojo_communications/controllers/email_center.py`.
+- **OWL component**: `EmailCenter` (`addons/dojo_communications/static/src/js/email_center.js`) registered as `dojo_communications.email_center`.
+- **Templates**: QWeb template `dojo_communications.EmailCenter` (`addons/dojo_communications/static/src/xml/email_center.xml`).
+- **Styling**: All CSS uses `dojo_theme` tokens defined in `addons/dojo_theme/static/src/css/tokens.css`.
+
 ### 5.9 Marketing (dojo_marketing)
 
 Promotional cards with embedded QR codes. Cards appear in the kiosk carousel and member portal. QR codes deep-link to website pages or trial forms.
