@@ -57,7 +57,7 @@ reset:
   - bash testenv/reset.sh
 gate:
   - test -f releases/REL-001/muk-audit.md
-  - bash -c 'n=$(grep -rl muk_web_ addons/dojo_*/\__manifest__.py addons/ai_*/\__manifest__.py 2>/dev/null | wc -l); echo "MuK deps in custom modules: $n"; test "$n" -eq 0'
+  - bash -c 'n=$(grep -rl muk_web_ addons/dojo_*/\__manifest__.py addons/ai_*/\__manifest__.py 2>/dev/null | wc -l); echo muk_dep_count=$n; test $n -eq 0'
   - curl -sf http://127.0.0.1:8070/web/login -o /dev/null
 regression_gate:
   - bash testenv/verify.sh
@@ -104,7 +104,7 @@ test_data:
 reset:
   - bash testenv/reset.sh
 gate:
-  - bash -c 'count=$(docker compose exec -T db psql -U odoo -d odoo19 -tAc "SELECT COUNT(*) FROM ir_module_module WHERE name LIKE '"'"'muk_web_%'"'"' AND state='"'"'installed'"'"';" 2>/dev/null || echo 0); echo "Installed MuK modules: $count"; test "$count" -eq 0'
+  - bash -c 'count=$(docker compose exec -T db psql -U odoo -d odoo19 -tAc "SELECT COUNT(*) FROM ir_module_module WHERE name LIKE '"'"'muk_web_%'"'"' AND state='"'"'installed'"'"';" 2>/dev/null || echo 0); echo muk_installed=$count; test $count -eq 0'
   - bash -c 'for mod in muk_web_theme muk_web_chatter muk_web_appsbar muk_web_colors muk_web_dialog muk_web_group muk_web_refresh; do test ! -d "addons/$mod" && echo "$mod removed" || (echo "$mod still present" && exit 1); done'
   - curl -sf http://127.0.0.1:8070/web/login -o /dev/null
   - test -f docs/ui-ux-guide.md
