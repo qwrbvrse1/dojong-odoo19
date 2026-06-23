@@ -55,6 +55,7 @@ Modules are organized by category. All custom/UFTKD modules use `saas~19.2.x.x.x
 |---|---|---|
 | `dojo_core` | saas~19.2.4.0.0 | Core martial arts school management: members, classes, attendance, belt progression, instructor dashboard |
 | `dojo_instructor_dashboard` | saas~19.2.1.0.0 | OWL-based instructor dashboard with stats, belt distribution, birthdays, and expiring memberships |
+| `dojo_belt_progression` | saas~19.2.1.0.0 | OWL-based mass belt promotion with multi-select, single-click promote-all, undo, and promotion history |
 | `dojo_kiosk` | saas~19.2.1.1.0 | Tablet check-in kiosk for dojang members and instructors |
 | `dojo_subscriptions` | saas~19.2.6.0.0 | Membership plans and subscriptions |
 | `dojo_onboarding` | saas~19.2.1.0.0 | Step-by-step member onboarding wizard |
@@ -119,7 +120,6 @@ Seven modules from MuK IT providing the current backend UI theme. All targeted f
 The following directories exist in `addons/` but contain only an `access_rights` security file and no `__manifest__.py`. They appear to be placeholder namespaces reserved for future implementation.
 
 - `dojo_attendance`
-- `dojo_belt_progression`
 - `dojo_classes`
 - `dojo_members`
 - `dojo_base`
@@ -200,67 +200,86 @@ OWL-based instructor dashboard providing at-a-glance metrics and action lists. A
 - **Template**: QWeb template `dojo_instructor_dashboard.Dashboard` (`addons/dojo_instructor_dashboard/static/src/xml/dashboard.xml`).
 - **Styling**: All CSS uses `dojo_theme` tokens (`--bg`, `--surface`, `--text`, `--gold`, `--red`, etc.) defined in `addons/dojo_theme/static/src/css/tokens.css`.
 
-### 5.3 Kiosk (dojo_kiosk)
+### 5.3 Belt Progression (dojo_belt_progression)
+
+OWL-based mass belt promotion with multi-select member grid, single-click promote-all, and in-session undo. Accessed via menu under "Dojang Management" → "Mass Promote". The mass promotion view is rendered as a client action using Odoo Web Framework components and styled exclusively with `dojo_theme` design tokens.
+
+**Features:**
+
+1. **Member selection grid** — Grid of member cards showing name and current belt rank (color-coded). Click to toggle selection. Filter by name (text search) or current belt rank (dropdown). "Select All" and "Deselect All" buttons. Selection count display.
+2. **Target rank selector** — Buttons for each belt rank ordered by sequence. Click to select target rank. Selected rank is highlighted.
+3. **Promote button** — Disabled until at least one member is selected and a target rank is chosen. Click to promote all selected members to the target rank in a single action. Creates `dojo.member.rank` records for each promoted member with `date_awarded` set to today and notes recording "Mass promotion to [Rank Name]".
+4. **Undo stack** — In-memory stack of promotion actions within the current session. "Undo Last Promotion" button deletes the most recent batch of `dojo.member.rank` records created by the last promote action. Undo is only available within the same browser session; closing the page clears the stack.
+5. **Promotion History** — Read-only list view of all `dojo.member.rank` records showing date awarded, member, rank, awarded by, program, stripe count, and notes. Ordered by `date_awarded` descending (most recent first). Accessible via menu under "Dojang Management" → "Promotion History".
+
+**Technical implementation:**
+
+- **Controllers**: `/belt_progression/data` (returns members and ranks), `/belt_progression/promote` (creates rank records, returns record IDs for undo), `/belt_progression/undo` (deletes specified rank records).
+- **OWL component**: `MassPromoteApp` (`addons/dojo_belt_progression/static/src/js/mass_promote.js`) registered in the action registry as `dojo_belt_progression.action`.
+- **Template**: QWeb template `dojo_belt_progression.MassPromote` (`addons/dojo_belt_progression/static/src/xml/mass_promote.xml`).
+- **Styling**: All CSS uses `dojo_theme` tokens defined in `addons/dojo_theme/static/src/css/tokens.css`.
+
+### 5.4 Kiosk (dojo_kiosk)
 
 Tablet check-in interface. Members check in via PIN or QR code. Action log tracks every check-in/check-out event. Kiosk carousel displays marketing announcements. Parent SMS alerts fire on check-in via `dojo_communications`. Config record is per-location. See Section 7 for full kiosk detail.
 
-### 5.4 Subscriptions (dojo_subscriptions + subscription_oca)
+### 5.5 Subscriptions (dojo_subscriptions + subscription_oca)
 
 Subscription plans map to Odoo recurring invoices via `subscription_oca`. `dojo_subscriptions` adds the dojo-specific plan definitions and program enrollment records. Stripe integration via `dojo_stripe` handles payment collection.
 
-### 5.5 Onboarding (dojo_onboarding + dojo_onboarding_stripe + dojo_sign)
+### 5.6 Onboarding (dojo_onboarding + dojo_onboarding_stripe + dojo_sign)
 
 Multi-step wizard: collect member info → sign waiver (`dojo_sign`) → select subscription plan → collect Stripe payment method (`dojo_onboarding_stripe`) → create member record. Wizard state persisted in `dojo.onboarding.record` to allow resume on disconnection.
 
-### 5.6 CRM (dojo_crm)
+### 5.7 CRM (dojo_crm)
 
 Pipeline stages, lead scoring, trial lesson booking. Leads sourced from website trial forms (`dojo_website`), AI phone calls (`dojo_connect_ai`), and manual entry. Convert-to-member action promotes a won lead directly into the onboarding flow. Automation rules managed via `dojo_automation`.
 
-### 5.7 Communications (dojo_communications + dojo_firebase + connect)
+### 5.8 Communications (dojo_communications + dojo_firebase + connect)
 
 Automated SMS via Twilio (`connect` module). Email relay via Firebase Cloud Functions / Gmail (`dojo_firebase`). FCM web push to the member portal. Triggers: check-in parent alerts, class session reminders, instructor messages.
 
-### 5.8 Marketing (dojo_marketing)
+### 5.9 Marketing (dojo_marketing)
 
 Promotional cards with embedded QR codes. Cards appear in the kiosk carousel and member portal. QR codes deep-link to website pages or trial forms.
 
-### 5.9 Points and Credits (dojo_points + dojo_credits)
+### 5.10 Points and Credits (dojo_points + dojo_credits)
 
 `dojo_points`: auto-award points on attendance (streak bonuses), belt promotions, and configured events. `dojo_credits`: class credit ledger for drop-in and prepaid class packs. Both integrate with the member portal.
 
-### 5.10 Calendar (dojo_calendar + dojo_events)
+### 5.11 Calendar (dojo_calendar + dojo_events)
 
 Class sessions sync to `calendar.event` for visibility in the Odoo calendar view. `dojo_events` links members to Odoo native Events (tournaments, seminars).
 
-### 5.11 Automation Builder (dojo_automation)
+### 5.12 Automation Builder (dojo_automation)
 
 Spark-Membership-style visual automation builder: trigger → condition → action chains. Drives communications and points awards without code changes.
 
-### 5.12 Social (dojo_social)
+### 5.13 Social (dojo_social)
 
 Facebook/Instagram post scheduling from inside Odoo. Allows dojos to schedule social media content around events and promotions.
 
-### 5.13 Member Portal (dojo_members_portal)
+### 5.14 Member Portal (dojo_members_portal)
 
 Self-service portal for parents and students. Shows attendance history, belt rank, points, credits, upcoming classes. Receives FCM push notifications. Public checkout flow via `dojo_checkout`.
 
-### 5.14 Website (dojo_website)
+### 5.15 Website (dojo_website)
 
 Custom dojang public website with trial lesson booking forms. Forms submit leads into `dojo_crm`.
 
-### 5.15 Stripe (dojo_stripe)
+### 5.16 Stripe (dojo_stripe)
 
 Stripe Billing for subscription recurring payments. Stripe Issuing for dojo employee/instructor cards. Payment method collection during onboarding via `dojo_onboarding_stripe`.
 
-### 5.16 API Bridge (dojo_bridge)
+### 5.17 API Bridge (dojo_bridge)
 
 Headless REST API. Exposes versioned, stateless endpoints secured by HS256 JWTs. Intended to allow a NestJS Control Plane or other external clients to drive Odoo as the Business Plane without coupling to Odoo's web client.
 
-### 5.17 Checkout (dojo_checkout)
+### 5.18 Checkout (dojo_checkout)
 
 Public-facing checkout pages: plan selection, day picker, optional upsells, invoice or pay-now flow, portal account upgrade. Operates without requiring a logged-in Odoo session.
 
-### 5.18 Data Migration (dojo_migration)
+### 5.19 Data Migration (dojo_migration)
 
 Admin-only tool. Imports SparkMembership CSV exports into the dojo data model. One-time use per operator onboarding.
 
@@ -487,7 +506,7 @@ curl -f http://127.0.0.1:8070/web/login
 | **MuK IT theme** | High | 7 `muk_web_*` modules active. Replace with custom OWL/plain-CSS theme. Planned for Milestone 5 (MuK Retirement). |
 | **`theme_liquid_glass`** | Medium | Cybrosys Technologies glassmorphism theme (v1.0) present in `addons/`. Not active in production. **Clean up — remove from addons directory.** Added to addons in error; conflicts with planned custom theme direction. |
 | **`portalops_demo`** | Low | Dev artifact with controllers and models, no `__manifest__.py`. Not installed in production. Remove or properly manifest before next production deploy. |
-| **Stub modules** | Low | `dojo_attendance`, `dojo_belt_progression`, `dojo_classes`, `dojo_members`, `dojo_base` — security-only directories, no manifests. Clarify intent: implement or remove. |
+| **Stub modules** | Low | `dojo_attendance`, `dojo_classes`, `dojo_members`, `dojo_base` — security-only directories, no manifests. Clarify intent: implement or remove. |
 | **No git on production** | High | Code manually deployed to production VM; no version tracking. Cloud SQL backups **DISABLED**. Production has no rollback path. Address in infrastructure phase. |
 | **Cloud SQL backups disabled** | Critical | `free-trial-first-project` Cloud SQL instance has backups disabled. No backup = no recovery from data loss. Enable immediately outside of any release cycle. |
 | **ui-ux-guide.md** | Medium | `docs/ui-ux-guide.md` documents MuK design tokens. Must be updated to reflect new token system as part of the theme migration release. |

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- Client Action for Mass Promotion -->
+    <record id="action_mass_promote" model="ir.actions.client">
+        <field name="name">Mass Belt Promotion</field>
+        <field name="tag">dojo_belt_progression.action</field>
+    </record>
+
+    <!-- Menu Entry -->
+    <menuitem
+        id="menu_mass_promote"
+        name="Mass Promote"
+        parent="dojo_core.menu_dojo_core_root"
+        action="action_mass_promote"
+        sequence="15"/>
+
+</odoo>

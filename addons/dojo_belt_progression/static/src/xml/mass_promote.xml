@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="dojo_belt_progression.MassPromote">
+        <div class="dojo-mass-promote">
+            <div class="dojo-mass-promote__header">
+                <h1>Mass Belt Promotion</h1>
+                <div class="dojo-mass-promote__actions">
+                    <button class="btn btn-secondary" t-on-click="() => this.undoLastPromotion()" t-att-disabled="state.undoStack.length === 0">
+                        Undo Last Promotion
+                    </button>
+                </div>
+            </div>
+
+            <div class="dojo-mass-promote__filters">
+                <div class="dojo-mass-promote__filter-group">
+                    <label>Search by name:</label>
+                    <input type="text" class="form-control" placeholder="Type member name..." t-model="state.filterText" t-on-input="onFilterTextChange"/>
+                </div>
+                <div class="dojo-mass-promote__filter-group">
+                    <label>Filter by current rank:</label>
+                    <select class="form-select" t-model="state.filterRankId" t-on-change="onFilterRankChange">
+                        <option value="">All Ranks</option>
+                        <t t-foreach="state.ranks" t-as="rank" t-key="rank.id">
+                            <option t-att-value="rank.id"><t t-esc="rank.name"/></option>
+                        </t>
+                    </select>
+                </div>
+            </div>
+
+            <div class="dojo-mass-promote__selection-controls">
+                <button class="btn btn-sm btn-secondary" t-on-click="() => this.selectAll()">Select All</button>
+                <button class="btn btn-sm btn-secondary" t-on-click="() => this.deselectAll()">Deselect All</button>
+                <span class="dojo-mass-promote__selection-count">
+                    <t t-esc="state.selectedMembers.size"/> selected
+                </span>
+            </div>
+
+            <div class="dojo-mass-promote__member-grid">
+                <t t-foreach="filteredMembers" t-as="member" t-key="member.id">
+                    <div class="dojo-mass-promote__member-card"
+                         t-att-class="{ 'dojo-mass-promote__member-card--selected': state.selectedMembers.has(member.id) }"
+                         t-on-click="() => this.toggleMember(member.id)">
+                        <div class="dojo-mass-promote__member-name">
+                            <t t-esc="member.name"/>
+                        </div>
+                        <div class="dojo-mass-promote__member-rank" t-att-style="'color: ' + member.current_rank_color">
+                            <t t-esc="member.current_rank_name"/>
+                        </div>
+                    </div>
+                </t>
+            </div>
+
+            <div class="dojo-mass-promote__promote-section">
+                <h2>Promote Selected Members To:</h2>
+                <div class="dojo-mass-promote__rank-selector">
+                    <t t-foreach="state.ranks" t-as="rank" t-key="rank.id">
+                        <button class="btn dojo-mass-promote__rank-button"
+                                t-att-class="{ 'btn-primary': state.targetRankId === rank.id, 'btn-outline-secondary': state.targetRankId !== rank.id }"
+                                t-att-style="state.targetRankId === rank.id ? 'background-color: ' + rank.color + '; border-color: ' + rank.color : ''"
+                                t-on-click="() => this.setTargetRank(rank.id)">
+                            <t t-esc="rank.name"/>
+                        </button>
+                    </t>
+                </div>
+                <button class="btn btn-primary btn-lg dojo-mass-promote__promote-button"
+                        t-on-click="() => this.promoteSelected()"
+                        t-att-disabled="state.selectedMembers.size === 0 || !state.targetRankId">
+                    Promote <t t-esc="state.selectedMembers.size"/> Member(s)
+                </button>
+            </div>
+        </div>
+    </t>
+
+</templates>
