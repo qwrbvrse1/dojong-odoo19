@@ -6,7 +6,7 @@
 >
 > **Deviation from UnattendedBuild template:** This project uses a single `SPECIFICATION.md` at the repo root rather than the `specifications/<domain>.md` per-domain convention. All increment touchpoints and deliverables reference `SPECIFICATION.md`. When running the audit, treat `SPECIFICATION.md` as the equivalent of `specifications/`.
 >
-> **Resumption note:** INC-01, 02, 03, 04, 06, 08, 09, 10, 11, 12 passed on first run and are committed. This plan covers only the remaining increments. All `depends_on` references to already-committed increments have been cleared.
+> **Resumption note:** INC-01, 02, 03, 04, 05, 06, 08, 09, 10, 11, 12 passed and are committed. This plan covers only the remaining increments (INC-07, INC-13–INC-23). All `depends_on` references to already-committed increments have been cleared.
 
 ## Release configuration
 
@@ -21,50 +21,6 @@ workproducts: ~/workproducts/dojong-odoo19/REL-001
 baseline_gate:
   - bash testenv/verify.sh
   - test -d addons/sms_twilio && test -f addons/sms_twilio/__manifest__.py
-```
-
----
-
-## INC-05 — session-time-tagging: time-state field on today's sessions
-
-Add a `time_state` computed value to the `get_todays_sessions()` response in `dojo_kiosk_service.py`. State is one of: `active`, `upcoming_soon`, `upcoming`, `done`.
-
-**Decision rules:**
-- `active`: session `start_time` ≤ now < session `end_time`.
-- `upcoming_soon`: session `start_time` > now AND session `start_time` ≤ now + 15 minutes.
-- `upcoming`: session `start_time` > now + 15 minutes.
-- `done`: session `end_time` ≤ now.
-- Server-side computation only — use `fields.Datetime.now()` in service method. Do not rely on client clock.
-- If a session has no `end_time`, treat `end_time` as `start_time + 60 minutes` for state computation.
-- Write tests in `addons/dojo_kiosk/tests/test_session_time_state.py` covering all four states plus the no-end-time fallback. Use `freeze_time` or set `datetime.now` via monkeypatch in the test setup.
-- If `freeze_time` is not available in the container, implement time injection via a keyword argument `_now=None` on the service method (defaults to `fields.Datetime.now()`). Tests pass a fixed datetime.
-- **CRITICAL:** Do NOT modify `get_member_profile()`, `workflow_status`, or any method outside `get_todays_sessions()`. Existing tests `test_kiosk_workflow_visibility` and `test_kiosk_workflow_actions` test `workflow_status` in the member profile — do not touch that code path.
-
-```yaml
-id: INC-05
-title: time_state field on kiosk session list
-depends_on: []
-touchpoints:
-  - addons/dojo_kiosk/services/dojo_kiosk_service.py
-  - addons/dojo_kiosk/tests/test_session_time_state.py
-  - SPECIFICATION.md
-deliverables:
-  - get_todays_sessions() returns time_state on each session dict
-  - Test file with ≥5 test methods covering all states
-  - SPECIFICATION.md §5.1 (or §6) updated with time_state field description
-test_data:
-  seed: n/a
-  migration_before_state: n/a
-  external_stubs: n/a
-  credentials: n/a
-reset:
-  - bash testenv/reset.sh
-gate:
-  - docker compose run --rm --entrypoint /opt/odoo/odoo-bin web -c /etc/odoo/odoo.conf -d odoo19 --workers=0 --no-http -u dojo_kiosk --test-enable --test-file addons/dojo_kiosk/tests/test_session_time_state.py --stop-after-init
-  - curl -sf http://127.0.0.1:8070/web/login -o /dev/null
-regression_gate:
-  - bash testenv/verify.sh
-  - docker compose run --rm --entrypoint /opt/odoo/odoo-bin web -c /etc/odoo/odoo.conf -d odoo19 --workers=0 --no-http -u dojo_core,dojo_kiosk --test-enable --stop-after-init
 ```
 
 ---
