@@ -17,6 +17,7 @@
         'security/ir.model.access.csv',
         'views/dashboard.xml',
         'views/analytics.xml',
+        'views/export_wizard.xml',
     ],
     'assets': {
         'web.assets_backend': [

@@ -202,11 +202,23 @@ A dedicated analytics view provides insight into class attendance patterns and m
 3. **Most Attendance** — Top 10 members ranked by check-in count within the selected period. Shows member name, current belt rank badge, and check-in count. Clicking a member opens their form view.
 4. **Inactive Members** — Active members with zero check-ins (present or late) in the selected period. Shows member name, current belt rank badge, and last seen date (the most recent check-in from any period, or "Never" if no attendance records exist). Useful for identifying at-risk members who may need follow-up.
 
+**CSV Export Wizard:**
+
+The instructor dashboard and member reports include a CSV export wizard accessible via an "Export Data" action. The wizard (`dojo.export.wizard`, a transient model) presents four export types:
+
+1. **Students (All Fields)** — exports all members with: member number, name, first name, last name, email, phone, date of birth, gender, membership state, current belt, membership expiry, emergency contacts, blood type, allergies, medical notes, total sessions, and attendance rate.
+2. **Attendance Log** — exports all `dojo.attendance.log` records with: date, member number, member name, session, status, check-in time, check-out time, duration (hours), performance rating, and notes.
+3. **Promotion History** — exports all `dojo.member.rank` records with: date awarded, member number, member name, belt rank, stripes, program, awarded by, and notes.
+4. **Belt Test Rosters** — exports all `dojo.belt.test` records and their registrations with: test date, test name, location, program, lead instructor, status, member number, member name, current belt, testing for rank, registration status, and result.
+
+The wizard returns a CSV file download via the `/instructor_dashboard/export?type=<export_type>` HTTP controller (`addons/dojo_instructor_dashboard/controllers/export.py`). The controller generates the CSV dynamically and returns it with `Content-Type: text/csv` and a `Content-Disposition: attachment` header.
+
 **Technical implementation:**
 
-- **Controllers**: `/instructor_dashboard/data` JSON-RPC endpoint (`addons/dojo_instructor_dashboard/controllers/dashboard.py`) computes dashboard metrics; `/instructor_dashboard/analytics` JSON-RPC endpoint (`addons/dojo_instructor_dashboard/controllers/analytics.py`) computes attendance analytics accepting a `days` parameter (30 or 90).
+- **Controllers**: `/instructor_dashboard/data` JSON-RPC endpoint (`addons/dojo_instructor_dashboard/controllers/dashboard.py`) computes dashboard metrics; `/instructor_dashboard/analytics` JSON-RPC endpoint (`addons/dojo_instructor_dashboard/controllers/analytics.py`) computes attendance analytics accepting a `days` parameter (30 or 90); `/instructor_dashboard/export` HTTP endpoint (`addons/dojo_instructor_dashboard/controllers/export.py`) generates and returns CSV exports.
 - **OWL components**: `InstructorDashboardApp` (`addons/dojo_instructor_dashboard/static/src/js/dashboard.js`) registered as `dojo_instructor_dashboard.action`; `AttendanceAnalyticsApp` (`addons/dojo_instructor_dashboard/static/src/js/analytics.js`) registered as `dojo_instructor_dashboard.analytics_action`.
 - **Templates**: QWeb templates `dojo_instructor_dashboard.Dashboard` and `dojo_instructor_dashboard.Analytics` (`addons/dojo_instructor_dashboard/static/src/xml/dashboard.xml`).
+- **Models**: `dojo.export.wizard` transient model (`addons/dojo_instructor_dashboard/models/export_wizard.py`) with methods `_export_students()`, `_export_attendance()`, `_export_promotion_history()`, `_export_belt_test_rosters()`.
 - **Styling**: All CSS uses `dojo_theme` tokens (`--bg`, `--surface`, `--text`, `--gold`, `--red`, etc.) defined in `addons/dojo_theme/static/src/css/tokens.css`.
 
 ### 5.3 Belt Progression (dojo_belt_progression)
