@@ -17,6 +17,11 @@
                     <button class="btn btn-primary" t-on-click="onRefresh">
                         Refresh
                     </button>
+                    <button class="btn btn-success ms-2"
+                            t-on-click="openFollowupDialog"
+                            t-att-disabled="!hasSelection">
+                        Send Follow-up (<t t-esc="state.selectedIds.size"/>)
+                    </button>
                 </div>
             </div>
             <div class="dojo-report-content">
@@ -27,6 +32,12 @@
                     <table class="table table-striped">
                         <thead>
                             <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox"
+                                           t-att-checked="allSelected"
+                                           t-on-click="toggleSelectAll"
+                                           class="form-check-input"/>
+                                </th>
                                 <th>Member #</th>
                                 <th>Name</th>
                                 <th>Email</th>
@@ -37,11 +48,17 @@
                         <tbody>
                             <t t-if="state.members.length === 0">
                                 <tr>
-                                    <td colspan="5" class="text-center">No inactive students found</td>
+                                    <td colspan="6" class="text-center">No inactive students found</td>
                                 </tr>
                             </t>
                             <t t-else="">
                                 <tr t-foreach="state.members" t-as="member" t-key="member.id">
+                                    <td>
+                                        <input type="checkbox"
+                                               t-att-checked="state.selectedIds.has(member.id)"
+                                               t-on-click="() => this.toggleSelection(member.id)"
+                                               class="form-check-input"/>
+                                    </td>
                                     <td><t t-esc="member.member_number"/></td>
                                     <td><t t-esc="member.name"/></td>
                                     <td><t t-esc="member.email"/></td>
@@ -53,6 +70,39 @@
                     </table>
                 </t>
             </div>
+
+            <!-- Follow-up Email Confirmation Dialog -->
+            <t t-if="state.showFollowupDialog">
+                <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Send Follow-up Email</h5>
+                                <button type="button" class="btn-close" t-on-click="closeFollowupDialog"/>
+                            </div>
+                            <div class="modal-body">
+                                <p>Send follow-up email to <strong><t t-esc="state.selectedIds.size"/></strong> selected member(s)?</p>
+                                <p class="text-muted small">A default "We miss you at the dojo" message will be sent to each selected member.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        t-on-click="closeFollowupDialog"
+                                        t-att-disabled="state.sendingEmail">
+                                    Cancel
+                                </button>
+                                <button type="button"
+                                        class="btn btn-primary"
+                                        t-on-click="sendFollowup"
+                                        t-att-disabled="state.sendingEmail">
+                                    <t t-if="state.sendingEmail">Sending...</t>
+                                    <t t-else="">Send Email</t>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
         </div>
     </t>
 

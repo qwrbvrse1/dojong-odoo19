@@ -321,11 +321,29 @@ Facebook/Instagram post scheduling from inside Odoo. Allows dojos to schedule so
 
 Three OWL-based member reports accessible from the backend:
 
-- **Inactive Student Report** — lists members with no attendance in the last N days (configurable, default 30). Shows member number, name, email, phone, and last attendance date.
+- **Inactive Student Report** — lists members with no attendance in the last N days (configurable, default 30). Shows member number, name, email, phone, and last attendance date. Includes checkbox selection for individual or bulk selection of members, and a "Send Follow-up" action button that triggers a follow-up email workflow to selected inactive students.
 - **Contact Report** — lists members missing parent/guardian email or phone. Highlights missing fields to drive contact data completeness.
 - **Family Report** — groups members by household, showing primary guardian and all household members. Useful for family billing and communication.
 
-All reports are OWL components with refresh controls, filterable data, and JSON API endpoints. Reports are read-only views; they do not modify member data.
+All reports are OWL components with refresh controls, filterable data, and JSON API endpoints.
+
+**Follow-up Email Action:**
+
+The Inactive Student Report includes a mass email action accessible via the "Send Follow-up" button. The workflow:
+
+1. **Selection** — Instructors check individual members or use "Select All" to mark inactive students for follow-up. The button label shows the count of selected members.
+2. **Confirmation Dialog** — Clicking "Send Follow-up" opens a modal dialog confirming the action and showing the count of recipients. The dialog explains that a default "We miss you at the dojo" message will be sent.
+3. **Email Sending** — Confirmation triggers the `/dojo_members/send_followup` JSON-RPC endpoint which creates and sends `mail.mail` records for each selected member (routing to their partner email). Only members with valid email addresses receive the email; members without email are silently skipped.
+4. **Success Notification** — A toast notification confirms the sent count, and the selection is cleared.
+
+The endpoint requires `dojo_core.group_dojo_instructor` or `group_dojo_admin` permission. The default email subject is "We miss you at the dojo!" and the default body is a friendly re-engagement message. Custom subject and body can be passed as optional parameters by future implementations (Email Center integration). All follow-up emails sent via this action are logged via standard Odoo `mail.mail` tracking but do not create `dojo.email.history` records (reserved for the Email Center mass-send feature).
+
+**Technical implementation:**
+
+- **Controllers**: `/dojo_members/api/inactive_report` (returns inactive members), `/dojo_members/api/contact_report` (returns incomplete contacts), `/dojo_members/api/family_report` (returns household groupings), `/dojo_members/send_followup` (sends follow-up emails). All JSON-RPC endpoints in `addons/dojo_members/controllers/reports.py` and `addons/dojo_members/controllers/followup.py`.
+- **OWL components**: `InactiveStudentReport`, `ContactReport`, `FamilyReport` (`addons/dojo_members/static/src/js/reports.js`) registered as client actions.
+- **Templates**: QWeb templates `dojo_members.InactiveStudentReport`, `dojo_members.ContactReport`, `dojo_members.FamilyReport` (`addons/dojo_members/static/src/xml/reports.xml`).
+- **Styling**: Components use standard Odoo classes and `dojo_theme` tokens where custom styling is needed.
 
 ### 5.15 Member Portal (dojo_members_portal)
 

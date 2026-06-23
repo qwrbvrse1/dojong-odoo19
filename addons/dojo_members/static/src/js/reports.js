@@ -11,10 +11,14 @@ class InactiveStudentReport extends Component {
 
     setup() {
         this.rpc = useService("rpc");
+        this.notification = useService("notification");
         this.state = useState({
             members: [],
             days: 30,
             loading: false,
+            selectedIds: new Set(),
+            showFollowupDialog: false,
+            sendingEmail: false,
         });
         onWillStart(() => this.loadData());
     }
@@ -26,6 +30,7 @@ class InactiveStudentReport extends Component {
                 days: this.state.days,
             });
             this.state.members = members;
+            this.state.selectedIds.clear();
         } finally {
             this.state.loading = false;
         }
@@ -37,6 +42,77 @@ class InactiveStudentReport extends Component {
 
     async onRefresh() {
         await this.loadData();
+    }
+
+    toggleSelection(memberId) {
+        if (this.state.selectedIds.has(memberId)) {
+            this.state.selectedIds.delete(memberId);
+        } else {
+            this.state.selectedIds.add(memberId);
+        }
+    }
+
+    toggleSelectAll() {
+        if (this.state.selectedIds.size === this.state.members.length) {
+            this.state.selectedIds.clear();
+        } else {
+            this.state.selectedIds.clear();
+            this.state.members.forEach(m => this.state.selectedIds.add(m.id));
+        }
+    }
+
+    get allSelected() {
+        return this.state.members.length > 0 && this.state.selectedIds.size === this.state.members.length;
+    }
+
+    get hasSelection() {
+        return this.state.selectedIds.size > 0;
+    }
+
+    openFollowupDialog() {
+        if (!this.hasSelection) {
+            this.notification.add("Please select at least one member to send follow-up email.", {
+                type: "warning",
+            });
+            return;
+        }
+        this.state.showFollowupDialog = true;
+    }
+
+    closeFollowupDialog() {
+        this.state.showFollowupDialog = false;
+    }
+
+    async sendFollowup() {
+        const memberIds = Array.from(this.state.selectedIds);
+        this.state.sendingEmail = true;
+
+        try {
+            const result = await this.rpc('/dojo_members/send_followup', {
+                member_ids: memberIds,
+            });
+
+            if (result.success) {
+                this.notification.add(
+                    `Follow-up email sent to ${result.sent_count} member(s).`,
+                    { type: "success" }
+                );
+                this.state.showFollowupDialog = false;
+                this.state.selectedIds.clear();
+            } else {
+                this.notification.add(
+                    result.error || "Failed to send follow-up emails.",
+                    { type: "danger" }
+                );
+            }
+        } catch (error) {
+            this.notification.add(
+                "Error sending follow-up emails. Please try again.",
+                { type: "danger" }
+            );
+        } finally {
+            this.state.sendingEmail = false;
+        }
     }
 }
 
