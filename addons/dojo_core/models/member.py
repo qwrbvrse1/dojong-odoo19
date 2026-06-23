@@ -2,6 +2,7 @@ import logging
 import re
 import secrets
 import unicodedata
+from datetime import timedelta
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
@@ -550,6 +551,73 @@ class DojoMember(models.Model):
                 "sticky": sticky,
             },
         }
+
+    # ── Birthday Automation ───────────────────────────────────────────────
+
+    def _cron_send_birthday_emails(self):
+        """Daily cron job to send birthday emails to members.
+
+        Finds members whose birthday is today (or within N days ahead if configured).
+        Sends the birthday email template to each matching member.
+
+        Configuration:
+        - dojo_automation.birthday_days_ahead (ir.config_parameter): how many days
+          ahead to check (default: 0 = today only).
+        """
+        days_ahead = int(
+            self.env['ir.config_parameter'].sudo().get_param(
+                'dojo_automation.birthday_days_ahead', '0'
+            )
+        )
+
+        template = self.env.ref(
+            'dojo_automation.email_tpl_birthday',
+            raise_if_not_found=False,
+        )
+        if not template:
+            _logger.warning(
+                "Birthday email template 'dojo_automation.email_tpl_birthday' not found. "
+                "Skipping birthday email cron."
+            )
+            return
+
+        today = fields.Date.today()
+        target_dates = []
+        for offset in range(days_ahead + 1):
+            target_date = today + timedelta(days=offset)
+            target_dates.append((target_date.month, target_date.day))
+
+        members = self.sudo().search([
+            ('active', '=', True),
+            ('date_of_birth', '!=', False),
+            ('partner_id.email', '!=', False),
+        ])
+
+        birthday_members = members.filtered(
+            lambda m: (m.date_of_birth.month, m.date_of_birth.day) in target_dates
+        )
+
+        for member in birthday_members:
+            try:
+                template.send_mail(member.id, force_send=False, raise_exception=False)
+                _logger.info(
+                    "Birthday email queued for %s (DOB: %s, email: %s)",
+                    member.name,
+                    member.date_of_birth,
+                    member.partner_id.email,
+                )
+            except Exception as e:
+                _logger.error(
+                    "Failed to send birthday email to %s: %s",
+                    member.name,
+                    str(e),
+                )
+
+        _logger.info(
+            "Birthday email cron completed: %d emails queued (days_ahead=%d).",
+            len(birthday_members),
+            days_ahead,
+        )
 
     # ── Deletion ──────────────────────────────────────────────────────────
 

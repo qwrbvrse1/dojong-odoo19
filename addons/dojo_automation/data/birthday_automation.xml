@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        ════════════════════════════════════════════════════════════════════════
+        Birthday Email Automation
+
+        Fires daily at 6:00 AM server time.
+        Finds members with birthdays today (or within N days if configured).
+        Sends the birthday email template.
+
+        Configuration:
+        - dojo_automation.birthday_days_ahead (default: 0 = today only)
+        - Enable/disable via the cron record's active field
+        ════════════════════════════════════════════════════════════════════════
+    -->
+
+    <!-- Configuration Parameter: Days Ahead -->
+    <record id="config_birthday_days_ahead" model="ir.config_parameter">
+        <field name="key">dojo_automation.birthday_days_ahead</field>
+        <field name="value">0</field>
+    </record>
+
+    <!-- Daily Birthday Email Cron -->
+    <record id="ir_cron_birthday_emails" model="ir.cron">
+        <field name="name">Dojo Automation: Send Birthday Emails</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_send_birthday_emails()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="True"/>
+        <field name="doall" eval="False"/>
+    </record>
+
+</odoo>

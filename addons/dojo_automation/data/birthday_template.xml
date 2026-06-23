@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!--
+        ════════════════════════════════════════════════════════════════════════
+        Birthday Email Template
+        Targets: dojo.member model
+        Sent by: birthday automation cron (birthday_automation.xml)
+        ════════════════════════════════════════════════════════════════════════
+    -->
+
+    <record id="email_tpl_birthday" model="mail.template">
+        <field name="name">Dojo – Birthday Wishes</field>
+        <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="subject">🎉 Happy Birthday, ${object.partner_id.name or 'Warrior'}!</field>
+        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
+
+    <!-- Header -->
+    <div style="background: #1a1a2e; padding: 40px 24px; text-align: center;">
+        <div style="font-size: 64px; margin-bottom: 8px;">🎉</div>
+        <h1 style="color: #f0a500; margin: 0; font-size: 32px;">Happy Birthday!</h1>
+    </div>
+
+    <!-- Body -->
+    <div style="padding: 32px 24px; text-align: center;">
+        <p style="font-size: 20px; color: #1a1a2e; margin: 0 0 16px 0;">
+            <strong>${object.partner_id.name or 'there'}</strong>, today is YOUR day!
+        </p>
+        <p style="color: #444; line-height: 1.7; text-align: left;">
+            Everyone at <strong>${object.company_id.name or 'the dojo'}</strong> wants to wish you
+            the happiest of birthdays. We're so grateful to have you as part of our martial arts family.
+        </p>
+        <p style="color: #444; line-height: 1.7; text-align: left;">
+            Your dedication, hard work, and positive spirit inspire everyone around you.
+            We hope your special day is filled with joy, laughter, and maybe a few kicks! 🥋
+        </p>
+
+        % if object.current_rank_id:
+        <div style="background: #fff8e1; border: 2px solid #f0a500; padding: 20px; margin: 24px 0; border-radius: 8px;">
+            <p style="margin: 0 0 4px 0; color: #888; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Your Current Rank</p>
+            <p style="margin: 0; font-size: 24px; font-weight: bold; color: #1a1a2e;">${object.current_rank_id.name}</p>
+        </div>
+        % endif
+
+        <p style="color: #444; line-height: 1.7; text-align: left;">
+            Here's to another year of growth, achievement, and awesome training sessions.
+            See you on the mat!
+        </p>
+
+        <div style="margin: 32px 0;">
+            <p style="font-size: 18px; color: #f0a500; margin: 0; font-weight: bold;">
+                🎂 Have an amazing day! 🎂
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background: #f5f5f5; padding: 16px 24px; text-align: center; border-top: 1px solid #e0e0e0;">
+        <p style="color: #888; font-size: 12px; margin: 0;">
+            ${object.company_id.name or 'Your Dojo'} &bull; Sent to ${object.partner_id.email or ''}
+        </p>
+    </div>
+
+</div>
+        ]]></field>
+    </record>
+
+</odoo>

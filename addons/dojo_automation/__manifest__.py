@@ -1,6 +1,6 @@
 {
     "name": "Dojang Automation",
-    "version": "saas~19.2.1.1.0",
+    "version": "saas~19.2.1.3.0",
     "summary": "Spark-Membership-style automation builder for Dojang workflows",
     "author": "Dojo",
     "category": "Hidden",
@@ -16,6 +16,8 @@
         "data/trigger_templates.xml",
         "data/hide_oca_app.xml",
         "data/mail_sms_templates.xml",
+        "data/birthday_template.xml",
+        "data/birthday_automation.xml",
         "views/automation_views_inherit.xml",
         "views/automation_menus.xml",
         "views/automation_builder_views.xml",

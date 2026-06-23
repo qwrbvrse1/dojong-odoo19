@@ -313,6 +313,23 @@ Class sessions sync to `calendar.event` for visibility in the Odoo calendar view
 
 Spark-Membership-style visual automation builder: trigger → condition → action chains. Drives communications and points awards without code changes.
 
+**Birthday Email Automation:**
+
+Daily automated birthday emails are sent to members via an `ir.cron` scheduled action that runs at 6:00 AM server time. The automation finds members with birthdays today (or within N days ahead if configured) and sends the "Dojo – Birthday Wishes" email template to each matching member.
+
+**Features:**
+1. **Daily Cron Job** — `ir_cron_birthday_emails` runs daily, calling `dojo.member._cron_send_birthday_emails()`. Active by default.
+2. **Configuration** — `dojo_automation.birthday_days_ahead` ir.config_parameter controls how many days ahead to check (default: 0 = today only). Set to 1 to send emails to members with birthdays today or tomorrow; set to 7 to send up to a week in advance.
+3. **Email Template** — `email_tpl_birthday` (`dojo_automation.email_tpl_birthday`) provides a branded birthday message with celebration styling, member's current rank display (if set), and a call-to-action button linking to the member portal.
+4. **Filtering** — Only active members with a `date_of_birth` set and a valid `partner_id.email` receive the birthday email. Inactive members and members without email are excluded.
+5. **Logging** — Each sent email is logged via `_logger.info` with the member name, date of birth, and email address. Send failures are logged as errors but do not halt the cron job.
+
+**Technical implementation:**
+- **Cron record**: `ir_cron_birthday_emails` (`addons/dojo_automation/data/birthday_automation.xml`) — daily interval, runs `dojo.member._cron_send_birthday_emails()`.
+- **Method**: `_cron_send_birthday_emails()` (`addons/dojo_core/models/member.py`) — queries members by birthday month/day match, calls `mail.template.send_mail()` for each.
+- **Template**: `email_tpl_birthday` (`addons/dojo_automation/data/birthday_template.xml`) — Mako template targeting `dojo.member` model.
+- **Config parameter**: `dojo_automation.birthday_days_ahead` (`addons/dojo_automation/data/birthday_automation.xml`) — default value `0`.
+
 ### 5.13 Social (dojo_social)
 
 Facebook/Instagram post scheduling from inside Odoo. Allows dojos to schedule social media content around events and promotions.
