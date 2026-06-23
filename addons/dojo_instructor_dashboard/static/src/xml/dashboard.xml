@@ -93,4 +93,95 @@
     </div>
 </t>
 
+<t t-name="dojo_instructor_dashboard.Analytics">
+    <div class="attendance-analytics">
+
+        <!-- Period Selector -->
+        <div class="analytics-header">
+            <h2>Attendance Analytics</h2>
+            <div class="period-selector">
+                <button
+                    t-att-class="state.period_days === 30 ? 'btn btn-primary' : 'btn btn-secondary'"
+                    t-on-click="() => this.changePeriod(30)">
+                    Last 30 Days
+                </button>
+                <button
+                    t-att-class="state.period_days === 90 ? 'btn btn-primary' : 'btn btn-secondary'"
+                    t-on-click="() => this.changePeriod(90)">
+                    Last 90 Days
+                </button>
+            </div>
+        </div>
+
+        <!-- Three Sections -->
+        <div class="analytics-sections">
+
+            <!-- Busiest Classes -->
+            <div class="analytics-section">
+                <h3>Busiest Classes</h3>
+                <div class="session-list">
+                    <t t-if="state.busiest_sessions.length === 0">
+                        <div class="empty-state">No sessions found in this period</div>
+                    </t>
+                    <t t-foreach="state.busiest_sessions" t-as="session" t-key="session.session_id">
+                        <div class="session-row" t-on-click="() => this.openSessionRecord(session.session_id)">
+                            <div class="session-info">
+                                <div class="session-name"><t t-esc="session.session_name"/></div>
+                                <div class="session-date"><t t-esc="session.start_datetime"/></div>
+                            </div>
+                            <div class="session-stats">
+                                <div class="checkin-count badge"><t t-esc="session.checkin_count"/> check-ins</div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+
+            <!-- Most Attendance -->
+            <div class="analytics-section">
+                <h3>Most Attendance</h3>
+                <div class="member-list">
+                    <t t-if="state.top_attending_members.length === 0">
+                        <div class="empty-state">No attendance found in this period</div>
+                    </t>
+                    <t t-foreach="state.top_attending_members" t-as="member" t-key="member.member_id">
+                        <div class="member-row" t-on-click="() => this.openMemberRecord(member.member_id)">
+                            <div class="member-info">
+                                <div class="member-name"><t t-esc="member.member_name"/></div>
+                                <div class="member-belt badge"><t t-esc="member.belt"/></div>
+                            </div>
+                            <div class="member-stats">
+                                <div class="checkin-count badge"><t t-esc="member.checkin_count"/> check-ins</div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+
+            <!-- Inactive Members -->
+            <div class="analytics-section">
+                <h3>Inactive Members</h3>
+                <div class="member-list">
+                    <t t-if="state.inactive_members.length === 0">
+                        <div class="empty-state">No inactive members found</div>
+                    </t>
+                    <t t-foreach="state.inactive_members" t-as="member" t-key="member.member_id">
+                        <div class="member-row" t-on-click="() => this.openMemberRecord(member.member_id)">
+                            <div class="member-info">
+                                <div class="member-name"><t t-esc="member.member_name"/></div>
+                                <div class="member-belt badge"><t t-esc="member.belt"/></div>
+                            </div>
+                            <div class="member-meta">
+                                <div class="last-seen">Last seen: <t t-esc="member.last_seen"/></div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</t>
+
 </templates>

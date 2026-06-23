@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- Client Action -->
+    <record id="action_attendance_analytics" model="ir.actions.client">
+        <field name="name">Attendance Analytics</field>
+        <field name="tag">dojo_instructor_dashboard.analytics_action</field>
+    </record>
+
+    <!-- Menu Entry -->
+    <menuitem
+        id="menu_attendance_analytics"
+        name="Attendance Analytics"
+        parent="dojo_core.menu_dojo_core_root"
+        action="action_attendance_analytics"
+        sequence="6"/>
+
+</odoo>

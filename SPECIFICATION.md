@@ -193,11 +193,20 @@ OWL-based instructor dashboard providing at-a-glance metrics and action lists. A
 3. **Birthday list** — Members with birthdays in the next 7 days, calculated year-agnostically (handles year boundaries correctly). Each entry shows member name, belt rank badge, date of birth, and countdown ("in X days" or "Today!"). Sorted by days until birthday. Clicking a member opens their form view.
 4. **Expiring memberships list** — Active members with `expdate` within 30 days. Each entry shows member name, belt rank badge, and expiry date. Sorted by expiry date ascending. Clicking a member opens their form view.
 
+**Attendance Analytics:**
+
+A dedicated analytics view provides insight into class attendance patterns and member engagement. Accessed via menu under "Dojang Management" → "Attendance Analytics".
+
+1. **Time period selector** — Toggle between "Last 30 Days" and "Last 90 Days" to adjust the analysis window. All three analytics sections update when the period changes.
+2. **Busiest Classes** — Top 10 class sessions ranked by check-in count (present + late) within the selected period. Shows session name, start datetime, and check-in count. Clicking a session opens its form view.
+3. **Most Attendance** — Top 10 members ranked by check-in count within the selected period. Shows member name, current belt rank badge, and check-in count. Clicking a member opens their form view.
+4. **Inactive Members** — Active members with zero check-ins (present or late) in the selected period. Shows member name, current belt rank badge, and last seen date (the most recent check-in from any period, or "Never" if no attendance records exist). Useful for identifying at-risk members who may need follow-up.
+
 **Technical implementation:**
 
-- **Controller**: `/instructor_dashboard/data` JSON-RPC endpoint (`addons/dojo_instructor_dashboard/controllers/dashboard.py`) computes all metrics and lists server-side, returns JSON payload.
-- **OWL component**: `InstructorDashboardApp` (`addons/dojo_instructor_dashboard/static/src/js/dashboard.js`) registered in the action registry as `dojo_instructor_dashboard.action`.
-- **Template**: QWeb template `dojo_instructor_dashboard.Dashboard` (`addons/dojo_instructor_dashboard/static/src/xml/dashboard.xml`).
+- **Controllers**: `/instructor_dashboard/data` JSON-RPC endpoint (`addons/dojo_instructor_dashboard/controllers/dashboard.py`) computes dashboard metrics; `/instructor_dashboard/analytics` JSON-RPC endpoint (`addons/dojo_instructor_dashboard/controllers/analytics.py`) computes attendance analytics accepting a `days` parameter (30 or 90).
+- **OWL components**: `InstructorDashboardApp` (`addons/dojo_instructor_dashboard/static/src/js/dashboard.js`) registered as `dojo_instructor_dashboard.action`; `AttendanceAnalyticsApp` (`addons/dojo_instructor_dashboard/static/src/js/analytics.js`) registered as `dojo_instructor_dashboard.analytics_action`.
+- **Templates**: QWeb templates `dojo_instructor_dashboard.Dashboard` and `dojo_instructor_dashboard.Analytics` (`addons/dojo_instructor_dashboard/static/src/xml/dashboard.xml`).
 - **Styling**: All CSS uses `dojo_theme` tokens (`--bg`, `--surface`, `--text`, `--gold`, `--red`, etc.) defined in `addons/dojo_theme/static/src/css/tokens.css`.
 
 ### 5.3 Belt Progression (dojo_belt_progression)

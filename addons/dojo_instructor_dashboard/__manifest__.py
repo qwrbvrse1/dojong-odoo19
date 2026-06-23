@@ -16,12 +16,14 @@
     'data': [
         'security/ir.model.access.csv',
         'views/dashboard.xml',
+        'views/analytics.xml',
     ],
     'assets': {
         'web.assets_backend': [
             'dojo_instructor_dashboard/static/src/css/dashboard.css',
             'dojo_instructor_dashboard/static/src/xml/dashboard.xml',
             'dojo_instructor_dashboard/static/src/js/dashboard.js',
+            'dojo_instructor_dashboard/static/src/js/analytics.js',
         ],
     },
 }
