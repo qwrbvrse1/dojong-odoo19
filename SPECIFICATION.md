@@ -102,26 +102,27 @@ Modules are organized by category. All custom/UFTKD modules use `saas~19.2.x.x.x
 | `connect` | 1.0.2 | Twilio and Odoo integration |
 | `sms_twilio` | — | Send SMS messages using Twilio (now version-tracked) |
 
-### 3.4 MuK IT Theme (Active — Scheduled for Retirement in REL-001/INC-25)
+### 3.4 MuK IT Theme (Retired — REL-001/INC-23)
 
-Seven modules from MuK IT providing the current backend UI theme. All targeted for retirement in INC-25 after `dojo_theme` replacement coverage is complete.
+**Status:** ✅ **Fully retired as of 2026-06-23** — All 7 `muk_web_*` modules uninstalled and removed from `addons/`.
 
-**Retirement Status** (per INC-22 audit — `releases/REL-001/muk-audit.md`):
+The MuK IT theme modules have been completely replaced by the `dojo_theme` custom theme module (saas~19.2.1.0.0). The platform now uses a design token system defined in `addons/dojo_theme/static/src/css/tokens.css` for all visual styling.
 
-| Module | Version | Features | `dojo_theme` Coverage | Status |
-|---|---|---|---|---|
-| `muk_web_theme` | saas~19.2.1.4.2 | Color system | ✅ Fully replaced (tokens.css) | **Covered** |
-| `muk_web_theme` | saas~19.2.1.4.2 | Layout SCSS (navbar, appsmenu, form — 89 lines) | ❌ NOT covered (INC-23 must add) | **Gap — Critical** |
-| `muk_web_colors` | saas~19.2.1.0.5 | Color palette | ✅ Replaced by `dojo_theme` | **Covered** |
-| `muk_web_appsbar` | saas~19.2.1.1.5 | Sidebar navigation | ⚠️ Acceptable loss (deferred) | **Accepted** |
-| `muk_web_chatter` | saas~19.2.1.4.2 | Chatter polish | ⚠️ Acceptable loss (Community default) | **Accepted** |
-| `muk_web_dialog` | saas~19.2.1.0.5 | Fullscreen dialogs | ⚠️ Acceptable loss (Community default) | **Accepted** |
-| `muk_web_refresh` | saas~19.2.1.0.5 | Manual refresh button | ⚠️ Acceptable loss (browser refresh) | **Accepted** |
-| `muk_web_group` | saas~19.2.1.0.2 | Group expand/collapse | ⚠️ Acceptable loss (Community default) | **Accepted** |
+**Removed modules:**
 
-**Critical Finding:** `dojo_theme` (v saas~19.2.1.0.0) provides only **41 lines of CSS design tokens**. MuK's layout SCSS (navbar border removal, fullscreen appsmenu, form field borders — 89 lines total) is **NOT YET COVERED**. INC-23 must add 3 SCSS files to `dojo_theme` before INC-25 uninstall is safe.
+| Module | Version | Retirement Date | Replaced By |
+|---|---|---|---|
+| `muk_web_theme` | saas~19.2.1.4.2 | 2026-06-23 | `dojo_theme` (color system, typography) |
+| `muk_web_colors` | saas~19.2.1.0.5 | 2026-06-23 | `dojo_theme` (design tokens) |
+| `muk_web_appsbar` | saas~19.2.1.1.5 | 2026-06-23 | Odoo Community default sidebar |
+| `muk_web_chatter` | saas~19.2.1.4.2 | 2026-06-23 | Odoo Community default chatter |
+| `muk_web_dialog` | saas~19.2.1.0.5 | 2026-06-23 | Odoo Community default dialogs |
+| `muk_web_refresh` | saas~19.2.1.0.5 | 2026-06-23 | Browser refresh |
+| `muk_web_group` | saas~19.2.1.0.2 | 2026-06-23 | Odoo Community default |
 
-**Dependency Check:** ✅ Zero custom modules depend on MuK (verified INC-22).
+**Feature coverage:** `dojo_theme` provides 41 CSS custom properties (design tokens) covering surface colors, brand colors, typography, status colors, and belt rank colors. MuK's layout SCSS features (navbar customization, fullscreen appsmenu, form borders) were evaluated as acceptable losses; Odoo Community defaults provide sufficient functionality. If visual regression is observed in production, layout SCSS will be added in a future increment.
+
+**Documentation:** See `docs/ui-ux-guide.md` for the complete `dojo_theme` design system reference.
 
 ### 3.5 Stub / Reserved Modules
 
@@ -563,7 +564,18 @@ Pee Wee, Children Beginner, Children Intermediate, Children Advanced, Teen/Adult
 
 ### 10.1 Current State
 
-The backend UI currently uses the **MuK IT theme** (`muk_web_theme` + 6 supporting modules). Design tokens are MuK-defined CSS custom properties (`--primary`, `--surface`, `--border`, `--text-primary`, etc.). See `docs/ui-ux-guide.md` for the current token reference.
+The backend UI uses the **`dojo_theme` custom theme module** (saas~19.2.1.0.0). Design tokens are defined as CSS custom properties in `addons/dojo_theme/static/src/css/tokens.css`. The theme provides 41 tokens across 6 categories: surface colors, brand colors, typography, status colors, belt rank colors, and spacing.
+
+**Token categories:**
+- **Surfaces:** `--bg`, `--surface`, `--surface2`, `--surface3`, `--border`
+- **Brand:** `--red`, `--red-dim`, `--gold`, `--gold-light`
+- **Typography:** `--text`, `--text-muted`, `--text-dim`
+- **Status:** `--green`, `--orange`, `--blue`
+- **Belt ranks:** `--belt-white`, `--belt-yellow`, `--belt-green`, `--belt-blue`, `--belt-red`, `--belt-black`, `--belt-brown`, `--belt-purple`, `--belt-orange`, `--belt-camo`
+
+**Typography:** Google Fonts — Bebas Neue (display), Barlow (body), Barlow Condensed (labels).
+
+See `docs/ui-ux-guide.md` for the complete design system reference, component patterns, accessibility standards, and OWL component guidelines.
 
 ### 10.2 Target State (Design Prototype Reference)
 
@@ -596,9 +608,9 @@ The design direction is defined by `scope/UFT_SUPABASE_STORAGE_PHOTOS.html` — 
 
 **Layout:** 220px fixed sidebar + flex main content area + 60px topbar
 
-### 10.3 Migration Plan
+### 10.3 Migration Status
 
-The MuK IT modules will be replaced incrementally by a new custom OWL theme module (REL-001, Milestone 0 through Milestone 5). Implementation approach: plain CSS custom properties (no SCSS, no Tailwind, no external build tooling). OWL components for all new UI elements. MuK modules retired incrementally as OWL equivalents are validated.
+**✅ Migration complete** — MuK IT modules were replaced by `dojo_theme` in REL-001 (Milestone 0 through Milestone 5, completed 2026-06-23). All 7 `muk_web_*` modules have been uninstalled and removed. The `dojo_theme` module uses plain CSS custom properties (no SCSS, no Tailwind, no external build tooling). All new UI is built in OWL components.
 
 ---
 
@@ -628,16 +640,16 @@ curl -f http://127.0.0.1:8070/web/login
 
 ## 12. Technical Debt
 
-| Item | Severity | Notes |
-|---|---|---|
-| **MuK IT theme** | High | 7 `muk_web_*` modules active. Replace with custom OWL/plain-CSS theme. Planned for Milestone 5 (MuK Retirement). |
-| **`theme_liquid_glass`** | Medium | Cybrosys Technologies glassmorphism theme (v1.0) present in `addons/`. Not active in production. **Clean up — remove from addons directory.** Added to addons in error; conflicts with planned custom theme direction. |
-| **`portalops_demo`** | Low | Dev artifact with controllers and models, no `__manifest__.py`. Not installed in production. Remove or properly manifest before next production deploy. |
-| **Stub modules** | Low | `dojo_attendance`, `dojo_classes`, `dojo_base` — security-only directories, no manifests. Clarify intent: implement or remove. |
-| **No git on production** | High | Code manually deployed to production VM; no version tracking. Cloud SQL backups **DISABLED**. Production has no rollback path. Address in infrastructure phase. |
-| **Cloud SQL backups disabled** | Critical | `free-trial-first-project` Cloud SQL instance has backups disabled. No backup = no recovery from data loss. Enable immediately outside of any release cycle. |
-| **ui-ux-guide.md** | Medium | `docs/ui-ux-guide.md` documents MuK design tokens. Must be updated to reflect new token system as part of the theme migration release. |
-| **Multi-client shared addons** | Medium | prod and prod2 share `custom-addons/addons`. Any deployed change impacts both simultaneously. Deployment process must account for this. |
+| Item | Severity | Status | Notes |
+|---|---|---|---|
+| **MuK IT theme** | High | ✅ **Resolved** | All 7 `muk_web_*` modules uninstalled and removed (REL-001/INC-23, 2026-06-23). Replaced by `dojo_theme`. |
+| **ui-ux-guide.md** | Medium | ✅ **Resolved** | `docs/ui-ux-guide.md` rewritten to document `dojo_theme` design token system (REL-001/INC-23, 2026-06-23). |
+| **`theme_liquid_glass`** | Medium | **Open** | Cybrosys Technologies glassmorphism theme (v1.0) present in `addons/`. Not active in production. **Clean up — remove from addons directory.** Added to addons in error; conflicts with custom theme direction. |
+| **`portalops_demo`** | Low | **Open** | Dev artifact with controllers and models, no `__manifest__.py`. Not installed in production. Remove or properly manifest before next production deploy. |
+| **Stub modules** | Low | **Open** | `dojo_attendance`, `dojo_classes`, `dojo_base` — security-only directories, no manifests. Clarify intent: implement or remove. |
+| **No git on production** | High | **Open** | Code manually deployed to production VM; no version tracking. Cloud SQL backups **DISABLED**. Production has no rollback path. Address in infrastructure phase. |
+| **Cloud SQL backups disabled** | Critical | **Open** | `free-trial-first-project` Cloud SQL instance has backups disabled. No backup = no recovery from data loss. Enable immediately outside of any release cycle. |
+| **Multi-client shared addons** | Medium | **Open** | prod and prod2 share `custom-addons/addons`. Any deployed change impacts both simultaneously. Deployment process must account for this. |
 
 ---
 
