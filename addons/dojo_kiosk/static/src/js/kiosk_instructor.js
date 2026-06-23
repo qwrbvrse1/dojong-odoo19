@@ -50,6 +50,17 @@ class KioskInstructorLayout extends Component {
                         <div class="k-roster-card">
                             <div class="k-roster-card__name" t-esc="member.name"/>
                             <div class="k-roster-card__belt" t-esc="member.belt_rank"/>
+                            <t t-if="member.onboarding_pct and member.onboarding_pct > 0">
+                                <div class="k-roster-card__progress">
+                                    <div class="k-roster-card__progress-bar">
+                                        <div class="k-roster-card__progress-fill" t-att-style="'width: ' + member.onboarding_pct + '%'"/>
+                                    </div>
+                                    <div class="k-roster-card__progress-label" t-esc="member.onboarding_pct + '%'"/>
+                                </div>
+                            </t>
+                            <t t-if="member.open_task_count and member.open_task_count > 0">
+                                <div class="k-roster-card__badge" t-esc="member.open_task_count"/>
+                            </t>
                         </div>
                     </t>
                 </div>

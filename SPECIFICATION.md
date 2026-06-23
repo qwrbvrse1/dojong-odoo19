@@ -262,7 +262,7 @@ The kiosk is a full-screen tablet application running in Odoo's web client, serv
 **Instructor three-panel layout**: When the kiosk is in instructor mode, the view is organized as a three-column grid:
 
 - **Left panel**: Active session card with session name, time range, countdown timer (showing minutes:seconds remaining until session end), and attendance summary showing present/late/absent counts.
-- **Main panel**: Member roster displayed as a grid of cards, one per enrolled member.
+- **Main panel**: Member roster displayed as a grid of cards, one per enrolled member. Each roster card shows the member name, belt rank, an onboarding progress bar (when onboarding is incomplete, 0-99%), and an open task count badge (when instructor tasks exist for the member).
 - **Right panel**: Alerts and notes organized into sections: onboarding incomplete, membership issues, and instructor tasks. Each alert shows the member name and a brief detail.
 
 The countdown timer updates every second via `setInterval` and displays `MM:SS` format. The session summary data (attendance counts, session info) is fetched via `/kiosk/api/session_summary` which calls `get_session_summary()` on `dojo.kiosk.service`.

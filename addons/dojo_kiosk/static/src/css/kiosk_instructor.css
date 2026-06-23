@@ -103,6 +103,81 @@
     gap: 12px;
 }
 
+.k-roster-card {
+    position: relative;
+    background: var(--surface, #1a1a1a);
+    border: 1px solid var(--border, #333);
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.k-roster-card:hover {
+    background: var(--surface2, #222);
+    border-color: var(--gold, #d4af37);
+}
+
+.k-roster-card__name {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text, #f5f5f5);
+}
+
+.k-roster-card__belt {
+    font-size: 13px;
+    color: var(--text-muted, #999);
+    margin-bottom: 8px;
+}
+
+.k-roster-card__progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.k-roster-card__progress-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--surface3, #2a2a2a);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.k-roster-card__progress-fill {
+    height: 100%;
+    background: var(--orange, #f59e0b);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.k-roster-card__progress-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--orange, #f59e0b);
+    min-width: 32px;
+    text-align: right;
+}
+
+.k-roster-card__badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: var(--blue, #3b82f6);
+    color: var(--text, #f5f5f5);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ─── Right Panel: Alerts & Notes ───────────────────────────────────────── */
 
 .k-instructor-right {

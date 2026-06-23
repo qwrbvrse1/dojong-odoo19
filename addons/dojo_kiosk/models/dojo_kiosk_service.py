@@ -549,6 +549,11 @@ class DojoKioskService(models.AbstractModel):
             session_id=enrollment.session_id.id if enrollment else None,
             compact=True,
         )
+        onboarding_pct = workflow_status.get("onboarding", {}).get("progress_pct") or 0
+        open_task_count = workflow_status.get("tasks", {}).get("open_count") or 0
+        # Only include non-zero values to reduce payload size
+        if onboarding_pct >= 100:
+            onboarding_pct = 0
         return {
             "member_id": member.id,
             "name": member.name,
@@ -560,6 +565,8 @@ class DojoKioskService(models.AbstractModel):
             "membership_state": member.membership_state if hasattr(member, "membership_state") else "",
             "issues": workflow_status.get("alerts", []),
             "workflow_status": workflow_status,
+            "onboarding_pct": onboarding_pct,
+            "open_task_count": open_task_count,
         }
 
     def _public_member_entry(self, member):
@@ -736,6 +743,7 @@ class DojoKioskService(models.AbstractModel):
 
         enrolled_sessions = self.get_enrolled_sessions_today(member.id)
         workflow_status = self._member_workflow_status(member, session_id=session_id)
+        programs = self._member_programs(member)
 
         return {
             "member_id": member.id,
@@ -746,7 +754,45 @@ class DojoKioskService(models.AbstractModel):
             "attendance_state": attendance_state,
             "enrolled_sessions": enrolled_sessions,
             "workflow_status": workflow_status,
+            "programs": programs,
         }
+
+    def _member_programs(self, member):
+        """Return member's program participation with ranks and attendance counts."""
+        programs = []
+        if hasattr(member, "rank_history_ids"):
+            prog_ranks = {}
+            for rank_rec in member.rank_history_ids:
+                prog = rank_rec.program_id
+                prog_key = prog.id if prog else 0
+                if prog_key not in prog_ranks or rank_rec.date_awarded > prog_ranks[prog_key]["date"]:
+                    prog_ranks[prog_key] = {
+                        "program_name": prog.name if prog else "General",
+                        "rank_name": rank_rec.rank_id.name if rank_rec.rank_id else "",
+                        "rank_color": rank_rec.rank_id.color if rank_rec.rank_id else "",
+                        "date": rank_rec.date_awarded,
+                    }
+            # Count attendance logs per program
+            all_logs = self.env["dojo.attendance.log"].search([
+                ("member_id", "=", member.id),
+                ("status", "in", ["present", "late"]),
+            ])
+            prog_attendance = {}
+            for log in all_logs:
+                tmpl = log.session_id.template_id if log.session_id else None
+                if tmpl and tmpl.program_id:
+                    pid = tmpl.program_id.id
+                    prog_attendance[pid] = prog_attendance.get(pid, 0) + 1
+            for prog_key, info in prog_ranks.items():
+                programs.append({
+                    "program_id": prog_key if prog_key != 0 else None,
+                    "program_name": info["program_name"],
+                    "rank_name": info["rank_name"],
+                    "rank_color": info["rank_color"],
+                    "attendance_count": prog_attendance.get(prog_key, 0),
+                })
+            programs.sort(key=lambda p: p["program_name"])
+        return programs
 
     def _member_profile_dict(self, member, session_id=None):
         workflow_status = self._member_workflow_status(member, session_id=session_id)
@@ -842,39 +888,7 @@ class DojoKioskService(models.AbstractModel):
 
         # Belt progression: classes since last rank + per-program stats
         att_since_rank = getattr(member, "attendance_since_last_rank", 0) or 0
-        programs = []
-        if hasattr(member, "rank_history_ids"):
-            prog_ranks = {}
-            for rank_rec in member.rank_history_ids:
-                prog = rank_rec.program_id
-                prog_key = prog.id if prog else 0
-                if prog_key not in prog_ranks or rank_rec.date_awarded > prog_ranks[prog_key]["date"]:
-                    prog_ranks[prog_key] = {
-                        "program_name": prog.name if prog else "General",
-                        "rank_name": rank_rec.rank_id.name if rank_rec.rank_id else "",
-                        "rank_color": rank_rec.rank_id.color if rank_rec.rank_id else "",
-                        "date": rank_rec.date_awarded,
-                    }
-            # Count attendance logs per program
-            all_logs = self.env["dojo.attendance.log"].search([
-                ("member_id", "=", member.id),
-                ("status", "in", ["present", "late"]),
-            ])
-            prog_attendance = {}
-            for log in all_logs:
-                tmpl = log.session_id.template_id if log.session_id else None
-                if tmpl and tmpl.program_id:
-                    pid = tmpl.program_id.id
-                    prog_attendance[pid] = prog_attendance.get(pid, 0) + 1
-            for prog_key, info in prog_ranks.items():
-                programs.append({
-                    "program_id": prog_key if prog_key != 0 else None,
-                    "program_name": info["program_name"],
-                    "rank_name": info["rank_name"],
-                    "rank_color": info["rank_color"],
-                    "attendance_count": prog_attendance.get(prog_key, 0),
-                })
-            programs.sort(key=lambda p: p["program_name"])
+        programs = self._member_programs(member)
 
         # Guardians: people flagged as guardians in the same household
         guardians = []
