@@ -102,19 +102,26 @@ Modules are organized by category. All custom/UFTKD modules use `saas~19.2.x.x.x
 | `connect` | 1.0.2 | Twilio and Odoo integration |
 | `sms_twilio` | — | Send SMS messages using Twilio (now version-tracked) |
 
-### 3.4 MuK IT Theme (Active — Scheduled for Replacement)
+### 3.4 MuK IT Theme (Active — Scheduled for Retirement in REL-001/INC-25)
 
-Seven modules from MuK IT providing the current backend UI theme. All targeted for retirement when the custom OWL/plain-CSS theme module is delivered.
+Seven modules from MuK IT providing the current backend UI theme. All targeted for retirement in INC-25 after `dojo_theme` replacement coverage is complete.
 
-| Module | Version |
-|---|---|
-| `muk_web_theme` | saas~19.2.1.4.2 |
-| `muk_web_chatter` | saas~19.2.1.4.2 |
-| `muk_web_appsbar` | saas~19.2.1.1.5 |
-| `muk_web_colors` | saas~19.2.1.0.5 |
-| `muk_web_dialog` | saas~19.2.1.0.5 |
-| `muk_web_refresh` | saas~19.2.1.0.5 |
-| `muk_web_group` | saas~19.2.1.0.2 |
+**Retirement Status** (per INC-22 audit — `releases/REL-001/muk-audit.md`):
+
+| Module | Version | Features | `dojo_theme` Coverage | Status |
+|---|---|---|---|---|
+| `muk_web_theme` | saas~19.2.1.4.2 | Color system | ✅ Fully replaced (tokens.css) | **Covered** |
+| `muk_web_theme` | saas~19.2.1.4.2 | Layout SCSS (navbar, appsmenu, form — 89 lines) | ❌ NOT covered (INC-23 must add) | **Gap — Critical** |
+| `muk_web_colors` | saas~19.2.1.0.5 | Color palette | ✅ Replaced by `dojo_theme` | **Covered** |
+| `muk_web_appsbar` | saas~19.2.1.1.5 | Sidebar navigation | ⚠️ Acceptable loss (deferred) | **Accepted** |
+| `muk_web_chatter` | saas~19.2.1.4.2 | Chatter polish | ⚠️ Acceptable loss (Community default) | **Accepted** |
+| `muk_web_dialog` | saas~19.2.1.0.5 | Fullscreen dialogs | ⚠️ Acceptable loss (Community default) | **Accepted** |
+| `muk_web_refresh` | saas~19.2.1.0.5 | Manual refresh button | ⚠️ Acceptable loss (browser refresh) | **Accepted** |
+| `muk_web_group` | saas~19.2.1.0.2 | Group expand/collapse | ⚠️ Acceptable loss (Community default) | **Accepted** |
+
+**Critical Finding:** `dojo_theme` (v saas~19.2.1.0.0) provides only **41 lines of CSS design tokens**. MuK's layout SCSS (navbar border removal, fullscreen appsmenu, form field borders — 89 lines total) is **NOT YET COVERED**. INC-23 must add 3 SCSS files to `dojo_theme` before INC-25 uninstall is safe.
+
+**Dependency Check:** ✅ Zero custom modules depend on MuK (verified INC-22).
 
 ### 3.5 Stub / Reserved Modules
 
