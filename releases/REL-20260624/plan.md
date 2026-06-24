@@ -1,4 +1,4 @@
-# Release Plan — REL-002: REL-001 Remediation
+# Release Plan — REL-20260624: REL-001 Remediation
 
 > Prose sections are for humans. Fenced `yaml` blocks are parsed by `apev-run.sh`.
 > Block 1 = release config. Each subsequent block = one increment, in execution order.
@@ -11,13 +11,13 @@
 ## Release configuration
 
 ```yaml
-release: REL-002
-branch: rel/REL-002
+release: REL-20260624
+branch: rel/REL-20260624
 worker_model: claude
 alternate_model: claude
 max_shots: 3
 halt_on_fail: downstream
-workproducts: ~/workproducts/dojong-odoo19/REL-002
+workproducts: ~/workproducts/dojong-odoo19/REL-20260624
 baseline_gate:
   - bash testenv/verify.sh
   - bash -c 'count=$(docker compose exec -T db psql -U odoo -d odoo19 -tAc "SELECT COUNT(*) FROM ir_module_module WHERE name IN ('"'"'dojo_theme'"'"','"'"'dojo_kiosk'"'"','"'"'dojo_core'"'"','"'"'dojo_instructor_dashboard'"'"','"'"'dojo_belt_progression'"'"','"'"'dojo_members'"'"','"'"'dojo_communications'"'"','"'"'dojo_automation'"'"') AND state='"'"'installed'"'"';"); echo "rel001_modules_installed=$count"; test "$count" -eq 8'

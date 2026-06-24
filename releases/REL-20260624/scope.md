@@ -1,8 +1,8 @@
-# Release Scope — REL-002: REL-001 Remediation
+# Release Scope — REL-20260624: REL-001 Remediation
 
 ## Summary
 
-REL-002 is a remediation release. REL-001 passed its audit (APPROVED-PARTIAL) but its gates were insufficient: no increment exercised the running Odoo instance. As a result, multiple deliverables were marked PASS despite producing zero user-visible effect. This release does two things:
+REL-20260624 is a remediation release. REL-001 passed its audit (APPROVED-PARTIAL) but its gates were insufficient: no increment exercised the running Odoo instance. As a result, multiple deliverables were marked PASS despite producing zero user-visible effect. This release does two things:
 
 1. **Verify every REL-001 deliverable against the running system.** Each verification increment upgrades the relevant module(s) and asserts the deliverable against live output — live API responses, live rendered HTML, live DB state. Static file checks are permitted only as supplementary assertions; they cannot be the sole gate.
 
