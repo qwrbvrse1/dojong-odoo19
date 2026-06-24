@@ -3,8 +3,8 @@
  * Renders active session info, countdown timer, roster grid, and alerts.
  * Part of the existing kiosk_app.js OWL SPA; assumes owl globals are available.
  */
-/* global owl, jsonPost, KIOSK_TOKEN */
-const { Component, useState, onMounted, onWillUnmount, xml } = owl;
+/* global owl, jsonPost, KIOSK_TOKEN, Component, useState, onMounted, onWillUnmount, xml */
+// owl globals already destructured by kiosk_app.js — do not re-declare here
 
 class KioskInstructorLayout extends Component {
     static template = xml`
