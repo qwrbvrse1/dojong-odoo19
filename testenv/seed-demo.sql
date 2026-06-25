@@ -49,3 +49,153 @@ BEGIN
     ON CONFLICT DO NOTHING;
   END IF;
 END $$;
+
+-- Create demo program (required for class template)
+INSERT INTO dojo_program (name, code, active, is_trial, create_uid, write_uid, create_date, write_date)
+VALUES ('Demo Program', 'DEMO', true, false, 1, 1, NOW(), NOW())
+ON CONFLICT DO NOTHING;
+
+-- Create demo class template
+INSERT INTO dojo_class_template (
+  name,
+  code,
+  program_id,
+  level,
+  duration_minutes,
+  max_capacity,
+  active,
+  create_uid,
+  write_uid,
+  create_date,
+  write_date
+)
+SELECT
+  'Demo Class',
+  'DEMO-CLASS',
+  dp.id,
+  'beginner',
+  60,
+  20,
+  true,
+  1,
+  1,
+  NOW(),
+  NOW()
+FROM dojo_program dp
+WHERE dp.code = 'DEMO'
+LIMIT 1
+ON CONFLICT DO NOTHING;
+
+-- Create demo sessions for today (active, upcoming_soon, upcoming, done)
+DO $$
+DECLARE
+  template_id_val integer;
+BEGIN
+  SELECT id INTO template_id_val FROM dojo_class_template WHERE code = 'DEMO-CLASS' LIMIT 1;
+
+  IF template_id_val IS NOT NULL THEN
+    -- Active session (started 30 min ago, ends in 30 min)
+    INSERT INTO dojo_class_session (
+      name,
+      template_id,
+      state,
+      start_datetime,
+      end_datetime,
+      capacity,
+      create_uid,
+      write_uid,
+      create_date,
+      write_date
+    )
+    VALUES (
+      'Demo Active Session',
+      template_id_val,
+      'open',
+      NOW() - INTERVAL '30 minutes',
+      NOW() + INTERVAL '30 minutes',
+      20,
+      1,
+      1,
+      NOW(),
+      NOW()
+    );
+
+    -- Upcoming soon session (starts in 10 min)
+    INSERT INTO dojo_class_session (
+      name,
+      template_id,
+      state,
+      start_datetime,
+      end_datetime,
+      capacity,
+      create_uid,
+      write_uid,
+      create_date,
+      write_date
+    )
+    VALUES (
+      'Demo Upcoming Soon Session',
+      template_id_val,
+      'open',
+      NOW() + INTERVAL '10 minutes',
+      NOW() + INTERVAL '70 minutes',
+      20,
+      1,
+      1,
+      NOW(),
+      NOW()
+    );
+
+    -- Upcoming session (starts in 3 hours)
+    INSERT INTO dojo_class_session (
+      name,
+      template_id,
+      state,
+      start_datetime,
+      end_datetime,
+      capacity,
+      create_uid,
+      write_uid,
+      create_date,
+      write_date
+    )
+    VALUES (
+      'Demo Upcoming Session',
+      template_id_val,
+      'open',
+      NOW() + INTERVAL '3 hours',
+      NOW() + INTERVAL '4 hours',
+      20,
+      1,
+      1,
+      NOW(),
+      NOW()
+    );
+
+    -- Done session (ended 2 hours ago)
+    INSERT INTO dojo_class_session (
+      name,
+      template_id,
+      state,
+      start_datetime,
+      end_datetime,
+      capacity,
+      create_uid,
+      write_uid,
+      create_date,
+      write_date
+    )
+    VALUES (
+      'Demo Done Session',
+      template_id_val,
+      'done',
+      NOW() - INTERVAL '3 hours',
+      NOW() - INTERVAL '2 hours',
+      20,
+      1,
+      1,
+      NOW(),
+      NOW()
+    );
+  END IF;
+END $$;
