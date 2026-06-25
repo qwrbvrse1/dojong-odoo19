@@ -142,3 +142,52 @@ class InstructorDashboardController(http.Controller):
         }
         """
         return self._compute_dashboard_data(request.env)
+
+    @http.route(
+        '/odoo/instructor-dashboard',
+        type='http',
+        auth='user',
+        methods=['GET'],
+        csrf=False,
+    )
+    def instructor_dashboard_page(self):
+        """
+        HTTP route for instructor dashboard verification.
+        Renders a simple HTML page with dashboard stats.
+        """
+        data = self._compute_dashboard_data(request.env)
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>Instructor Dashboard</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }}
+        .dashboard-stats {{ display: flex; gap: 20px; margin-bottom: 30px; }}
+        .stat-card {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; }}
+        .stat-value {{ font-size: 32px; font-weight: bold; color: #333; }}
+        .stat-label {{ font-size: 14px; color: #666; margin-top: 8px; }}
+    </style>
+</head>
+<body>
+    <h1>Instructor Dashboard</h1>
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-value">{data['active_students']}</div>
+            <div class="stat-label">Active Students</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{data['todays_checkins']}</div>
+            <div class="stat-label">Today's Check-ins</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{data['upcoming_birthdays']}</div>
+            <div class="stat-label">Upcoming Birthdays</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{data['expiring_memberships']}</div>
+            <div class="stat-label">Expiring Memberships</div>
+        </div>
+    </div>
+</body>
+</html>"""
+        return request.make_response(html, headers=[('Content-Type', 'text/html')])
