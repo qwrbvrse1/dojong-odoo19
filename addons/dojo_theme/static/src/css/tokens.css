@@ -5,16 +5,16 @@
 
 :root {
     /* ━━━ Surfaces ━━━ */
-    --bg: #000000;                /* True black background */
-    --surface: #0c0c0c;           /* Elevated surface */
-    --surface2: #141414;          /* Secondary surface */
-    --surface3: #1c1c1c;          /* Tertiary surface */
-    --border: #272727;            /* Border color */
+    --bg: #0a0a0c;                /* True black background */
+    --surface: #111116;           /* Elevated surface */
+    --surface2: #18181f;          /* Secondary surface */
+    --surface3: #1f1f2a;          /* Tertiary surface */
+    --border: #2a2a38;            /* Border color */
 
     /* ━━━ Brand Colors ━━━ */
-    --red: #b41e16;               /* Dojo red (primary brand) */
+    --red: #e8192c;               /* Dojo red (primary brand) */
     --red-dim: #fce8e6;           /* Muted red background */
-    --gold: #eab308;              /* Gold accent */
+    --gold: #c9a84c;              /* Gold accent */
     --gold-light: #fef3c7;        /* Light gold background */
 
     /* ━━━ Typography ━━━ */
