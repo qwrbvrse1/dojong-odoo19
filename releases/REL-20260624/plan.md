@@ -102,7 +102,7 @@ reset:
   - bash testenv/reset.sh
 gate:
   - docker compose run --rm --entrypoint /opt/odoo/odoo-bin web -c /etc/odoo/odoo.conf -d odoo19 --workers=0 --no-http -u dojo_core --stop-after-init
-  - bash -c 'SESSION=$(curl -sf -c /tmp/jar -b /tmp/jar -X POST http://127.0.0.1:8070/web/session/authenticate -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"db\":\"odoo19\",\"login\":\"admin@demo.com\",\"password\":\"admin123\"}}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[\"result\"][\"session_id\"] if \"result\" in d else \"\")"); result=$(curl -sf -c /tmp/jar -b /tmp/jar -X POST http://127.0.0.1:8070/web/dataset/call_kw -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"model\":\"dojo.member\",\"method\":\"name_search\",\"args\":[\"Smi\"],\"kwargs\":{\"limit\":10}}}"); echo "$result" | python3 -c "import sys,json; d=json.load(sys.stdin); names=[r[1] for r in d.get('"'"'result'"'"',d.get('"'"'error'"'"',{}).get('"'"'data'"'"',{}).get('"'"'arguments'"'"',[[],[]])[1] if isinstance(d.get('"'"'result'"'"'),list) else [])]; print(names); assert len(names) > 0, '"'"'No results returned'"'"'"'
+  - bash testenv/scripts/ver03-name-search.sh
 regression_gate:
   - bash testenv/verify.sh
 ```
@@ -129,7 +129,7 @@ reset:
   - bash testenv/reset.sh
 gate:
   - docker compose run --rm --entrypoint /opt/odoo/odoo-bin web -c /etc/odoo/odoo.conf -d odoo19 --workers=0 --no-http -u dojo_kiosk --stop-after-init
-  - bash -c 'TOKEN=$(docker compose exec -T db psql -U odoo -d odoo19 -tAc "SELECT token FROM dojo_kiosk_config LIMIT 1;"); MID=$(docker compose exec -T db psql -U odoo -d odoo19 -tAc "SELECT id FROM dojo_member LIMIT 1;"); result=$(curl -sf -X POST http://127.0.0.1:8070/kiosk/api/member_profile -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"token\":\"$TOKEN\",\"member_id\":$MID}}"); echo "$result" | python3 -c "import sys,json; d=json.load(sys.stdin); r=d.get('"'"'result'"'"',{}); wf=r.get('"'"'workflow_status'"'"',{}); ob=wf.get('"'"'onboarding'"'"',{}); assert '"'"'progress_pct'"'"' in ob, '"'"'missing progress_pct'"'"'; assert '"'"'available'"'"' in ob, '"'"'missing available'"'"'; print('"'"'onboarding payload OK'"'"')"'
+  - bash testenv/scripts/ver04-member-profile.sh
 regression_gate:
   - bash testenv/verify.sh
 ```
@@ -153,7 +153,7 @@ reset:
   - bash testenv/reset.sh
 gate:
   - docker compose run --rm --entrypoint /opt/odoo/odoo-bin web -c /etc/odoo/odoo.conf -d odoo19 --workers=0 --no-http -u dojo_kiosk --stop-after-init
-  - bash -c 'TOKEN=$(docker compose exec -T db psql -U odoo -d odoo19 -tAc "SELECT token FROM dojo_kiosk_config LIMIT 1;"); result=$(curl -sf -X POST http://127.0.0.1:8070/kiosk/api/sessions -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"token\":\"$TOKEN\"}}"); echo "$result" | python3 -c "import sys,json; d=json.load(sys.stdin); sessions=d.get('"'"'result'"'"',{}).get('"'"'sessions'"'"',[]); valid={'"'"'active'"'"','"'"'upcoming_soon'"'"','"'"'upcoming'"'"','"'"'done'"'"'}; [print(s.get('"'"'time_state'"'"')) or (lambda s: (_ for _ in ()).throw(AssertionError(f\"bad time_state: {s.get(\'time_state\')}\")))(s) for s in sessions if s.get('"'"'time_state'"'"') not in valid]; print('"'"'time_state OK'"'"')"'
+  - bash testenv/scripts/ver05-time-state.sh
 regression_gate:
   - bash testenv/verify.sh
 ```
@@ -308,7 +308,7 @@ reset:
   - bash testenv/reset.sh
 gate:
   - docker compose run --rm --entrypoint /opt/odoo/odoo-bin web -c /etc/odoo/odoo.conf -d odoo19 --workers=0 --no-http -u dojo_kiosk --stop-after-init
-  - bash -c 'TOKEN=$(docker compose exec -T db psql -U odoo -d odoo19 -tAc "SELECT token FROM dojo_kiosk_config LIMIT 1;"); SID=$(docker compose exec -T db psql -U odoo -d odoo19 -tAc "SELECT id FROM dojo_class_session WHERE session_date=CURRENT_DATE LIMIT 1;"); result=$(curl -sf -X POST http://127.0.0.1:8070/kiosk/api/roster -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"token\":\"$TOKEN\",\"session_id\":$SID}}"); echo "$result" | python3 -c "import sys,json; d=json.load(sys.stdin); entries=d.get('"'"'result'"'"',[]); print(f\"roster_entries={len(entries)}\"); assert all('"'"'onboarding_pct'"'"' in e for e in entries), '"'"'missing onboarding_pct'"'"'; assert all('"'"'open_task_count'"'"' in e for e in entries), '"'"'missing open_task_count'"'"'; print('"'"'roster payload OK'"'"')"'
+  - bash testenv/scripts/ver11-roster-check.sh
   - grep -q "onboarding_pct" addons/dojo_kiosk/static/src/kiosk_app.js
   - grep -q "k-roster-card__progress\|progress-fill\|progress-bar" addons/dojo_kiosk/static/src/kiosk_app.js
 regression_gate:
