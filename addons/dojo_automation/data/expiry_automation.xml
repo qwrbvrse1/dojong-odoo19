@@ -20,17 +20,22 @@
         <field name="value">30</field>
     </record>
 
-    <!-- Daily Membership Expiry Warning Email Cron -->
-    <record id="ir_cron_expiry_warning_emails" model="ir.cron">
+    <!-- Server Action for Membership Expiry Warning Email Cron -->
+    <record id="ir_actions_server_expiry_warning_emails" model="ir.actions.server">
         <field name="name">Dojo Automation: Send Membership Expiry Warning Emails</field>
         <field name="model_id" ref="dojo_core.model_dojo_member"/>
+        <field name="usage">ir_cron</field>
         <field name="state">code</field>
         <field name="code">model._cron_send_expiry_warning_emails()</field>
+    </record>
+
+    <!-- Daily Membership Expiry Warning Email Cron -->
+    <record id="ir_cron_expiry_warning_emails" model="ir.cron">
+        <field name="ir_actions_server_id" ref="ir_actions_server_expiry_warning_emails"/>
+        <field name="cron_name">Dojo Automation: Send Membership Expiry Warning Emails</field>
         <field name="interval_number">1</field>
         <field name="interval_type">days</field>
-        <field name="numbercall">-1</field>
         <field name="active" eval="True"/>
-        <field name="doall" eval="False"/>
     </record>
 
 </odoo>
