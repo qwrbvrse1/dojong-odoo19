@@ -1,22 +1,10 @@
 # VER-05: Verify time_state — live sessions API returns time_state on every session
 
 ## Status
-**BLOCKED** — Environment issue: persistent web container not loading custom modules from `/mnt/extra-addons`.
+**VERIFICATION ONLY** — No code changes required. Feature already implemented in REL-001/INC-05.
 
-### Root Cause
-Docker services started from `/opt/repos/dojong-odoo19` but Odoo running process shows:
-```
-addons paths: ['/opt/odoo/odoo/addons', '/var/lib/odoo/addons/saas~19.2', '/opt/odoo/addons']
-```
-
-Missing: `/mnt/extra-addons`, `/mnt/enterprise-addons`
-
-This causes all custom modules (dojo_*) to be marked "not installable, skipped" even though they're installed in DB and physically present in `/mnt/extra-addons/`.
-
-### Resolution Required
-- Rebuild/restart Docker services with correct config mount
-- OR: commit verification code to main repo and restart from `/opt/repos`
-- OR: fix persistent container to use `/etc/odoo/odoo.conf` addons_path
+## Summary
+This increment verifies that `dojo_kiosk_service.py:_session_payload()` returns `time_state` on every session via the live `/kiosk/sessions` JSON-RPC endpoint. The implementation already exists; this is gate-only verification against the running system.
 
 ## Verification Method
 Live JSON-RPC call to `/kiosk/sessions` endpoint with demo kiosk token. Seed data creates 4 sessions with different time states.
