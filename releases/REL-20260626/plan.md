@@ -55,7 +55,7 @@ touchpoints:
 deliverables:
   - Dedicated live kiosk verification scripts exist for home flow, instructor layout, profile tabs, and photo flow
   - Baseline release documents are aligned with the unattended-build template requirements
-  - Canonical kiosk domain specification files exist in `specifications/`
+  - Canonical kiosk domain specification files exist in specifications/
 test_data:
   seed: testenv/reset.sh seeded demo environment
   migration_before_state: current dojo_kiosk implementation
@@ -96,7 +96,7 @@ deliverables:
   - Student home/search presentation matches the intended kiosk experience in the running Odoo app
   - Result selection and self check-in flow behave correctly for a walk-up user
   - Success overlay and chime are proven by live gates
-  - `specifications/kiosk-student-experience.md` is updated to current state
+  - specifications/kiosk-student-experience.md is updated to current state
 test_data:
   seed: seeded member, trial lead, active session, check-in eligible member
   migration_before_state: current dojo_kiosk student flow
@@ -136,7 +136,7 @@ deliverables:
   - The intended three-panel instructor layout is mounted and visible in the running kiosk
   - Session context and roster presentation are validated in live output
   - Instructor roster card semantics are corrected and verified
-  - `specifications/kiosk-instructor-experience.md` is updated to current state
+  - specifications/kiosk-instructor-experience.md is updated to current state
 test_data:
   seed: seeded instructor session with roster, onboarding flags, membership issues
   migration_before_state: current mixed instructor kiosk implementation
@@ -177,7 +177,7 @@ deliverables:
   - Member profile and manage flow are internally consistent in the kiosk UI
   - Onboarding semantics are corrected and proven via live API plus UI verification
   - Public versus instructor-authorized data boundaries are verified
-  - `specifications/kiosk-profile-onboarding.md` is updated to current state
+  - specifications/kiosk-profile-onboarding.md is updated to current state
 test_data:
   seed: seeded member with partial onboarding and instructor-accessible actions
   migration_before_state: current legacy-leaning onboarding semantics
@@ -218,7 +218,7 @@ deliverables:
   - Kiosk photo capture/upload uses the intended Supabase-backed storage path
   - Returned image URLs and in-session refresh behavior are deterministic
   - Upload failure handling is explicit and verified
-  - `specifications/kiosk-photo-storage.md` is updated to current state
+  - specifications/kiosk-photo-storage.md is updated to current state
 test_data:
   seed: seeded member with existing image and instructor access
   migration_before_state: current Odoo image_1920 write path
@@ -254,7 +254,7 @@ touchpoints:
 deliverables:
   - Final kiosk rescue verification suite runs green against the local Odoo instance
   - Canonical kiosk specification files reflect shipped behavior
-  - `CHANGELOG.md` has the release-ready material needed after audit
+  - CHANGELOG.md has the release-ready material needed after audit
 test_data:
   seed: final integrated local environment
   migration_before_state: kiosk behavior fixed in prior increments
