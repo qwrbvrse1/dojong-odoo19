@@ -101,6 +101,9 @@ class KioskController(http.Controller):
     <link rel="stylesheet" href="/dojo_theme/static/src/css/tokens.css"/>
     <link rel="stylesheet" href="/dojo_kiosk/static/src/kiosk.css?v={_static_ver('static/src/kiosk.css')}_s2"/>
     <link rel="stylesheet" href="/dojo_kiosk/static/src/css/kiosk_instructor.css?v={_static_ver('static/src/css/kiosk_instructor.css')}"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"/>
 </head>
 <body class="dojo-kiosk-body {theme_class}">

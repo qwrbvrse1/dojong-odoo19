@@ -3048,30 +3048,29 @@ class KioskApp extends Component {
                 <t t-if="!state.instructorMode">
                     <div class="k-welcome-screen">
                         <img class="k-welcome-logo" src="/dojo_kiosk/static/src/img/uft-logo-horizontal.png"/>
-                        <div class="k-welcome-title">WELCOME!</div>
-                        <div class="k-welcome-subtitle">Type your name to check in</div>
+                        <div class="k-welcome-title">CHECK IN</div>
+                        <div class="k-welcome-subtitle">Type your name below</div>
                         <div class="k-search-container">
                             <div class="k-welcome-search-wrap">
                                 <input class="k-welcome-search"
                                     type="text"
-                                    placeholder="Student Name…"
+                                    placeholder="Search student name..."
                                     t-model="state.searchQuery"
                                     t-on-input="onSearchInput"
                                     autocomplete="off"
                                     autocorrect="off"
                                     spellcheck="false"/>
-                                <button class="k-welcome-search-btn" t-on-click="onSearchSubmit">ENTER</button>
                             </div>
-                            <t t-if="state.searchQuery or state.searchLoading or state.searchResults.length">
-                                <div class="k-search-results-panel">
-                                    <HomeContent
-                                        query="state.searchQuery"
-                                        results="state.searchResults"
-                                        loading="state.searchLoading"
-                                        onSelect="(member) => this.studentConfirm(member)"/>
-                                </div>
-                            </t>
                         </div>
+                        <t t-if="state.searchQuery or state.searchLoading or state.searchResults.length">
+                            <div class="k-search-results-flow">
+                                <HomeContent
+                                    query="state.searchQuery"
+                                    results="state.searchResults"
+                                    loading="state.searchLoading"
+                                    onSelect="(member) => this.studentConfirm(member)"/>
+                            </div>
+                        </t>
                     </div>
                 </t>
 

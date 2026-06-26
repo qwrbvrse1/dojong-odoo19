@@ -83,6 +83,10 @@ body.kiosk-theme-light {
     --k-font-mono: "Roboto Mono", "SF Mono", "Consolas", "Courier New", monospace;
     --k-letter-spacing-label: 0.10em;
     --k-letter-spacing-display: -0.025em;
+
+    /* Gold accent (always available) */
+    --k-gold: #c9a84c;
+    --k-gold-glow: rgba(201, 168, 76, .30);
 }
 
 /* — Dark theme (True Black · Industrial Minimalism) — */
@@ -151,7 +155,7 @@ body.kiosk-theme-dark {
 html,
 body {
     height: 100%;
-    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    font-family: "Barlow", -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
     font-size: var(--k-font-base);
     color: var(--k-text);
     background: var(--k-bg);
@@ -593,9 +597,9 @@ select {
 /* ── Results grid ── */
 .k-results-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 20px;
-    padding: 24px 20px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 18px;
+    padding: 20px 20px;
     align-content: start;
 }
 
@@ -615,12 +619,12 @@ select {
 }
 
 .k-member-tile__avatar-wrap {
-    width: 88px;
-    height: 88px;
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
     overflow: hidden;
     background: var(--k-surface-2);
-    border: 3px solid var(--k-border);
+    border: 3px solid var(--k-gold);
     box-shadow: 0 2px 8px rgba(0, 0, 0, .18);
     flex-shrink: 0;
 }
@@ -645,13 +649,13 @@ select {
 }
 
 .k-member-tile__name {
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 700;
     color: var(--k-text);
     text-align: center;
     line-height: 1.3;
     word-break: break-word;
-    max-width: 100px;
+    max-width: 160px;
 }
 
 .k-member-tile__trial-badge {
@@ -4973,9 +4977,10 @@ body.kiosk-theme-light .k-ai-panel__footer {
     align-items: center;
     justify-content: flex-start;
     flex: 1;
-    gap: 2rem;
-    padding: 6vh 2rem 2rem;
+    gap: 1.5rem;
+    padding: 5vh 2rem 1rem;
     min-height: 0;
+    overflow: hidden;
 }
 
 .k-welcome-logo {
@@ -4987,13 +4992,14 @@ body.kiosk-theme-light .k-ai-panel__footer {
 }
 
 .k-welcome-title {
-    font-size: clamp(3rem, 10vw, 6rem);
-    font-weight: 900;
-    font-style: italic;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3.5rem, 10vw, 6rem);
+    font-weight: 400;
+    font-style: normal;
     text-transform: uppercase;
-    letter-spacing: -0.03em;
+    letter-spacing: 3px;
     line-height: 1;
-    color: var(--k-text);
+    color: var(--k-gold);
 }
 
 .k-welcome-subtitle {
@@ -5006,7 +5012,7 @@ body.kiosk-theme-light .k-ai-panel__footer {
 .k-search-container {
     position: relative;
     width: 100%;
-    max-width: 540px;
+    max-width: 640px;
 }
 
 .k-search-results-panel {
@@ -5045,27 +5051,28 @@ body.kiosk-theme-dark .k-search-results-panel {
 
 .k-welcome-search-wrap {
     width: 100%;
-    max-width: 540px;
+    max-width: 600px;
     display: flex;
     align-items: stretch;
-    border: 2px solid var(--k-accent);
-    border-radius: var(--k-radius);
+    border: 2px solid var(--k-gold);
+    border-radius: 18px;
     overflow: hidden;
     background: var(--k-surface);
     transition: box-shadow var(--k-transition);
 }
 
 .k-welcome-search-wrap:focus-within {
-    box-shadow: 0 0 0 3px rgba(250, 82, 65, .25);
+    box-shadow: 0 0 0 3px var(--k-gold-glow);
 }
 
 .k-welcome-search {
     flex: 1;
-    padding: 14px 16px;
+    padding: 20px 24px;
     background: transparent;
     border: none;
     outline: none;
-    font-size: 1.05rem;
+    font-family: "Barlow", sans-serif;
+    font-size: 1.4rem;
     color: var(--k-text);
 }
 
@@ -5140,10 +5147,19 @@ body.kiosk-theme-dark .k-search-results-panel {
     flex-shrink: 0;
 }
 
+/* Results flow — static, fills remaining screen height */
+.k-search-results-flow {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 /* Dark theme overrides for welcome screen */
 body.kiosk-theme-dark .k-welcome-search-wrap {
     background: var(--k-surface-2);
-    border-color: var(--k-accent);
+    border-color: var(--k-gold);
 }
 
 body.kiosk-theme-dark .k-status-card {
