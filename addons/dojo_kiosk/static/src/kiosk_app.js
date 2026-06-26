@@ -1728,6 +1728,11 @@ class StudentCheckinModal extends Component {
 class InstructorRosterTile extends Component {
     static template = xml`
         <div t-attf-class="k-roster-tile k-roster-tile--#{props.entry.attendance_state || 'pending'} #{state.pressing ? 'k-roster-tile--pressing' : ''}"
+             t-att-data-member-id="props.entry.member_id || props.entry.lead_id || ''"
+             t-att-data-attendance-state="props.entry.attendance_state || 'pending'"
+             t-att-data-onboarding-pct="props.entry.onboarding_pct || 0"
+             t-att-data-open-task-count="props.entry.open_task_count || 0"
+             t-att-data-membership-state="props.entry.membership_state || ''"
              t-on-click="onTileTap"
              t-on-pointerdown="onPointerDown"
              t-on-pointerup="onPointerUp"
@@ -1753,13 +1758,26 @@ class InstructorRosterTile extends Component {
             </div>
 
             <div class="k-roster-tile__name" t-esc="props.entry.name"/>
+            <div class="k-roster-tile__attendance" t-esc="attendanceLabel()"/>
+
+            <t t-if="props.entry.belt_rank || props.entry.program_name || props.entry.trial_program">
+                <div class="k-roster-tile__meta">
+                    <t t-if="props.entry.belt_rank">
+                        <span class="k-roster-tile__belt" t-esc="props.entry.belt_rank"/>
+                    </t>
+                    <t t-if="props.entry.program_name || props.entry.trial_program">
+                        <span class="k-roster-tile__program" t-esc="props.entry.program_name || props.entry.trial_program"/>
+                    </t>
+                </div>
+            </t>
 
             <!-- Onboarding progress bar -->
             <t t-if="props.entry.onboarding_pct &gt; 0">
-                <div class="k-roster-card__progress">
-                    <div class="progress-bar" t-attf-style="width: #{props.entry.onboarding_pct}%;">
-                        <div class="progress-fill"></div>
+                <div class="k-roster-card__progress" t-att-title="'Onboarding ' + props.entry.onboarding_pct + '%'">
+                    <div class="k-roster-card__progress-bar">
+                        <div class="k-roster-card__progress-fill" t-attf-style="width: #{props.entry.onboarding_pct}%;"/>
                     </div>
+                    <div class="k-roster-card__progress-label" t-esc="props.entry.onboarding_pct + '%'"/>
                 </div>
             </t>
 
@@ -1791,6 +1809,18 @@ class InstructorRosterTile extends Component {
         if (this.props.entry.issues && this.props.entry.issues.length) return true;
         const state = this.props.entry.membership_state;
         return state && state !== "active" && state !== "trial";
+    }
+
+    attendanceLabel() {
+        const state = this.props.entry.attendance_state || "pending";
+        const labels = {
+            present: "Present",
+            late: "Late",
+            absent: "Absent",
+            checked_out: "Checked out",
+            pending: "Pending",
+        };
+        return labels[state] || state;
     }
 
     workflowBadges() {
@@ -1968,6 +1998,380 @@ class InstructorSessionCard extends Component {
 
     pendingCount() {
         return this.props.roster.filter(e => !e.attendance_state || e.attendance_state === "pending").length;
+    }
+}
+
+// ─── InstructorThreePanelLayout ───────────────────────────────────────────────
+
+class InstructorThreePanelLayout extends Component {
+    static template = xml`
+        <div class="k-instructor-layout"
+            t-att-data-selected-session-id="selectedSession() ? selectedSession().id : ''">
+
+            <!-- Left panel: session context and controls -->
+            <aside class="k-instructor-left">
+                <div class="k-instructor-panel-heading">Session Context</div>
+
+                <t t-if="selectedSession()">
+                    <div t-attf-class="k-session-card k-session-card--context #{sessionStateClass(selectedSession())}">
+                        <div class="k-session-card__eyebrow" t-esc="sessionStateLabel(selectedSession())"/>
+                        <div class="k-session-card__name" t-esc="sessionName(selectedSession())"/>
+                        <div class="k-session-card__time">
+                            <t t-esc="formatTime(selectedSession().start)"/> - <t t-esc="formatTime(selectedSession().end)"/>
+                        </div>
+                        <t t-if="sessionSubline(selectedSession())">
+                            <div class="k-session-card__subline" t-esc="sessionSubline(selectedSession())"/>
+                        </t>
+                        <div class="k-session-card__countdown" t-esc="countdownText(selectedSession())"/>
+
+                        <div class="k-session-card__summary">
+                            <div class="k-summary-stat k-summary-stat--present">
+                                <span class="k-summary-stat__count" t-esc="attendanceSummary().present"/>
+                                <span class="k-summary-stat__label">Present</span>
+                            </div>
+                            <div class="k-summary-stat k-summary-stat--late">
+                                <span class="k-summary-stat__count" t-esc="attendanceSummary().late"/>
+                                <span class="k-summary-stat__label">Late</span>
+                            </div>
+                            <div class="k-summary-stat k-summary-stat--absent">
+                                <span class="k-summary-stat__count" t-esc="attendanceSummary().absent"/>
+                                <span class="k-summary-stat__label">Absent</span>
+                            </div>
+                            <div class="k-summary-stat k-summary-stat--pending">
+                                <span class="k-summary-stat__count" t-esc="attendanceSummary().pending"/>
+                                <span class="k-summary-stat__label">Pending</span>
+                            </div>
+                        </div>
+
+                        <div class="k-session-card__footer k-session-card__footer--context">
+                            <t t-if="selectedSession().state === 'done'">
+                                <button class="k-btn k-session-action k-session-action--reopen"
+                                    t-on-click="() => props.onReopen(selectedSession().id)">Reopen</button>
+                                <button class="k-btn k-session-action k-session-action--delete"
+                                    t-on-click="() => props.onDelete(selectedSession().id)">Delete</button>
+                            </t>
+                            <t t-else="">
+                                <button class="k-btn k-session-action k-session-action--assign"
+                                    t-on-click="() => props.onAssignRoster(selectedSession())">Assign Roster</button>
+                                <button class="k-btn k-session-action k-session-action--edit"
+                                    t-on-click="() => props.onEdit(selectedSession())">Edit</button>
+                                <button t-attf-class="k-btn k-session-action #{attendanceSummary().pending ? 'k-session-action--done-blocked' : 'k-session-action--done'}"
+                                    t-on-click="() => props.onClose(selectedSession().id)">
+                                    Mark Done
+                                    <t t-if="attendanceSummary().pending">
+                                        <span class="k-session-action--done-pending-badge" t-esc="attendanceSummary().pending"/>
+                                    </t>
+                                </button>
+                            </t>
+                        </div>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="k-session-card k-session-card--context">
+                        <div class="k-session-card__eyebrow">Standby</div>
+                        <div class="k-session-card__name">No Selected Session</div>
+                        <div class="k-session-card__subline" t-esc="sessionContextText()"/>
+                    </div>
+                </t>
+
+                <div class="k-instructor-session-list">
+                    <t t-foreach="sessions()" t-as="s" t-key="s.id">
+                        <button
+                            t-attf-class="k-instructor-session-option #{isSessionSelected(s) ? 'k-instructor-session-option--selected' : ''}"
+                            t-on-click="() => props.onSessionChange(s.id)">
+                            <span class="k-instructor-session-option__state" t-esc="sessionStateLabel(s)"/>
+                            <span class="k-instructor-session-option__name" t-esc="sessionName(s)"/>
+                            <span class="k-instructor-session-option__time">
+                                <t t-esc="formatTime(s.start)"/>
+                            </span>
+                        </button>
+                    </t>
+                </div>
+                <button class="k-btn k-btn--secondary k-instructor-create-session"
+                    t-on-click="props.onCreateSession">
+                    Create Session
+                </button>
+            </aside>
+
+            <!-- Center panel: actionable roster -->
+            <main class="k-instructor-main">
+                <div class="k-instructor-main__header">
+                    <div>
+                        <div class="k-instructor-panel-heading">Roster</div>
+                        <t t-if="selectedSession()">
+                            <div class="k-instructor-main__subtitle" t-esc="sessionName(selectedSession())"/>
+                        </t>
+                    </div>
+                    <div class="k-instructor-main__count">
+                        <t t-esc="attendanceSummary().total"/> students
+                    </div>
+                </div>
+
+                <t t-if="isSelectedRosterLoading()">
+                    <div class="k-session-card__loading"><div class="k-spinner"/></div>
+                </t>
+                <t t-elif="!selectedSession()">
+                    <div class="k-session-card__empty">Select a session to view the roster.</div>
+                </t>
+                <t t-elif="!selectedRoster().length">
+                    <div class="k-session-card__empty">No students enrolled yet</div>
+                </t>
+                <t t-else="">
+                    <div class="k-roster-grid k-roster-grid--instructor">
+                        <t t-foreach="selectedRoster()" t-as="entry" t-key="entry.is_trial ? 'lead_' + entry.lead_id : entry.member_id">
+                            <InstructorRosterTile
+                                entry="entry"
+                                sessionId="selectedSession().id"
+                                onMark="(memberId, status) => props.onMark(memberId, selectedSession().id, status)"
+                                onRemoveAttendance="(memberId) => props.onRemoveAttendance(memberId, selectedSession().id)"
+                                onManage="(memberId) => props.onManage(memberId, selectedSession().id)"/>
+                        </t>
+                    </div>
+                </t>
+            </main>
+
+            <!-- Right panel: operational alerts -->
+            <aside class="k-instructor-right">
+                <div class="k-instructor-panel-heading">Alerts</div>
+                <t t-set="groups" t-value="alertGroups()"/>
+
+                <t t-if="groups.onboarding.length">
+                    <div class="k-alert-section">
+                        <div class="k-alert-section__title">Onboarding</div>
+                        <t t-foreach="groups.onboarding" t-as="alert" t-key="alert.key">
+                            <div class="k-alert-item k-alert-item--onboarding">
+                                <div class="k-alert-item__name" t-esc="alert.name"/>
+                                <div class="k-alert-item__detail" t-esc="alert.detail"/>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+
+                <t t-if="groups.membership.length">
+                    <div class="k-alert-section">
+                        <div class="k-alert-section__title">Membership Issues</div>
+                        <t t-foreach="groups.membership" t-as="alert" t-key="alert.key">
+                            <div class="k-alert-item k-alert-item--membership">
+                                <div class="k-alert-item__name" t-esc="alert.name"/>
+                                <div class="k-alert-item__detail" t-esc="alert.detail"/>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+
+                <t t-if="groups.tasks.length">
+                    <div class="k-alert-section">
+                        <div class="k-alert-section__title">Instructor Tasks</div>
+                        <t t-foreach="groups.tasks" t-as="alert" t-key="alert.key">
+                            <div class="k-alert-item k-alert-item--task">
+                                <div class="k-alert-item__name" t-esc="alert.name"/>
+                                <div class="k-alert-item__detail" t-esc="alert.detail"/>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+
+                <t t-if="!groups.onboarding.length and !groups.membership.length and !groups.tasks.length">
+                    <div class="k-alert-section k-alert-section--empty">
+                        <div class="k-alert-section__title">Clear</div>
+                        <div class="k-alert-item__detail">No roster alerts for this session.</div>
+                    </div>
+                </t>
+            </aside>
+        </div>
+    `;
+
+    static props = [
+        "sessions",
+        "sessionId",
+        "sessionContext",
+        "rosters",
+        "loadingRosters",
+        "onSessionChange",
+        "onMark",
+        "onRemoveAttendance",
+        "onManage",
+        "onClose",
+        "onReopen",
+        "onDelete",
+        "onEdit",
+        "onAssignRoster",
+        "onCreateSession",
+    ];
+    static components = { InstructorRosterTile };
+
+    setup() {
+        this.state = useState({ now: Date.now() });
+        onMounted(() => {
+            this._clock = setInterval(() => {
+                this.state.now = Date.now();
+            }, 1000);
+        });
+        onWillUnmount(() => clearInterval(this._clock));
+    }
+
+    sessions() {
+        return this.props.sessions || [];
+    }
+
+    selectedSession() {
+        const sessions = this.sessions();
+        const selectedId = this.props.sessionId;
+        if (selectedId) {
+            return sessions.find(session => session.id === selectedId) || null;
+        }
+
+        const ctx = this.props.sessionContext || {};
+        if (ctx.selected_session_id) {
+            const fromContext = sessions.find(session => session.id === ctx.selected_session_id);
+            if (fromContext) return fromContext;
+        }
+
+        return sessions.find(session => session.time_state === "active")
+            || sessions.find(session => session.time_state === "upcoming_soon")
+            || sessions[0]
+            || null;
+    }
+
+    selectedRoster() {
+        const session = this.selectedSession();
+        if (!session) return [];
+        return (this.props.rosters || {})[session.id] || [];
+    }
+
+    isSessionSelected(session) {
+        const selected = this.selectedSession();
+        return !!(selected && session && selected.id === session.id);
+    }
+
+    isSelectedRosterLoading() {
+        const session = this.selectedSession();
+        if (!session) return false;
+        return !!((this.props.loadingRosters || {})[session.id]);
+    }
+
+    sessionName(session) {
+        return (session && (session.template_name || session.name)) || "Class";
+    }
+
+    sessionSubline(session) {
+        if (!session) return "";
+        const parts = [];
+        if (session.program_name) parts.push(session.program_name);
+        if (session.instructor) parts.push(session.instructor);
+        return parts.join(" / ");
+    }
+
+    sessionStateLabel(session) {
+        const state = session && session.time_state;
+        if (session && session.state === "done") return "Done";
+        if (state === "active") return "Active now";
+        if (state === "upcoming_soon") return "Next up";
+        if (state === "done") return "Ended";
+        return "Upcoming";
+    }
+
+    sessionStateClass(session) {
+        const state = session && session.time_state;
+        if (session && session.state === "done") return "k-session--done";
+        if (state === "active") return "k-session--active";
+        if (state === "upcoming_soon") return "k-session--soon";
+        if (state === "done") return "k-session--done";
+        return "k-session--upcoming";
+    }
+
+    sessionContextText() {
+        const ctx = this.props.sessionContext || {};
+        return ctx.reason || "No active class or class starting soon.";
+    }
+
+    countdownText(session) {
+        if (!session) return "--";
+        if (session.state === "done" || session.time_state === "done") return "Complete";
+        const target = session.time_state === "active" ? session.end : session.start;
+        if (!target) return "--";
+        const targetMs = Date.parse(target.replace(" ", "T") + "Z");
+        const diffMs = targetMs - this.state.now;
+        if (diffMs <= 0) return session.time_state === "active" ? "Ending now" : "Starting now";
+        const prefix = session.time_state === "active" ? "Ends in " : "Starts in ";
+        return prefix + this.durationText(diffMs);
+    }
+
+    durationText(diffMs) {
+        const totalSeconds = Math.max(0, Math.floor(diffMs / 1000));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        if (hours > 0) return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+        return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    attendanceSummary() {
+        const summary = { present: 0, late: 0, absent: 0, checkedOut: 0, pending: 0, total: 0 };
+        for (const entry of this.selectedRoster()) {
+            summary.total += 1;
+            const state = entry.attendance_state || "pending";
+            if (state === "present") summary.present += 1;
+            else if (state === "late") summary.late += 1;
+            else if (state === "absent") summary.absent += 1;
+            else if (state === "checked_out") summary.checkedOut += 1;
+            else summary.pending += 1;
+        }
+        return summary;
+    }
+
+    alertGroups() {
+        const groups = { onboarding: [], membership: [], tasks: [] };
+        const onboardingCodes = new Set(["onboarding_incomplete", "waiver_unsigned"]);
+
+        for (const entry of this.selectedRoster()) {
+            const wf = entry.workflow_status || {};
+            const onboarding = wf.onboarding || {};
+            if (onboarding.available && !onboarding.complete) {
+                groups.onboarding.push({
+                    key: `onboarding-${entry.member_id || entry.lead_id}`,
+                    name: entry.name,
+                    detail: `${onboarding.progress_pct || entry.onboarding_pct || 0}% complete`,
+                });
+            }
+
+            const waiver = wf.waiver || {};
+            if (waiver.available && !waiver.signed) {
+                groups.onboarding.push({
+                    key: `waiver-${entry.member_id || entry.lead_id}`,
+                    name: entry.name,
+                    detail: "Waiver unsigned",
+                });
+            }
+
+            const subscriptionAlerts = ((wf.subscription || {}).alerts || []);
+            const issueAlerts = (entry.issues || []).filter(issue => {
+                const code = issue.code || "";
+                return code !== "instructor_tasks" && !onboardingCodes.has(code);
+            });
+            for (const alert of [...subscriptionAlerts, ...issueAlerts]) {
+                groups.membership.push({
+                    key: `membership-${entry.member_id || entry.lead_id}-${alert.code || alert.label}`,
+                    name: entry.name,
+                    detail: alert.label || alert.code || "Membership issue",
+                });
+            }
+
+            const taskCount = ((wf.tasks || {}).open_count || entry.open_task_count || 0);
+            if (taskCount) {
+                groups.tasks.push({
+                    key: `tasks-${entry.member_id || entry.lead_id}`,
+                    name: entry.name,
+                    detail: `${taskCount} open task${taskCount === 1 ? "" : "s"}`,
+                });
+            }
+        }
+
+        return groups;
+    }
+
+    formatTime(dt) {
+        return formatTime(dt);
     }
 }
 
@@ -3147,33 +3551,22 @@ class KioskApp extends Component {
                                 <button class="k-sessions-toast__dismiss" t-on-click="() => this.state.sessionDoneError = null">✕</button>
                             </div>
                         </t>
-                        <!-- Mount KioskInstructorLayout three-panel component -->
-                        <KioskInstructorLayout
+                        <InstructorThreePanelLayout
+                            sessions="state.sessions"
                             sessionId="state.sessionViewId"
-                            onSessionChange="(id) => this.onSessionViewChange(id)"/>
-                        <!-- Legacy session cards view (fallback) -->
-                        <div class="k-sessions-list" style="display:none;">
-                            <t t-foreach="filteredSessions()" t-as="session" t-key="session.id">
-                                <InstructorSessionCard
-                                    session="session"
-                                    roster="state.sessionRosters[session.id] || []"
-                                    loading="!!state.loadingRosters[session.id]"
-                                    onMark="(memberId, sessionId, status) => this.markAttendance(memberId, sessionId, status)"
-                                    onProfile="(memberId, sessionId) => this.openProfile(memberId, sessionId)"
-                                    onRemoveAttendance="(memberId, sessionId) => this.directRemoveAttendance(memberId, sessionId)"
-                                    onManage="(memberId, sessionId) => this.openProfile(memberId, sessionId, 'manage')"
-                                    onClose="(sessionId) => this.closeSessionById(sessionId)"
-                                    onReopen="(sessionId) => this.reopenSessionById(sessionId)"
-                                    onDelete="(sessionId) => this.deleteSessionById(sessionId)"
-                                    onEdit="(session) => this.openEditSession(session)"
-                                    onAssignRoster="(session) => this.openAssignRoster(session)"/>
-                            </t>
-                        </div>
-                        <div style="display:flex;justify-content:center;padding:12px 0 4px;">
-                            <button class="k-btn k-btn--secondary" t-on-click="openCreateSession">
-                                ➕ Create Session
-                            </button>
-                        </div>
+                            sessionContext="state.sessionContext"
+                            rosters="state.sessionRosters"
+                            loadingRosters="state.loadingRosters"
+                            onSessionChange="(id) => this.onSessionViewChange(id)"
+                            onMark="(memberId, sessionId, status) => this.markAttendance(memberId, sessionId, status)"
+                            onRemoveAttendance="(memberId, sessionId) => this.directRemoveAttendance(memberId, sessionId)"
+                            onManage="(memberId, sessionId) => this.openProfile(memberId, sessionId, 'manage')"
+                            onClose="(sessionId) => this.closeSessionById(sessionId)"
+                            onReopen="(sessionId) => this.reopenSessionById(sessionId)"
+                            onDelete="(sessionId) => this.deleteSessionById(sessionId)"
+                            onEdit="(session) => this.openEditSession(session)"
+                            onAssignRoster="(session) => this.openAssignRoster(session)"
+                            onCreateSession="() => this.openCreateSession()"/>
                     </t>
                 </t>
 
@@ -3289,6 +3682,7 @@ class KioskApp extends Component {
         StudentCheckinModal,
         InstructorSessionCard,
         InstructorRosterTile,
+        InstructorThreePanelLayout,
         AttendanceRemoveConfirm,
         DeleteSessionConfirm,
         AssignRosterModal,
@@ -3300,7 +3694,6 @@ class KioskApp extends Component {
         KioskSettingsModal,
         CreateSessionModal,
         KioskVoiceAssistant,
-        KioskInstructorLayout: window.KioskInstructorLayout,
     };
 
     setup() {

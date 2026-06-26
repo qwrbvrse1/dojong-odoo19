@@ -468,26 +468,34 @@ class DojoKioskService(models.AbstractModel):
             return {"success": False, "error": "Session not found."}
 
         logs = self.env["dojo.attendance.log"].search([("session_id", "=", session_id)])
-        present_count = logs.filtered(lambda log: log.status == "present").mapped("member_id")
-        late_count = logs.filtered(lambda log: log.status == "late").mapped("member_id")
-        absent_count = logs.filtered(lambda log: log.status == "absent").mapped("member_id")
+        present_ids = set(logs.filtered(lambda log: log.status == "present").mapped("member_id").ids)
+        late_ids = set(logs.filtered(lambda log: log.status == "late").mapped("member_id").ids)
+        absent_ids = set(logs.filtered(lambda log: log.status == "absent").mapped("member_id").ids)
 
-        enrollments = self.env["dojo.class.enrollment"].search_count([
+        enrollments = self.env["dojo.class.enrollment"].search([
             ("session_id", "=", session_id),
             ("status", "=", "registered"),
         ])
+        enrolled_ids = set(enrollments.mapped("member_id").ids)
+        pending_ids = enrolled_ids - present_ids - late_ids - absent_ids
 
         return {
             "success": True,
             "session_id": session.id,
             "session_name": session.name,
             "template_name": session.template_id.name if session.template_id else "",
+            "program_name": session.template_id.program_id.name if (session.template_id and session.template_id.program_id) else "",
+            "state": session.state,
+            "time_state": self._session_time_state(session.start_datetime, session.end_datetime),
             "start_datetime": fields.Datetime.to_string(session.start_datetime) if session.start_datetime else "",
             "end_datetime": fields.Datetime.to_string(session.end_datetime) if session.end_datetime else "",
-            "present_count": len(present_count),
-            "late_count": len(late_count),
-            "absent_count": len(absent_count),
-            "total_enrolled": enrollments,
+            "present_count": len(present_ids),
+            "late_count": len(late_ids),
+            "absent_count": len(absent_ids),
+            "pending_count": len(pending_ids),
+            "total_enrolled": len(enrollments),
+            "seats_taken": session.seats_taken,
+            "capacity": session.capacity,
         }
 
     # -------------------------------------------------------------------------
@@ -538,12 +546,27 @@ class DojoKioskService(models.AbstractModel):
                     "is_trial": True,
                     "trial_program": program_name,
                     "partner_id": partner_id,
+                    "image_url": "/web/image/res.partner/%d/image_128" % partner_id if partner_id else "",
                     "attendance_state": "present" if lead.trial_attended else "pending",
+                    "attendance_label": "Present" if lead.trial_attended else "Pending",
                     "membership_state": "trial",
+                    "membership_label": "Trial",
+                    "program_name": program_name,
+                    "program_color": session.template_id.program_id.color if (session.template_id and session.template_id.program_id) else "",
                     "belt_rank": "",
                     "belt_color": "",
                     "issues": [],
-                    "workflow_status": {"alert_count": 0, "alerts": []},
+                    "workflow_status": {
+                        "alert_count": 0,
+                        "alerts": [],
+                        "onboarding": {"available": False, "complete": True, "progress_pct": 0},
+                        "waiver": {"available": False, "signed": True},
+                        "subscription": {"state": "trial", "good_standing": True, "alerts": []},
+                        "tasks": {"open_count": 0},
+                        "grading": {},
+                    },
+                    "onboarding_pct": 0,
+                    "open_task_count": 0,
                 })
         return result
 
@@ -561,6 +584,17 @@ class DojoKioskService(models.AbstractModel):
         # Only include non-zero values to reduce payload size
         if onboarding_pct >= 100:
             onboarding_pct = 0
+        program_name = ""
+        program_color = ""
+        if enrollment and enrollment.session_id.template_id and enrollment.session_id.template_id.program_id:
+            program = enrollment.session_id.template_id.program_id
+            program_name = program.name
+            program_color = program.color or ""
+        else:
+            program = self._public_member_program_context(member)
+            program_name = program.get("program_name", "")
+            program_color = program.get("program_color", "")
+        membership_state = member.membership_state if "membership_state" in member._fields else ""
         return {
             "member_id": member.id,
             "name": member.name,
@@ -568,13 +602,27 @@ class DojoKioskService(models.AbstractModel):
             "image_url": "/web/image/dojo.member/%d/image_128" % member.id,
             "belt_rank": member.current_rank_id.name if member.current_rank_id else "",
             "belt_color": member.current_rank_id.color if member.current_rank_id else "",
+            "program_name": program_name,
+            "program_color": program_color,
             "attendance_state": attendance_state,
-            "membership_state": member.membership_state if hasattr(member, "membership_state") else "",
+            "attendance_label": self._attendance_state_label(attendance_state),
+            "membership_state": membership_state,
+            "membership_label": self._member_state_label(member),
             "issues": workflow_status.get("alerts", []),
             "workflow_status": workflow_status,
+            "alert_count": workflow_status.get("alert_count", 0),
             "onboarding_pct": onboarding_pct,
             "open_task_count": open_task_count,
         }
+
+    def _attendance_state_label(self, state):
+        return {
+            "present": "Present",
+            "late": "Late",
+            "absent": "Absent",
+            "checked_out": "Checked Out",
+            "pending": "Pending",
+        }.get(state or "pending", state or "Pending")
 
     def _member_state_label(self, member):
         if "membership_state" not in member._fields:
