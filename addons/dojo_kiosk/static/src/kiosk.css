@@ -2453,6 +2453,26 @@ select {
     white-space: nowrap;
 }
 
+.k-profile-private-note {
+    border: 1px solid var(--k-border);
+    border-radius: var(--k-radius-sm);
+    background: var(--k-surface-2);
+    padding: 14px;
+}
+
+.k-profile-private-note__title {
+    color: var(--k-text);
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.k-profile-private-note__body {
+    color: var(--k-text-2);
+    font-size: 13px;
+    line-height: 1.35;
+    margin-top: 4px;
+}
+
 /* Stats row */
 .k-profile__stats {
     display: flex;

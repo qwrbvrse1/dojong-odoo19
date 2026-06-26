@@ -339,7 +339,7 @@ class MemberProfileCard extends Component {
                                 </div>
                             </t>
                         </t>
-                        <t t-if="props.instructorMode">
+                        <t t-if="isInstructorProfile()">
                             <button class="k-profile__photo-btn" t-on-click="togglePhotoSheet" title="Update photo">📷</button>
                         </t>
                         <t t-if="state.showPhotoSheet">
@@ -367,11 +367,13 @@ class MemberProfileCard extends Component {
                 <div class="k-profile-tabs">
                     <button t-attf-class="k-profile-tab #{state.tab === 'profile' ? 'k-profile-tab--active' : ''}"
                         t-on-click="() => this.state.tab = 'profile'">Profile</button>
-                    <button t-attf-class="k-profile-tab #{state.tab === 'progress' ? 'k-profile-tab--active' : ''}"
-                        t-on-click="() => this.state.tab = 'progress'">Progress</button>
-                    <button t-attf-class="k-profile-tab #{state.tab === 'household' ? 'k-profile-tab--active' : ''}"
-                        t-on-click="() => this.state.tab = 'household'">Household</button>
-                    <t t-if="props.instructorMode">
+                    <t t-if="isInstructorProfile()">
+                        <button t-attf-class="k-profile-tab #{state.tab === 'progress' ? 'k-profile-tab--active' : ''}"
+                            t-on-click="() => this.state.tab = 'progress'">Progress</button>
+                        <button t-attf-class="k-profile-tab #{state.tab === 'household' ? 'k-profile-tab--active' : ''}"
+                            t-on-click="() => this.state.tab = 'household'">Household</button>
+                    </t>
+                    <t t-if="props.instructorMode and isInstructorProfile()">
                         <button t-attf-class="k-profile-tab k-profile-tab--manage #{state.tab === 'manage' ? 'k-profile-tab--active' : ''}"
                             t-on-click="() => this.switchToManage()">⚙ Manage</button>
                     </t>
@@ -380,7 +382,27 @@ class MemberProfileCard extends Component {
                 <!-- ══ Profile tab ══ -->
                 <t t-if="state.tab === 'profile'">
                     <div class="k-profile__scroll-body">
-                        <t t-if="props.member.issues and props.member.issues.length">
+                        <t t-if="!isInstructorProfile()">
+                            <div class="k-profile-private-note">
+                                <div class="k-profile-private-note__title">Check-in profile</div>
+                                <div class="k-profile-private-note__body">
+                                    Instructor details unlock after staff authorization.
+                                </div>
+                            </div>
+                            <t t-if="props.member.enrolled_sessions and props.member.enrolled_sessions.length">
+                                <div class="k-appointments">
+                                    <div class="k-appointments__title">Today's Classes</div>
+                                    <t t-foreach="props.member.enrolled_sessions" t-as="session" t-key="session.id">
+                                        <div class="k-appt-row">
+                                            <div class="k-appt-row__name" t-esc="session.template_name || session.name"/>
+                                            <div class="k-appt-row__time" t-esc="formatDateTime(session.start)"/>
+                                        </div>
+                                    </t>
+                                </div>
+                            </t>
+                        </t>
+
+                        <t t-if="isInstructorProfile() and props.member.issues and props.member.issues.length">
                             <div class="k-warning-banner">
                                 <div class="k-warning-banner__icon">!</div>
                                 <div class="k-warning-banner__list">
@@ -391,128 +413,130 @@ class MemberProfileCard extends Component {
                             </div>
                         </t>
 
-                        <div class="k-workflow-grid">
-                            <div t-attf-class="k-workflow-card #{workflow().onboarding and workflow().onboarding.complete ? 'k-workflow-card--ok' : 'k-workflow-card--warn'}">
-                                <div class="k-workflow-card__label">Onboarding</div>
-                                <div class="k-workflow-card__value">
-                                    <t t-if="workflow().onboarding and workflow().onboarding.available">
-                                        <t t-esc="workflow().onboarding.progress_pct"/>%
-                                    </t>
-                                    <t t-else="">N/A</t>
-                                </div>
-                                <t t-if="workflow().onboarding and workflow().onboarding.missing_steps and workflow().onboarding.missing_steps.length">
-                                    <div class="k-workflow-card__detail" t-esc="workflow().onboarding.missing_steps.slice(0, 2).join(', ')"/>
-                                </t>
-                            </div>
-                            <div t-attf-class="k-workflow-card #{workflow().waiver and workflow().waiver.signed ? 'k-workflow-card--ok' : 'k-workflow-card--warn'}">
-                                <div class="k-workflow-card__label">Waiver</div>
-                                <div class="k-workflow-card__value">
-                                    <t t-if="workflow().waiver and workflow().waiver.available">
-                                        <t t-esc="workflow().waiver.signed ? 'Signed' : 'Unsigned'"/>
-                                    </t>
-                                    <t t-else="">N/A</t>
-                                </div>
-                                <t t-if="workflow().waiver and workflow().waiver.signed_by">
-                                    <div class="k-workflow-card__detail" t-esc="workflow().waiver.signed_by"/>
-                                </t>
-                            </div>
-                            <div t-attf-class="k-workflow-card #{workflow().subscription and workflow().subscription.good_standing ? 'k-workflow-card--ok' : 'k-workflow-card--warn'}">
-                                <div class="k-workflow-card__label">Membership</div>
-                                <div class="k-workflow-card__value">
-                                    <t t-if="workflow().subscription" t-esc="workflow().subscription.state || 'none'"/>
-                                </div>
-                                <t t-if="workflow().subscription and workflow().subscription.plan_name">
-                                    <div class="k-workflow-card__detail" t-esc="workflow().subscription.plan_name"/>
-                                </t>
-                            </div>
-                            <div t-attf-class="k-workflow-card #{workflow().grading and workflow().grading.ready ? 'k-workflow-card--ok' : ''}">
-                                <div class="k-workflow-card__label">Grading</div>
-                                <div class="k-workflow-card__value">
-                                    <t t-if="workflow().grading" t-esc="workflow().grading.label"/>
-                                </div>
-                                <t t-if="workflow().grading and workflow().grading.next_rank">
-                                    <div class="k-workflow-card__detail" t-esc="'Next: ' + workflow().grading.next_rank.name"/>
-                                </t>
-                            </div>
-                        </div>
-
-                        <t t-if="workflow().tasks and workflow().tasks.open_count">
-                            <div class="k-workflow-tasks">
-                                <div class="k-workflow-tasks__title">
-                                    <t t-esc="workflow().tasks.open_count"/> Open Instructor Task<t t-if="workflow().tasks.open_count !== 1">s</t>
-                                </div>
-                                <t t-foreach="workflow().tasks.tasks || []" t-as="task" t-key="task.id">
-                                    <div class="k-workflow-task-row">
-                                        <span class="k-workflow-task-row__name" t-esc="task.name"/>
-                                        <t t-if="task.deadline">
-                                            <span class="k-workflow-task-row__deadline" t-esc="task.deadline"/>
+                        <t t-if="isInstructorProfile()">
+                            <div class="k-workflow-grid">
+                                <div t-attf-class="k-workflow-card #{workflow().onboarding and workflow().onboarding.complete ? 'k-workflow-card--ok' : 'k-workflow-card--warn'}">
+                                    <div class="k-workflow-card__label">Onboarding</div>
+                                    <div class="k-workflow-card__value">
+                                        <t t-if="workflow().onboarding and workflow().onboarding.available">
+                                            <t t-esc="workflow().onboarding.progress_pct"/>%
                                         </t>
+                                        <t t-else="">N/A</t>
+                                    </div>
+                                    <t t-if="workflow().onboarding and workflow().onboarding.missing_steps and workflow().onboarding.missing_steps.length">
+                                        <div class="k-workflow-card__detail" t-esc="workflow().onboarding.missing_steps.slice(0, 2).join(', ')"/>
+                                    </t>
+                                </div>
+                                <div t-attf-class="k-workflow-card #{workflow().waiver and workflow().waiver.signed ? 'k-workflow-card--ok' : 'k-workflow-card--warn'}">
+                                    <div class="k-workflow-card__label">Waiver</div>
+                                    <div class="k-workflow-card__value">
+                                        <t t-if="workflow().waiver and workflow().waiver.available">
+                                            <t t-esc="workflow().waiver.signed ? 'Signed' : 'Unsigned'"/>
+                                        </t>
+                                        <t t-else="">N/A</t>
+                                    </div>
+                                    <t t-if="workflow().waiver and workflow().waiver.signed_by">
+                                        <div class="k-workflow-card__detail" t-esc="workflow().waiver.signed_by"/>
+                                    </t>
+                                </div>
+                                <div t-attf-class="k-workflow-card #{workflow().subscription and workflow().subscription.good_standing ? 'k-workflow-card--ok' : 'k-workflow-card--warn'}">
+                                    <div class="k-workflow-card__label">Membership</div>
+                                    <div class="k-workflow-card__value">
+                                        <t t-if="workflow().subscription" t-esc="workflow().subscription.state || 'none'"/>
+                                    </div>
+                                    <t t-if="workflow().subscription and workflow().subscription.plan_name">
+                                        <div class="k-workflow-card__detail" t-esc="workflow().subscription.plan_name"/>
+                                    </t>
+                                </div>
+                                <div t-attf-class="k-workflow-card #{workflow().grading and workflow().grading.ready ? 'k-workflow-card--ok' : ''}">
+                                    <div class="k-workflow-card__label">Grading</div>
+                                    <div class="k-workflow-card__value">
+                                        <t t-if="workflow().grading" t-esc="workflow().grading.label"/>
+                                    </div>
+                                    <t t-if="workflow().grading and workflow().grading.next_rank">
+                                        <div class="k-workflow-card__detail" t-esc="'Next: ' + workflow().grading.next_rank.name"/>
+                                    </t>
+                                </div>
+                            </div>
+
+                            <t t-if="workflow().tasks and workflow().tasks.open_count">
+                                <div class="k-workflow-tasks">
+                                    <div class="k-workflow-tasks__title">
+                                        <t t-esc="workflow().tasks.open_count"/> Open Instructor Task<t t-if="workflow().tasks.open_count !== 1">s</t>
+                                    </div>
+                                    <t t-foreach="workflow().tasks.tasks || []" t-as="task" t-key="task.id">
+                                        <div class="k-workflow-task-row">
+                                            <span class="k-workflow-task-row__name" t-esc="task.name"/>
+                                            <t t-if="task.deadline">
+                                                <span class="k-workflow-task-row__deadline" t-esc="task.deadline"/>
+                                            </t>
+                                        </div>
+                                    </t>
+                                </div>
+                            </t>
+
+                            <div class="k-profile__stats">
+                                <div class="k-stat">
+                                    <span class="k-stat__value" t-esc="props.member.total_attendance"/>
+                                    <span class="k-stat__label">Total Classes</span>
+                                </div>
+                                <div class="k-stat">
+                                    <span class="k-stat__value">
+                                        <t t-if="props.member.credits_per_period === 0">
+                                            <span style="font-size:13px;font-weight:600;">Unlimited</span>
+                                        </t>
+                                        <t t-else="">
+                                            <t t-esc="props.member.credit_balance"/>
+                                            <span style="font-size:13px;font-weight:400;color:var(--k-text-3);"> / <t t-esc="props.member.credits_per_period"/></span>
+                                        </t>
+                                    </span>
+                                    <span class="k-stat__label">Credits</span>
+                                </div>
+                            </div>
+
+                            <div class="k-profile-info">
+                                <t t-if="props.member.date_of_birth">
+                                    <div class="k-info-row">
+                                        <span class="k-info-row__label">Date of Birth</span>
+                                        <span class="k-info-row__value" t-esc="props.member.date_of_birth"/>
+                                    </div>
+                                </t>
+                                <t t-if="props.member.plan_name">
+                                    <div class="k-info-row">
+                                        <span class="k-info-row__label">Plan</span>
+                                        <span class="k-info-row__value" t-esc="props.member.plan_name"/>
+                                    </div>
+                                </t>
+                                <t t-if="props.member.email">
+                                    <div class="k-info-row">
+                                        <span class="k-info-row__label">Email</span>
+                                        <span class="k-info-row__value" t-esc="props.member.email"/>
+                                    </div>
+                                </t>
+                                <t t-if="props.member.phone">
+                                    <div class="k-info-row">
+                                        <span class="k-info-row__label">Phone</span>
+                                        <span class="k-info-row__value" t-esc="props.member.phone"/>
                                     </div>
                                 </t>
                             </div>
-                        </t>
 
-                        <div class="k-profile__stats">
-                            <div class="k-stat">
-                                <span class="k-stat__value" t-esc="props.member.total_attendance"/>
-                                <span class="k-stat__label">Total Classes</span>
-                            </div>
-                            <div class="k-stat">
-                                <span class="k-stat__value">
-                                    <t t-if="props.member.credits_per_period === 0">
-                                        <span style="font-size:13px;font-weight:600;">Unlimited</span>
+                            <t t-if="props.member.appointments and props.member.appointments.length">
+                                <div class="k-appointments">
+                                    <div class="k-appointments__title">Upcoming Classes</div>
+                                    <t t-foreach="props.member.appointments" t-as="appt" t-key="appt.session_id">
+                                        <div class="k-appt-row">
+                                            <div class="k-appt-row__name" t-esc="appt.name"/>
+                                            <div class="k-appt-row__time" t-esc="formatDateTime(appt.start)"/>
+                                        </div>
                                     </t>
-                                    <t t-else="">
-                                        <t t-esc="props.member.credit_balance"/>
-                                        <span style="font-size:13px;font-weight:400;color:var(--k-text-3);"> / <t t-esc="props.member.credits_per_period"/></span>
-                                    </t>
-                                </span>
-                                <span class="k-stat__label">Credits</span>
-                            </div>
-                        </div>
-
-                        <div class="k-profile-info">
-                            <t t-if="props.member.date_of_birth">
-                                <div class="k-info-row">
-                                    <span class="k-info-row__label">Date of Birth</span>
-                                    <span class="k-info-row__value" t-esc="props.member.date_of_birth"/>
                                 </div>
                             </t>
-                            <t t-if="props.member.plan_name">
-                                <div class="k-info-row">
-                                    <span class="k-info-row__label">Plan</span>
-                                    <span class="k-info-row__value" t-esc="props.member.plan_name"/>
-                                </div>
-                            </t>
-                            <t t-if="props.member.email">
-                                <div class="k-info-row">
-                                    <span class="k-info-row__label">Email</span>
-                                    <span class="k-info-row__value" t-esc="props.member.email"/>
-                                </div>
-                            </t>
-                            <t t-if="props.member.phone">
-                                <div class="k-info-row">
-                                    <span class="k-info-row__label">Phone</span>
-                                    <span class="k-info-row__value" t-esc="props.member.phone"/>
-                                </div>
-                            </t>
-                        </div>
-
-                        <t t-if="props.member.appointments and props.member.appointments.length">
-                            <div class="k-appointments">
-                                <div class="k-appointments__title">Upcoming Classes</div>
-                                <t t-foreach="props.member.appointments" t-as="appt" t-key="appt.session_id">
-                                    <div class="k-appt-row">
-                                        <div class="k-appt-row__name" t-esc="appt.name"/>
-                                        <div class="k-appt-row__time" t-esc="formatDateTime(appt.start)"/>
-                                    </div>
-                                </t>
-                            </div>
                         </t>
                     </div>
 
                     <div class="k-profile__actions">
-                        <t t-if="props.instructorMode">
+                        <t t-if="isInstructorProfile()">
                             <div class="k-att-section">
                                 <div class="k-att-section__label">Mark Attendance</div>
                                 <div class="k-att-toggle--lg">
@@ -562,7 +586,7 @@ class MemberProfileCard extends Component {
                 </t>
 
                 <!-- ══ Progress tab ══ -->
-                <t t-if="state.tab === 'progress'">
+                <t t-if="state.tab === 'progress' and isInstructorProfile()">
                     <div class="k-profile__scroll-body">
                         <div class="k-progress">
                             <div class="k-progress__stat">
@@ -598,7 +622,7 @@ class MemberProfileCard extends Component {
                 </t>
 
                 <!-- ══ Household tab ══ -->
-                <t t-if="state.tab === 'household'">
+                <t t-if="state.tab === 'household' and isInstructorProfile()">
                     <div class="k-profile__scroll-body">
                         <t t-if="props.member.household">
                             <div class="k-hh">
@@ -650,7 +674,7 @@ class MemberProfileCard extends Component {
                 </t>
 
                 <!-- ══ Manage tab (instructor only) ══ -->
-                <t t-if="state.tab === 'manage' and props.instructorMode">
+                <t t-if="state.tab === 'manage' and props.instructorMode and isInstructorProfile()">
                     <div class="k-profile__scroll-body">
 
                         <!-- ── Onboarding Workflow ── -->
@@ -965,14 +989,16 @@ class MemberProfileCard extends Component {
         </t>
     `;
 
-    static props = ["member", "sessionId", "instructorMode", "initialTab", "onClose", "onCheckin", "onMarkAttendance", "onRosterAdd", "onRosterRemove", "onCheckout", "onRosterRemoveBySession", "onRefreshProfile"];
+    static props = ["member", "sessionId", "instructorMode", "instructorKey", "initialTab", "onClose", "onCheckin", "onMarkAttendance", "onRosterAdd", "onRosterRemove", "onCheckout", "onRosterRemoveBySession", "onRefreshProfile"];
 
     setup() {
+        const requestedTab = (this.props.initialTab && this.props.initialTab !== "photo") ? this.props.initialTab : "profile";
+        const initialTab = this.props.instructorMode && this.props.member.workflow_status ? requestedTab : "profile";
         this.state = useState({
-            tab: (this.props.initialTab && this.props.initialTab !== "photo") ? this.props.initialTab : "profile",
+            tab: initialTab,
             rosterAddError: "",
             // Photo update
-            showPhotoSheet: this.props.initialTab === "photo",
+            showPhotoSheet: this.props.initialTab === "photo" && !!(this.props.instructorMode && this.props.member.workflow_status),
             photoUploading: false,
             photoError: "",
             photoSuccess: "",
@@ -1022,6 +1048,8 @@ class MemberProfileCard extends Component {
     formatDateTime(dt) { return formatDateTime(dt); }
     computeContrast(hex) { return contrastColor(hex); }
     workflow() { return this.props.member.workflow_status || {}; }
+    isInstructorProfile() { return !!(this.props.instructorMode && this.props.member.workflow_status); }
+    instructorParams(params = {}) { return { ...params, instructor_key: this.props.instructorKey }; }
     guardianPartnerId(guardian) { return guardian.partner_id || guardian.member_id; }
     onImgError(ev) { ev.target.style.display = "none"; }
 
@@ -1104,10 +1132,10 @@ class MemberProfileCard extends Component {
         this.state.photoSuccess = "";
         try {
             const base64 = dataUrl.split(",")[1];
-            const result = await jsonPost("/kiosk/instructor/update_photo", {
+            const result = await jsonPost("/kiosk/instructor/update_photo", this.instructorParams({
                 member_id: this.props.member.member_id,
                 image_data: base64,
-            });
+            }));
             if (result && result.success) {
                 this.state.photoSuccess = "Photo updated!";
                 if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
@@ -1149,10 +1177,10 @@ class MemberProfileCard extends Component {
             });
             this.state.photoPreview = dataUrl;
             const base64 = dataUrl.split(",")[1];
-            const result = await jsonPost("/kiosk/instructor/update_photo", {
+            const result = await jsonPost("/kiosk/instructor/update_photo", this.instructorParams({
                 member_id: this.props.member.member_id,
                 image_data: base64,
-            });
+            }));
             if (result && result.success) {
                 this.state.photoSuccess = "Photo updated!";
                 if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
@@ -1202,10 +1230,10 @@ class MemberProfileCard extends Component {
         this.state.onboardingError = "";
         this.state.onboardingSuccess = "";
         try {
-            const result = await jsonPost("/kiosk/api/onboarding/complete_step", {
+            const result = await jsonPost("/kiosk/api/onboarding/complete_step", this.instructorParams({
                 member_id: this.props.member.member_id,
                 step_key: stepKey,
-            });
+            }));
             if (result && result.success) {
                 this.state.onboardingSuccess = "Step marked complete.";
                 if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
@@ -1230,11 +1258,11 @@ class MemberProfileCard extends Component {
         this.state.onboardingSuccess = "";
         try {
             // Note: add_note not in §6.1 spec; using legacy instructor/onboarding/action endpoint
-            const result = await jsonPost("/kiosk/instructor/onboarding/action", {
+            const result = await jsonPost("/kiosk/instructor/onboarding/action", this.instructorParams({
                 member_id: this.props.member.member_id,
                 action: "add_note",
                 note,
-            });
+            }));
             if (result && result.success) {
                 this.state.onboardingSuccess = "Note added.";
                 this.state.onboardingNote = "";
@@ -1255,10 +1283,10 @@ class MemberProfileCard extends Component {
         this.state.onboardingError = "";
         this.state.onboardingSuccess = "";
         try {
-            const result = await jsonPost("/kiosk/api/onboarding/send_reminder", {
+            const result = await jsonPost("/kiosk/api/onboarding/send_reminder", this.instructorParams({
                 member_id: this.props.member.member_id,
                 message: message || undefined,
-            });
+            }));
             if (result && result.success) {
                 const sentVia = (result.sent_via || []).join(", ");
                 const recipientCount = (result.recipients || []).length;
@@ -1287,12 +1315,12 @@ class MemberProfileCard extends Component {
         this.state.onboardingSuccess = "";
         try {
             // Note: escalate_blocker not in §6.1 spec; using legacy instructor/onboarding/action endpoint
-            const result = await jsonPost("/kiosk/instructor/onboarding/action", {
+            const result = await jsonPost("/kiosk/instructor/onboarding/action", this.instructorParams({
                 member_id: this.props.member.member_id,
                 action: "escalate_blocker",
                 step_key: incomplete ? incomplete.key : null,
                 note,
-            });
+            }));
             if (result && result.success) {
                 this.state.onboardingSuccess = "Blocker escalated.";
                 this.state.onboardingNote = "";
@@ -1311,9 +1339,9 @@ class MemberProfileCard extends Component {
         this.state.nextRankLoading = true;
         this.state.nextRankError = "";
         try {
-            const result = await jsonPost("/kiosk/instructor/next_rank", {
+            const result = await jsonPost("/kiosk/instructor/next_rank", this.instructorParams({
                 member_id: this.props.member.member_id,
-            });
+            }));
             if (result && result.success) {
                 this.state.currentRank = result.current_rank;
                 this.state.nextRank = result.next_rank;
@@ -1344,10 +1372,10 @@ class MemberProfileCard extends Component {
         this.state.promoteError = "";
         this.state.promoteSuccess = "";
         try {
-            const result = await jsonPost("/kiosk/instructor/award_rank", {
+            const result = await jsonPost("/kiosk/instructor/award_rank", this.instructorParams({
                 member_id: this.props.member.member_id,
                 rank_id: this.state.nextRank.id,
-            });
+            }));
             if (result && result.success) {
                 this.state.promoteSuccess = `🥋 ${result.rank_name} awarded to ${this.props.member.name}!`;
                 this.state.promoteConfirming = false;
@@ -1390,14 +1418,14 @@ class MemberProfileCard extends Component {
         this.state.msgError = "";
         this.state.msgSuccess = "";
         try {
-            const result = await jsonPost("/kiosk/instructor/send_message", {
+            const result = await jsonPost("/kiosk/instructor/send_message", this.instructorParams({
                 member_id: this.props.member.member_id,
                 guardian_member_ids: this.state.checkedGuardianIds,
                 subject: this.state.msgSubject || "Message from your Dojang",
                 message: this.state.msgBody,
                 send_sms: this.state.msgSendSms,
                 send_email: this.state.msgSendEmail,
-            });
+            }));
             if (result && result.success) {
                 const channels = (result.sent_via || []).join(" & ") || "message";
                 const toNames = (result.recipients || (result.recipient_name ? [result.recipient_name] : [])).join(", ");
@@ -1424,9 +1452,9 @@ class MemberProfileCard extends Component {
         this.state.sessionsLoading = true;
         this.state.sessionsLoadError = "";
         try {
-            const result = await jsonPost("/kiosk/instructor/available_sessions", {
+            const result = await jsonPost("/kiosk/instructor/available_sessions", this.instructorParams({
                 member_id: this.props.member.member_id,
-            });
+            }));
             if (result && result.success) {
                 this.state.availableSessions = result.sessions || [];
             } else {
@@ -1441,11 +1469,11 @@ class MemberProfileCard extends Component {
 
     async addToSession(sessionId) {
         try {
-            const result = await jsonPost("/kiosk/instructor/roster/add", {
+            const result = await jsonPost("/kiosk/instructor/roster/add", this.instructorParams({
                 session_id: sessionId,
                 member_id: this.props.member.member_id,
                 override_settings: true,
-            });
+            }));
             if (result && result.success) {
                 this.state.sessionRemoveMsg = "Added to session.";
                 this.state.showSessionPicker = false;
@@ -3591,6 +3619,7 @@ class KioskApp extends Component {
                     member="state.profileMember"
                     sessionId="state.profileSessionId"
                     instructorMode="state.instructorMode"
+                    instructorKey="state.instructorKey"
                     initialTab="state.profileInitialTab"
                     onClose="() => this.closeProfile()"
                     onCheckin="(member, sessionId) => this.doCheckinFromProfile(member, sessionId)"
@@ -4246,6 +4275,7 @@ class KioskApp extends Component {
             const result = await jsonPost("/kiosk/instructor/roster/add", {
                 session_id: sessionId,
                 member_id: member.member_id,
+                instructor_key: this.state.instructorKey,
             });
             if (result.success) {
                 await this._loadSessionRoster(sessionId);
@@ -4264,6 +4294,7 @@ class KioskApp extends Component {
             await jsonPost("/kiosk/instructor/roster/remove", {
                 session_id: sessionId,
                 member_id: member.member_id,
+                instructor_key: this.state.instructorKey,
             });
             await this._loadSessionRoster(sessionId);
         } catch (e) {
@@ -4278,6 +4309,7 @@ class KioskApp extends Component {
             const profile = await jsonPost("/kiosk/member/profile", {
                 member_id: member.member_id,
                 session_id: this.state.profileSessionId,
+                instructor_key: this.state.instructorKey,
             });
             if (profile && this.state.profileMember) this.state.profileMember = profile;
             // Reload session roster so tile avatars re-render with the busted URL
@@ -4302,6 +4334,7 @@ class KioskApp extends Component {
             await jsonPost("/kiosk/instructor/roster/remove", {
                 session_id: sessionId,
                 member_id: member.member_id,
+                instructor_key: this.state.instructorKey,
             });
             // Reload the affected session roster
             await this._loadSessionRoster(sessionId);
@@ -4309,6 +4342,7 @@ class KioskApp extends Component {
             const profile = await jsonPost("/kiosk/member/profile", {
                 member_id: member.member_id,
                 session_id: this.state.profileSessionId,
+                instructor_key: this.state.instructorKey,
             });
             if (this.state.profileMember) this.state.profileMember = profile;
         } catch (e) {

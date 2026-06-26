@@ -30,6 +30,14 @@ _ONBOARDING_STEP_FIELDS = {
     "uniform_issued": ("step_uniform_issued", "Uniform Issued"),
 }
 
+_ONBOARDING_GUIDANCE_STEP_KEYS = (
+    "trial_booked",
+    "waiver_signed",
+    "intro_completed",
+    "membership_activated",
+    "uniform_issued",
+)
+
 
 class DojoKioskService(models.AbstractModel):
     _name = "dojo.kiosk.service"
@@ -816,11 +824,14 @@ class DojoKioskService(models.AbstractModel):
     # -------------------------------------------------------------------------
 
     @api.model
-    def get_member_profile(self, member_id, session_id=None, instructor_key=None):
+    def get_member_profile(self, member_id, session_id=None, instructor_key=None, instructor_authorized=False):
         """Return minimal profile pre-PIN; full profile with valid instructor_key."""
         member = self.env["dojo.member"].browse(member_id)
         if not member.exists():
             return None
+
+        if instructor_authorized:
+            return self._member_profile_dict(member, session_id=session_id)
 
         # Validate instructor_key if provided
         if instructor_key:
@@ -848,8 +859,7 @@ class DojoKioskService(models.AbstractModel):
                 attendance_state = log.status if log else enr.attendance_state
 
         enrolled_sessions = self.get_enrolled_sessions_today(member.id)
-        workflow_status = self._member_workflow_status(member, session_id=session_id)
-        programs = self._member_programs(member)
+        program = self._public_member_program_context(member)
 
         return {
             "member_id": member.id,
@@ -857,10 +867,10 @@ class DojoKioskService(models.AbstractModel):
             "image_url": "/web/image/dojo.member/%d/image_128" % member.id,
             "belt_rank": member.current_rank_id.name if member.current_rank_id else "",
             "belt_color": member.current_rank_id.color if member.current_rank_id else "",
+            "program_name": program.get("program_name", ""),
+            "program_color": program.get("program_color", ""),
             "attendance_state": attendance_state,
             "enrolled_sessions": enrolled_sessions,
-            "workflow_status": workflow_status,
-            "programs": programs,
         }
 
     def _member_programs(self, member):
@@ -1148,18 +1158,18 @@ class DojoKioskService(models.AbstractModel):
             order="create_date desc, id desc",
             limit=1,
         )
+        if record and hasattr(record, "_sync_derived_steps"):
+            record._sync_derived_steps()
+
         steps = []
         completed = 0
-        # Only count the first 5 legacy data-entry steps for progress calculation
-        legacy_step_keys = ["member_info", "household", "enrollment", "subscription", "portal_access"]
-        for key, (field_name, label) in _ONBOARDING_STEP_FIELDS.items():
+        for key in _ONBOARDING_GUIDANCE_STEP_KEYS:
+            field_name, label = _ONBOARDING_STEP_FIELDS[key]
             done = bool(record and getattr(record, field_name, False))
-            if key in legacy_step_keys:
-                completed += 1 if done else 0
+            completed += 1 if done else 0
             steps.append({"key": key, "label": label, "complete": done})
-        # Calculate progress based on legacy data-entry steps
-        progress = int(completed / len(legacy_step_keys) * 100) if legacy_step_keys else 0
-        complete = bool(record and (record.state == "completed" or progress >= 100))
+        progress = int(completed / len(_ONBOARDING_GUIDANCE_STEP_KEYS) * 100)
+        complete = bool(record and progress >= 100)
         return {
             "available": True,
             "record_id": record.id if record else False,
@@ -2110,7 +2120,11 @@ class DojoKioskService(models.AbstractModel):
 
         field_name, label = _ONBOARDING_STEP_FIELDS[step_key]
         record.write({field_name: True})
-        if all(getattr(record, field_name) for field_name, _label in _ONBOARDING_STEP_FIELDS.values()):
+        guidance_fields = [
+            _ONBOARDING_STEP_FIELDS[key][0]
+            for key in _ONBOARDING_GUIDANCE_STEP_KEYS
+        ]
+        if all(getattr(record, field_name) for field_name in guidance_fields):
             record.state = "completed"
         else:
             record.state = "in_progress"

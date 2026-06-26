@@ -239,8 +239,22 @@ class KioskController(http.Controller):
         guard = self._guard_token(token, None)
         if guard is not None:
             return guard
+        instructor_authorized = False
+        if instructor_key:
+            instructor_authorized = (
+                self._guard_instructor(
+                    token,
+                    instructor_key,
+                    {"success": False, "error": "instructor_auth_required"},
+                )
+                is None
+            )
         svc = request.env["dojo.kiosk.service"].sudo()
-        return svc.get_member_profile(member_id, session_id=session_id, instructor_key=instructor_key)
+        return svc.get_member_profile(
+            member_id,
+            session_id=session_id,
+            instructor_authorized=instructor_authorized,
+        )
 
     @http.route("/kiosk/member/enrolled_sessions", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
     def kiosk_enrolled_sessions(self, member_id=None, date=None, token=None, **kw):

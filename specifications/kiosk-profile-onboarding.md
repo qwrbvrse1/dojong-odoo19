@@ -2,7 +2,7 @@
 
 ## Status
 
-Canonical REL-20260626 domain specification. INC-01 establishes the live profile/auth/onboarding gate; later profile increments must make it pass against the running Odoo kiosk.
+Canonical REL-20260626 domain specification. INC-04 delivers the live profile/auth/onboarding contract against the running Odoo kiosk.
 
 ## Intended behavior
 
@@ -12,12 +12,14 @@ Canonical REL-20260626 domain specification. INC-01 establishes the live profile
   - Progress
   - Household
   - Manage
+- Profile is the only pre-authorization tab. Progress, Household, photo tools, and Manage render only when the loaded profile payload is instructor-authorized.
 - Manage actions are instructor-only and are not exposed before instructor authorization.
 - Public profile data before instructor authorization is deliberately scoped to safe kiosk check-in information:
   - member id
   - name
   - image URL
   - belt rank/color
+  - non-sensitive program name/color context
   - attendance state
   - enrolled sessions for check-in
 - Public profile data must not expose instructor/private fields:
@@ -44,23 +46,34 @@ Canonical REL-20260626 domain specification. INC-01 establishes the live profile
   - `membership_activated`
   - `uniform_issued`
 - Onboarding payloads must include `available`, `complete`, `progress_pct`, `steps`, and `missing_steps`.
+- Onboarding progress and completion are calculated from the lifecycle guidance keys only. Legacy data-entry keys (`member_info`, `household`, `enrollment`, `subscription`, `portal_access`) may remain on the underlying model for compatibility, but they are not returned as kiosk onboarding steps and do not count toward kiosk progress.
+- Instructor onboarding actions must carry the active kiosk token and instructor key. Unauthenticated onboarding actions return `instructor_auth_required`.
 
 ## Live gate
 
-- Script: `testenv/scripts/ver-kiosk-profile-tabs.sh`
+- Scripts:
+  - `testenv/scripts/ver04-member-profile.sh`
+  - `testenv/scripts/ver-kiosk-profile-tabs.sh`
 - Data source: `testenv/reset.sh` seeded demo environment.
 - Credentials: kiosk token from `dojo_kiosk_config`; instructor PIN from the seeded kiosk config.
 - The gate exercises:
   - served `kiosk_app.js` profile/tab markers
+  - served `kiosk.css` profile/manage markers
   - live `/kiosk/auth/pin`
   - live public `/kiosk/member/profile`
+  - live invalid-key `/kiosk/member/profile`
   - live instructor-authorized `/kiosk/member/profile`
+  - live unauthenticated and authenticated `/kiosk/api/onboarding/complete_step`
 - The gate intentionally rejects public profile payloads that leak workflow/private fields.
+- The gate seeds a deterministic partial lifecycle onboarding state for `Demo Member`, verifies 40% progress, marks `intro_completed`, and verifies 60% progress.
 
-## Current INC-01 baseline
+## Current INC-04 state
 
-- The gate script exists and is executable.
-- The current implementation may still fail this gate because the pre-PIN profile payload includes workflow/program information that belongs behind instructor authorization.
+- `/kiosk/member/profile` returns a public check-in payload unless an instructor key validates against the active kiosk token.
+- Public and invalid-key profile payloads include only safe check-in fields and do not expose workflow, issues, membership state, household, guardians, contact details, member number, appointments, or program-management rows.
+- Instructor-authorized profile payloads include workflow, onboarding, issues, membership state, household/guardian data, programs, and Manage-tab action context.
+- `MemberProfileCard` hides Progress, Household, photo tools, and Manage unless the profile payload includes instructor workflow data.
+- Manage-tab onboarding actions use token plus instructor key and render the lifecycle guidance steps.
 
 ## Source of truth
 
