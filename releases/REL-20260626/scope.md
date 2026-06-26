@@ -26,6 +26,12 @@ Interpretation rule:
 - The rescue branch runs against a reproducible local Odoo environment using `testenv/reset.sh` and `testenv/verify.sh`.
 - Missing or weak kiosk gates are replaced with live behavioral gates that exercise the running instance, not just static source grep.
 - New verification scripts are added under `testenv/scripts/` for the kiosk flows delivered in this release.
+- INC-01 establishes these strict live gates:
+  - `testenv/scripts/ver-kiosk-home.sh`
+  - `testenv/scripts/ver-kiosk-instructor-layout.sh`
+  - `testenv/scripts/ver-kiosk-profile-tabs.sh`
+  - `testenv/scripts/ver-kiosk-photo-flow.sh`
+- `testenv/verify.sh` is the environment/harness health gate: it verifies services, bootstraps the required Odoo module set when reset leaves an empty database, checks the active kiosk token, and verifies that the rescue gate scripts are present and executable. The strict flow gates are enforced by the feature increments that own the corresponding behavior.
 - The rescue release documents exactly which kiosk behaviors are considered done, so the worker model is not allowed to “fill in” product intent.
 
 ### Milestone 1 — Student kiosk parity
@@ -91,7 +97,7 @@ Interpretation rule:
 - `specifications/kiosk-instructor-experience.md` — current instructor layout, session context, and roster-card behavior
 - `specifications/kiosk-profile-onboarding.md` — current member profile, manage flow, and onboarding payload/visibility rules
 - `specifications/kiosk-photo-storage.md` — current photo capture/upload/storage/refresh behavior
-- `CHANGELOG.md` — release history entry after audit
+- `CHANGELOG.md` — release history entry after audit in the final release-integrity increment
 
 ## Decisions
 
@@ -116,7 +122,7 @@ Interpretation rule:
 
 | Scope item | What is deferred / partial | Reason | Operator sign-off |
 |---|---|---|---|
-| Release baseline gate coverage | Baseline gate is limited to environment health and currently-shipped verification scripts; the broader kiosk rescue verification suite is created in INC-01 rather than existing before the release | The repo does not yet contain a single authoritative kiosk regression suite broad enough to represent the full rescue target pre-INC-01 | Required before run |
+| Release baseline gate coverage | INC-01 creates strict live gate scripts and makes `verify.sh` check their presence/executability; feature increments enforce the corresponding strict gates when they own the behavior | INC-01 is an infrastructure increment and does not claim student, instructor, profile, or Supabase photo parity is already delivered | Required before run |
 | Legacy `specifications/` normalization | Existing `specifications/` contents are mostly verification notes from prior releases, not clean domain-state specs; REL-20260626 establishes canonical kiosk domain specs and then keeps them current | Repo state predates the stricter artifact standard | Required before run |
 
 ## Success criteria

@@ -39,6 +39,8 @@ baseline_gate:
 
 Replace the weak kiosk proof points with deterministic live verification scripts before feature correction work continues. This increment does not claim the kiosk is fixed; it establishes the rescue harness so later passes cannot “green” without proving behavior.
 
+INC-01 creates strict target gates for the four kiosk domains and makes `testenv/verify.sh` prove the local Odoo baseline is usable: services responding, required modules installed, seeded kiosk token present, and rescue scripts present/executable. The strict scripts are intentionally allowed to fail against the pre-fix kiosk; the owning feature increments wire them into their pass gates.
+
 ```yaml
 id: INC-01
 title: Establish deterministic kiosk rescue gates
