@@ -233,3 +233,24 @@ BEGIN
     ON CONFLICT DO NOTHING;
   END IF;
 END $$;
+
+-- Set up admin user for gate tests
+-- Update admin login to admin@demo.com and password to admin123
+UPDATE res_users
+SET login = 'admin@demo.com',
+    password = '$pbkdf2-sha512$25000$PceY8763tpbS.h8jZEzJOQ$9R75uT4b1i/dHt3DHtRlG1Nh4JjsKbpoxCgu7a0DHQaoXU6qTihS8.9gXuH0hOYUsA2nEao5FjIfJV2gnDlOAg'
+WHERE id = 2;
+
+-- Add admin to instructor group (required for /odoo/export/students endpoint)
+DO $$
+DECLARE
+  instructor_group_id integer;
+BEGIN
+  SELECT id INTO instructor_group_id FROM res_groups WHERE name::text LIKE '%Dojo Instructor%' LIMIT 1;
+
+  IF instructor_group_id IS NOT NULL THEN
+    INSERT INTO res_groups_users_rel (gid, uid)
+    VALUES (instructor_group_id, 2)
+    ON CONFLICT DO NOTHING;
+  END IF;
+END $$;

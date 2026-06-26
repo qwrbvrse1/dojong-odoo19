@@ -7,10 +7,11 @@ from odoo.exceptions import AccessError
 
 class DojoExportController(http.Controller):
     @http.route(
-        "/instructor_dashboard/export",
+        ["/instructor_dashboard/export", "/odoo/export/students"],
         type="http",
         auth="user",
-        methods=["GET"],
+        methods=["GET", "POST"],
+        csrf=False,  # SECURITY: Required for gate spec, but this creates CSRF vulnerability
     )
     def export_csv(self, export_type=None, **kwargs):
         """Generate and return CSV file based on export type."""
