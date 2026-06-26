@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# VER-04 gate: call /kiosk/api/member_profile, assert onboarding keys present.
+# gate: call /kiosk/api/member_profile, assert onboarding keys present.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 

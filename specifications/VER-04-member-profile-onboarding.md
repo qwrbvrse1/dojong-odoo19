@@ -1,7 +1,7 @@
-# VER-04: Verify get_member_profile — onboarding keys present in live API response
+# Verify get_member_profile — onboarding keys present in live API response
 
 ## Status
-**PASS** — Live API returns onboarding payload with all required keys.
+Verification — confirms REL-001 INC-04 deliverable against running system.
 
 ## Verification Method
 Live JSON-RPC call to `/kiosk/member/profile` endpoint with demo member and kiosk token.
@@ -30,7 +30,7 @@ Live JSON-RPC call to `/kiosk/member/profile` endpoint with demo member and kios
           {"key": "household", "label": "Household", "complete": true},
           {"key": "enrollment", "label": "Class Enrollment", "complete": false}
         ],
-        "missing_steps": ["Class Enrollment", "Subscription", "Portal Access", ...]
+        "missing_steps": ["Class Enrollment", "Subscription", "Portal Access"]
       }
     }
   }

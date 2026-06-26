@@ -34,6 +34,9 @@ fast_reset() {
     -i "${CORE_MODULES}" \
     --stop-after-init \
     >/dev/null 2>&1
+
+  # Load demo seed data
+  docker compose exec -T db psql -U odoo -d odoo19 -f - < "$TESTENV/seed-demo.sql" >/dev/null 2>&1
 }
 
 deep_reset() {
@@ -60,6 +63,9 @@ deep_reset() {
     -i "${CORE_MODULES}" \
     --stop-after-init \
     >/dev/null 2>&1
+
+  # Load demo seed data
+  docker compose exec -T db psql -U odoo -d odoo19 -f - < "$TESTENV/seed-demo.sql" >/dev/null 2>&1
 }
 
 if fast_reset && "$TESTENV/verify.sh"; then
