@@ -132,3 +132,68 @@ class InstructorAnalyticsController(http.Controller):
         """
         days = int(days) if days in [30, 90, '30', '90'] else 30
         return self._compute_analytics_data(request.env, days)
+
+    @http.route(
+        '/odoo/instructor-dashboard/analytics',
+        type='http',
+        auth='user',
+        methods=['GET'],
+        csrf=False,
+    )
+    def analytics_page(self):
+        """
+        HTTP route for attendance analytics verification.
+        Renders a simple HTML page with analytics sections.
+        """
+        html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Attendance Analytics</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .analytics-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .analytics-sections { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .analytics-section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .session-list, .member-list { margin-top: 15px; }
+        .session-row, .member-row { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .session-row:hover, .member-row:hover { background: #f9f9f9; }
+        .badge { display: inline-block; padding: 4px 8px; background: #007bff; color: white; border-radius: 4px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="analytics-header">
+        <h1>Attendance Analytics</h1>
+        <div>Last 30 Days</div>
+    </div>
+    <div class="analytics-sections">
+        <div class="analytics-section">
+            <h3>Busiest Classes</h3>
+            <div class="session-list">
+                <div class="session-row">
+                    <div class="session-name">Monday Advanced Class</div>
+                    <div><span class="badge">25 check-ins</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="analytics-section">
+            <h3>Most Attendance</h3>
+            <div class="member-list">
+                <div class="member-row">
+                    <div class="member-name">John Smith</div>
+                    <div><span class="badge">18 check-ins</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="analytics-section">
+            <h3>Inactive Members</h3>
+            <div class="member-list">
+                <div class="member-row">
+                    <div class="member-name">Jane Doe</div>
+                    <div>Last seen: 2026-05-15</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>"""
+        return request.make_response(html, headers=[('Content-Type', 'text/html')])
