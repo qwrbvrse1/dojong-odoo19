@@ -3100,7 +3100,12 @@ class KioskApp extends Component {
                                 <button class="k-sessions-toast__dismiss" t-on-click="() => this.state.sessionDoneError = null">✕</button>
                             </div>
                         </t>
-                        <div class="k-sessions-list">
+                        <!-- Mount KioskInstructorLayout three-panel component -->
+                        <KioskInstructorLayout
+                            sessionId="state.sessionViewId"
+                            onSessionChange="(id) => this.onSessionViewChange(id)"/>
+                        <!-- Legacy session cards view (fallback) -->
+                        <div class="k-sessions-list" style="display:none;">
                             <t t-foreach="filteredSessions()" t-as="session" t-key="session.id">
                                 <InstructorSessionCard
                                     session="session"
@@ -3248,6 +3253,7 @@ class KioskApp extends Component {
         KioskSettingsModal,
         CreateSessionModal,
         KioskVoiceAssistant,
+        KioskInstructorLayout: window.KioskInstructorLayout,
     };
 
     setup() {
@@ -3463,6 +3469,12 @@ class KioskApp extends Component {
     onSessionViewFilter(ev) {
         const val = ev.target.value;
         this.state.sessionViewId = val ? parseInt(val, 10) : null;
+        this.state.sessionViewManual = true;
+        this._loadVisibleSessionRosters();
+    }
+
+    onSessionViewChange(sessionId) {
+        this.state.sessionViewId = sessionId;
         this.state.sessionViewManual = true;
         this._loadVisibleSessionRosters();
     }
