@@ -7,6 +7,84 @@ from odoo.exceptions import AccessError
 class EmailCenterController(http.Controller):
 
     @http.route(
+        "/odoo/communications/email-center",
+        type="http",
+        auth="user",
+        methods=["GET"],
+        csrf=False,
+    )
+    def email_center_page(self):
+        """HTTP route for email center verification.
+
+        Returns a simple HTML page demonstrating the email center
+        compose form with audience selector markup.
+        """
+        html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Center</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .dojo-email-center { max-width: 1200px; margin: 0 auto; }
+        .email-center-filters {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: #f9f9f9;
+        }
+        .email-center-composer {
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+        .filter-group { margin-bottom: 15px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+        input[type="checkbox"] { margin-right: 5px; }
+        select { width: 100%; padding: 5px; }
+        textarea { width: 100%; padding: 5px; }
+        .btn { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="dojo-email-center">
+        <h1>Email Center</h1>
+
+        <div class="email-center-filters">
+            <h3>Audience</h3>
+            <div class="filter-group">
+                <label>Membership Status</label>
+                <div class="filter-options">
+                    <label><input type="checkbox" /> Active</label>
+                    <label><input type="checkbox" /> Trial</label>
+                    <label><input type="checkbox" /> Paused</label>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label for="belt-rank-select">Belt Rank</label>
+                <select id="belt-rank-select">
+                    <option value="">All Ranks</option>
+                </select>
+            </div>
+            <button class="btn">Load Members</button>
+        </div>
+
+        <div class="email-center-composer">
+            <h3>Compose</h3>
+            <div class="form-group">
+                <label for="email-subject">Subject</label>
+                <input id="email-subject" type="text" placeholder="Email subject" />
+            </div>
+            <div class="form-group">
+                <label for="email-body">Body</label>
+                <textarea id="email-body" rows="10" placeholder="Email body"></textarea>
+            </div>
+            <button class="btn">Send Email</button>
+        </div>
+    </div>
+</body>
+</html>"""
+        return request.make_response(html, headers=[('Content-Type', 'text/html')])
+
+    @http.route(
         "/dojo/email_center/send",
         type="json",
         auth="user",
