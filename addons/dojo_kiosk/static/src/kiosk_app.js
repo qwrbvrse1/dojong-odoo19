@@ -1705,6 +1705,16 @@ class InstructorRosterTile extends Component {
             </div>
 
             <div class="k-roster-tile__name" t-esc="props.entry.name"/>
+
+            <!-- Onboarding progress bar -->
+            <t t-if="props.entry.onboarding_pct &gt; 0">
+                <div class="k-roster-card__progress">
+                    <div class="progress-bar" t-attf-style="width: #{props.entry.onboarding_pct}%;">
+                        <div class="progress-fill"></div>
+                    </div>
+                </div>
+            </t>
+
             <t t-if="workflowBadges().length">
                 <div class="k-roster-tile__badges">
                     <t t-foreach="workflowBadges()" t-as="badge" t-key="badge.key">

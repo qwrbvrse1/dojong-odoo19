@@ -199,3 +199,37 @@ BEGIN
     );
   END IF;
 END $$;
+
+-- Create demo enrollment for active session
+DO $$
+DECLARE
+  member_id_val integer;
+  session_id_val integer;
+BEGIN
+  SELECT id INTO member_id_val FROM dojo_member WHERE name = 'Demo Member' LIMIT 1;
+  SELECT id INTO session_id_val FROM dojo_class_session WHERE name = 'Demo Active Session' LIMIT 1;
+
+  IF member_id_val IS NOT NULL AND session_id_val IS NOT NULL THEN
+    INSERT INTO dojo_class_enrollment (
+      session_id,
+      member_id,
+      status,
+      attendance_state,
+      create_uid,
+      write_uid,
+      create_date,
+      write_date
+    )
+    VALUES (
+      session_id_val,
+      member_id_val,
+      'registered',
+      'pending',
+      1,
+      1,
+      NOW(),
+      NOW()
+    )
+    ON CONFLICT DO NOTHING;
+  END IF;
+END $$;
