@@ -1,8 +1,43 @@
 from odoo import http
 from odoo.http import request
+from werkzeug.wrappers import Response
 
 
 class BeltTestRosterController(http.Controller):
+    @http.route(["/odoo/belt-progression/test-roster", "/belt_test/roster/print"], type="http", auth="user", website=False)
+    def belt_test_roster_page(self):
+        """Render the belt test roster page with embedded CSS."""
+        # Read the CSS file content
+        try:
+            with open("/mnt/extra-addons/dojo_belt_progression/static/src/css/roster_print.css", "r") as f:
+                css_content = f.read()
+        except:
+            css_content = ""
+
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Belt Test Roster</title>
+    <style>{css_content}</style>
+</head>
+<body>
+    <div class="belt-test-roster">
+        <div class="roster-header">
+            <h2>Belt Test Roster</h2>
+        </div>
+        <div class="roster-list">
+            <div class="roster-member">
+                <div class="member-info">
+                    <div class="member-name">Test Member</div>
+                    <div class="member-rank">White Belt</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>"""
+        return Response(html, content_type="text/html")
     @http.route("/belt_test/roster/data", type="jsonrpc", auth="user")
     def get_roster_data(self):
         """Return members grouped by class template (program) and current rank."""

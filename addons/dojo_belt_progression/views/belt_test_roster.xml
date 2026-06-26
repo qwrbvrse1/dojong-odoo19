@@ -72,4 +72,17 @@
         </field>
     </record>
 
+    <!-- HTTP Page Template for Belt Test Roster -->
+    <template id="belt_test_roster_page_template" name="Belt Test Roster Page">
+        <t t-call="web.layout">
+            <t t-set="head_web" t-value="true"/>
+            <link rel="stylesheet" href="/dojo_belt_progression/static/src/css/roster_print.css"/>
+            <div class="o_main">
+                <div class="o_content">
+                    <div id="belt-test-roster-app"/>
+                </div>
+            </div>
+        </t>
+    </template>
+
 </odoo>
