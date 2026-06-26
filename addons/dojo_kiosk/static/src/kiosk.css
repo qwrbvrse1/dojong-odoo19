@@ -88,33 +88,34 @@ body.kiosk-theme-light {
 /* — Dark theme (True Black · Industrial Minimalism) — */
 body.kiosk-theme-dark {
     /* Surfaces — true black base */
-    --k-bg: #000000;
-    --k-surface: #0c0c0c;
-    --k-surface-2: #141414;
-    --k-surface-3: #1c1c1c;
-    --k-border: #272727;
+    --k-bg: var(--bg);
+    --k-surface: var(--surface);
+    --k-surface-2: var(--surface2);
+    --k-surface-3: var(--surface3);
+    --k-border: var(--border);
     --k-border-2: #383838;
 
     /* Text */
-    --k-text: #e8eaed;
-    --k-text-2: #9aa0a6;
-    --k-text-3: #4e5256;
+    --k-text: var(--text);
+    --k-text-2: var(--text-muted);
+    --k-text-3: var(--text-dim);
     --k-text-inv: #000000;
 
-    /* Accent — Dojo red-orange */
-    --k-accent: #FA5241;
-    --k-accent-dim: #2a0500;
+    /* Accent — Dojo red */
+    --k-accent: var(--red);
+    --k-accent-dim: var(--red-dim);
     --k-accent-text: #ffffff;
+    --k-gold: var(--gold);
 
     /* Status */
-    --k-success: #57bb8a;
+    --k-success: var(--green);
     --k-success-dim: #091a10;
-    --k-warning: #ffb74d;
+    --k-warning: var(--orange);
     --k-warning-dim: #1a1000;
     --k-danger: #f28b82;
     --k-danger-dim: #1a0504;
-    --k-info: #FA5241;
-    --k-info-dim: #2a0500;
+    --k-info: var(--red);
+    --k-info-dim: var(--red-dim);
 
     /* Instructor header — dark industrial */
     --k-instr-bg: #1a1a1a;
@@ -123,7 +124,7 @@ body.kiosk-theme-dark {
 
     /* Card header */
     --k-card-header: #091a10;
-    --k-card-header-text: #57bb8a;
+    --k-card-header-text: var(--green);
 
     /* Modal backdrop — strong on true black */
     --k-backdrop: rgba(0, 0, 0, 0.88);
@@ -2813,7 +2814,7 @@ select {
 
 /* ── Header ── */
 body.kiosk-theme-dark .k-header {
-    background: #000000;
+    background: var(--bg);
     border-bottom: 1px solid var(--k-border);
 }
 
@@ -2895,7 +2896,7 @@ body.kiosk-theme-dark .k-svh-date {
 
 /* ── Idle screen ── */
 body.kiosk-theme-dark .k-idle-screen {
-    background: #000000;
+    background: var(--bg);
 }
 
 body.kiosk-theme-dark .k-idle-slide__title {
@@ -2962,7 +2963,7 @@ body.kiosk-theme-dark .k-checkin-session-btn__program {
 
 /* ── Success view ── */
 body.kiosk-theme-dark .k-success-view {
-    background: #000000;
+    background: var(--bg);
 }
 
 body.kiosk-theme-dark .k-success-view--error {

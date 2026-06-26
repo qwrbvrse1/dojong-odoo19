@@ -98,6 +98,7 @@ class KioskController(http.Controller):
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
     <meta name="robots" content="noindex,nofollow"/>
     <title>Dojo Kiosk</title>
+    <link rel="stylesheet" href="/dojo_theme/static/src/css/tokens.css"/>
     <link rel="stylesheet" href="/dojo_kiosk/static/src/kiosk.css?v={_static_ver('static/src/kiosk.css')}_s2"/>
     <link rel="stylesheet" href="/dojo_kiosk/static/src/css/kiosk_instructor.css?v={_static_ver('static/src/css/kiosk_instructor.css')}"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"/>
