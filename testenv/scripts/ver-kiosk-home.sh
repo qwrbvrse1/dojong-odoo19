@@ -49,9 +49,16 @@ for marker in (
     "k-welcome-search",
     "k-search-results-flow",
     "k-member-tile",
+    "k-member-tile__program",
+    "k-member-tile__belt",
+    "k-member-tile__state",
+    "k-member-tile__affordance",
     "k-member-tile__trial-badge",
     "k-checkin-session-btn",
+    "k-checkin-session-btn__cta",
     "k-checkin-success-overlay",
+    "CHECKIN_SUCCESS_DISMISS_MS = 4000",
+    "playCheckinChime();",
 ):
     assert marker in app_js, "student UI marker missing from served app asset: %s" % marker
 
@@ -70,9 +77,22 @@ for session in sessions:
 assert isinstance(search, list), "search result is not a list"
 demo = next((item for item in search if item.get("name") == "Demo Member"), None)
 assert demo, "Demo Member not returned by live kiosk search"
-for key in ("member_id", "name", "is_trial", "belt_rank", "membership_state", "program_name"):
+for key in (
+    "member_id",
+    "name",
+    "image_url",
+    "is_trial",
+    "belt_rank",
+    "belt_color",
+    "membership_state",
+    "membership_label",
+    "program_name",
+    "program_color",
+):
     assert key in demo, "member search card payload missing %s" % key
 assert demo["is_trial"] is False, "Demo Member must render as a member card, not a trial card"
+assert demo["membership_state"] == "active", "Demo Member search card should expose active state"
+assert demo["program_name"] == "Demo Program", "Demo Member search card missing class program context"
 
 print("ver-kiosk-home: PASS")
 PY

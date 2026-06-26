@@ -138,6 +138,12 @@ class DojoKioskService(models.AbstractModel):
             ("session_id.start_datetime", "<=", fields.Datetime.to_string(today_end)),
         ])
 
+        logs = self.env["dojo.attendance.log"].search([
+            ("session_id", "in", enrollments.mapped("session_id").ids),
+            ("member_id", "=", member_id),
+        ])
+        log_by_session = {log.session_id.id: log.status for log in logs}
+
         # Deduplicate by session
         seen = set()
         result = []
@@ -146,6 +152,7 @@ class DojoKioskService(models.AbstractModel):
             if s.id in seen:
                 continue
             seen.add(s.id)
+            attendance_state = log_by_session.get(s.id) or enr.attendance_state
             result.append({
                 "id": s.id,
                 "name": s.name,
@@ -155,7 +162,8 @@ class DojoKioskService(models.AbstractModel):
                 "start": fields.Datetime.to_string(s.start_datetime),
                 "end": fields.Datetime.to_string(s.end_datetime),
                 "instructor": s.instructor_profile_id.name if s.instructor_profile_id else "",
-                "attendance_state": enr.attendance_state,
+                "attendance_state": attendance_state,
+                "time_state": self._session_time_state(s.start_datetime, s.end_datetime),
             })
         return result
 
@@ -364,11 +372,8 @@ class DojoKioskService(models.AbstractModel):
             "session_context": self.get_session_context_from_payload(sessions),
         }
 
-    def _session_payload(self, session):
+    def _session_time_state(self, start, end):
         now = fields.Datetime.now()
-        start = session.start_datetime
-        end = session.end_datetime
-
         time_state = "upcoming"
         if start and end:
             if now >= start and now <= end:
@@ -379,7 +384,9 @@ class DojoKioskService(models.AbstractModel):
                 minutes_until = (start - now).total_seconds() / 60
                 if minutes_until <= _UPCOMING_SESSION_WINDOW_MINUTES:
                     time_state = "upcoming_soon"
+        return time_state
 
+    def _session_payload(self, session):
         return {
             "id": session.id,
             "name": session.name,
@@ -392,7 +399,7 @@ class DojoKioskService(models.AbstractModel):
             "seats_taken": session.seats_taken,
             "capacity": session.capacity,
             "instructor": session.instructor_profile_id.name if session.instructor_profile_id else "",
-            "time_state": time_state,
+            "time_state": self._session_time_state(session.start_datetime, session.end_datetime),
         }
 
     @api.model
@@ -569,21 +576,65 @@ class DojoKioskService(models.AbstractModel):
             "open_task_count": open_task_count,
         }
 
+    def _member_state_label(self, member):
+        if "membership_state" not in member._fields:
+            return ""
+        return dict(member._fields["membership_state"].selection).get(
+            member.membership_state,
+            member.membership_state or "",
+        )
+
+    def _public_member_program_context(self, member):
+        """Return non-sensitive program context for a student search card."""
+        program = False
+        sub = self._member_operational_subscription(member)
+        if sub and sub.plan_id and getattr(sub.plan_id, "program_ids", False):
+            program = sub.plan_id.program_ids[:1]
+
+        if not program:
+            enrollments = self.env["dojo.class.enrollment"].sudo().search([
+                ("member_id", "=", member.id),
+                ("status", "=", "registered"),
+                ("session_id.state", "=", "open"),
+            ], limit=20)
+            ordered = enrollments.sorted(
+                key=lambda e: e.session_id.start_datetime or fields.Datetime.now()
+            )
+            for enrollment in ordered:
+                template = enrollment.session_id.template_id
+                if template and template.program_id:
+                    program = template.program_id
+                    break
+
+        return {
+            "program_name": program.name if program else "",
+            "program_color": program.color if program else "",
+        }
+
     def _public_member_entry(self, member):
-        """Minimal member payload safe for public kiosk search and barcode lookup."""
+        """Kiosk-safe member payload for public search and barcode lookup."""
+        program = self._public_member_program_context(member)
         return {
             "member_id": member.id,
             "name": member.name,
+            "image_url": "/web/image/dojo.member/%d/image_128" % member.id,
             "belt_rank": member.current_rank_id.name if member.current_rank_id else "",
+            "belt_color": member.current_rank_id.color if member.current_rank_id else "",
+            "membership_state": member.membership_state if hasattr(member, "membership_state") else "",
+            "membership_label": self._member_state_label(member),
+            "program_name": program["program_name"],
+            "program_color": program["program_color"],
             "is_trial": False,
         }
 
     def _public_trial_lead_dict(self, lead):
-        """Minimal trial payload safe for public kiosk search results."""
+        """Kiosk-safe trial payload for public search results."""
         session = lead.trial_session_id
         program_name = ""
+        program_color = ""
         if session and session.template_id and session.template_id.program_id:
             program_name = session.template_id.program_id.name
+            program_color = session.template_id.program_id.color or ""
         session_dict = {}
         if session:
             session_dict = {
@@ -591,19 +642,26 @@ class DojoKioskService(models.AbstractModel):
                 "name": session.name,
                 "template_name": session.template_id.name if session.template_id else session.name,
                 "program_name": program_name,
+                "program_color": program_color,
                 "start": str(session.start_datetime) if session.start_datetime else "",
                 "end": str(session.end_datetime) if session.end_datetime else "",
                 "instructor": "",
+                "time_state": self._session_time_state(session.start_datetime, session.end_datetime),
             }
         return {
             "member_id": None,
             "lead_id": lead.id,
             "name": lead.contact_name or lead.partner_name or "Unknown",
             "is_trial": True,
+            "membership_state": "trial",
+            "membership_label": "Trial",
+            "program_name": program_name,
+            "program_color": program_color,
             "trial_program": program_name,
             "trial_session": session_dict,
             "partner_id": lead.partner_id.id if lead.partner_id else False,
             "belt_rank": "",
+            "belt_color": "",
         }
 
     # -------------------------------------------------------------------------
@@ -1212,6 +1270,12 @@ class DojoKioskService(models.AbstractModel):
         if not member.exists() or not session.exists():
             return {"success": False, "error": "Member or session not found."}
 
+        enrollment = self.env["dojo.class.enrollment"].search([
+            ("session_id", "=", session_id),
+            ("member_id", "=", member_id),
+            ("status", "=", "registered"),
+        ], limit=1)
+
         # --- Eligibility ---
         if member.membership_state in ("cancelled", "paused", "lead"):
             return {
@@ -1219,7 +1283,9 @@ class DojoKioskService(models.AbstractModel):
                 "error": "Membership is not active. Please see the front desk.",
             }
 
-        if not member.active_subscription_id:
+        has_active_subscription = bool(member.active_subscription_id)
+        registered_active_member = member.membership_state == "active" and bool(enrollment)
+        if not has_active_subscription and not registered_active_member:
             return {
                 "success": False,
                 "error": "No active subscription found. Please see the front desk.",
@@ -1236,11 +1302,6 @@ class DojoKioskService(models.AbstractModel):
                 "error": "You are not enrolled in this course. Please see the front desk.",
             }
 
-        # --- Capacity check ---
-        if session.capacity > 0 and session.seats_taken >= session.capacity:
-            return {"success": False, "error": "This session is full."}
-
-        # --- Find or create enrollment ---
         existing_log = self.env["dojo.attendance.log"].search([
             ("session_id", "=", session_id),
             ("member_id", "=", member_id),
@@ -1251,11 +1312,9 @@ class DojoKioskService(models.AbstractModel):
                 "error": "Already checked in to this session.",
             }
 
-        enrollment = self.env["dojo.class.enrollment"].search([
-            ("session_id", "=", session_id),
-            ("member_id", "=", member_id),
-            ("status", "=", "registered"),
-        ], limit=1)
+        # --- Capacity check ---
+        if not enrollment and session.capacity > 0 and session.seats_taken >= session.capacity:
+            return {"success": False, "error": "This session is full."}
 
         if not enrollment:
             enrollment = self.env["dojo.class.enrollment"].create({
@@ -1308,6 +1367,7 @@ class DojoKioskService(models.AbstractModel):
             "log_id": log.id,
             "member": self._member_profile_dict(member, session_id=session_id),
             "session_name": session.name,
+            "program_name": session.template_id.program_id.name if (session.template_id and session.template_id.program_id) else "",
             "points": points_info,
         }
 

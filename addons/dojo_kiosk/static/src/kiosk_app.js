@@ -9,6 +9,7 @@ const { Component, useState, onMounted, onWillUnmount, mount, xml, useRef } = ow
 
 // ─── Config identity (per-tablet token from URL) ─────────────────────────────
 const KIOSK_TOKEN = window.KIOSK_TOKEN || null;
+const CHECKIN_SUCCESS_DISMISS_MS = 4000;
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -223,7 +224,7 @@ class CheckinSuccessView extends Component {
             if (this.props.success) {
                 playCheckinChime();
             }
-            this._timer = setTimeout(() => this.props.onDone(), 4000);
+            this._timer = setTimeout(() => this.props.onDone(), CHECKIN_SUCCESS_DISMISS_MS);
         });
         onWillUnmount(() => clearTimeout(this._timer));
     }
@@ -1508,26 +1509,53 @@ class HomeContent extends Component {
 
 class MemberCard extends Component {
     static template = xml`
-        <div class="k-member-tile" t-on-click="() => props.onSelect(props.member)">
+        <button type="button" class="k-member-tile" t-on-click="() => props.onSelect(props.member)">
             <div class="k-member-tile__avatar-wrap">
                 <img class="k-member-tile__avatar"
                     t-att-src="memberAvatarUrl(props.member)"
                     t-att-alt="props.member.name"
                     t-on-error="onImgError"/>
             </div>
-            <t t-if="props.member.is_trial">
-                <div class="k-member-tile__trial-badge">TRIAL</div>
-                <t t-if="props.member.trial_program">
-                    <div class="k-member-tile__trial-program" t-esc="props.member.trial_program"/>
-                </t>
-            </t>
-            <div class="k-member-tile__name" t-esc="props.member.name"/>
-        </div>
+            <div class="k-member-tile__body">
+                <div class="k-member-tile__topline">
+                    <div class="k-member-tile__name" t-esc="props.member.name"/>
+                    <t t-if="props.member.is_trial">
+                        <span class="k-member-tile__trial-badge">TRIAL</span>
+                    </t>
+                    <t t-elif="stateLabel(props.member)">
+                        <span t-attf-class="k-member-tile__state k-member-tile__state--#{stateClass(props.member)}"
+                            t-esc="stateLabel(props.member)"/>
+                    </t>
+                </div>
+                <div class="k-member-tile__details">
+                    <t t-if="programName(props.member)">
+                        <span class="k-member-tile__program" t-esc="programName(props.member)"/>
+                    </t>
+                    <t t-if="props.member.belt_rank">
+                        <span class="k-member-tile__belt" t-esc="props.member.belt_rank"/>
+                    </t>
+                </div>
+                <div class="k-member-tile__affordance" t-esc="affordanceLabel(props.member)"/>
+            </div>
+        </button>
     `;
     static props = ["member", "onSelect"];
     memberAvatarUrl(member) {
+        if (member.image_url) return member.image_url;
         if (member.is_trial && member.partner_id) return partnerAvatarUrl(member.partner_id);
         return avatarUrl(member.member_id);
+    }
+    programName(member) {
+        return member.program_name || member.trial_program || "";
+    }
+    stateLabel(member) {
+        return member.membership_label || member.membership_state || "";
+    }
+    stateClass(member) {
+        return (member.membership_state || "unknown").replace(/[^a-z0-9_-]/gi, "").toLowerCase();
+    }
+    affordanceLabel(member) {
+        return member.is_trial ? "Start trial check-in" : "Check in";
     }
     onImgError(ev) {
         const img = ev.target;
@@ -1559,6 +1587,15 @@ class StudentCheckinModal extends Component {
                     <t t-if="props.member.belt_rank">
                         <div class="k-checkin-modal__belt" t-esc="props.member.belt_rank"/>
                     </t>
+                    <div class="k-checkin-modal__identity-row">
+                        <t t-if="programName(props.member)">
+                            <span class="k-checkin-modal__program" t-esc="programName(props.member)"/>
+                        </t>
+                        <t t-if="stateLabel(props.member)">
+                            <span t-attf-class="k-checkin-modal__state k-checkin-modal__state--#{stateClass(props.member)}"
+                                t-esc="stateLabel(props.member)"/>
+                        </t>
+                    </div>
                 </div>
 
                 <!-- ── Result view (checkin or checkout success/error) ── -->
@@ -1642,6 +1679,7 @@ class StudentCheckinModal extends Component {
                                     <t t-if="s.instructor">
                                         <div class="k-checkin-session-btn__instructor">👤 <t t-esc="s.instructor"/></div>
                                     </t>
+                                    <div class="k-checkin-session-btn__cta">Check in</div>
                                 </button>
                             </t>
                         </div>
@@ -1662,10 +1700,20 @@ class StudentCheckinModal extends Component {
     static props = ["member", "sessions", "loading", "result", "checkedInSession", "onSelect", "onCheckout", "onClose"];
     onOverlayClick() { if (!this.props.result) this.props.onClose(); }
     memberAvatarUrl(member) {
+        if (member.image_url) return member.image_url;
         if (member.is_trial && member.partner_id) return partnerAvatarUrl(member.partner_id);
         return avatarUrl(member.member_id);
     }
     formatTime(dt) { return formatTime(dt); }
+    programName(member) {
+        return member.program_name || member.trial_program || "";
+    }
+    stateLabel(member) {
+        return member.membership_label || member.membership_state || "";
+    }
+    stateClass(member) {
+        return (member.membership_state || "unknown").replace(/[^a-z0-9_-]/gi, "").toLowerCase();
+    }
     onImgError(ev) {
         const img = ev.target;
         const ph = document.createElement("div");
@@ -3631,6 +3679,7 @@ class KioskApp extends Component {
         const modal = this.state.checkinModal;
         if (!modal) return;
         const member = modal.member;
+        modal.loading = true;
         try {
             let result;
             if (member.is_trial) {
@@ -3647,19 +3696,29 @@ class KioskApp extends Component {
                     this._updateSessionRosterEntry(session.id, member.member_id, { attendance_state: result.status });
                 }
             }
-            // Show result inside the modal itself
-            modal.result = {
-                success: result.success,
-                sessionName: result.session_name || session.template_name || session.name,
-                programName: result.program_name || session.program_name || "",
-                error: result.error || "",
-            };
-            // Auto-dismiss after 3.5s
-            setTimeout(() => {
+            const sessionName = result.session_name || session.template_name || session.name;
+            const programName = result.program_name || session.program_name || "";
+            if (result.success) {
+                this.state.checkinResult = {
+                    success: true,
+                    memberName: member.name,
+                    sessionName,
+                    programName,
+                    status: result.status || "present",
+                    error: "",
+                };
                 this.state.checkinModal = null;
                 this.state.searchQuery = "";
                 this.state.searchResults = [];
-            }, 3500);
+                return;
+            }
+            modal.result = {
+                success: false,
+                sessionName,
+                programName,
+                error: result.error || "Check-in failed. Please see the front desk.",
+            };
+            modal.loading = false;
         } catch {
             modal.result = {
                 success: false,
@@ -3667,7 +3726,7 @@ class KioskApp extends Component {
                 programName: "",
                 error: "Network error. Please try again.",
             };
-            setTimeout(() => { this.state.checkinModal = null; }, 3500);
+            modal.loading = false;
         }
     }
 

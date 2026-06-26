@@ -2,53 +2,61 @@
 
 ## Status
 
-Canonical REL-20260626 domain specification. INC-01 establishes the live gate; later student-flow increments must make it pass against the running Odoo kiosk.
+Canonical REL-20260626 domain specification. INC-02 delivers the student home, search, selection, and self check-in behavior in the running Odoo `dojo_kiosk` app.
 
-## Intended behavior
+## Runtime Target
 
 - The deployable target is the Odoo `dojo_kiosk` SPA served from `/kiosk/<token>`.
-- The first student screen is a walk-up check-in surface, not a generic member list.
+- The HTML prototype remains a design reference only; it is not served as the kiosk.
 - The live kiosk shell must provide the kiosk root, token bootstrap, student app asset, instructor asset, theme body class, and kiosk CSS.
-- The student home UI must expose the welcome/search treatment through the served kiosk asset:
-  - `k-welcome-screen`
-  - `k-welcome-search`
-  - `k-search-results-flow`
-  - `k-member-tile`
-  - trial-state marker for trial cards
-  - session selection button treatment
-  - full-screen check-in success overlay treatment
-- Bootstrap must return kiosk config, today's sessions, and session context in one JSON-RPC response.
-- Session payloads must include `id`, `name`, `template_name`, `program_name`, `start`, `end`, `time_state`, `capacity`, and `seats_taken`.
-- `time_state` values are limited to `active`, `upcoming_soon`, `upcoming`, and `done`.
-- Student search results must carry enough data to render rich result cards:
+
+## Student Home And Search
+
+- The first student screen is a walk-up check-in surface, not a staff member list.
+- The home screen presents the kiosk logo, check-in title, and large name search input.
+- Search runs through live JSON-RPC at `/kiosk/search` with the active kiosk token.
+- Search results render as tap-first member cards through the served app asset.
+- Result cards expose kiosk-safe identity and check-in context:
   - member or trial identity
-  - trial/member state
+  - photo URL with initials fallback
+  - trial or membership state
   - belt rank when applicable
-  - membership state for members
-  - program context for the card
-  - check-in affordance through card selection
-- Selecting a student opens a tap-first check-in flow with today's enrolled sessions.
-- Successful check-in shows a prominent deterministic confirmation, identifies the member and session, plays one chime, and auto-dismisses.
+  - program context from an active subscription or today's registered class
+  - explicit check-in affordance
+- Public search does not expose full profile, household, guardian, contact, task, or onboarding detail.
 
-## Live gate
+## Session Selection
 
-- Script: `testenv/scripts/ver-kiosk-home.sh`
-- Data source: `testenv/reset.sh` seeded demo environment.
-- Credentials: kiosk token from `dojo_kiosk_config`.
-- The gate exercises:
-  - live `/kiosk/<token>` shell fetch
-  - served `kiosk_app.js` UI markers
-  - live `/kiosk/api/bootstrap`
-  - live `/kiosk/search`
-- The gate is intentionally stricter than the INC-01 baseline. It is expected to fail until the student kiosk card payload and rendering satisfy the rich-card requirements.
+- Selecting a member opens a kiosk check-in modal immediately.
+- Trial leads use their booked trial session directly.
+- Members load today's registered open sessions from `/kiosk/member/enrolled_sessions`.
+- Session options show class name, program, time, instructor when available, and a clear check-in CTA.
+- If the member has already checked into a session today, the modal shows that state and offers checkout.
+- The seeded active, registered demo member is considered check-in eligible even when the SQL seed has no subscription row; cancelled, paused, lead, and unregistered no-subscription members remain blocked.
 
-## Current INC-01 baseline
+## Check-In Success
 
-- The gate script exists and is executable.
-- The script normalizes the seeded `Demo Member` fixture because the raw SQL seed does not populate `active`, split-name fields, or `search_name_normalized`.
-- The current implementation may still fail this gate because public member search results do not yet expose the full card context required above.
+- Self check-in posts to `/kiosk/checkin` for members and `/kiosk/trial/checkin` for trial leads.
+- A successful member check-in creates exactly one attendance log, syncs enrollment attendance to present, and returns member, session, status, and program context.
+- The enrolled-session and roster payloads reflect the attendance log status (`present` or `late`) during the same kiosk session.
+- Successful student check-in closes the selection modal and shows the full-screen `CheckinSuccessView` overlay.
+- The overlay identifies the member and session, shows the program when available, plays the Web Audio chime once on mount, and auto-dismisses after `CHECKIN_SUCCESS_DISMISS_MS` (`4000` ms).
+- Failed check-in remains in the modal with an explicit error so the student can retry or ask the front desk.
 
-## Source of truth
+## Live Gates
+
+- `testenv/scripts/ver-kiosk-home.sh`
+  - Fetches the live kiosk shell and served `kiosk_app.js`.
+  - Verifies bootstrap sessions and session context.
+  - Verifies rich search-card payload for the seeded Demo Member.
+  - Verifies served UI markers for result cards, session buttons, success overlay, chime, and dismiss timing.
+- `testenv/scripts/ver-kiosk-checkin-flow.sh`
+  - Resets the seeded Demo Member attendance state.
+  - Exercises live `/kiosk/search`, `/kiosk/member/enrolled_sessions`, `/kiosk/checkin`, and `/kiosk/roster`.
+  - Verifies the database attendance log and enrollment state after check-in.
+  - Verifies the served app contains the full-screen success overlay and chime path used by the successful live check-in.
+
+## Source Of Truth
 
 - Runtime shell: `/kiosk/<token>`
 - Runtime code: `addons/dojo_kiosk/static/src/kiosk_app.js`
