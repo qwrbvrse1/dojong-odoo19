@@ -667,7 +667,7 @@ class MemberProfileCard extends Component {
                                                 <button class="k-btn k-btn--secondary k-onboarding-step__btn"
                                                     t-on-click="() => this.completeOnboardingStep(step.key)"
                                                     t-att-disabled="state.onboardingBusy or undefined">
-                                                    Mark Done
+                                                    Mark Complete
                                                 </button>
                                             </t>
                                         </div>
