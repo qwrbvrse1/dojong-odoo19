@@ -13,14 +13,14 @@
 
     /* ━━━ Brand Colors ━━━ */
     --red: #e8192c;               /* Dojo red (primary brand) */
-    --red-dim: #fce8e6;           /* Muted red background */
+    --red-dim: #9b1020;           /* Muted red background */
     --gold: #c9a84c;              /* Gold accent */
-    --gold-light: #fef3c7;        /* Light gold background */
+    --gold-light: #f0cc6e;        /* Light gold background */
 
     /* ━━━ Typography ━━━ */
-    --text: #e8eaed;              /* Primary text (light on dark) */
-    --text-muted: #9aa0a6;        /* Secondary text */
-    --text-dim: #5f6368;          /* Tertiary/disabled text */
+    --text: #f0f0f5;              /* Primary text (light on dark) */
+    --text-muted: #9999b0;        /* Secondary text */
+    --text-dim: #6b6b80;          /* Tertiary/disabled text */
 
     /* ━━━ Status Colors ━━━ */
     --green: #188038;             /* Success/active state */
