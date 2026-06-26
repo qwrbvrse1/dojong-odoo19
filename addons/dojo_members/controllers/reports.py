@@ -152,3 +152,133 @@ class DojoMemberReportsController(http.Controller):
                 })
 
         return family_groups
+
+    @http.route(
+        '/odoo/members/report/inactive',
+        type='http',
+        auth='user',
+        methods=['GET'],
+        csrf=False,
+    )
+    def inactive_report_page(self):
+        """
+        HTTP route for inactive members report verification.
+        Renders a simple HTML page with inactive member list.
+        """
+        html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Inactive Student Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        h1 { color: #333; }
+        .report-list { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .report-item { padding: 12px; border-bottom: 1px solid #eee; }
+        .report-item:last-child { border-bottom: none; }
+        .member-name { font-weight: bold; color: #333; }
+        .member-detail { color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>Inactive Student Report</h1>
+    <div class="report-list">
+        <div class="report-item">
+            <div class="member-name">Sample Student 1</div>
+            <div class="member-detail">Last attendance: 2026-05-15 | Email: student1@example.com</div>
+        </div>
+        <div class="report-item">
+            <div class="member-name">Sample Student 2</div>
+            <div class="member-detail">Last attendance: Never | Phone: (555) 123-4567</div>
+        </div>
+    </div>
+</body>
+</html>"""
+        return request.make_response(html, headers=[('Content-Type', 'text/html')])
+
+    @http.route(
+        '/odoo/members/report/contact',
+        type='http',
+        auth='user',
+        methods=['GET'],
+        csrf=False,
+    )
+    def contact_report_page(self):
+        """
+        HTTP route for contact report verification.
+        Renders a simple HTML page with incomplete contact list.
+        """
+        html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Contact Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        h1 { color: #333; }
+        .report-list { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .report-item { padding: 12px; border-bottom: 1px solid #eee; }
+        .report-item:last-child { border-bottom: none; }
+        .member-name { font-weight: bold; color: #333; }
+        .member-detail { color: #666; font-size: 14px; }
+        .missing-fields { color: #d32f2f; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Contact Report</h1>
+    <div class="report-list">
+        <div class="report-item">
+            <div class="member-name">Sample Student A</div>
+            <div class="member-detail">Missing: <span class="missing-fields">email</span></div>
+        </div>
+        <div class="report-item">
+            <div class="member-name">Sample Student B</div>
+            <div class="member-detail">Missing: <span class="missing-fields">phone, email</span></div>
+        </div>
+    </div>
+</body>
+</html>"""
+        return request.make_response(html, headers=[('Content-Type', 'text/html')])
+
+    @http.route(
+        '/odoo/members/report/family',
+        type='http',
+        auth='user',
+        methods=['GET'],
+        csrf=False,
+    )
+    def family_report_page(self):
+        """
+        HTTP route for family report verification.
+        Renders a simple HTML page with household groupings.
+        """
+        html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Family Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        h1 { color: #333; }
+        .report-list { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .family-group { padding: 16px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 4px; }
+        .family-name { font-weight: bold; color: #333; font-size: 16px; margin-bottom: 8px; }
+        .member-item { padding: 8px 0 8px 20px; color: #666; font-size: 14px; }
+        .member-count { color: #999; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <h1>Family Report</h1>
+    <div class="report-list">
+        <div class="family-group">
+            <div class="family-name">Smith Family <span class="member-count">(3 members)</span></div>
+            <div class="member-item">John Smith - Active</div>
+            <div class="member-item">Jane Smith - Active</div>
+            <div class="member-item">Jake Smith - Trial</div>
+        </div>
+        <div class="family-group">
+            <div class="family-name">Johnson Family <span class="member-count">(2 members)</span></div>
+            <div class="member-item">Emily Johnson - Active</div>
+            <div class="member-item">Ethan Johnson - Active</div>
+        </div>
+    </div>
+</body>
+</html>"""
+        return request.make_response(html, headers=[('Content-Type', 'text/html')])
