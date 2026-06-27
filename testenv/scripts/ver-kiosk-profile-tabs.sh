@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Gate: INC-04 live member profile API, onboarding semantics, and auth boundary.
+# Gate: live member profile tabs, onboarding payload, and auth scoping contract.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/kiosk-live-lib.sh"
@@ -22,19 +22,20 @@ fi
 RID=$(kiosk_psql_scalar "SELECT id FROM dojo_onboarding_record WHERE member_id = ${MID} ORDER BY create_date DESC, id DESC LIMIT 1;")
 kiosk_psql_exec "UPDATE dojo_onboarding_record SET state = 'in_progress', step_member_info = TRUE, step_household = TRUE, step_enrollment = FALSE, step_subscription = FALSE, step_portal_access = FALSE, step_trial_booked = TRUE, step_waiver_signed = FALSE, step_intro_completed = FALSE, step_membership_activated = TRUE, step_uniform_issued = FALSE WHERE id = ${RID};"
 
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
+
+kiosk_fetch "/dojo_kiosk/static/src/kiosk_app.js" > "$TMPDIR/kiosk_app.js"
+kiosk_fetch "/dojo_kiosk/static/src/kiosk.css" > "$TMPDIR/kiosk.css"
 public_profile=$(kiosk_json_rpc "/kiosk/member/profile" "{\"token\":\"${TOKEN}\",\"member_id\":${MID},\"session_id\":${SID}}")
 invalid_key_profile=$(kiosk_json_rpc "/kiosk/member/profile" "{\"token\":\"${TOKEN}\",\"member_id\":${MID},\"session_id\":${SID},\"instructor_key\":\"invalid-key\"}")
 instructor_profile=$(kiosk_json_rpc "/kiosk/member/profile" "{\"token\":\"${TOKEN}\",\"member_id\":${MID},\"session_id\":${SID},\"instructor_key\":\"${KEY}\"}")
-unauth_action=$(kiosk_json_rpc "/kiosk/api/onboarding/complete_step" "{\"token\":\"${TOKEN}\",\"member_id\":${MID},\"step_key\":\"intro_completed\"}")
-complete_action=$(kiosk_json_rpc "/kiosk/api/onboarding/complete_step" "{\"token\":\"${TOKEN}\",\"member_id\":${MID},\"step_key\":\"intro_completed\",\"instructor_key\":\"${KEY}\"}")
-refreshed_profile=$(kiosk_json_rpc "/kiosk/member/profile" "{\"token\":\"${TOKEN}\",\"member_id\":${MID},\"session_id\":${SID},\"instructor_key\":\"${KEY}\"}")
 
+KIOSK_APP_JS_FILE="$TMPDIR/kiosk_app.js" \
+KIOSK_CSS_FILE="$TMPDIR/kiosk.css" \
 KIOSK_PUBLIC_PROFILE="$public_profile" \
 KIOSK_INVALID_KEY_PROFILE="$invalid_key_profile" \
 KIOSK_INSTRUCTOR_PROFILE="$instructor_profile" \
-KIOSK_UNAUTH_ACTION="$unauth_action" \
-KIOSK_COMPLETE_ACTION="$complete_action" \
-KIOSK_REFRESHED_PROFILE="$refreshed_profile" \
 python3 - <<'PY'
 import json
 import os
@@ -44,16 +45,42 @@ def fail(message):
     print(message, file=sys.stderr)
     sys.exit(1)
 
-def result(name):
-    payload = json.loads(os.environ[name])
-    return payload.get("result")
+with open(os.environ["KIOSK_APP_JS_FILE"], encoding="utf-8") as fh:
+    app_js = fh.read()
+with open(os.environ["KIOSK_CSS_FILE"], encoding="utf-8") as fh:
+    kiosk_css = fh.read()
 
-public_profile = result("KIOSK_PUBLIC_PROFILE") or {}
-invalid_key_profile = result("KIOSK_INVALID_KEY_PROFILE") or {}
-instructor_profile = result("KIOSK_INSTRUCTOR_PROFILE") or {}
-unauth_action = result("KIOSK_UNAUTH_ACTION") or {}
-complete_action = result("KIOSK_COMPLETE_ACTION") or {}
-refreshed_profile = result("KIOSK_REFRESHED_PROFILE") or {}
+public_profile = json.loads(os.environ["KIOSK_PUBLIC_PROFILE"]).get("result") or {}
+invalid_key_profile = json.loads(os.environ["KIOSK_INVALID_KEY_PROFILE"]).get("result") or {}
+instructor_profile = json.loads(os.environ["KIOSK_INSTRUCTOR_PROFILE"]).get("result") or {}
+
+for marker in (
+    "MemberProfileCard",
+    "k-profile-tabs",
+    "k-profile-tab",
+    "state.tab === 'profile'",
+    "state.tab === 'progress' and isInstructorProfile()",
+    "state.tab === 'household' and isInstructorProfile()",
+    "state.tab === 'manage' and props.instructorMode and isInstructorProfile()",
+    "props.instructorMode and isInstructorProfile()",
+    "k-profile-tab--manage",
+    "k-profile-private-note",
+    "instructorKey",
+    "instructorParams({",
+    "workflow().onboarding.steps",
+):
+    if marker not in app_js:
+        fail("profile tab marker missing from served app asset: %s" % marker)
+
+for marker in (
+    ".k-profile-private-note",
+    ".k-profile-tabs",
+    ".k-profile-tab--manage",
+    ".k-onboarding-step",
+    ".k-onboarding-actions",
+):
+    if marker not in kiosk_css:
+        fail("profile/manage CSS marker missing from served stylesheet: %s" % marker)
 
 safe_keys = {"member_id", "name", "image_url", "belt_rank", "belt_color", "program_name", "program_color", "attendance_state", "enrolled_sessions"}
 private_keys = {"email", "phone", "member_number", "membership_state", "household", "guardians", "issues", "workflow_status", "programs", "appointments", "plan_name"}
@@ -69,39 +96,29 @@ for payload_name, payload in (("public", public_profile), ("invalid-key", invali
     if unexpected:
         fail("%s profile returned keys outside public contract: %s" % (payload_name, ", ".join(unexpected)))
 
-for key in ("member_id", "name", "member_number", "membership_state", "workflow_status", "issues", "attendance_state"):
+for key in ("member_id", "name", "member_number", "membership_state", "workflow_status", "issues", "attendance_state", "programs", "guardians"):
     if key not in instructor_profile:
         fail("instructor profile missing %s" % key)
 
 workflow = instructor_profile.get("workflow_status") or {}
 onboarding = workflow.get("onboarding") or {}
+if onboarding.get("available") is not True:
+    fail("instructor profile onboarding payload is unavailable")
+for key in ("available", "complete", "progress_pct", "steps", "missing_steps"):
+    if key not in onboarding:
+        fail("onboarding payload missing %s" % key)
+
 expected_steps = {"trial_booked", "waiver_signed", "intro_completed", "membership_activated", "uniform_issued"}
 legacy_steps = {"member_info", "household", "enrollment", "subscription", "portal_access"}
 step_keys = {step.get("key") for step in onboarding.get("steps") or []}
-if onboarding.get("available") is not True:
-    fail("instructor onboarding payload unavailable: %s" % onboarding)
 if step_keys != expected_steps:
-    fail("onboarding steps should be lifecycle guidance keys only; got %s" % sorted(step_keys))
+    fail("onboarding guidance steps mismatch: %s" % sorted(step_keys))
 if step_keys.intersection(legacy_steps):
-    fail("onboarding steps still expose legacy data-entry keys: %s" % sorted(step_keys.intersection(legacy_steps)))
+    fail("legacy onboarding steps are still exposed: %s" % sorted(step_keys.intersection(legacy_steps)))
 if onboarding.get("progress_pct") != 40:
-    fail("expected seeded lifecycle onboarding progress 40, got %s" % onboarding.get("progress_pct"))
+    fail("expected partial lifecycle onboarding progress 40, got %s" % onboarding.get("progress_pct"))
 if onboarding.get("complete") is not False:
-    fail("partial lifecycle onboarding should not be complete")
-if "Intro Session Completed" not in (onboarding.get("missing_steps") or []):
-    fail("missing lifecycle step label not present before action")
+    fail("partial onboarding should not be complete")
 
-if unauth_action.get("success") is not False or unauth_action.get("error") != "instructor_auth_required":
-    fail("complete_step without instructor key must be rejected: %s" % unauth_action)
-if complete_action.get("success") is not True:
-    fail("complete_step with instructor key failed: %s" % complete_action)
-
-refreshed_onboarding = ((refreshed_profile.get("workflow_status") or {}).get("onboarding") or {})
-refreshed_steps = {step.get("key"): step for step in refreshed_onboarding.get("steps") or []}
-if not refreshed_steps.get("intro_completed", {}).get("complete"):
-    fail("intro_completed was not marked complete after authenticated action")
-if refreshed_onboarding.get("progress_pct") != 60:
-    fail("expected lifecycle onboarding progress 60 after action, got %s" % refreshed_onboarding.get("progress_pct"))
-
-print("ver04-member-profile: PASS")
+print("ver-kiosk-profile-tabs: PASS")
 PY

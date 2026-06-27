@@ -47,9 +47,16 @@ class KioskInstructorLayout extends Component {
             <div class="k-instructor-main">
                 <div class="k-roster-grid">
                     <t t-foreach="state.roster" t-as="member" t-key="member.member_id">
-                        <div class="k-roster-card">
+                        <div class="k-roster-card"
+                            t-att-data-member-id="member.member_id || member.lead_id || ''"
+                            t-att-data-attendance-state="member.attendance_state || 'pending'"
+                            t-att-data-onboarding-pct="member.onboarding_pct || 0"
+                            t-att-data-open-task-count="member.open_task_count || 0"
+                            t-att-data-membership-state="member.membership_state || ''">
                             <div class="k-roster-card__name" t-esc="member.name"/>
                             <div class="k-roster-card__belt" t-esc="member.belt_rank"/>
+                            <div t-attf-class="k-roster-status k-roster-status--#{member.attendance_state || 'pending'}"
+                                t-esc="attendanceLabel(member.attendance_state)"/>
                             <t t-if="member.onboarding_pct and member.onboarding_pct > 0">
                                 <div class="k-roster-card__progress">
                                     <div class="k-roster-card__progress-bar">
@@ -153,7 +160,7 @@ class KioskInstructorLayout extends Component {
 
     async loadRoster(sessionId) {
         try {
-            const roster = await jsonPost("/kiosk/api/roster", { session_id: sessionId });
+            const roster = await jsonPost("/kiosk/roster", { session_id: sessionId });
             this.state.roster = roster || [];
             this.updateAlerts();
         } catch (error) {
@@ -221,6 +228,17 @@ class KioskInstructorLayout extends Component {
         if (!dtStr) return "";
         const d = new Date(dtStr.replace(" ", "T") + "Z");
         return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    attendanceLabel(state) {
+        const labels = {
+            present: "Present",
+            late: "Late",
+            absent: "Absent",
+            checked_out: "Checked out",
+            pending: "Pending",
+        };
+        return labels[state || "pending"] || state || "Pending";
     }
 }
 

@@ -39,6 +39,8 @@ baseline_gate:
 
 Replace the weak kiosk proof points with deterministic live verification scripts before feature correction work continues. This increment does not claim the kiosk is fixed; it establishes the rescue harness so later passes cannot “green” without proving behavior.
 
+INC-01 creates strict target gates for the four kiosk domains and makes `testenv/verify.sh` prove the local Odoo baseline is usable: services responding, required modules installed, seeded kiosk token present, and rescue scripts present/executable. The strict scripts are intentionally allowed to fail against the pre-fix kiosk; the owning feature increments wire them into their pass gates.
+
 ```yaml
 id: INC-01
 title: Establish deterministic kiosk rescue gates
@@ -55,7 +57,7 @@ touchpoints:
 deliverables:
   - Dedicated live kiosk verification scripts exist for home flow, instructor layout, profile tabs, and photo flow
   - Baseline release documents are aligned with the unattended-build template requirements
-  - Canonical kiosk domain specification files exist in `specifications/`
+  - Canonical kiosk domain specification files exist in specifications/
 test_data:
   seed: testenv/reset.sh seeded demo environment
   migration_before_state: current dojo_kiosk implementation
@@ -96,7 +98,7 @@ deliverables:
   - Student home/search presentation matches the intended kiosk experience in the running Odoo app
   - Result selection and self check-in flow behave correctly for a walk-up user
   - Success overlay and chime are proven by live gates
-  - `specifications/kiosk-student-experience.md` is updated to current state
+  - specifications/kiosk-student-experience.md is updated to current state
 test_data:
   seed: seeded member, trial lead, active session, check-in eligible member
   migration_before_state: current dojo_kiosk student flow
@@ -136,7 +138,7 @@ deliverables:
   - The intended three-panel instructor layout is mounted and visible in the running kiosk
   - Session context and roster presentation are validated in live output
   - Instructor roster card semantics are corrected and verified
-  - `specifications/kiosk-instructor-experience.md` is updated to current state
+  - specifications/kiosk-instructor-experience.md is updated to current state
 test_data:
   seed: seeded instructor session with roster, onboarding flags, membership issues
   migration_before_state: current mixed instructor kiosk implementation
@@ -177,7 +179,7 @@ deliverables:
   - Member profile and manage flow are internally consistent in the kiosk UI
   - Onboarding semantics are corrected and proven via live API plus UI verification
   - Public versus instructor-authorized data boundaries are verified
-  - `specifications/kiosk-profile-onboarding.md` is updated to current state
+  - specifications/kiosk-profile-onboarding.md is updated to current state
 test_data:
   seed: seeded member with partial onboarding and instructor-accessible actions
   migration_before_state: current legacy-leaning onboarding semantics
@@ -218,7 +220,7 @@ deliverables:
   - Kiosk photo capture/upload uses the intended Supabase-backed storage path
   - Returned image URLs and in-session refresh behavior are deterministic
   - Upload failure handling is explicit and verified
-  - `specifications/kiosk-photo-storage.md` is updated to current state
+  - specifications/kiosk-photo-storage.md is updated to current state
 test_data:
   seed: seeded member with existing image and instructor access
   migration_before_state: current Odoo image_1920 write path
@@ -254,7 +256,7 @@ touchpoints:
 deliverables:
   - Final kiosk rescue verification suite runs green against the local Odoo instance
   - Canonical kiosk specification files reflect shipped behavior
-  - `CHANGELOG.md` has the release-ready material needed after audit
+  - CHANGELOG.md has the release-ready material needed after audit
 test_data:
   seed: final integrated local environment
   migration_before_state: kiosk behavior fixed in prior increments
@@ -273,3 +275,18 @@ gate:
 regression_gate:
   - bash testenv/verify.sh
 ```
+
+### INC-06 execution record
+
+Final verification was run against the local Odoo instance after `bash testenv/reset.sh`. Because kiosk session selection uses the company local timezone, the live demo company timezone was set to `America/New_York` before the strict gates were rerun; this keeps the seeded active session visible when the VM clock is just after UTC midnight.
+
+Passed:
+
+- `bash testenv/verify.sh`
+- `bash testenv/scripts/ver-kiosk-home.sh`
+- `bash testenv/scripts/ver-kiosk-checkin-flow.sh`
+- `bash testenv/scripts/ver-kiosk-instructor-layout.sh`
+- `bash testenv/scripts/ver-kiosk-profile-tabs.sh`
+- `bash testenv/scripts/ver-kiosk-photo-flow.sh`
+- `bash testenv/scripts/ver-kiosk-photo-refresh.sh`
+- `bash testenv/verify.sh` regression rerun after mutating gates

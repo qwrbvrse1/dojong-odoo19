@@ -239,8 +239,22 @@ class KioskController(http.Controller):
         guard = self._guard_token(token, None)
         if guard is not None:
             return guard
+        instructor_authorized = False
+        if instructor_key:
+            instructor_authorized = (
+                self._guard_instructor(
+                    token,
+                    instructor_key,
+                    {"success": False, "error": "instructor_auth_required"},
+                )
+                is None
+            )
         svc = request.env["dojo.kiosk.service"].sudo()
-        return svc.get_member_profile(member_id, session_id=session_id, instructor_key=instructor_key)
+        return svc.get_member_profile(
+            member_id,
+            session_id=session_id,
+            instructor_authorized=instructor_authorized,
+        )
 
     @http.route("/kiosk/member/enrolled_sessions", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
     def kiosk_enrolled_sessions(self, member_id=None, date=None, token=None, **kw):
@@ -479,6 +493,24 @@ class KioskController(http.Controller):
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
         return svc.update_member_photo(member_id, image_data)
+
+    @http.route(
+        "/kiosk/storage/v1/object/public/<string:bucket>/<path:object_path>",
+        type="http", auth="public", methods=["GET"], csrf=False,
+    )
+    def kiosk_photo_storage_object(self, bucket=None, object_path=None, **kw):
+        svc = request.env["dojo.kiosk.service"].sudo()
+        obj = svc.get_photo_storage_object(bucket, object_path)
+        if not obj:
+            return request.not_found()
+        return request.make_response(
+            obj["body"],
+            headers=[
+                ("Content-Type", obj["content_type"]),
+                ("Cache-Control", "public, max-age=31536000, immutable"),
+                ("X-Content-Type-Options", "nosniff"),
+            ],
+        )
 
     # ------------------------------------------------------------------
     # Instructor -- onboarding workflow actions

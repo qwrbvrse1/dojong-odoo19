@@ -2,18 +2,35 @@
 Kiosk service methods -- all business logic for the kiosk SPA lives here.
 Methods are designed to be called from the kiosk HTTP controller via sudo().
 """
+import base64
+import binascii
+import hashlib
+import logging
+import mimetypes
+import os
+import re
+import time
 from datetime import datetime, timedelta
+from urllib import error as urlerror
+from urllib import parse as urlparse
+from urllib import request as urlrequest
 
 import pytz
 from markupsafe import Markup
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError
+from odoo.http import request as odoo_request
+from odoo.tools import config as odoo_config
 from odoo.tools import html2plaintext, html_escape
+
+_logger = logging.getLogger(__name__)
 
 _MAX_PIN_ATTEMPTS = 5
 _LOCKOUT_MINUTES = 15
 _UPCOMING_SESSION_WINDOW_MINUTES = 15
+_KIOSK_PHOTO_BUCKET = "kiosk-photos"
+_KIOSK_PHOTO_MAX_BYTES = 10 * 1024 * 1024
 
 _ONBOARDING_STEP_FIELDS = {
     # Legacy data-entry steps (kept for compatibility)
@@ -29,6 +46,14 @@ _ONBOARDING_STEP_FIELDS = {
     "membership_activated": ("step_membership_activated", "Membership Activated"),
     "uniform_issued": ("step_uniform_issued", "Uniform Issued"),
 }
+
+_ONBOARDING_GUIDANCE_STEP_KEYS = (
+    "trial_booked",
+    "waiver_signed",
+    "intro_completed",
+    "membership_activated",
+    "uniform_issued",
+)
 
 
 class DojoKioskService(models.AbstractModel):
@@ -55,6 +80,243 @@ class DojoKioskService(models.AbstractModel):
         except Exception as e:
             import logging
             logging.getLogger(__name__).warning("Kiosk action log failed: %s", e)
+
+    # -------------------------------------------------------------------------
+    # Kiosk photo storage
+    # -------------------------------------------------------------------------
+
+    def _photo_param_key(self, member_id, suffix):
+        return "dojo_kiosk.photo.%s.%s" % (member_id, suffix)
+
+    def _photo_get_param(self, key, default=""):
+        icp = self.env["ir.config_parameter"].sudo()
+        if hasattr(icp, "get_param"):
+            return icp.get_param(key, default) or default
+        if hasattr(icp, "get_str"):
+            return icp.get_str(key, default) or default
+        rec = icp.search([("key", "=", key)], limit=1)
+        return (rec.value if rec else default) or default
+
+    def _photo_set_params(self, values):
+        icp = self.env["ir.config_parameter"].sudo()
+        for key, value in values.items():
+            value = value if value is not None else ""
+            if hasattr(icp, "set_param"):
+                icp.set_param(key, value)
+            elif hasattr(icp, "set_str"):
+                icp.set_str(key, value)
+            else:
+                rec = icp.search([("key", "=", key)], limit=1)
+                if rec:
+                    rec.value = value
+                else:
+                    icp.create({"key": key, "value": value})
+
+    def _photo_bucket(self):
+        return (
+            os.environ.get("KIOSK_PHOTO_BUCKET")
+            or self._photo_get_param("dojo_kiosk.photo.bucket")
+            or _KIOSK_PHOTO_BUCKET
+        )
+
+    def _is_valid_photo_bucket(self, bucket):
+        return bool(re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*$", bucket or ""))
+
+    def _photo_storage_driver(self):
+        requested = (
+            os.environ.get("KIOSK_PHOTO_STORAGE_DRIVER")
+            or self._photo_get_param("dojo_kiosk.photo.storage_driver")
+            or ""
+        ).strip().lower()
+        if requested in ("supabase", "local"):
+            return requested
+        if self._supabase_url() and self._supabase_key():
+            return "supabase"
+        return "local"
+
+    def _supabase_url(self):
+        return (
+            os.environ.get("SUPABASE_URL")
+            or os.environ.get("KIOSK_SUPABASE_URL")
+            or self._photo_get_param("dojo_kiosk.photo.supabase_url")
+            or ""
+        ).strip().rstrip("/")
+
+    def _supabase_key(self):
+        return (
+            os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+            or os.environ.get("KIOSK_SUPABASE_SERVICE_ROLE_KEY")
+            or os.environ.get("SUPABASE_ANON_KEY")
+            or os.environ.get("KIOSK_SUPABASE_ANON_KEY")
+            or self._photo_get_param("dojo_kiosk.photo.supabase_service_role_key")
+            or self._photo_get_param("dojo_kiosk.photo.supabase_anon_key")
+            or ""
+        ).strip()
+
+    def _photo_local_storage_root(self):
+        return (
+            os.environ.get("KIOSK_PHOTO_LOCAL_DIR")
+            or self._photo_get_param("dojo_kiosk.photo.local_dir")
+            or os.path.join(odoo_config.get("data_dir") or "/var/lib/odoo", "kiosk-photo-storage")
+        )
+
+    def _photo_public_base_url(self, driver):
+        if driver == "supabase":
+            configured_supabase = (
+                os.environ.get("KIOSK_SUPABASE_PUBLIC_BASE_URL")
+                or self._photo_get_param("dojo_kiosk.photo.supabase_public_base_url")
+                or ""
+            ).strip().rstrip("/")
+            if configured_supabase:
+                return configured_supabase
+            return "%s/storage/v1/object/public" % self._supabase_url()
+        configured = (
+            os.environ.get("KIOSK_PHOTO_PUBLIC_BASE_URL")
+            or self._photo_get_param("dojo_kiosk.photo.public_base_url")
+            or ""
+        ).strip().rstrip("/")
+        if configured:
+            return configured
+        try:
+            host_url = (odoo_request.httprequest.host_url or "").rstrip("/")
+        except Exception:
+            host_url = ""
+        if not host_url:
+            host_url = self._photo_get_param("web.base.url", "").rstrip("/")
+        return "%s/kiosk/storage/v1/object/public" % host_url
+
+    def _photo_public_url(self, bucket, object_path, driver):
+        base = self._photo_public_base_url(driver)
+        return "%s/%s/%s" % (
+            base,
+            urlparse.quote(bucket.strip("/")),
+            urlparse.quote(object_path.strip("/"), safe="/"),
+        )
+
+    def _photo_url_with_bust(self, public_url, cache_bust):
+        if not public_url:
+            return ""
+        if not cache_bust:
+            return public_url
+        separator = "&" if "?" in public_url else "?"
+        return "%s%sv=%s" % (public_url, separator, urlparse.quote(str(cache_bust)))
+
+    def _member_image_url(self, member):
+        public_url = self._photo_get_param(self._photo_param_key(member.id, "public_url"))
+        if public_url:
+            cache_bust = self._photo_get_param(self._photo_param_key(member.id, "cache_bust"))
+            return self._photo_url_with_bust(public_url, cache_bust)
+        return "/web/image/dojo.member/%d/image_128" % member.id
+
+    def _decode_kiosk_photo(self, image_data):
+        if not isinstance(image_data, str):
+            return None, None, None, "Photo data was not valid."
+        payload = image_data.strip()
+        if "," in payload and payload.lower().startswith("data:image/"):
+            payload = payload.split(",", 1)[1]
+        payload = re.sub(r"\s+", "", payload)
+        if not payload:
+            return None, None, None, "Photo data was empty."
+        try:
+            raw = base64.b64decode(payload, validate=True)
+        except (binascii.Error, ValueError):
+            return None, None, None, "Photo data was not valid base64."
+        if not raw:
+            return None, None, None, "Photo data was empty."
+        if len(raw) > _KIOSK_PHOTO_MAX_BYTES:
+            return None, None, None, "Photo must be under 10 MB."
+        if raw.startswith(b"\xff\xd8\xff"):
+            return raw, "image/jpeg", "jpg", ""
+        if raw.startswith(b"\x89PNG\r\n\x1a\n"):
+            return raw, "image/png", "png", ""
+        if raw.startswith(b"RIFF") and raw[8:12] == b"WEBP":
+            return raw, "image/webp", "webp", ""
+        return None, None, None, "Unsupported photo type. Use JPEG, PNG, or WEBP."
+
+    def _photo_object_path(self, member, raw, ext, cache_bust):
+        digest = hashlib.sha256(raw).hexdigest()[:16]
+        return "members/%s/%s-%s.%s" % (member.id, cache_bust, digest, ext)
+
+    def _upload_photo_to_supabase(self, bucket, object_path, raw, content_type):
+        supabase_url = self._supabase_url()
+        supabase_key = self._supabase_key()
+        if not supabase_url or not supabase_key:
+            return {"success": False, "error": "Photo storage is not configured."}
+        upload_url = "%s/storage/v1/object/%s/%s" % (
+            supabase_url,
+            urlparse.quote(bucket.strip("/")),
+            urlparse.quote(object_path.strip("/"), safe="/"),
+        )
+        headers = {
+            "Authorization": "Bearer %s" % supabase_key,
+            "apikey": supabase_key,
+            "Content-Type": content_type,
+            "Cache-Control": "3600",
+            "x-upsert": "true",
+        }
+        req = urlrequest.Request(upload_url, data=raw, headers=headers, method="POST")
+        try:
+            with urlrequest.urlopen(req, timeout=15) as resp:
+                if resp.status >= 400:
+                    return {"success": False, "error": "Photo storage rejected the upload."}
+        except urlerror.HTTPError as exc:
+            detail = ""
+            try:
+                detail = exc.read().decode("utf-8", "replace")[:180]
+            except Exception:
+                detail = ""
+            _logger.warning("Supabase kiosk photo upload failed: %s %s", exc.code, detail)
+            return {"success": False, "error": "Photo storage rejected the upload."}
+        except Exception as exc:
+            _logger.warning("Supabase kiosk photo upload failed: %s", exc)
+            return {"success": False, "error": "Photo storage is unavailable."}
+        return {
+            "success": True,
+            "public_url": self._photo_public_url(bucket, object_path, "supabase"),
+        }
+
+    def _upload_photo_to_local_storage(self, bucket, object_path, raw, content_type):
+        root = os.path.abspath(self._photo_local_storage_root())
+        bucket_root = os.path.abspath(os.path.join(root, bucket.strip("/")))
+        full_path = os.path.abspath(os.path.join(bucket_root, object_path.strip("/")))
+        if not full_path.startswith(bucket_root + os.sep):
+            return {"success": False, "error": "Photo storage path was invalid."}
+        try:
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            tmp_path = "%s.tmp-%s" % (full_path, os.getpid())
+            with open(tmp_path, "wb") as fh:
+                fh.write(raw)
+            os.replace(tmp_path, full_path)
+        except Exception as exc:
+            _logger.warning("Local kiosk photo storage failed: %s", exc)
+            return {"success": False, "error": "Photo storage is unavailable."}
+        return {
+            "success": True,
+            "public_url": self._photo_public_url(bucket, object_path, "local"),
+            "content_type": content_type,
+        }
+
+    @api.model
+    def get_photo_storage_object(self, bucket, object_path):
+        """Return a locally stored kiosk photo object for the public compatible endpoint."""
+        bucket = (bucket or "").strip("/")
+        object_path = (object_path or "").strip("/")
+        if (
+            not self._is_valid_photo_bucket(bucket)
+            or not object_path
+            or ".." in object_path.split("/")
+            or object_path.startswith("/")
+        ):
+            return None
+        root = os.path.abspath(self._photo_local_storage_root())
+        bucket_root = os.path.abspath(os.path.join(root, bucket))
+        full_path = os.path.abspath(os.path.join(bucket_root, object_path))
+        if not full_path.startswith(bucket_root + os.sep) or not os.path.isfile(full_path):
+            return None
+        content_type = mimetypes.guess_type(full_path)[0] or "application/octet-stream"
+        with open(full_path, "rb") as fh:
+            body = fh.read()
+        return {"body": body, "content_type": content_type}
 
     # -------------------------------------------------------------------------
     # Token + bootstrap
@@ -138,6 +400,12 @@ class DojoKioskService(models.AbstractModel):
             ("session_id.start_datetime", "<=", fields.Datetime.to_string(today_end)),
         ])
 
+        logs = self.env["dojo.attendance.log"].search([
+            ("session_id", "in", enrollments.mapped("session_id").ids),
+            ("member_id", "=", member_id),
+        ])
+        log_by_session = {log.session_id.id: log.status for log in logs}
+
         # Deduplicate by session
         seen = set()
         result = []
@@ -146,6 +414,7 @@ class DojoKioskService(models.AbstractModel):
             if s.id in seen:
                 continue
             seen.add(s.id)
+            attendance_state = log_by_session.get(s.id) or enr.attendance_state
             result.append({
                 "id": s.id,
                 "name": s.name,
@@ -155,7 +424,8 @@ class DojoKioskService(models.AbstractModel):
                 "start": fields.Datetime.to_string(s.start_datetime),
                 "end": fields.Datetime.to_string(s.end_datetime),
                 "instructor": s.instructor_profile_id.name if s.instructor_profile_id else "",
-                "attendance_state": enr.attendance_state,
+                "attendance_state": attendance_state,
+                "time_state": self._session_time_state(s.start_datetime, s.end_datetime),
             })
         return result
 
@@ -364,11 +634,8 @@ class DojoKioskService(models.AbstractModel):
             "session_context": self.get_session_context_from_payload(sessions),
         }
 
-    def _session_payload(self, session):
+    def _session_time_state(self, start, end):
         now = fields.Datetime.now()
-        start = session.start_datetime
-        end = session.end_datetime
-
         time_state = "upcoming"
         if start and end:
             if now >= start and now <= end:
@@ -379,7 +646,9 @@ class DojoKioskService(models.AbstractModel):
                 minutes_until = (start - now).total_seconds() / 60
                 if minutes_until <= _UPCOMING_SESSION_WINDOW_MINUTES:
                     time_state = "upcoming_soon"
+        return time_state
 
+    def _session_payload(self, session):
         return {
             "id": session.id,
             "name": session.name,
@@ -392,7 +661,7 @@ class DojoKioskService(models.AbstractModel):
             "seats_taken": session.seats_taken,
             "capacity": session.capacity,
             "instructor": session.instructor_profile_id.name if session.instructor_profile_id else "",
-            "time_state": time_state,
+            "time_state": self._session_time_state(session.start_datetime, session.end_datetime),
         }
 
     @api.model
@@ -461,26 +730,34 @@ class DojoKioskService(models.AbstractModel):
             return {"success": False, "error": "Session not found."}
 
         logs = self.env["dojo.attendance.log"].search([("session_id", "=", session_id)])
-        present_count = logs.filtered(lambda log: log.status == "present").mapped("member_id")
-        late_count = logs.filtered(lambda log: log.status == "late").mapped("member_id")
-        absent_count = logs.filtered(lambda log: log.status == "absent").mapped("member_id")
+        present_ids = set(logs.filtered(lambda log: log.status == "present").mapped("member_id").ids)
+        late_ids = set(logs.filtered(lambda log: log.status == "late").mapped("member_id").ids)
+        absent_ids = set(logs.filtered(lambda log: log.status == "absent").mapped("member_id").ids)
 
-        enrollments = self.env["dojo.class.enrollment"].search_count([
+        enrollments = self.env["dojo.class.enrollment"].search([
             ("session_id", "=", session_id),
             ("status", "=", "registered"),
         ])
+        enrolled_ids = set(enrollments.mapped("member_id").ids)
+        pending_ids = enrolled_ids - present_ids - late_ids - absent_ids
 
         return {
             "success": True,
             "session_id": session.id,
             "session_name": session.name,
             "template_name": session.template_id.name if session.template_id else "",
+            "program_name": session.template_id.program_id.name if (session.template_id and session.template_id.program_id) else "",
+            "state": session.state,
+            "time_state": self._session_time_state(session.start_datetime, session.end_datetime),
             "start_datetime": fields.Datetime.to_string(session.start_datetime) if session.start_datetime else "",
             "end_datetime": fields.Datetime.to_string(session.end_datetime) if session.end_datetime else "",
-            "present_count": len(present_count),
-            "late_count": len(late_count),
-            "absent_count": len(absent_count),
-            "total_enrolled": enrollments,
+            "present_count": len(present_ids),
+            "late_count": len(late_ids),
+            "absent_count": len(absent_ids),
+            "pending_count": len(pending_ids),
+            "total_enrolled": len(enrollments),
+            "seats_taken": session.seats_taken,
+            "capacity": session.capacity,
         }
 
     # -------------------------------------------------------------------------
@@ -531,12 +808,27 @@ class DojoKioskService(models.AbstractModel):
                     "is_trial": True,
                     "trial_program": program_name,
                     "partner_id": partner_id,
+                    "image_url": "/web/image/res.partner/%d/image_128" % partner_id if partner_id else "",
                     "attendance_state": "present" if lead.trial_attended else "pending",
+                    "attendance_label": "Present" if lead.trial_attended else "Pending",
                     "membership_state": "trial",
+                    "membership_label": "Trial",
+                    "program_name": program_name,
+                    "program_color": session.template_id.program_id.color if (session.template_id and session.template_id.program_id) else "",
                     "belt_rank": "",
                     "belt_color": "",
                     "issues": [],
-                    "workflow_status": {"alert_count": 0, "alerts": []},
+                    "workflow_status": {
+                        "alert_count": 0,
+                        "alerts": [],
+                        "onboarding": {"available": False, "complete": True, "progress_pct": 0},
+                        "waiver": {"available": False, "signed": True},
+                        "subscription": {"state": "trial", "good_standing": True, "alerts": []},
+                        "tasks": {"open_count": 0},
+                        "grading": {},
+                    },
+                    "onboarding_pct": 0,
+                    "open_task_count": 0,
                 })
         return result
 
@@ -554,36 +846,105 @@ class DojoKioskService(models.AbstractModel):
         # Only include non-zero values to reduce payload size
         if onboarding_pct >= 100:
             onboarding_pct = 0
+        program_name = ""
+        program_color = ""
+        if enrollment and enrollment.session_id.template_id and enrollment.session_id.template_id.program_id:
+            program = enrollment.session_id.template_id.program_id
+            program_name = program.name
+            program_color = program.color or ""
+        else:
+            program = self._public_member_program_context(member)
+            program_name = program.get("program_name", "")
+            program_color = program.get("program_color", "")
+        membership_state = member.membership_state if "membership_state" in member._fields else ""
         return {
             "member_id": member.id,
             "name": member.name,
             "member_number": member.member_number or "",
-            "image_url": "/web/image/dojo.member/%d/image_128" % member.id,
+            "image_url": self._member_image_url(member),
             "belt_rank": member.current_rank_id.name if member.current_rank_id else "",
             "belt_color": member.current_rank_id.color if member.current_rank_id else "",
+            "program_name": program_name,
+            "program_color": program_color,
             "attendance_state": attendance_state,
-            "membership_state": member.membership_state if hasattr(member, "membership_state") else "",
+            "attendance_label": self._attendance_state_label(attendance_state),
+            "membership_state": membership_state,
+            "membership_label": self._member_state_label(member),
             "issues": workflow_status.get("alerts", []),
             "workflow_status": workflow_status,
+            "alert_count": workflow_status.get("alert_count", 0),
             "onboarding_pct": onboarding_pct,
             "open_task_count": open_task_count,
         }
 
+    def _attendance_state_label(self, state):
+        return {
+            "present": "Present",
+            "late": "Late",
+            "absent": "Absent",
+            "checked_out": "Checked Out",
+            "pending": "Pending",
+        }.get(state or "pending", state or "Pending")
+
+    def _member_state_label(self, member):
+        if "membership_state" not in member._fields:
+            return ""
+        return dict(member._fields["membership_state"].selection).get(
+            member.membership_state,
+            member.membership_state or "",
+        )
+
+    def _public_member_program_context(self, member):
+        """Return non-sensitive program context for a student search card."""
+        program = False
+        sub = self._member_operational_subscription(member)
+        if sub and sub.plan_id and getattr(sub.plan_id, "program_ids", False):
+            program = sub.plan_id.program_ids[:1]
+
+        if not program:
+            enrollments = self.env["dojo.class.enrollment"].sudo().search([
+                ("member_id", "=", member.id),
+                ("status", "=", "registered"),
+                ("session_id.state", "=", "open"),
+            ], limit=20)
+            ordered = enrollments.sorted(
+                key=lambda e: e.session_id.start_datetime or fields.Datetime.now()
+            )
+            for enrollment in ordered:
+                template = enrollment.session_id.template_id
+                if template and template.program_id:
+                    program = template.program_id
+                    break
+
+        return {
+            "program_name": program.name if program else "",
+            "program_color": program.color if program else "",
+        }
+
     def _public_member_entry(self, member):
-        """Minimal member payload safe for public kiosk search and barcode lookup."""
+        """Kiosk-safe member payload for public search and barcode lookup."""
+        program = self._public_member_program_context(member)
         return {
             "member_id": member.id,
             "name": member.name,
+            "image_url": self._member_image_url(member),
             "belt_rank": member.current_rank_id.name if member.current_rank_id else "",
+            "belt_color": member.current_rank_id.color if member.current_rank_id else "",
+            "membership_state": member.membership_state if hasattr(member, "membership_state") else "",
+            "membership_label": self._member_state_label(member),
+            "program_name": program["program_name"],
+            "program_color": program["program_color"],
             "is_trial": False,
         }
 
     def _public_trial_lead_dict(self, lead):
-        """Minimal trial payload safe for public kiosk search results."""
+        """Kiosk-safe trial payload for public search results."""
         session = lead.trial_session_id
         program_name = ""
+        program_color = ""
         if session and session.template_id and session.template_id.program_id:
             program_name = session.template_id.program_id.name
+            program_color = session.template_id.program_id.color or ""
         session_dict = {}
         if session:
             session_dict = {
@@ -591,19 +952,26 @@ class DojoKioskService(models.AbstractModel):
                 "name": session.name,
                 "template_name": session.template_id.name if session.template_id else session.name,
                 "program_name": program_name,
+                "program_color": program_color,
                 "start": str(session.start_datetime) if session.start_datetime else "",
                 "end": str(session.end_datetime) if session.end_datetime else "",
                 "instructor": "",
+                "time_state": self._session_time_state(session.start_datetime, session.end_datetime),
             }
         return {
             "member_id": None,
             "lead_id": lead.id,
             "name": lead.contact_name or lead.partner_name or "Unknown",
             "is_trial": True,
+            "membership_state": "trial",
+            "membership_label": "Trial",
+            "program_name": program_name,
+            "program_color": program_color,
             "trial_program": program_name,
             "trial_session": session_dict,
             "partner_id": lead.partner_id.id if lead.partner_id else False,
             "belt_rank": "",
+            "belt_color": "",
         }
 
     # -------------------------------------------------------------------------
@@ -710,11 +1078,14 @@ class DojoKioskService(models.AbstractModel):
     # -------------------------------------------------------------------------
 
     @api.model
-    def get_member_profile(self, member_id, session_id=None, instructor_key=None):
+    def get_member_profile(self, member_id, session_id=None, instructor_key=None, instructor_authorized=False):
         """Return minimal profile pre-PIN; full profile with valid instructor_key."""
         member = self.env["dojo.member"].browse(member_id)
         if not member.exists():
             return None
+
+        if instructor_authorized:
+            return self._member_profile_dict(member, session_id=session_id)
 
         # Validate instructor_key if provided
         if instructor_key:
@@ -742,19 +1113,18 @@ class DojoKioskService(models.AbstractModel):
                 attendance_state = log.status if log else enr.attendance_state
 
         enrolled_sessions = self.get_enrolled_sessions_today(member.id)
-        workflow_status = self._member_workflow_status(member, session_id=session_id)
-        programs = self._member_programs(member)
+        program = self._public_member_program_context(member)
 
         return {
             "member_id": member.id,
             "name": member.name,
-            "image_url": "/web/image/dojo.member/%d/image_128" % member.id,
+            "image_url": self._member_image_url(member),
             "belt_rank": member.current_rank_id.name if member.current_rank_id else "",
             "belt_color": member.current_rank_id.color if member.current_rank_id else "",
+            "program_name": program.get("program_name", ""),
+            "program_color": program.get("program_color", ""),
             "attendance_state": attendance_state,
             "enrolled_sessions": enrolled_sessions,
-            "workflow_status": workflow_status,
-            "programs": programs,
         }
 
     def _member_programs(self, member):
@@ -925,7 +1295,7 @@ class DojoKioskService(models.AbstractModel):
             "is_student": member.partner_id.is_student,
             "is_guardian": member.partner_id.is_guardian,
             "member_number": member.member_number or "",
-            "image_url": "/web/image/dojo.member/%d/image_128" % member.id,
+            "image_url": self._member_image_url(member),
             "date_of_birth": fields.Date.to_string(member.date_of_birth) if member.date_of_birth else "",
             "membership_state": member.membership_state,
             "belt_rank": member.current_rank_id.name if member.current_rank_id else "",
@@ -1042,18 +1412,18 @@ class DojoKioskService(models.AbstractModel):
             order="create_date desc, id desc",
             limit=1,
         )
+        if record and hasattr(record, "_sync_derived_steps"):
+            record._sync_derived_steps()
+
         steps = []
         completed = 0
-        # Only count the first 5 legacy data-entry steps for progress calculation
-        legacy_step_keys = ["member_info", "household", "enrollment", "subscription", "portal_access"]
-        for key, (field_name, label) in _ONBOARDING_STEP_FIELDS.items():
+        for key in _ONBOARDING_GUIDANCE_STEP_KEYS:
+            field_name, label = _ONBOARDING_STEP_FIELDS[key]
             done = bool(record and getattr(record, field_name, False))
-            if key in legacy_step_keys:
-                completed += 1 if done else 0
+            completed += 1 if done else 0
             steps.append({"key": key, "label": label, "complete": done})
-        # Calculate progress based on legacy data-entry steps
-        progress = int(completed / len(legacy_step_keys) * 100) if legacy_step_keys else 0
-        complete = bool(record and (record.state == "completed" or progress >= 100))
+        progress = int(completed / len(_ONBOARDING_GUIDANCE_STEP_KEYS) * 100)
+        complete = bool(record and progress >= 100)
         return {
             "available": True,
             "record_id": record.id if record else False,
@@ -1212,6 +1582,12 @@ class DojoKioskService(models.AbstractModel):
         if not member.exists() or not session.exists():
             return {"success": False, "error": "Member or session not found."}
 
+        enrollment = self.env["dojo.class.enrollment"].search([
+            ("session_id", "=", session_id),
+            ("member_id", "=", member_id),
+            ("status", "=", "registered"),
+        ], limit=1)
+
         # --- Eligibility ---
         if member.membership_state in ("cancelled", "paused", "lead"):
             return {
@@ -1219,7 +1595,9 @@ class DojoKioskService(models.AbstractModel):
                 "error": "Membership is not active. Please see the front desk.",
             }
 
-        if not member.active_subscription_id:
+        has_active_subscription = bool(member.active_subscription_id)
+        registered_active_member = member.membership_state == "active" and bool(enrollment)
+        if not has_active_subscription and not registered_active_member:
             return {
                 "success": False,
                 "error": "No active subscription found. Please see the front desk.",
@@ -1236,11 +1614,6 @@ class DojoKioskService(models.AbstractModel):
                 "error": "You are not enrolled in this course. Please see the front desk.",
             }
 
-        # --- Capacity check ---
-        if session.capacity > 0 and session.seats_taken >= session.capacity:
-            return {"success": False, "error": "This session is full."}
-
-        # --- Find or create enrollment ---
         existing_log = self.env["dojo.attendance.log"].search([
             ("session_id", "=", session_id),
             ("member_id", "=", member_id),
@@ -1251,11 +1624,9 @@ class DojoKioskService(models.AbstractModel):
                 "error": "Already checked in to this session.",
             }
 
-        enrollment = self.env["dojo.class.enrollment"].search([
-            ("session_id", "=", session_id),
-            ("member_id", "=", member_id),
-            ("status", "=", "registered"),
-        ], limit=1)
+        # --- Capacity check ---
+        if not enrollment and session.capacity > 0 and session.seats_taken >= session.capacity:
+            return {"success": False, "error": "This session is full."}
 
         if not enrollment:
             enrollment = self.env["dojo.class.enrollment"].create({
@@ -1308,6 +1679,7 @@ class DojoKioskService(models.AbstractModel):
             "log_id": log.id,
             "member": self._member_profile_dict(member, session_id=session_id),
             "session_name": session.name,
+            "program_name": session.template_id.program_id.name if (session.template_id and session.template_id.program_id) else "",
             "points": points_info,
         }
 
@@ -1317,14 +1689,46 @@ class DojoKioskService(models.AbstractModel):
 
     @api.model
     def update_member_photo(self, member_id, image_data):
-        """Write a new profile photo (base64) to the member's partner record."""
+        """Upload a new profile photo to kiosk object storage and persist its URL."""
         member = self.env["dojo.member"].browse(member_id)
         if not member.exists():
             return {"success": False, "error": "Member not found."}
-        member.image_1920 = image_data
+
+        raw, content_type, ext, error = self._decode_kiosk_photo(image_data)
+        if error:
+            return {"success": False, "error": error}
+
+        bucket = self._photo_bucket()
+        if not self._is_valid_photo_bucket(bucket):
+            return {"success": False, "error": "Photo storage bucket was invalid."}
+        driver = self._photo_storage_driver()
+        cache_bust = str(int(time.time() * 1000))
+        object_path = self._photo_object_path(member, raw, ext, cache_bust)
+        if driver == "supabase":
+            upload = self._upload_photo_to_supabase(bucket, object_path, raw, content_type)
+        else:
+            upload = self._upload_photo_to_local_storage(bucket, object_path, raw, content_type)
+            driver = "local"
+        if not upload.get("success"):
+            return {"success": False, "error": upload.get("error") or "Photo upload failed."}
+
+        public_url = upload["public_url"]
+        self._photo_set_params({
+            self._photo_param_key(member.id, "bucket"): bucket,
+            self._photo_param_key(member.id, "object_path"): object_path,
+            self._photo_param_key(member.id, "public_url"): public_url,
+            self._photo_param_key(member.id, "cache_bust"): cache_bust,
+            self._photo_param_key(member.id, "content_type"): content_type,
+            self._photo_param_key(member.id, "storage_driver"): driver,
+        })
+        image_url = self._photo_url_with_bust(public_url, cache_bust)
         return {
             "success": True,
-            "image_url": "/web/image/dojo.member/%d/image_128?v=%s" % (member.id, int(datetime.now().timestamp())),
+            "image_url": image_url,
+            "cache_bust": cache_bust,
+            "storage_driver": driver,
+            "bucket": bucket,
+            "object_path": object_path,
         }
 
     # -------------------------------------------------------------------------
@@ -2002,7 +2406,11 @@ class DojoKioskService(models.AbstractModel):
 
         field_name, label = _ONBOARDING_STEP_FIELDS[step_key]
         record.write({field_name: True})
-        if all(getattr(record, field_name) for field_name, _label in _ONBOARDING_STEP_FIELDS.values()):
+        guidance_fields = [
+            _ONBOARDING_STEP_FIELDS[key][0]
+            for key in _ONBOARDING_GUIDANCE_STEP_KEYS
+        ]
+        if all(getattr(record, field_name) for field_name in guidance_fields):
             record.state = "completed"
         else:
             record.state = "in_progress"
