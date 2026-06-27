@@ -2,7 +2,7 @@
 
 ## Status
 
-Canonical REL-20260626 domain specification. INC-02 delivers the student home, search, selection, and self check-in behavior in the running Odoo `dojo_kiosk` app.
+Canonical REL-20260626 domain specification. INC-02 delivered the student home, search, selection, and self check-in behavior in the running Odoo `dojo_kiosk` app. INC-06 final verification confirmed the shipped behavior against the local Odoo instance.
 
 ## Runtime Target
 
@@ -28,6 +28,7 @@ Canonical REL-20260626 domain specification. INC-02 delivers the student home, s
 ## Session Selection
 
 - Selecting a member opens a kiosk check-in modal immediately.
+- Today's-session filtering uses the company local timezone; the release demo company must have an explicit timezone so UTC midnight does not hide a still-active local session.
 - Trial leads use their booked trial session directly.
 - Members load today's registered open sessions from `/kiosk/member/enrolled_sessions`.
 - Session options show class name, program, time, instructor when available, and a clear check-in CTA.
@@ -55,6 +56,13 @@ Canonical REL-20260626 domain specification. INC-02 delivers the student home, s
   - Exercises live `/kiosk/search`, `/kiosk/member/enrolled_sessions`, `/kiosk/checkin`, and `/kiosk/roster`.
   - Verifies the database attendance log and enrollment state after check-in.
   - Verifies the served app contains the full-screen success overlay and chime path used by the successful live check-in.
+
+## Final INC-06 Verification
+
+- `bash testenv/verify.sh` passed after reset.
+- `bash testenv/scripts/ver-kiosk-home.sh` passed.
+- `bash testenv/scripts/ver-kiosk-checkin-flow.sh` passed.
+- The final run used the local demo company timezone `America/New_York`, matching the service's company-local definition of today's sessions.
 
 ## Source Of Truth
 

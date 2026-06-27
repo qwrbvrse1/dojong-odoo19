@@ -2,7 +2,7 @@
 
 ## Status
 
-Canonical REL-20260626 domain specification. INC-03 delivers the live three-panel instructor layout, roster-card density corrections, and session-context validation for the running Odoo kiosk.
+Canonical REL-20260626 domain specification. INC-03 delivered the live three-panel instructor layout, roster-card density corrections, and session-context validation for the running Odoo kiosk. INC-06 final verification confirmed the shipped behavior against the local Odoo instance.
 
 ## Intended behavior
 
@@ -30,6 +30,7 @@ Canonical REL-20260626 domain specification. INC-03 delivers the live three-pane
   - current active class wins
   - otherwise nearest class starting within the configured threshold wins
   - otherwise standby is explicit
+- Session context uses today's sessions in the company local timezone; the release demo company must have an explicit timezone for deterministic local-day behavior around UTC midnight.
 - Roster entries must include quick-scan fields:
   - identity
   - image URL
@@ -76,6 +77,11 @@ Canonical REL-20260626 domain specification. INC-03 delivers the live three-pane
   - a main app that depends on late-loaded `window.KioskInstructorLayout`
   - a hidden legacy single-column instructor fallback as the primary mounted view
   - roster payloads missing workflow, membership, attendance, onboarding, or task semantics
+
+## Final INC-06 Verification
+
+- `bash testenv/scripts/ver-kiosk-instructor-layout.sh` passed.
+- The final run used the local demo company timezone `America/New_York`, matching the service's company-local session-context behavior.
 
 ## Source of truth
 

@@ -275,3 +275,18 @@ gate:
 regression_gate:
   - bash testenv/verify.sh
 ```
+
+### INC-06 execution record
+
+Final verification was run against the local Odoo instance after `bash testenv/reset.sh`. Because kiosk session selection uses the company local timezone, the live demo company timezone was set to `America/New_York` before the strict gates were rerun; this keeps the seeded active session visible when the VM clock is just after UTC midnight.
+
+Passed:
+
+- `bash testenv/verify.sh`
+- `bash testenv/scripts/ver-kiosk-home.sh`
+- `bash testenv/scripts/ver-kiosk-checkin-flow.sh`
+- `bash testenv/scripts/ver-kiosk-instructor-layout.sh`
+- `bash testenv/scripts/ver-kiosk-profile-tabs.sh`
+- `bash testenv/scripts/ver-kiosk-photo-flow.sh`
+- `bash testenv/scripts/ver-kiosk-photo-refresh.sh`
+- `bash testenv/verify.sh` regression rerun after mutating gates

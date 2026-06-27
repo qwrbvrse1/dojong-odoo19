@@ -2,7 +2,7 @@
 
 ## Status
 
-Canonical REL-20260626 domain specification. INC-05 implements the storage-backed kiosk photo path and its live refresh gates.
+Canonical REL-20260626 domain specification. INC-05 implemented the storage-backed kiosk photo path and its live refresh gates. INC-06 final verification confirmed the shipped behavior against the local Odoo instance.
 
 ## Intended behavior
 
@@ -59,6 +59,12 @@ Canonical REL-20260626 domain specification. INC-05 implements the storage-backe
 - Member search, roster, minimal profile, and instructor profile payloads all resolve member photos through the persisted storage URL when present.
 - The kiosk UI applies a successful returned image URL immediately to the open profile, loaded rosters, active check-in modal, and loaded search results, then refreshes profile and roster payloads from the server.
 - Failed uploads show an explicit error and do not leave a false-success preview state.
+
+## Final INC-06 Verification
+
+- `bash testenv/scripts/ver-kiosk-photo-flow.sh` passed.
+- `bash testenv/scripts/ver-kiosk-photo-refresh.sh` passed.
+- The final run verified storage-backed URLs, direct object fetch, failure handling, and latest-photo convergence across profile, roster, and search payloads.
 
 ## Source of truth
 

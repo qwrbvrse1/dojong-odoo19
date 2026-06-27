@@ -6,6 +6,38 @@ Full run history: `workproducts/<project>/REL-NNN/runlog.jsonl`.
 
 ---
 
+## [REL-20260626] — 2026-06-26 — Kiosk Full-Correctness Rescue
+
+### Added
+- Final live kiosk rescue gates for the existing Odoo `dojo_kiosk` app: student home/search, student check-in, instructor three-panel layout, profile/manage tabs, photo storage flow, and photo refresh behavior.
+- Canonical kiosk domain specifications under `specifications/` for student experience, instructor experience, profile/onboarding, and photo storage.
+
+### Changed
+- `dojo_kiosk` — student kiosk now behaves as a walk-up check-in surface with rich search cards, tap-first session selection, deterministic full-screen success confirmation, one-shot success chime, and same-session attendance refresh.
+- `dojo_kiosk` — instructor mode now mounts the intended three-panel layout in the running Odoo kiosk, with current/next session context, roster tiles, attendance actions, onboarding/task badges, and operational alert panels.
+- `dojo_kiosk` — member profile/manage behavior now scopes public profile data to kiosk-safe check-in fields and exposes Progress, Household, photo tools, Manage actions, workflow, and onboarding only after instructor authorization.
+- `dojo_kiosk` — instructor photo updates now use the storage-backed kiosk photo path. Supabase credentials use Supabase Storage; the local release VM uses the approved Supabase-compatible object route with cache-safe URLs.
+- `releases/REL-20260626/scope.md`, `releases/REL-20260626/plan.md`, and `specifications/` now describe the shipped Odoo kiosk behavior and the live proof required to close the rescue.
+
+### Fixed
+- Kiosk verification no longer relies on static source markers alone for release closure; the final suite proves live HTTP/JSON-RPC behavior against the local Odoo instance.
+- Student check-in, instructor session context, profile authorization boundaries, onboarding lifecycle semantics, and photo refresh now have release gates tied to the running app.
+- The kiosk photo update path no longer reports an Odoo-only `/web/image/...` URL as a successful storage-backed upload.
+
+### Removed
+- No deployable kiosk surface was removed. The HTML prototype remains a design reference only and is not treated as the served kiosk target.
+
+### Technical Debt Addressed
+- Prior kiosk completeness claims were normalized into canonical domain specs and backed by live gates.
+- The release proof now covers the full rescue path end to end on the local VM.
+
+### Deferred
+- None after INC-06 final verification.
+
+Audited by: *(pending final audit)*
+
+---
+
 ## [REL-001] — 2026-06-23 — UFTKD Platform Feature Delivery
 
 ### Added

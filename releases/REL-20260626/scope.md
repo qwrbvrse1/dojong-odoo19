@@ -82,6 +82,7 @@ Interpretation rule:
 - `specifications/` is updated so the repo no longer claims kiosk completeness where the running app disagrees.
 - `CHANGELOG.md` and release artifacts describe the rescue accurately.
 - The final release gate proves the kiosk end-to-end on the local VM without relying on manual interpretation alone.
+- INC-06 records the final proof against the running local Odoo instance and keeps the HTML prototype scoped to design reference only.
 
 ## Out of scope
 
@@ -132,3 +133,18 @@ Interpretation rule:
 - Photo upload/capture uses the intended storage path and refreshes correctly in-session.
 - Release documentation, verification notes, and changelog no longer overstate kiosk completeness.
 - An operator can run the rescue plan on the unattended development VM and decide pass/fail from the recorded gates without subjective guesswork.
+
+## INC-06 final proof
+
+Final verification was run against the local Odoo instance after `bash testenv/reset.sh`. The demo company timezone was set to `America/New_York` for the proof run because kiosk session selection intentionally uses the company local timezone when deciding which sessions count as today.
+
+Passed gates:
+
+- `bash testenv/verify.sh`
+- `bash testenv/scripts/ver-kiosk-home.sh`
+- `bash testenv/scripts/ver-kiosk-checkin-flow.sh`
+- `bash testenv/scripts/ver-kiosk-instructor-layout.sh`
+- `bash testenv/scripts/ver-kiosk-profile-tabs.sh`
+- `bash testenv/scripts/ver-kiosk-photo-flow.sh`
+- `bash testenv/scripts/ver-kiosk-photo-refresh.sh`
+- `bash testenv/verify.sh` regression rerun after mutating gates

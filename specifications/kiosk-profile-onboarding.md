@@ -2,7 +2,7 @@
 
 ## Status
 
-Canonical REL-20260626 domain specification. INC-04 delivers the live profile/auth/onboarding contract against the running Odoo kiosk.
+Canonical REL-20260626 domain specification. INC-04 delivered the live profile/auth/onboarding contract against the running Odoo kiosk. INC-06 final verification confirmed the shipped behavior against the local Odoo instance.
 
 ## Intended behavior
 
@@ -74,6 +74,11 @@ Canonical REL-20260626 domain specification. INC-04 delivers the live profile/au
 - Instructor-authorized profile payloads include workflow, onboarding, issues, membership state, household/guardian data, programs, and Manage-tab action context.
 - `MemberProfileCard` hides Progress, Household, photo tools, and Manage unless the profile payload includes instructor workflow data.
 - Manage-tab onboarding actions use token plus instructor key and render the lifecycle guidance steps.
+
+## Final INC-06 Verification
+
+- `bash testenv/scripts/ver-kiosk-profile-tabs.sh` passed.
+- The final run verified public payload scoping, instructor-authorized profile tabs, lifecycle onboarding progress, and authenticated onboarding action handling.
 
 ## Source of truth
 
