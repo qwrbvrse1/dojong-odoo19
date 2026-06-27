@@ -35,6 +35,10 @@ services:
       - HOST=db
       - USER=odoo
       - PASSWORD=odoo
+      - KIOSK_PHOTO_STORAGE_DRIVER=local
+      - KIOSK_PHOTO_BUCKET=kiosk-photos
+      - KIOSK_PHOTO_LOCAL_DIR=/var/lib/odoo/kiosk-photo-storage
+      - KIOSK_PHOTO_PUBLIC_BASE_URL=http://127.0.0.1:8070/kiosk/storage/v1/object/public
     restart: unless-stopped
 
   n8n:

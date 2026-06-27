@@ -340,7 +340,10 @@ class MemberProfileCard extends Component {
                             </t>
                         </t>
                         <t t-if="isInstructorProfile()">
-                            <button class="k-profile__photo-btn" t-on-click="togglePhotoSheet" title="Update photo">📷</button>
+                            <button class="k-profile__photo-btn"
+                                t-on-click="togglePhotoSheet"
+                                t-att-disabled="state.photoUploading or undefined"
+                                title="Update photo">📷</button>
                         </t>
                         <t t-if="state.showPhotoSheet">
                             <div class="k-profile__photo-sheet">
@@ -1054,7 +1057,24 @@ class MemberProfileCard extends Component {
     onImgError(ev) { ev.target.style.display = "none"; }
 
     // ── Photo update ────────────────────────────────────────────
+    async finishPhotoUpload(result) {
+        if (result && result.success) {
+            this.state.photoError = "";
+            this.state.photoSuccess = "Photo updated!";
+            this.state.photoPreview = result.image_url || null;
+            if (this.props.onRefreshProfile) {
+                await this.props.onRefreshProfile(this.props.member, result);
+            }
+            return true;
+        }
+        this.state.photoSuccess = "";
+        this.state.photoError = (result && result.error) || "Upload failed.";
+        this.state.photoPreview = null;
+        return false;
+    }
+
     togglePhotoSheet() {
+        if (this.state.photoUploading) return;
         this.state.showPhotoSheet = !this.state.showPhotoSheet;
         this.state.photoError = "";
         this.state.photoSuccess = "";
@@ -1136,15 +1156,10 @@ class MemberProfileCard extends Component {
                 member_id: this.props.member.member_id,
                 image_data: base64,
             }));
-            if (result && result.success) {
-                this.state.photoSuccess = "Photo updated!";
-                if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
-            } else {
-                this.state.photoError = (result && result.error) || "Upload failed.";
-                this.state.photoPreview = null;
-            }
+            await this.finishPhotoUpload(result);
         } catch (e) {
             this.state.photoError = "Network error uploading photo.";
+            this.state.photoSuccess = "";
             this.state.photoPreview = null;
         } finally {
             this.state.photoUploading = false;
@@ -1181,15 +1196,10 @@ class MemberProfileCard extends Component {
                 member_id: this.props.member.member_id,
                 image_data: base64,
             }));
-            if (result && result.success) {
-                this.state.photoSuccess = "Photo updated!";
-                if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
-            } else {
-                this.state.photoError = (result && result.error) || "Upload failed.";
-                this.state.photoPreview = null;
-            }
+            await this.finishPhotoUpload(result);
         } catch (e) {
             this.state.photoError = "Network error uploading photo.";
+            this.state.photoSuccess = "";
             this.state.photoPreview = null;
         } finally {
             this.state.photoUploading = false;
@@ -1828,6 +1838,7 @@ class InstructorRosterTile extends Component {
     }
 
     rosterAvatarUrl(entry) {
+        if (entry.image_url) return entry.image_url;
         if (entry.is_trial && entry.partner_id) return partnerAvatarUrl(entry.partner_id);
         return avatarUrl(entry.member_id);
     }
@@ -3628,7 +3639,7 @@ class KioskApp extends Component {
                     onRosterAdd="(member, sessionId) => this.rosterAdd(member, sessionId)"
                     onRosterRemove="(member, sessionId) => this.rosterRemove(member, sessionId)"
                     onRosterRemoveBySession="(member, sessionId) => this.rosterRemoveBySession(member, sessionId)"
-                    onRefreshProfile="(member) => this.refreshProfile(member)"/>
+                    onRefreshProfile="(member, photo) => this.refreshProfile(member, photo)"/>
             </t>
 
             <!-- ── Remove attendance confirm ── -->
@@ -4302,28 +4313,51 @@ class KioskApp extends Component {
         }
     }
 
-    async refreshProfile(member) {
+    _applyMemberPhotoUrl(memberId, imageUrl, cacheBust = null) {
+        if (!memberId || !imageUrl) return;
+        if (cacheBust) _photoBust[memberId] = cacheBust;
+        if (this.state.profileMember && this.state.profileMember.member_id === memberId) {
+            this.state.profileMember = { ...this.state.profileMember, image_url: imageUrl };
+        }
+        for (const entry of this.state.searchResults) {
+            if (entry.member_id === memberId) Object.assign(entry, { image_url: imageUrl });
+        }
+        if (this.state.checkinModal && this.state.checkinModal.member && this.state.checkinModal.member.member_id === memberId) {
+            Object.assign(this.state.checkinModal.member, { image_url: imageUrl });
+        }
+        for (const roster of Object.values(this.state.sessionRosters)) {
+            if (!roster) continue;
+            for (const entry of roster) {
+                if (entry.member_id === memberId) Object.assign(entry, { image_url: imageUrl });
+            }
+        }
+    }
+
+    async refreshProfile(member, photoResult = null) {
         try {
-            // Bust image cache so roster tiles and the profile modal show the new photo
-            _photoBust[member.member_id] = Date.now();
+            const cacheBust = (photoResult && photoResult.cache_bust) || Date.now();
+            const imageUrl = photoResult && photoResult.image_url;
+            _photoBust[member.member_id] = cacheBust;
+            if (imageUrl) this._applyMemberPhotoUrl(member.member_id, imageUrl, cacheBust);
             const profile = await jsonPost("/kiosk/member/profile", {
                 member_id: member.member_id,
                 session_id: this.state.profileSessionId,
                 instructor_key: this.state.instructorKey,
             });
             if (profile && this.state.profileMember) this.state.profileMember = profile;
-            // Reload session roster so tile avatars re-render with the busted URL
             if (this.state.profileSessionId) {
                 await this._loadSessionRoster(this.state.profileSessionId);
             } else {
-                // Refresh all loaded rosters that contain this member
+                const reloads = [];
                 for (const sessionId of Object.keys(this.state.sessionRosters)) {
                     const roster = this.state.sessionRosters[sessionId];
                     if (roster && roster.some(e => e.member_id === member.member_id)) {
-                        this._loadSessionRoster(parseInt(sessionId, 10));
+                        reloads.push(this._loadSessionRoster(parseInt(sessionId, 10)));
                     }
                 }
+                await Promise.all(reloads);
             }
+            if (imageUrl) this._applyMemberPhotoUrl(member.member_id, imageUrl, cacheBust);
         } catch (e) {
             console.error("Kiosk: refresh profile failed", e);
         }

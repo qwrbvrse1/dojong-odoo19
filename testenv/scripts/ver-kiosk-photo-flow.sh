@@ -23,11 +23,13 @@ kiosk_fetch "/dojo_kiosk/static/src/kiosk_app.js" > "$TMPDIR/kiosk_app.js"
 upload=$(kiosk_json_rpc "/kiosk/instructor/update_photo" "{\"token\":\"${TOKEN}\",\"instructor_key\":\"${KEY}\",\"member_id\":${MID},\"image_data\":\"${PHOTO_B64}\"}")
 profile=$(kiosk_json_rpc "/kiosk/member/profile" "{\"token\":\"${TOKEN}\",\"member_id\":${MID},\"session_id\":${SID},\"instructor_key\":\"${KEY}\"}")
 roster=$(kiosk_json_rpc "/kiosk/roster" "{\"token\":\"${TOKEN}\",\"session_id\":${SID}}")
+bad_upload=$(kiosk_json_rpc "/kiosk/instructor/update_photo" "{\"token\":\"${TOKEN}\",\"instructor_key\":\"${KEY}\",\"member_id\":${MID},\"image_data\":\"not-a-photo\"}")
 
 KIOSK_APP_JS_FILE="$TMPDIR/kiosk_app.js" \
 KIOSK_UPLOAD="$upload" \
 KIOSK_PROFILE="$profile" \
 KIOSK_ROSTER="$roster" \
+KIOSK_BAD_UPLOAD="$bad_upload" \
 python3 - <<'PY'
 import json
 import os
@@ -43,18 +45,23 @@ with open(os.environ["KIOSK_APP_JS_FILE"], encoding="utf-8") as fh:
 upload = json.loads(os.environ["KIOSK_UPLOAD"]).get("result") or {}
 profile = json.loads(os.environ["KIOSK_PROFILE"]).get("result") or {}
 roster = json.loads(os.environ["KIOSK_ROSTER"]).get("result") or []
+bad_upload = json.loads(os.environ["KIOSK_BAD_UPLOAD"]).get("result") or {}
 
 for marker in (
     "k-profile__photo-btn",
     "takePhoto",
     "chooseFile",
+    "finishPhotoUpload",
     "/kiosk/instructor/update_photo",
     "onRefreshProfile",
+    "_applyMemberPhotoUrl",
     "_loadSessionRoster",
 ):
     assert marker in app_js, "photo UI marker missing from served app asset: %s" % marker
 
 assert upload.get("success") is True, "photo upload did not succeed: %s" % upload
+assert upload.get("storage_driver") in {"local", "supabase"}, "photo upload missing storage driver: %s" % upload
+assert upload.get("object_path"), "photo upload missing object_path: %s" % upload
 image_url = upload.get("image_url") or ""
 assert image_url, "photo upload response missing image_url"
 assert not image_url.startswith("/web/image/"), "photo flow is still returning Odoo image URLs instead of storage-backed URLs"
@@ -76,6 +83,8 @@ roster_url = roster_entry.get("image_url") or ""
 assert roster_url == image_url or roster_url.split("?", 1)[0] == image_url.split("?", 1)[0], (
     "roster image_url did not refresh to uploaded storage URL"
 )
+assert bad_upload.get("success") is False, "invalid photo upload unexpectedly succeeded: %s" % bad_upload
+assert bad_upload.get("error"), "invalid photo upload did not return a safe error: %s" % bad_upload
 
 print("ver-kiosk-photo-flow: PASS")
 PY

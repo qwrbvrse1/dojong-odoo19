@@ -494,6 +494,24 @@ class KioskController(http.Controller):
         svc = request.env["dojo.kiosk.service"].sudo()
         return svc.update_member_photo(member_id, image_data)
 
+    @http.route(
+        "/kiosk/storage/v1/object/public/<string:bucket>/<path:object_path>",
+        type="http", auth="public", methods=["GET"], csrf=False,
+    )
+    def kiosk_photo_storage_object(self, bucket=None, object_path=None, **kw):
+        svc = request.env["dojo.kiosk.service"].sudo()
+        obj = svc.get_photo_storage_object(bucket, object_path)
+        if not obj:
+            return request.not_found()
+        return request.make_response(
+            obj["body"],
+            headers=[
+                ("Content-Type", obj["content_type"]),
+                ("Cache-Control", "public, max-age=31536000, immutable"),
+                ("X-Content-Type-Options", "nosniff"),
+            ],
+        )
+
     # ------------------------------------------------------------------
     # Instructor -- onboarding workflow actions
     # ------------------------------------------------------------------
