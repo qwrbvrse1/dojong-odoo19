@@ -758,6 +758,7 @@ select {
     align-self: flex-start;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     min-height: 34px;
     border-radius: var(--k-radius-sm);
     padding: 8px 12px;
@@ -766,6 +767,11 @@ select {
     font-size: 0.85rem;
     font-weight: 800;
     line-height: 1.2;
+}
+
+.k-member-tile__affordance .material-symbols-outlined {
+    font-size: 18px;
+    line-height: 1;
 }
 
 /* ── Student check-in modal ── */
@@ -5624,15 +5630,37 @@ body.kiosk-theme-dark .k-search-results-panel {
     box-shadow: 0 0 0 3px var(--k-gold-glow);
 }
 
+.k-welcome-search-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    flex: 0 0 58px;
+    color: var(--k-text-3);
+    font-size: 28px;
+    background: var(--k-surface-2);
+    border-right: 1px solid var(--k-border);
+}
+
 .k-welcome-search {
     flex: 1;
-    padding: 20px 24px;
+    min-width: 0;
+    padding: 20px 24px 20px 18px;
     background: transparent;
     border: none;
     outline: none;
+    appearance: none;
+    -webkit-appearance: none;
     font-family: "Barlow", sans-serif;
     font-size: 1.4rem;
     color: var(--k-text);
+}
+
+.k-welcome-search::-webkit-search-decoration,
+.k-welcome-search::-webkit-search-cancel-button,
+.k-welcome-search::-webkit-search-results-button,
+.k-welcome-search::-webkit-search-results-decoration {
+    display: none;
 }
 
 .k-welcome-search::placeholder {

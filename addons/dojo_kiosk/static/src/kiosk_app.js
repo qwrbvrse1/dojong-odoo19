@@ -9,6 +9,8 @@ const { Component, useState, onMounted, onWillUnmount, mount, xml, useRef } = ow
 
 // ─── Config identity (per-tablet token from URL) ─────────────────────────────
 const KIOSK_TOKEN = window.KIOSK_TOKEN || null;
+const KIOSK_RELEASE_BRANCH = "rel/REL-20260628";
+const KIOSK_RELEASE_INCREMENT = "INC-02";
 const CHECKIN_SUCCESS_DISMISS_MS = 4000;
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -1547,7 +1549,9 @@ class HomeContent extends Component {
 
 class MemberCard extends Component {
     static template = xml`
-        <button type="button" class="k-member-tile" t-on-click="() => props.onSelect(props.member)">
+        <button type="button" class="k-member-tile"
+            t-att-aria-label="affordanceLabel(props.member) + ' for ' + props.member.name"
+            t-on-click="() => props.onSelect(props.member)">
             <div class="k-member-tile__avatar-wrap">
                 <img class="k-member-tile__avatar"
                     t-att-src="memberAvatarUrl(props.member)"
@@ -1573,7 +1577,10 @@ class MemberCard extends Component {
                         <span class="k-member-tile__belt" t-esc="props.member.belt_rank"/>
                     </t>
                 </div>
-                <div class="k-member-tile__affordance" t-esc="affordanceLabel(props.member)"/>
+                <div class="k-member-tile__affordance">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span t-esc="affordanceLabel(props.member)"/>
+                </div>
             </div>
         </button>
     `;
@@ -3543,9 +3550,11 @@ class KioskApp extends Component {
                         <div class="k-welcome-subtitle">Type your name below</div>
                         <div class="k-search-container">
                             <div class="k-welcome-search-wrap">
+                                <span class="material-symbols-outlined k-welcome-search-icon">search</span>
                                 <input class="k-welcome-search"
-                                    type="text"
+                                    type="search"
                                     placeholder="Search student name..."
+                                    aria-label="Search student name"
                                     t-model="state.searchQuery"
                                     t-on-input="onSearchInput"
                                     autocomplete="off"
@@ -3787,6 +3796,7 @@ class KioskApp extends Component {
         });
 
         this._searchTimer = null;
+        this._searchSeq = 0;
         this._barcodeBuffer = "";
         this._barcodeTimer = null;
         this._idleTimer = null;
@@ -4017,17 +4027,20 @@ class KioskApp extends Component {
 
     onSearchInput() {
         clearTimeout(this._searchTimer);
+        const searchSeq = ++this._searchSeq;
         const q = this.state.searchQuery.trim();
         if (q.length < 2) { this.state.searchResults = []; this.state.searchLoading = false; return; }
         this.state.searchLoading = true;
         this._searchTimer = setTimeout(async () => {
             try {
                 const results = await jsonPost("/kiosk/search", { query: q });
-                this.state.searchResults = results || [];
+                if (searchSeq === this._searchSeq && this.state.searchQuery.trim() === q) {
+                    this.state.searchResults = results || [];
+                }
             } catch {
-                this.state.searchResults = [];
+                if (searchSeq === this._searchSeq) this.state.searchResults = [];
             } finally {
-                this.state.searchLoading = false;
+                if (searchSeq === this._searchSeq) this.state.searchLoading = false;
             }
         }, 300);
     }
@@ -4040,14 +4053,31 @@ class KioskApp extends Component {
     clearSearch() {
         this.state.searchQuery = "";
         this.state.searchResults = [];
+        this._searchSeq++;
+    }
+
+    checkinMemberKey(member) {
+        if (!member) return "";
+        return member.is_trial
+            ? `trial:${member.lead_id || ""}`
+            : `member:${member.member_id || ""}`;
+    }
+
+    isCurrentCheckinMember(member) {
+        return !!(
+            this.state.checkinModal
+            && this.state.checkinModal.memberKey === this.checkinMemberKey(member)
+        );
     }
 
     async studentConfirm(member) {
         // Open the modal immediately with a spinner, then load the member's enrolled sessions
-        this.state.checkinModal = { member, sessions: [], loading: true, result: null, checkedInSession: null };
+        const memberKey = this.checkinMemberKey(member);
+        this.state.checkinModal = { member, memberKey, sessions: [], loading: true, result: null, checkedInSession: null };
 
         // Trial leads — show only their booked session directly, no enrolled_sessions lookup
         if (member.is_trial) {
+            if (!this.isCurrentCheckinMember(member)) return;
             const session = member.trial_session;
             this.state.checkinModal.sessions = session && session.id ? [session] : [];
             this.state.checkinModal.loading = false;
@@ -4059,7 +4089,7 @@ class KioskApp extends Component {
                 member_id: member.member_id,
                 date: this.state.filterDate || todayIso(),
             });
-            if (!this.state.checkinModal) return;
+            if (!this.isCurrentCheckinMember(member)) return;
             const all = sessions || [];
             this.state.checkinModal.sessions = all;
             // Detect if already checked in to any session today
@@ -4067,9 +4097,9 @@ class KioskApp extends Component {
             this.state.checkinModal.checkedInSession = active || null;
         } catch (e) {
             console.error("Kiosk: failed to load enrolled sessions", e);
-            if (this.state.checkinModal) this.state.checkinModal.sessions = [];
+            if (this.isCurrentCheckinMember(member)) this.state.checkinModal.sessions = [];
         } finally {
-            if (this.state.checkinModal) this.state.checkinModal.loading = false;
+            if (this.isCurrentCheckinMember(member)) this.state.checkinModal.loading = false;
         }
     }
 

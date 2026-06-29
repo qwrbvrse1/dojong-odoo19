@@ -902,10 +902,24 @@ class DojoKioskService(models.AbstractModel):
             program = sub.plan_id.program_ids[:1]
 
         if not program:
+            tz_name = (
+                self.env.context.get("tz")
+                or self.env.user.tz
+                or self.env.company.partner_id.tz
+                or "UTC"
+            )
+            tz = pytz.timezone(tz_name)
+            local_target = datetime.now(tz).replace(tzinfo=None)
+            today_start_local = local_target.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_end_local = local_target.replace(hour=23, minute=59, second=59, microsecond=999999)
+            today_start = tz.localize(today_start_local).astimezone(pytz.utc).replace(tzinfo=None)
+            today_end = tz.localize(today_end_local).astimezone(pytz.utc).replace(tzinfo=None)
             enrollments = self.env["dojo.class.enrollment"].sudo().search([
                 ("member_id", "=", member.id),
                 ("status", "=", "registered"),
                 ("session_id.state", "=", "open"),
+                ("session_id.start_datetime", ">=", fields.Datetime.to_string(today_start)),
+                ("session_id.start_datetime", "<=", fields.Datetime.to_string(today_end)),
             ], limit=20)
             ordered = enrollments.sorted(
                 key=lambda e: e.session_id.start_datetime or fields.Datetime.now()
@@ -926,6 +940,7 @@ class DojoKioskService(models.AbstractModel):
         program = self._public_member_program_context(member)
         return {
             "member_id": member.id,
+            "lead_id": False,
             "name": member.name,
             "image_url": self._member_image_url(member),
             "belt_rank": member.current_rank_id.name if member.current_rank_id else "",
@@ -970,6 +985,7 @@ class DojoKioskService(models.AbstractModel):
             "trial_program": program_name,
             "trial_session": session_dict,
             "partner_id": lead.partner_id.id if lead.partner_id else False,
+            "image_url": "/web/image/res.partner/%d/image_128" % lead.partner_id.id if lead.partner_id else "",
             "belt_rank": "",
             "belt_color": "",
         }

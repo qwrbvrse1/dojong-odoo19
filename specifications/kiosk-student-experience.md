@@ -2,7 +2,7 @@
 
 ## Status
 
-Canonical REL-20260626 domain specification. INC-02 delivered the student home, search, selection, and self check-in behavior in the running Odoo `dojo_kiosk` app. INC-06 final verification confirmed the shipped behavior against the local Odoo instance.
+Canonical kiosk student domain specification. REL-20260628 INC-02 adds Development VM proof for the shipped Odoo `dojo_kiosk` student home, search, selection, and self check-in behavior.
 
 ## Runtime Target
 
@@ -19,6 +19,7 @@ Canonical REL-20260626 domain specification. INC-02 delivered the student home, 
 - Result cards expose kiosk-safe identity and check-in context:
   - member or trial identity
   - photo URL with initials fallback
+  - stable `member_id`/`lead_id` shape for member and trial cards
   - trial or membership state
   - belt rank when applicable
   - program context from an active subscription or today's registered class
@@ -46,6 +47,16 @@ Canonical REL-20260626 domain specification. INC-02 delivered the student home, 
 
 ## Live Gates
 
+- `testenv/scripts/ver-devvm-kiosk-home.sh`
+  - Requires `DEMO_KIOSK_URL` and `DEMO_KIOSK_TOKEN`.
+  - Fetches the Development VM kiosk shell and the exact served `kiosk_app.js` asset.
+  - Verifies the served app exposes the expected release branch and increment markers.
+  - Verifies bootstrap sessions, session context, student landing/search UI markers, and public search-card payload shape.
+- `testenv/scripts/ver-devvm-kiosk-student-flow.sh`
+  - Requires `DEMO_KIOSK_URL` and `DEMO_KIOSK_TOKEN`.
+  - Uses `DEMO_KIOSK_SEARCH_QUERY`, `DEMO_KIOSK_MEMBER_NAME`, `DEMO_KIOSK_MEMBER_ID`, and `DEMO_KIOSK_SESSION_ID` when provided; otherwise it selects a searchable non-trial demo member with a pending or already-present session.
+  - Exercises live `/kiosk/search`, `/kiosk/member/enrolled_sessions`, `/kiosk/checkin`, and `/kiosk/roster` against the Development VM.
+  - Creates a check-in when the selected session is pending, and treats an already-present repeat run as pass only when refreshed enrolled-session and roster state agree.
 - `testenv/scripts/ver-kiosk-home.sh`
   - Fetches the live kiosk shell and served `kiosk_app.js`.
   - Verifies bootstrap sessions and session context.
