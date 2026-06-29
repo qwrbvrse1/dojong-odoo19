@@ -30,7 +30,7 @@ baseline_gate:
 
 ## Dependency analysis
 
-`INC-01` establishes the Development VM proof surface and is intentionally first. The remaining increments are linear because each builds on the same live kiosk surface and each later gate depends on the earlier defect class being resolved:
+`INC-01` establishes the Development VM execution contract and is intentionally first. The remaining increments are linear because each builds on the same live kiosk surface and each later gate depends on the earlier defect class being resolved:
 
 - `INC-02` corrects the student entry/search/check-in contract first, because that is the first thing demo users see.
 - `INC-03` fixes instructor standby consistency and crash-prone roster interaction next, because those are blocking instructor demo defects.
@@ -68,6 +68,7 @@ gate:
   - bash -lc 'curl -fsS "$DEMO_KIOSK_URL" | grep -q "Dojo Kiosk"'
 regression_gate:
   - bash testenv/verify.sh
+```
 
 ---
 
