@@ -39,50 +39,46 @@ baseline_gate:
 
 ---
 
-## INC-01 — Establish Development VM live gates
+## INC-01 — Re-baseline release artifacts for Development VM execution
 
-Create only the minimal Development VM baseline verification surface needed to prove the demo URL, token wiring, and served kiosk shell are usable. Deeper behavioral gates belong to the later increments that own those behaviors.
+Lock the remediation release to a harness-compatible baseline before any new verification assets are introduced. This increment is planning-only and must leave a reviewable non-testenv workproduct diff.
 
 ```yaml
 id: INC-01
-title: Establish Development VM kiosk baseline gate
+title: Re-baseline Development VM remediation scope and execution contract
 depends_on: []
 touchpoints:
-  - testenv/scripts/devvm-kiosk-lib.sh
-  - testenv/scripts/ver-devvm-kiosk-home.sh
-  - testenv/verify.sh
   - releases/REL-20260628/scope.md
   - releases/REL-20260628/plan.md
 deliverables:
-  - Shared Development VM gate helper exists
-  - Baseline Development VM home gate exists
-  - Baseline gate proves the operator-supplied Development VM demo URL and token are usable
-  - Release artifacts are aligned with unattended Development VM execution
+  - Release scope is explicitly limited to Development VM kiosk remediation
+  - Increment contracts are aligned to apev workproduct expectations
+  - Later increments own any new Development VM verification assets under testenv/
 test_data:
   seed: current Development VM demo dataset
   migration_before_state: post-REL-20260626 kiosk deployment
   external_stubs: none
-  credentials: DEMO_KIOSK_URL, DEMO_KIOSK_TOKEN
+  credentials: DEMO_KIOSK_URL, DEMO_KIOSK_TOKEN, DEMO_INSTRUCTOR_PIN
 reset:
   - bash testenv/verify.sh
 gate:
   - bash testenv/verify.sh
-  - bash -c 'test -x testenv/scripts/devvm-kiosk-lib.sh'
-  - bash -c 'test -x testenv/scripts/ver-devvm-kiosk-home.sh'
-  - bash -lc 'bash testenv/scripts/ver-devvm-kiosk-home.sh'
+  - bash -lc 'test -n "${DEMO_KIOSK_URL:-}"'
+  - bash -lc 'test -n "${DEMO_KIOSK_TOKEN:-}"'
+  - bash -lc 'curl -fsS "$DEMO_KIOSK_URL" | grep -q "Dojo Kiosk"'
 regression_gate:
   - bash testenv/verify.sh
-```
 
 ---
 
-## INC-02 — Align student entry, search cards, and check-in flow
+## INC-02 — Establish Development VM gates and align student entry, search cards, and check-in flow
+
 
 Bring the student-facing Development VM demo closer to the canonical kiosk UX and prove that result selection and check-in behavior work reliably in the live deployment.
 
 ```yaml
 id: INC-02
-title: Fix student landing, search card contract, and live check-in flow
+title: Create Development VM gates and fix student landing, search card contract, and live check-in flow
 depends_on:
   - INC-01
 touchpoints:
@@ -91,8 +87,12 @@ touchpoints:
   - addons/dojo_kiosk/controllers/kiosk_controller.py
   - addons/dojo_kiosk/models/dojo_kiosk_service.py
   - specifications/kiosk-student-experience.md
+  - testenv/scripts/devvm-kiosk-lib.sh
+  - testenv/scripts/ver-devvm-kiosk-home.sh
   - testenv/scripts/ver-devvm-kiosk-student-flow.sh
+  - testenv/verify.sh
 deliverables:
+  - Development VM baseline verification assets exist under testenv/ and are accepted as part of a feature-bearing increment
   - Student landing screen remains kiosk-branded but better matches the reference walk-up check-in experience
   - Search-result cards expose the intended kiosk-safe identity and context fields
   - Tapping a search result reliably opens the expected session-selection or direct check-in path
