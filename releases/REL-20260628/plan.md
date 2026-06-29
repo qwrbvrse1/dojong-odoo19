@@ -41,34 +41,34 @@ baseline_gate:
 
 ## INC-01 — Establish Development VM live gates
 
-Create the Development VM-specific verification scripts and baseline release artifacts needed to prove demo behavior against the running deployment, not just against local source or local Docker state.
+Create only the minimal Development VM baseline verification surface needed to prove the demo URL, token wiring, and served kiosk shell are usable. Deeper behavioral gates belong to the later increments that own those behaviors.
 
 ```yaml
 id: INC-01
-title: Establish Development VM kiosk alignment gates
+title: Establish Development VM kiosk baseline gate
 depends_on: []
 touchpoints:
-  - testenv/scripts/
+  - testenv/scripts/devvm-kiosk-lib.sh
+  - testenv/scripts/ver-devvm-kiosk-home.sh
   - testenv/verify.sh
   - releases/REL-20260628/scope.md
   - releases/REL-20260628/plan.md
 deliverables:
-  - Dedicated Development VM verification scripts exist for student entry, student flow, instructor safety, and onboarding action correctness
-  - Baseline gate proves the operator-supplied Development VM demo URL and credentials are usable
+  - Shared Development VM gate helper exists
+  - Baseline Development VM home gate exists
+  - Baseline gate proves the operator-supplied Development VM demo URL and token are usable
   - Release artifacts are aligned with unattended Development VM execution
 test_data:
   seed: current Development VM demo dataset
   migration_before_state: post-REL-20260626 kiosk deployment
   external_stubs: none
-  credentials: DEMO_KIOSK_URL, DEMO_KIOSK_TOKEN, DEMO_INSTRUCTOR_PIN
+  credentials: DEMO_KIOSK_URL, DEMO_KIOSK_TOKEN
 reset:
   - bash testenv/verify.sh
 gate:
   - bash testenv/verify.sh
-  - bash -c 'test -f testenv/scripts/ver-devvm-kiosk-home.sh'
-  - bash -c 'test -f testenv/scripts/ver-devvm-kiosk-student-flow.sh'
-  - bash -c 'test -f testenv/scripts/ver-devvm-kiosk-instructor-safety.sh'
-  - bash -c 'test -f testenv/scripts/ver-devvm-kiosk-onboarding-action.sh'
+  - bash -c 'test -x testenv/scripts/devvm-kiosk-lib.sh'
+  - bash -c 'test -x testenv/scripts/ver-devvm-kiosk-home.sh'
   - bash -lc 'bash testenv/scripts/ver-devvm-kiosk-home.sh'
 regression_gate:
   - bash testenv/verify.sh
@@ -91,7 +91,6 @@ touchpoints:
   - addons/dojo_kiosk/controllers/kiosk_controller.py
   - addons/dojo_kiosk/models/dojo_kiosk_service.py
   - specifications/kiosk-student-experience.md
-  - testenv/scripts/ver-devvm-kiosk-home.sh
   - testenv/scripts/ver-devvm-kiosk-student-flow.sh
 deliverables:
   - Student landing screen remains kiosk-branded but better matches the reference walk-up check-in experience
