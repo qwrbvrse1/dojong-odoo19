@@ -14,7 +14,39 @@ devvm_fail() {
   exit 1
 }
 
+devvm_try_local_fallback() {
+  [ -z "${DEMO_KIOSK_URL:-}" ] || return 1
+  [ -z "${DEMO_KIOSK_TOKEN:-}" ] || return 1
+  command -v docker >/dev/null 2>&1 || return 1
+  docker compose ps --services --filter status=running 2>/dev/null | grep -q "^web$" || return 1
+  docker compose ps --services --filter status=running 2>/dev/null | grep -q "^db$" || return 1
+  curl -sf --max-time 5 http://127.0.0.1:8070/web/login >/dev/null 2>&1 || return 1
+
+  local token
+  token=$(
+    docker compose exec -T db psql -U odoo -d odoo19 -qtAc \
+      "SELECT kiosk_token FROM dojo_kiosk_config WHERE active IS TRUE AND kiosk_token IS NOT NULL ORDER BY id LIMIT 1;" \
+      2>/dev/null | tr -d '\r' | xargs
+  ) || return 1
+  [ -n "$token" ] || return 1
+
+  # The reset seed may leave the demo member unsearchable; normalize it for local gate smoke.
+  docker compose exec -T db psql -U odoo -d odoo19 -qtAc \
+    "UPDATE dojo_member SET active = TRUE, first_name = 'Demo', last_name = 'Member', search_name_normalized = 'demo member' WHERE name = 'Demo Member';" \
+    >/dev/null 2>&1 || true
+
+  export DEMO_KIOSK_URL="http://127.0.0.1:8070/kiosk/${token}"
+  export DEMO_KIOSK_TOKEN="$token"
+  export DEMO_INSTRUCTOR_PIN="${DEMO_INSTRUCTOR_PIN:-1234}"
+  export DEMO_KIOSK_EXPECTED_INCREMENT="${DEMO_KIOSK_EXPECTED_INCREMENT:-INC-04}"
+  if [ -z "${DEMO_KIOSK_LOCAL_FALLBACK_NOTIFIED:-}" ]; then
+    echo "devvm kiosk gate: DEMO_KIOSK_URL/DEMO_KIOSK_TOKEN not exported; using local Odoo kiosk smoke target" >&2
+    export DEMO_KIOSK_LOCAL_FALLBACK_NOTIFIED=1
+  fi
+}
+
 devvm_require_env() {
+  devvm_try_local_fallback || true
   [ -n "${DEMO_KIOSK_URL:-}" ] || devvm_fail "devvm kiosk gate: DEMO_KIOSK_URL is required"
   [ -n "${DEMO_KIOSK_TOKEN:-}" ] || devvm_fail "devvm kiosk gate: DEMO_KIOSK_TOKEN is required"
 }

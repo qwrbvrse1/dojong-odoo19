@@ -2,7 +2,7 @@
 
 ## Status
 
-Canonical REL-20260626 domain specification, carried forward for REL-20260628. INC-03 adds Development VM proof for explicit standby semantics, selected-session consistency, and roster-tap attendance safety in the running Odoo kiosk.
+Canonical REL-20260626 domain specification, carried forward for REL-20260628. INC-03 adds Development VM proof for explicit standby semantics, selected-session consistency, and roster-tap attendance safety in the running Odoo kiosk; INC-05 defines the final Development VM closure proof for that contract.
 
 ## Intended behavior
 
@@ -93,10 +93,15 @@ Canonical REL-20260626 domain specification, carried forward for REL-20260628. I
   - standby UI code that can select a fallback session without a selected session context
   - roster tap code that can fire invalid member/session/status attendance mutations
 
-## Final INC-06 Verification
+## REL-20260628 INC-05 Closure Proof
 
-- `bash testenv/scripts/ver-kiosk-instructor-layout.sh` passed.
-- The final run used the local demo company timezone `America/New_York`, matching the service's company-local session-context behavior.
+- The local reset/regression prerequisite remains `bash testenv/verify.sh`.
+- The final Development VM instructor proof is `bash testenv/scripts/ver-devvm-kiosk-instructor-safety.sh`.
+- Development VM proof requires `DEMO_KIOSK_URL`, `DEMO_KIOSK_TOKEN`, and `DEMO_INSTRUCTOR_PIN`; the script uses `DEMO_KIOSK_EXPECTED_BRANCH` when set, otherwise the current git branch.
+- The final suite expects the integrated REL-20260628 asset marker `KIOSK_RELEASE_INCREMENT = "INC-04"` by default. Operators may set `DEMO_KIOSK_EXPECTED_INCREMENT` only when proving a deliberately different deployed asset marker.
+- If the script runs without Development VM credentials in a prepared local workspace, the local Odoo fallback is a smoke check only and does not count as Development VM release proof.
+- A passing instructor closure proves that the running Development VM kiosk serves the standby/no-fallback and roster-tap safety code, returns explicit standby context with no selected session for a standby day, authenticates the demo instructor PIN, and safely toggles present, late, and pending attendance states while restoring the original roster state.
+- Pass/fail evidence is the gate exit status and stdout from the Development VM script; release `plan.md` and `scope.md` remain planning specifications, not run logs.
 
 ## Source of truth
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Canonical REL-20260626 domain specification, carried forward for REL-20260628. REL-20260628 INC-04 adds Development VM proof that onboarding complete-step actions mutate visible onboarding state and that refreshed profiles reflect the mutation.
+Canonical REL-20260626 domain specification, carried forward for REL-20260628. REL-20260628 INC-04 adds Development VM proof that onboarding complete-step actions mutate visible onboarding state and that refreshed profiles reflect the mutation; INC-05 defines the final Development VM closure proof for that contract.
 
 ## Intended behavior
 
@@ -86,10 +86,16 @@ Canonical REL-20260626 domain specification, carried forward for REL-20260628. R
 - `complete_step` responses include `changed: true` only after the refreshed workflow shows the selected step complete.
 - The kiosk displays complete-step success only after the action response and refreshed profile both reflect the completed step.
 
-## Final INC-06 Verification
+## REL-20260628 INC-05 Closure Proof
 
-- `bash testenv/scripts/ver-kiosk-profile-tabs.sh` passed.
-- The final run verified public payload scoping, instructor-authorized profile tabs, lifecycle onboarding progress, and authenticated onboarding action handling.
+- The local reset/regression prerequisite remains `bash testenv/verify.sh`.
+- The final Development VM onboarding proof is `bash testenv/scripts/ver-devvm-kiosk-onboarding-action.sh`.
+- Development VM proof requires `DEMO_KIOSK_URL`, `DEMO_KIOSK_TOKEN`, and `DEMO_INSTRUCTOR_PIN`; the script uses `DEMO_KIOSK_EXPECTED_BRANCH` when set, otherwise the current git branch.
+- The final suite expects the integrated REL-20260628 asset marker `KIOSK_RELEASE_INCREMENT = "INC-04"` by default. Operators may set `DEMO_KIOSK_EXPECTED_INCREMENT` only when proving a deliberately different deployed asset marker.
+- If the script runs without Development VM credentials in a prepared local workspace, the local Odoo fallback is a smoke check only and does not count as Development VM release proof.
+- A passing onboarding closure proves that the running Development VM kiosk rejects unauthenticated complete-step actions with `instructor_auth_required`, mutates an incomplete lifecycle onboarding step only with instructor authentication, returns a workflow that marks the selected step complete, and returns the same state after an instructor-authorized profile refresh.
+- The Development VM onboarding gate is intentionally stateful: repeat runs require an available partially complete onboarding profile, and operators may steer selection with `DEMO_KIOSK_ONBOARDING_QUERY` or `DEMO_KIOSK_MEMBER_ID`.
+- Pass/fail evidence is the gate exit status and stdout from the Development VM script; release `plan.md` and `scope.md` remain planning specifications, not run logs.
 
 ## Source of truth
 

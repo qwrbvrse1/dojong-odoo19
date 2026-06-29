@@ -2,7 +2,7 @@
 
 ## Status
 
-Canonical kiosk student domain specification. REL-20260628 INC-02 adds Development VM proof for the shipped Odoo `dojo_kiosk` student home, search, selection, and self check-in behavior.
+Canonical kiosk student domain specification. REL-20260628 INC-02 adds Development VM proof for the shipped Odoo `dojo_kiosk` student home, search, selection, and self check-in behavior; INC-05 defines the final Development VM closure proof for that contract.
 
 ## Runtime Target
 
@@ -68,12 +68,17 @@ Canonical kiosk student domain specification. REL-20260628 INC-02 adds Developme
   - Verifies the database attendance log and enrollment state after check-in.
   - Verifies the served app contains the full-screen success overlay and chime path used by the successful live check-in.
 
-## Final INC-06 Verification
+## REL-20260628 INC-05 Closure Proof
 
-- `bash testenv/verify.sh` passed after reset.
-- `bash testenv/scripts/ver-kiosk-home.sh` passed.
-- `bash testenv/scripts/ver-kiosk-checkin-flow.sh` passed.
-- The final run used the local demo company timezone `America/New_York`, matching the service's company-local definition of today's sessions.
+- The local reset/regression prerequisite remains `bash testenv/verify.sh`.
+- Final Development VM student proof is:
+  - `bash testenv/scripts/ver-devvm-kiosk-home.sh`
+  - `bash testenv/scripts/ver-devvm-kiosk-student-flow.sh`
+- Development VM proof requires `DEMO_KIOSK_URL` and `DEMO_KIOSK_TOKEN`; the scripts use `DEMO_KIOSK_EXPECTED_BRANCH` when set, otherwise the current git branch.
+- The final suite expects the integrated REL-20260628 asset marker `KIOSK_RELEASE_INCREMENT = "INC-04"` by default. Operators may set `DEMO_KIOSK_EXPECTED_INCREMENT` only when proving a deliberately different deployed asset marker.
+- If the scripts run without Development VM credentials in a prepared local workspace, the local Odoo fallback is a smoke check only and does not count as Development VM release proof.
+- A passing student closure proves that the running Development VM kiosk shell serves the deployed branch assets, exposes the expected walk-up search/card affordances, returns kiosk-safe search results, opens member session selection, and completes or confirms member check-in with enrolled-session and roster state in agreement.
+- Pass/fail evidence is the gate exit status and stdout from the Development VM scripts; release `plan.md` and `scope.md` remain planning specifications, not run logs.
 
 ## Source Of Truth
 
