@@ -1428,9 +1428,6 @@ class DojoKioskService(models.AbstractModel):
             order="create_date desc, id desc",
             limit=1,
         )
-        if record:
-            self._sync_kiosk_onboarding_record(record)
-
         steps = []
         completed = 0
         for key in _ONBOARDING_GUIDANCE_STEP_KEYS:
@@ -1470,8 +1467,6 @@ class DojoKioskService(models.AbstractModel):
         member = record.member_id
         vals = {}
         membership_state = getattr(member, "membership_state", "") if member else ""
-        if "step_trial_booked" in record._fields and membership_state in ("trial", "active") and not record.step_trial_booked:
-            vals["step_trial_booked"] = True
         if (
             "step_membership_activated" in record._fields
             and membership_state == "active"
