@@ -1285,6 +1285,11 @@ select {
     box-shadow: none;
 }
 
+.k-instructor-left .k-session-card--standby {
+    border-color: rgba(148, 163, 184, .5);
+    background: var(--k-surface-2);
+}
+
 .k-instructor-left .k-session-card__eyebrow {
     margin-bottom: 6px;
     font-size: 11px;
@@ -1688,6 +1693,11 @@ select {
     cursor: pointer;
     transition: border-color var(--k-transition), background var(--k-transition);
     user-select: none;
+}
+
+.k-roster-tile--busy {
+    cursor: wait;
+    opacity: .78;
 }
 
 /* State variants */

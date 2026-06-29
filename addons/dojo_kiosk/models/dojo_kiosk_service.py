@@ -1782,8 +1782,15 @@ class DojoKioskService(models.AbstractModel):
                 log.unlink()
             if enrollment:
                 enrollment.attendance_state = "pending"
+            self._log_action("attendance_mark", member_id=member_id, session_id=session_id, is_instructor=True, summary="Marked pending")
             member.invalidate_recordset()
-            return {"success": True, "log_id": False}
+            return {
+                "success": True,
+                "log_id": False,
+                "status": "pending",
+                "attendance_state": "pending",
+                "attendance_label": self._attendance_state_label("pending"),
+            }
 
         if log:
             log.status = attendance_status
@@ -1807,7 +1814,13 @@ class DojoKioskService(models.AbstractModel):
         # Invalidate cached computed fields so any subsequent profile read is fresh
         member.invalidate_recordset()
 
-        return {"success": True, "log_id": log.id}
+        return {
+            "success": True,
+            "log_id": log.id,
+            "status": attendance_status,
+            "attendance_state": attendance_status,
+            "attendance_label": self._attendance_state_label(attendance_status),
+        }
 
     # -------------------------------------------------------------------------
     # Instructor — roster management

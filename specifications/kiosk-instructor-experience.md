@@ -2,7 +2,7 @@
 
 ## Status
 
-Canonical REL-20260626 domain specification. INC-03 delivered the live three-panel instructor layout, roster-card density corrections, and session-context validation for the running Odoo kiosk. INC-06 final verification confirmed the shipped behavior against the local Odoo instance.
+Canonical REL-20260626 domain specification, carried forward for REL-20260628. INC-03 adds Development VM proof for explicit standby semantics, selected-session consistency, and roster-tap attendance safety in the running Odoo kiosk.
 
 ## Intended behavior
 
@@ -30,6 +30,7 @@ Canonical REL-20260626 domain specification. INC-03 delivered the live three-pan
   - current active class wins
   - otherwise nearest class starting within the configured threshold wins
   - otherwise standby is explicit
+- When session context is standby, instructor mode must not fall back to `sessions[0]` as a selected session. The left panel renders a standby card, the roster panel renders no selected roster, and existing sessions remain available only as explicit instructor choices.
 - Session context uses today's sessions in the company local timezone; the release demo company must have an explicit timezone for deterministic local-day behavior around UTC midnight.
 - Roster entries must include quick-scan fields:
   - identity
@@ -52,11 +53,17 @@ Canonical REL-20260626 domain specification. INC-03 delivered the live three-pan
   - visible belt/program context when available
   - visible onboarding progress when incomplete
   - compact workflow badges for onboarding, waiver, membership, grading, and task states
+- Roster tile tap behavior is single-flight and deterministic for member entries:
+  - pending taps mark present
+  - present taps clear back to pending
+  - late taps clear back to pending
+  - trial tiles and non-member entries do not toggle attendance
 
 ## Live gate
 
 - Script: `testenv/scripts/ver-kiosk-instructor-layout.sh`
 - Script: `testenv/scripts/ver-kiosk-roster-cards.sh`
+- Script: `testenv/scripts/ver-devvm-kiosk-instructor-safety.sh`
 - Data source: `testenv/reset.sh` seeded demo environment.
 - Credentials: kiosk token from `dojo_kiosk_config`.
 - The layout gate exercises:
@@ -72,11 +79,19 @@ Canonical REL-20260626 domain specification. INC-03 delivered the live three-pan
   - served CSS density markers
   - live session summary counts
   - live roster payload shape for every returned card
+- The Development VM instructor-safety gate exercises:
+  - served release branch and increment markers
+  - served standby/no-fallback and roster-tap guard markers
+  - live `/kiosk/sessions` standby context with no selected session
+  - live instructor PIN authentication
+  - live `/kiosk/instructor/attendance` transitions for present, late, and pending against a roster entry, with the original state restored
 - The gates reject:
   - a layout that calls the dead `/kiosk/api/roster` route
   - a main app that depends on late-loaded `window.KioskInstructorLayout`
   - a hidden legacy single-column instructor fallback as the primary mounted view
   - roster payloads missing workflow, membership, attendance, onboarding, or task semantics
+  - standby UI code that can select a fallback session without a selected session context
+  - roster tap code that can fire invalid member/session/status attendance mutations
 
 ## Final INC-06 Verification
 

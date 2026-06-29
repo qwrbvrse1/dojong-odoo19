@@ -10,7 +10,7 @@ const { Component, useState, onMounted, onWillUnmount, mount, xml, useRef } = ow
 // ─── Config identity (per-tablet token from URL) ─────────────────────────────
 const KIOSK_TOKEN = window.KIOSK_TOKEN || null;
 const KIOSK_RELEASE_BRANCH = "rel/REL-20260628";
-const KIOSK_RELEASE_INCREMENT = "INC-02";
+const KIOSK_RELEASE_INCREMENT = "INC-03";
 const CHECKIN_SUCCESS_DISMISS_MS = 4000;
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -1772,12 +1772,13 @@ class StudentCheckinModal extends Component {
 
 class InstructorRosterTile extends Component {
     static template = xml`
-        <div t-attf-class="k-roster-tile k-roster-tile--#{props.entry.attendance_state || 'pending'} #{state.pressing ? 'k-roster-tile--pressing' : ''}"
+        <div t-attf-class="k-roster-tile k-roster-tile--#{props.entry.attendance_state || 'pending'} #{state.pressing ? 'k-roster-tile--pressing' : ''} #{state.busy ? 'k-roster-tile--busy' : ''}"
              t-att-data-member-id="props.entry.member_id || props.entry.lead_id || ''"
              t-att-data-attendance-state="props.entry.attendance_state || 'pending'"
              t-att-data-onboarding-pct="props.entry.onboarding_pct || 0"
              t-att-data-open-task-count="props.entry.open_task_count || 0"
              t-att-data-membership-state="props.entry.membership_state || ''"
+             t-att-aria-disabled="state.busy ? 'true' : 'false'"
              t-on-click="onTileTap"
              t-on-pointerdown="onPointerDown"
              t-on-pointerup="onPointerUp"
@@ -1839,7 +1840,7 @@ class InstructorRosterTile extends Component {
     static props = ["entry", "sessionId", "onMark", "onRemoveAttendance", "onManage"];
 
     setup() {
-        this.state = owl.useState({ pressing: false });
+        this.state = owl.useState({ pressing: false, busy: false });
         this._lpTimer = null;
         this._lpFired = false;
     }
@@ -1896,24 +1897,44 @@ class InstructorRosterTile extends Component {
         return badges.slice(0, 3);
     }
 
-    onTileTap(ev) {
+    isToggleableAttendance() {
+        const entry = this.props.entry || {};
+        return !!(entry.member_id && !entry.is_trial);
+    }
+
+    attendanceToggleStatus() {
+        const state = (this.props.entry && this.props.entry.attendance_state) || "pending";
+        if (state === "present" || state === "late") return "pending";
+        if (state === "pending") return "present";
+        return null;
+    }
+
+    async onTileTap(ev) {
         // If long-press just fired, absorb the synthetic click
         if (this._lpFired) { this._lpFired = false; return; }
-        // Trials: no toggle
-        if (this.props.entry.is_trial) return;
+        if (this.state.busy || !this.isToggleableAttendance()) return;
 
-        const st = this.props.entry.attendance_state;
-        if (st === "present" || st === "late") {
-            // Toggle off — remove attendance immediately
-            this.props.onRemoveAttendance(this.props.entry.member_id);
-        } else {
-            // Toggle on — mark present
-            this.props.onMark(this.props.entry.member_id, "present");
+        const nextStatus = this.attendanceToggleStatus();
+        if (!nextStatus) return;
+
+        const memberId = this.props.entry.member_id;
+        const handler = nextStatus === "pending" ? this.props.onRemoveAttendance : this.props.onMark;
+        if (typeof handler !== "function") return;
+
+        this.state.busy = true;
+        try {
+            if (nextStatus === "pending") {
+                await handler(memberId);
+            } else {
+                await handler(memberId, nextStatus);
+            }
+        } finally {
+            this.state.busy = false;
         }
     }
 
     onPointerDown(ev) {
-        if (this.props.entry.is_trial) return;
+        if (this.state.busy || !this.isToggleableAttendance()) return;
         this.state.pressing = true;
         this._lpTimer = setTimeout(() => {
             this._lpFired = true;
@@ -2113,7 +2134,7 @@ class InstructorThreePanelLayout extends Component {
                     </div>
                 </t>
                 <t t-else="">
-                    <div class="k-session-card k-session-card--context">
+                    <div class="k-session-card k-session-card--context k-session-card--standby">
                         <div class="k-session-card__eyebrow">Standby</div>
                         <div class="k-session-card__name">No Selected Session</div>
                         <div class="k-session-card__subline" t-esc="sessionContextText()"/>
@@ -2271,11 +2292,14 @@ class InstructorThreePanelLayout extends Component {
         if (ctx.selected_session_id) {
             const fromContext = sessions.find(session => session.id === ctx.selected_session_id);
             if (fromContext) return fromContext;
+            return null;
+        }
+        if (ctx.mode === "standby") {
+            return null;
         }
 
         return sessions.find(session => session.time_state === "active")
             || sessions.find(session => session.time_state === "upcoming_soon")
-            || sessions[0]
             || null;
     }
 
@@ -3906,25 +3930,33 @@ class KioskApp extends Component {
             return;
         }
 
-        const activeSession = this.state.sessions.find(s => s.time_state === "active");
-        if (activeSession) {
-            this.state.sessionViewId = activeSession.id;
-            return;
-        }
-
-        const soonSession = this.state.sessions.find(s => s.time_state === "upcoming_soon");
-        if (soonSession) {
-            this.state.sessionViewId = soonSession.id;
-            return;
-        }
-
         const ctx = this.state.sessionContext || {};
         const selectedId = ctx.selected_session_id || null;
-        if (selectedId && (force || !this.state.sessionViewId)) {
+        if (selectedId && this.state.sessions.some(s => s.id === selectedId)) {
             this.state.sessionViewId = selectedId;
-        } else if (force && !selectedId) {
-            this.state.sessionViewId = null;
+            return;
         }
+
+        if (ctx.mode === "standby") {
+            if (force) this.state.sessionViewId = null;
+            return;
+        }
+
+        if (!this.state.sessionContext) {
+            const activeSession = this.state.sessions.find(s => s.time_state === "active");
+            if (activeSession) {
+                this.state.sessionViewId = activeSession.id;
+                return;
+            }
+
+            const soonSession = this.state.sessions.find(s => s.time_state === "upcoming_soon");
+            if (soonSession) {
+                this.state.sessionViewId = soonSession.id;
+                return;
+            }
+        }
+
+        if (force) this.state.sessionViewId = null;
     }
 
     async _loadSessions(date = null, options = {}) {
@@ -4221,6 +4253,7 @@ class KioskApp extends Component {
     }
 
     async directRemoveAttendance(memberId, sessionId) {
+        if (!memberId || !sessionId) return;
         await this.markAttendance(memberId, sessionId, "pending");
     }
 
@@ -4270,19 +4303,31 @@ class KioskApp extends Component {
     // ── Instructor — attendance ───────────────────────────────
 
     async markAttendance(memberId, sessionId, status) {
+        const validStatuses = new Set(["present", "late", "absent", "excused", "pending"]);
+        if (!memberId || !sessionId || !validStatuses.has(status)) return;
         try {
+            let result;
             if (typeof memberId === "string" && memberId.startsWith("trial:")) {
+                if (status !== "present") return;
                 const leadId = parseInt(memberId.slice(6), 10);
-                await jsonPost("/kiosk/trial/checkin", { lead_id: leadId, session_id: sessionId });
+                result = await jsonPost("/kiosk/trial/checkin", { lead_id: leadId, session_id: sessionId });
             } else {
-                await jsonPost("/kiosk/instructor/attendance", {
+                result = await jsonPost("/kiosk/instructor/attendance", {
                     session_id: sessionId,
                     member_id: memberId,
                     status,
                     instructor_key: this.state.instructorKey,
                 });
             }
-            this._updateSessionRosterEntry(sessionId, memberId, { attendance_state: status });
+            if (result && result.success === false) {
+                console.warn("Kiosk: attendance change rejected", result);
+                return;
+            }
+            const changes = {
+                attendance_state: (result && (result.attendance_state || result.status)) || status,
+            };
+            if (result && result.attendance_label) changes.attendance_label = result.attendance_label;
+            this._updateSessionRosterEntry(sessionId, memberId, changes);
         } catch (e) {
             console.error("Kiosk: mark attendance failed", e);
         }
