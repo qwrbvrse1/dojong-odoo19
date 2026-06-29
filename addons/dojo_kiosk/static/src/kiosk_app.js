@@ -10,7 +10,7 @@ const { Component, useState, onMounted, onWillUnmount, mount, xml, useRef } = ow
 // ─── Config identity (per-tablet token from URL) ─────────────────────────────
 const KIOSK_TOKEN = window.KIOSK_TOKEN || null;
 const KIOSK_RELEASE_BRANCH = "rel/REL-20260628";
-const KIOSK_RELEASE_INCREMENT = "INC-03";
+const KIOSK_RELEASE_INCREMENT = "INC-04";
 const CHECKIN_SUCCESS_DISMISS_MS = 4000;
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -1057,6 +1057,10 @@ class MemberProfileCard extends Component {
     instructorParams(params = {}) { return { ...params, instructor_key: this.props.instructorKey }; }
     guardianPartnerId(guardian) { return guardian.partner_id || guardian.member_id; }
     onImgError(ev) { ev.target.style.display = "none"; }
+    onboardingStepComplete(workflow, stepKey) {
+        const steps = (((workflow || {}).onboarding || {}).steps || []);
+        return steps.some(step => step.key === stepKey && step.complete);
+    }
 
     // ── Photo update ────────────────────────────────────────────
     async finishPhotoUpload(result) {
@@ -1247,8 +1251,22 @@ class MemberProfileCard extends Component {
                 step_key: stepKey,
             }));
             if (result && result.success) {
+                if (!result.changed || !this.onboardingStepComplete(result.workflow_status, stepKey)) {
+                    this.state.onboardingError = "Step completion was not reflected by the workflow.";
+                    return;
+                }
+                if (this.props.onRefreshProfile) {
+                    const refreshed = await this.props.onRefreshProfile(this.props.member);
+                    if (!refreshed) {
+                        this.state.onboardingError = "Profile refresh failed after step completion.";
+                        return;
+                    }
+                    if (!this.onboardingStepComplete(refreshed.workflow_status, stepKey)) {
+                        this.state.onboardingError = "Profile refresh did not reflect the completed step.";
+                        return;
+                    }
+                }
                 this.state.onboardingSuccess = "Step marked complete.";
-                if (this.props.onRefreshProfile) await this.props.onRefreshProfile(this.props.member);
             } else {
                 this.state.onboardingError = (result && result.error) || "Could not mark step complete.";
             }
@@ -4433,8 +4451,10 @@ class KioskApp extends Component {
                 await Promise.all(reloads);
             }
             if (imageUrl) this._applyMemberPhotoUrl(member.member_id, imageUrl, cacheBust);
+            return profile || null;
         } catch (e) {
             console.error("Kiosk: refresh profile failed", e);
+            return null;
         }
     }
 

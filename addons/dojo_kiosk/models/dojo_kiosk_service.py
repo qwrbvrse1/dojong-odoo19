@@ -1428,8 +1428,8 @@ class DojoKioskService(models.AbstractModel):
             order="create_date desc, id desc",
             limit=1,
         )
-        if record and hasattr(record, "_sync_derived_steps"):
-            record._sync_derived_steps()
+        if record:
+            self._sync_kiosk_onboarding_record(record)
 
         steps = []
         completed = 0
@@ -1449,6 +1449,52 @@ class DojoKioskService(models.AbstractModel):
             "steps": steps,
             "missing_steps": [step["label"] for step in steps if not step["complete"]],
         }
+
+    def _set_kiosk_onboarding_record_state(self, record):
+        if not record or "state" not in record._fields:
+            return
+        guidance_fields = [
+            _ONBOARDING_STEP_FIELDS[key][0]
+            for key in _ONBOARDING_GUIDANCE_STEP_KEYS
+        ]
+        if not all(field_name in record._fields for field_name in guidance_fields):
+            return
+        state = "completed" if all(getattr(record, field_name) for field_name in guidance_fields) else "in_progress"
+        if record.state != state:
+            record.write({"state": state})
+
+    def _sync_kiosk_onboarding_record(self, record):
+        """Fold positive source-system facts into kiosk onboarding without clearing manual completions."""
+        if not record:
+            return
+        member = record.member_id
+        vals = {}
+        membership_state = getattr(member, "membership_state", "") if member else ""
+        if "step_trial_booked" in record._fields and membership_state in ("trial", "active") and not record.step_trial_booked:
+            vals["step_trial_booked"] = True
+        if (
+            "step_membership_activated" in record._fields
+            and membership_state == "active"
+            and not record.step_membership_activated
+        ):
+            vals["step_membership_activated"] = True
+        waiver_signed = False
+        if member and hasattr(member, "waiver_signed_on"):
+            waiver_signed = bool(member.waiver_signed_on)
+        elif member and hasattr(member, "has_signed_waiver"):
+            waiver_signed = bool(member.has_signed_waiver)
+        if "step_waiver_signed" in record._fields and waiver_signed and not record.step_waiver_signed:
+            vals["step_waiver_signed"] = True
+        if vals:
+            record.write(vals)
+        self._set_kiosk_onboarding_record_state(record)
+
+    def _workflow_onboarding_step(self, workflow_status, step_key):
+        onboarding = (workflow_status or {}).get("onboarding") or {}
+        for step in onboarding.get("steps") or []:
+            if step.get("key") == step_key:
+                return step
+        return None
 
     def _member_waiver_status(self, member):
         if "has_signed_waiver" not in member._fields:
@@ -2427,6 +2473,7 @@ class DojoKioskService(models.AbstractModel):
         })
 
     def _kiosk_complete_onboarding_step(self, member, step_key):
+        step_key = (step_key or "").strip()
         if step_key not in _ONBOARDING_STEP_FIELDS:
             return {"success": False, "error": "Invalid onboarding step."}
         record = self._get_or_create_onboarding_record(member)
@@ -2434,22 +2481,55 @@ class DojoKioskService(models.AbstractModel):
             return {"success": False, "error": "Onboarding is not installed."}
 
         field_name, label = _ONBOARDING_STEP_FIELDS[step_key]
+        self._sync_kiosk_onboarding_record(record)
+        before_workflow = self._member_workflow_status(member)
+        before_onboarding = before_workflow.get("onboarding") or {}
+        before_progress = before_onboarding.get("progress_pct") or 0
+        visible_step = step_key in _ONBOARDING_GUIDANCE_STEP_KEYS
+        before_step = self._workflow_onboarding_step(before_workflow, step_key)
+        if (
+            (visible_step and before_step and before_step.get("complete"))
+            or (not visible_step and bool(getattr(record, field_name, False)))
+        ):
+            return {
+                "success": False,
+                "error": "Onboarding step is already complete.",
+                "workflow_status": before_workflow,
+            }
+
         record.write({field_name: True})
-        guidance_fields = [
-            _ONBOARDING_STEP_FIELDS[key][0]
-            for key in _ONBOARDING_GUIDANCE_STEP_KEYS
-        ]
-        if all(getattr(record, field_name) for field_name in guidance_fields):
-            record.state = "completed"
-        else:
-            record.state = "in_progress"
+        self._set_kiosk_onboarding_record_state(record)
+        if hasattr(record, "invalidate_recordset"):
+            record.invalidate_recordset([field_name, "state"])
+        after_workflow = self._member_workflow_status(member)
+
+        if visible_step:
+            after_step = self._workflow_onboarding_step(after_workflow, step_key)
+            after_onboarding = after_workflow.get("onboarding") or {}
+            after_progress = after_onboarding.get("progress_pct") or 0
+            if not after_step or not after_step.get("complete") or after_progress <= before_progress:
+                return {
+                    "success": False,
+                    "error": "Onboarding step did not change after refresh.",
+                    "workflow_status": after_workflow,
+                }
+        elif not bool(getattr(record, field_name, False)):
+            return {
+                "success": False,
+                "error": "Onboarding step did not persist.",
+                "workflow_status": after_workflow,
+            }
+
         record.message_post(
             body=Markup("<p>Kiosk update: <strong>%s</strong> marked complete.</p>") % html_escape(label)
         )
         self._log_action("onboarding_action", member_id=member.id, is_instructor=True, summary=f"Complete step: {label}")
         return {
             "success": True,
-            "workflow_status": self._member_workflow_status(member),
+            "changed": True,
+            "record_id": record.id,
+            "step_key": step_key,
+            "workflow_status": after_workflow,
         }
 
     def _kiosk_add_member_note(self, member, note):

@@ -2,7 +2,7 @@
 
 ## Status
 
-Canonical REL-20260626 domain specification. INC-04 delivered the live profile/auth/onboarding contract against the running Odoo kiosk. INC-06 final verification confirmed the shipped behavior against the local Odoo instance.
+Canonical REL-20260626 domain specification, carried forward for REL-20260628. REL-20260628 INC-04 adds Development VM proof that onboarding complete-step actions mutate visible onboarding state and that refreshed profiles reflect the mutation.
 
 ## Intended behavior
 
@@ -48,14 +48,21 @@ Canonical REL-20260626 domain specification. INC-04 delivered the live profile/a
 - Onboarding payloads must include `available`, `complete`, `progress_pct`, `steps`, and `missing_steps`.
 - Onboarding progress and completion are calculated from the lifecycle guidance keys only. Legacy data-entry keys (`member_info`, `household`, `enrollment`, `subscription`, `portal_access`) may remain on the underlying model for compatibility, but they are not returned as kiosk onboarding steps and do not count toward kiosk progress.
 - Instructor onboarding actions must carry the active kiosk token and instructor key. Unauthenticated onboarding actions return `instructor_auth_required`.
+- Authenticated `complete_step` actions return success only when the selected step was incomplete before the action and the post-action workflow marks that step complete.
+- Already-complete or non-persisting complete-step actions must return `success: false`; they must not show a successful kiosk outcome.
+- The workflow returned by `complete_step` and a subsequent instructor-authorized `/kiosk/member/profile` refresh must agree on `progress_pct`, completed step state, and `missing_steps`.
+- Source-derived facts may advance kiosk onboarding progress during refresh, but profile refresh must not silently clear a step completed through the kiosk action path.
 
 ## Live gate
 
 - Scripts:
   - `testenv/scripts/ver04-member-profile.sh`
   - `testenv/scripts/ver-kiosk-profile-tabs.sh`
+  - `testenv/scripts/ver-devvm-kiosk-onboarding-action.sh`
 - Data source: `testenv/reset.sh` seeded demo environment.
-- Credentials: kiosk token from `dojo_kiosk_config`; instructor PIN from the seeded kiosk config.
+- Credentials:
+  - local gates: kiosk token from `dojo_kiosk_config`; instructor PIN from the seeded kiosk config
+  - Development VM gate: `DEMO_KIOSK_URL`, `DEMO_KIOSK_TOKEN`, and `DEMO_INSTRUCTOR_PIN`
 - The gate exercises:
   - served `kiosk_app.js` profile/tab markers
   - served `kiosk.css` profile/manage markers
@@ -64,8 +71,10 @@ Canonical REL-20260626 domain specification. INC-04 delivered the live profile/a
   - live invalid-key `/kiosk/member/profile`
   - live instructor-authorized `/kiosk/member/profile`
   - live unauthenticated and authenticated `/kiosk/api/onboarding/complete_step`
+  - Development VM authenticated complete-step mutation, returned workflow truthfulness, and refreshed profile truthfulness
 - The gate intentionally rejects public profile payloads that leak workflow/private fields.
 - The gate seeds a deterministic partial lifecycle onboarding state for `Demo Member`, verifies 40% progress, marks `intro_completed`, and verifies 60% progress.
+- The Development VM gate selects an existing partially complete instructor-visible onboarding profile, prefers a manual lifecycle step when available, mutates one incomplete step, and verifies the refreshed profile no longer lists that step as missing.
 
 ## Current INC-04 state
 
@@ -74,6 +83,8 @@ Canonical REL-20260626 domain specification. INC-04 delivered the live profile/a
 - Instructor-authorized profile payloads include workflow, onboarding, issues, membership state, household/guardian data, programs, and Manage-tab action context.
 - `MemberProfileCard` hides Progress, Household, photo tools, and Manage unless the profile payload includes instructor workflow data.
 - Manage-tab onboarding actions use token plus instructor key and render the lifecycle guidance steps.
+- `complete_step` responses include `changed: true` only after the refreshed workflow shows the selected step complete.
+- The kiosk displays complete-step success only after the action response and refreshed profile both reflect the completed step.
 
 ## Final INC-06 Verification
 
