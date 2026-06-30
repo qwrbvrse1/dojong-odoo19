@@ -10,7 +10,7 @@ const { Component, useState, onMounted, onWillUnmount, mount, xml, useRef } = ow
 // ─── Config identity (per-tablet token from URL) ─────────────────────────────
 const KIOSK_TOKEN = window.KIOSK_TOKEN || null;
 const KIOSK_RELEASE_BRANCH = "rel/REL-20260629";
-const KIOSK_RELEASE_INCREMENT = "INC-03";
+const KIOSK_RELEASE_INCREMENT = "INC-04";
 const CHECKIN_SUCCESS_DISMISS_MS = 4000;
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -191,30 +191,35 @@ class PinModal extends Component {
 
 class CheckinSuccessView extends Component {
     static template = xml`
-        <div t-attf-class="k-checkin-success-overlay k-success-view #{!props.success ? 'k-success-view--error' : ''}">
-            <div class="k-success-icon">
-                <t t-if="props.success">✅</t>
-                <t t-else="">❌</t>
+        <div t-attf-class="k-checkin-success-overlay k-success-view #{!props.success ? 'k-success-view--error' : ''}"
+            data-prototype-contract="checkin-success">
+            <div class="k-success-kicker">
+                <t t-if="props.success">CHECKED IN</t>
+                <t t-else="">CHECK-IN ISSUE</t>
             </div>
             <div class="k-success-name" t-esc="props.memberName"/>
             <t t-if="props.success">
-                <div class="k-success-session">
-                    Checked in to <strong t-esc="props.sessionName"/>
-                </div>
-                <t t-if="props.programName">
-                    <div class="k-success-program" t-esc="props.programName"/>
+                <t t-if="props.sessionName">
+                    <div class="k-success-session" t-esc="props.sessionName"/>
                 </t>
-                <t t-if="props.status === 'late'">
-                    <div class="k-success-note k-success-note--late">⚠ Checked in late</div>
-                </t>
-                <t t-else="">
-                    <div class="k-success-note">On time 🎉</div>
+                <t t-if="props.programName or props.status">
+                    <div class="k-success-meta">
+                        <t t-if="props.programName">
+                            <span t-esc="props.programName"/>
+                        </t>
+                        <t t-if="props.programName and props.status">
+                            <span aria-hidden="true">/</span>
+                        </t>
+                        <t t-if="props.status">
+                            <span t-esc="statusLabel()"/>
+                        </t>
+                    </div>
                 </t>
             </t>
             <t t-else="">
                 <div class="k-success-error" t-esc="props.errorMessage"/>
             </t>
-            <div class="k-success-returning">Returning to kiosk…</div>
+            <div class="k-success-returning">Returning to check-in</div>
         </div>
     `;
 
@@ -229,6 +234,10 @@ class CheckinSuccessView extends Component {
             this._timer = setTimeout(() => this.props.onDone(), CHECKIN_SUCCESS_DISMISS_MS);
         });
         onWillUnmount(() => clearTimeout(this._timer));
+    }
+
+    statusLabel() {
+        return this.props.status === "late" ? "Late arrival" : "On time";
     }
 }
 
@@ -1548,7 +1557,10 @@ class HomeContent extends Component {
             <t t-elif="props.results.length">
                 <div class="k-results-grid">
                     <t t-foreach="props.results" t-as="m" t-key="m.is_trial ? 'lead_' + m.lead_id : m.member_id">
-                        <MemberCard member="m" onSelect="props.onSelect"/>
+                        <MemberCard
+                            member="m"
+                            pending="props.pendingKey === checkinKey(m)"
+                            onSelect="props.onSelect"/>
                     </t>
                 </div>
             </t>
@@ -1560,13 +1572,20 @@ class HomeContent extends Component {
             </t>
         </div>
     `;
-    static props = ["query", "results", "loading", "onSelect"];
+    static props = ["query", "results", "loading", "pendingKey", "onSelect"];
 
     emptyMessage() {
         const query = (this.props.query || "").trim();
         return query
             ? `No students match "${query}"`
             : "No students are on the current class roster.";
+    }
+
+    checkinKey(member) {
+        if (!member) return "";
+        return member.is_trial
+            ? `trial:${member.lead_id || ""}`
+            : `member:${member.member_id || ""}`;
     }
 }
 
@@ -1575,12 +1594,15 @@ class HomeContent extends Component {
 class MemberCard extends Component {
     static template = xml`
         <button type="button"
-            t-attf-class="k-member-tile #{checkedIn(props.member) ? 'k-member-tile--checked-in' : ''}"
+            t-attf-class="k-member-tile #{checkedIn(props.member) ? 'k-member-tile--checked-in' : ''} #{props.pending ? 'k-member-tile--checking-in' : ''}"
             t-att-aria-label="affordanceLabel(props.member) + ' for ' + props.member.name"
             t-att-data-student-card="props.member.is_trial ? 'trial' : 'member'"
+            t-att-data-direct-checkin="directCheckinReady(props.member) ? 'true' : 'fallback'"
             t-att-data-member-id="props.member.member_id || ''"
             t-att-data-lead-id="props.member.lead_id || ''"
             t-att-data-attendance-state="props.member.attendance_state || 'pending'"
+            t-att-data-session-id="cardSessionId(props.member) || ''"
+            t-att-disabled="(checkedIn(props.member) || props.pending) ? true : undefined"
             t-on-click="() => props.onSelect(props.member)">
             <div class="k-member-tile__avatar-wrap">
                 <img class="k-member-tile__avatar"
@@ -1611,12 +1633,12 @@ class MemberCard extends Component {
                 </div>
                 <div class="k-member-tile__affordance">
                     <span class="material-symbols-outlined">check_circle</span>
-                    <span t-esc="affordanceLabel(props.member)"/>
+                    <span t-esc="props.pending ? 'Checking in' : affordanceLabel(props.member)"/>
                 </div>
             </div>
         </button>
     `;
-    static props = ["member", "onSelect"];
+    static props = ["member", "pending", "onSelect"];
     memberAvatarUrl(member) {
         if (member.image_url) return member.image_url;
         if (member.is_trial && member.partner_id) return partnerAvatarUrl(member.partner_id);
@@ -1634,6 +1656,15 @@ class MemberCard extends Component {
     }
     checkedIn(member) {
         return ["present", "late"].includes(member.attendance_state || "");
+    }
+    cardSessionId(member) {
+        if (!member) return null;
+        if (member.session_id) return member.session_id;
+        if (member.trial_session && member.trial_session.id) return member.trial_session.id;
+        return null;
+    }
+    directCheckinReady(member) {
+        return !!(member && (this.cardSessionId(member) || member.is_trial));
     }
     stateLabel(member) {
         if (this.checkedIn(member)) return "ALREADY CHECKED IN";
@@ -3630,7 +3661,8 @@ class KioskApp extends Component {
                                 query="state.searchQuery"
                                 results="visibleStudentRoster()"
                                 loading="studentRosterLoading()"
-                                onSelect="(member) => this.studentConfirm(member)"/>
+                                pendingKey="state.directCheckinBusyKey"
+                                onSelect="(member) => this.studentDirectCheckin(member)"/>
                         </div>
                         <t t-if="state.studentRosterError">
                             <div class="k-prototype-home__error" t-esc="state.studentRosterError"/>
@@ -3816,6 +3848,7 @@ class KioskApp extends Component {
             studentRosterError: "",
             checkinModal: null,   // { member, sessions, loading }
             checkinResult: null,
+            directCheckinBusyKey: "",
 
             // Sessions (instructor)
             sessions: [],
@@ -4297,6 +4330,94 @@ class KioskApp extends Component {
             this.state.checkinModal
             && this.state.checkinModal.memberKey === this.checkinMemberKey(member)
         );
+    }
+
+    memberCardCheckedIn(member) {
+        return ["present", "late"].includes(member && member.attendance_state || "");
+    }
+
+    studentCheckinSessionForMember(member) {
+        if (!member) return null;
+        if (member.is_trial) {
+            return member.trial_session && member.trial_session.id ? member.trial_session : null;
+        }
+
+        const cardSessionId = member.session_id || this.state.studentRosterSessionId || this.studentSelectedSessionId();
+        if (!cardSessionId) return null;
+
+        const session = this._studentRosterSessionById(cardSessionId);
+        if (session) return session;
+
+        return {
+            id: cardSessionId,
+            name: member.session_name || member.session_template_name || this.studentRosterSessionName() || "",
+            template_name: member.session_template_name || member.session_name || this.studentRosterSessionName() || "",
+            program_name: member.session_program_name || member.program_name || "",
+        };
+    }
+
+    async studentDirectCheckin(member) {
+        if (!member || this.memberCardCheckedIn(member)) return;
+
+        const memberKey = this.checkinMemberKey(member);
+        if (this.state.directCheckinBusyKey) return;
+
+        const session = this.studentCheckinSessionForMember(member);
+        if (!session || !session.id) {
+            await this.studentConfirm(member);
+            return;
+        }
+
+        this.state.directCheckinBusyKey = memberKey;
+        this.state.checkinModal = null;
+        try {
+            const result = await jsonPost("/kiosk/student/checkin", {
+                member_id: member.is_trial ? null : member.member_id,
+                lead_id: member.is_trial ? member.lead_id : null,
+                session_id: session.id,
+                date: this.state.filterDate || todayIso(),
+            });
+            const sessionName = result.session_name || session.template_name || session.name || "";
+            const programName = result.program_name || session.program_name || member.program_name || "";
+            if (result.success) {
+                const status = result.status || "present";
+                if (member.is_trial) {
+                    Object.assign(member, { attendance_state: status, attendance_label: "Present" });
+                } else {
+                    this._updateSessionRosterEntry(session.id, member.member_id, { attendance_state: status, attendance_label: status === "late" ? "Late" : "Present" });
+                }
+                this.state.checkinResult = {
+                    success: true,
+                    memberName: member.name,
+                    sessionName,
+                    programName,
+                    status,
+                    error: "",
+                };
+                this.state.searchQuery = "";
+                this.state.searchResults = [];
+                return;
+            }
+            this.state.checkinResult = {
+                success: false,
+                memberName: member.name,
+                sessionName,
+                programName,
+                status: "",
+                error: result.error || "Check-in failed. Please see the front desk.",
+            };
+        } catch {
+            this.state.checkinResult = {
+                success: false,
+                memberName: member.name,
+                sessionName: session.template_name || session.name || "",
+                programName: session.program_name || member.program_name || "",
+                status: "",
+                error: "Network error. Please try again.",
+            };
+        } finally {
+            this.state.directCheckinBusyKey = "";
+        }
     }
 
     async studentConfirm(member) {

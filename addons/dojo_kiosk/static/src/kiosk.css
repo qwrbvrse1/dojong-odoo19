@@ -637,6 +637,24 @@ select {
     transform: scale(0.98);
 }
 
+.k-member-tile:disabled {
+    cursor: default;
+}
+
+.k-member-tile:disabled:active {
+    transform: none;
+}
+
+.k-member-tile--checking-in {
+    border-color: var(--k-accent);
+    background: var(--k-accent-dim);
+}
+
+.k-member-tile--checking-in .k-member-tile__affordance {
+    background: var(--k-surface);
+    color: var(--k-accent);
+}
+
 .k-member-tile__avatar-wrap {
     width: 82px;
     height: 82px;
@@ -1150,7 +1168,7 @@ select {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 14px;
     background: var(--k-surface);
     padding: 40px 24px;
     text-align: center;
@@ -1163,6 +1181,15 @@ select {
 .k-success-icon {
     font-size: 72px;
     animation: k-icon-bounce 0.5s ease-out;
+}
+
+.k-success-kicker {
+    color: var(--k-success);
+    font-family: "Bebas Neue", "Barlow Condensed", sans-serif;
+    font-size: 6.5rem;
+    font-weight: 700;
+    line-height: .9;
+    letter-spacing: 0;
 }
 
 @keyframes k-icon-bounce {
@@ -1180,20 +1207,30 @@ select {
 }
 
 .k-success-name {
-    font-size: 2rem;
+    max-width: min(820px, 92vw);
+    font-size: 3.5rem;
     font-weight: 800;
     color: var(--k-text);
+    line-height: .98;
+    overflow-wrap: anywhere;
 }
 
 .k-success-session {
-    font-size: 1.1rem;
+    max-width: min(620px, 90vw);
+    font-size: 1.35rem;
+    font-weight: 700;
     color: var(--k-text-2);
 }
 
-.k-success-program {
-    font-size: 0.85rem;
+.k-success-program,
+.k-success-meta {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.9rem;
     color: var(--k-text-3);
-    font-weight: 600;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0;
 }
@@ -1216,15 +1253,19 @@ select {
 }
 
 .k-success-error {
-    font-size: 1rem;
+    max-width: min(520px, 90vw);
+    font-size: 1.15rem;
     color: var(--k-danger);
-    max-width: 380px;
+    font-weight: 700;
 }
 
 .k-success-returning {
-    margin-top: 20px;
-    font-size: 0.85rem;
+    margin-top: 18px;
+    font-size: 0.95rem;
     color: var(--k-text-3);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0;
 }
 
 
@@ -5981,6 +6022,10 @@ body.kiosk-theme-light .k-ai-send {
     border-color: var(--k-success);
 }
 
+.k-prototype-home .k-member-tile--checked-in:disabled {
+    opacity: 1;
+}
+
 .k-prototype-home .k-member-tile--checked-in .k-member-tile__affordance {
     background: var(--k-success-dim);
     color: var(--k-success);
@@ -6003,6 +6048,18 @@ body.kiosk-theme-light .k-prototype-home {
 }
 
 @media (max-width: 720px) {
+    .k-success-kicker {
+        font-size: 4.2rem;
+    }
+
+    .k-success-name {
+        font-size: 2.4rem;
+    }
+
+    .k-success-session {
+        font-size: 1.1rem;
+    }
+
     .k-prototype-home {
         gap: 12px;
         padding: 14px 14px 18px;

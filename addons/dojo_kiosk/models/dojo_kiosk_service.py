@@ -839,6 +839,14 @@ class DojoKioskService(models.AbstractModel):
 
     def _student_card_entry(self, entry):
         """Kiosk-safe card dict for the public student roster surface."""
+        trial_session = entry.get("trial_session") or {}
+        session_id = entry.get("session_id") or trial_session.get("id") or False
+        session_name = entry.get("session_name") or trial_session.get("name") or ""
+        session_template_name = (
+            entry.get("session_template_name")
+            or trial_session.get("template_name")
+            or session_name
+        )
         card = {
             "member_id": entry.get("member_id") or None,
             "lead_id": entry.get("lead_id") or False,
@@ -857,6 +865,10 @@ class DojoKioskService(models.AbstractModel):
             ),
             "membership_state": entry.get("membership_state") or "",
             "membership_label": entry.get("membership_label") or "",
+            "session_id": session_id,
+            "session_name": session_name,
+            "session_template_name": session_template_name,
+            "session_program_name": entry.get("session_program_name") or trial_session.get("program_name") or "",
         }
         if entry.get("partner_id"):
             card["partner_id"] = entry.get("partner_id")
@@ -995,6 +1007,10 @@ class DojoKioskService(models.AbstractModel):
                     "is_trial": True,
                     "trial_program": program_name,
                     "trial_session": trial_session,
+                    "session_id": session.id,
+                    "session_name": session.name,
+                    "session_template_name": session.template_id.name if session.template_id else session.name,
+                    "session_program_name": program_name,
                     "partner_id": partner_id,
                     "image_url": "/web/image/res.partner/%d/image_128" % partner_id if partner_id else "",
                     "attendance_state": "present" if lead.trial_attended else "pending",
@@ -1044,6 +1060,7 @@ class DojoKioskService(models.AbstractModel):
             program = self._public_member_program_context(member)
             program_name = program.get("program_name", "")
             program_color = program.get("program_color", "")
+        session = enrollment.session_id if enrollment else None
         membership_state = member.membership_state if "membership_state" in member._fields else ""
         return {
             "member_id": member.id,
@@ -1058,6 +1075,10 @@ class DojoKioskService(models.AbstractModel):
             "attendance_label": self._attendance_state_label(attendance_state),
             "membership_state": membership_state,
             "membership_label": self._member_state_label(member),
+            "session_id": session.id if session else False,
+            "session_name": session.name if session else "",
+            "session_template_name": session.template_id.name if (session and session.template_id) else (session.name if session else ""),
+            "session_program_name": program_name,
             "issues": workflow_status.get("alerts", []),
             "workflow_status": workflow_status,
             "alert_count": workflow_status.get("alert_count", 0),
@@ -1810,6 +1831,54 @@ class DojoKioskService(models.AbstractModel):
     # -------------------------------------------------------------------------
     # Check-in
     # -------------------------------------------------------------------------
+
+    def _student_card_session_id_for_member(self, member_id, date=None):
+        sessions = self.get_enrolled_sessions_today(member_id, date=date)
+        for time_state in ("active", "upcoming_soon", "upcoming"):
+            for session in sessions:
+                if (
+                    session.get("time_state") == time_state
+                    and (session.get("attendance_state") or "pending") == "pending"
+                    and session.get("id")
+                ):
+                    return session["id"]
+        for session in sessions:
+            if (
+                session.get("time_state") != "done"
+                and (session.get("attendance_state") or "") not in ("present", "late")
+                and session.get("id")
+            ):
+                return session["id"]
+        return False
+
+    @api.model
+    def checkin_student_card(self, member_id=None, lead_id=None, session_id=None, date=None):
+        """Direct public student-card check-in for the prototype kiosk surface."""
+        if lead_id:
+            try:
+                lead_id = int(lead_id)
+                session_id = int(session_id) if session_id else None
+            except (TypeError, ValueError):
+                return {"success": False, "error": "Invalid trial check-in request."}
+            return self.checkin_trial_lead(lead_id, session_id=session_id)
+
+        if not member_id:
+            return {"success": False, "error": "member_id is required."}
+        try:
+            member_id = int(member_id)
+            session_id = int(session_id) if session_id else None
+        except (TypeError, ValueError):
+            return {"success": False, "error": "Invalid member check-in request."}
+
+        if not session_id:
+            session_id = self._student_card_session_id_for_member(member_id, date=date)
+        if not session_id:
+            return {
+                "success": False,
+                "error": "No eligible class is available for direct check-in.",
+            }
+
+        return self.checkin_member(member_id, session_id)
 
     @api.model
     def checkin_member(self, member_id, session_id):

@@ -288,6 +288,23 @@ class KioskController(http.Controller):
         svc = request.env["dojo.kiosk.service"].sudo()
         return svc.checkin_member(member_id, session_id)
 
+    @http.route("/kiosk/student/checkin", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    def kiosk_student_card_checkin(
+        self, member_id=None, lead_id=None, session_id=None, date=None, token=None, **kw
+    ):
+        if not member_id and not lead_id:
+            return {"success": False, "error": "member_id or lead_id is required."}
+        guard = self._guard_token(token, {"success": False, "error": "Invalid kiosk token."})
+        if guard is not None:
+            return guard
+        svc = request.env["dojo.kiosk.service"].sudo()
+        return svc.checkin_student_card(
+            member_id=member_id,
+            lead_id=lead_id,
+            session_id=session_id,
+            date=date,
+        )
+
     @http.route("/kiosk/checkout", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
     def kiosk_checkout(self, member_id=None, session_id=None, token=None, **kw):
         if not member_id or not session_id:
