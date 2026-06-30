@@ -47,12 +47,9 @@ id: INC-01
 title: Re-baseline unattended VM prototype-parity scope and execution contract
 depends_on: []
 touchpoints:
-  - releases/REL-20260629/scope.md
-  - releases/REL-20260629/plan.md
 deliverables:
   - Release scope explicitly names the HTML prototype as the student kiosk acceptance truth
   - Increment contracts are aligned to unattended Development VM proof expectations
-  - Later increments own any new Development VM verification assets under testenv/
   - Operator-facing pass/fail proof is anchored to live gates against DEMO_KIOSK_URL
 test_data:
   seed: current Development VM demo dataset
@@ -197,12 +194,9 @@ depends_on:
   - INC-04
 touchpoints:
   - specifications/kiosk-student-experience.md
-  - releases/REL-20260629/scope.md
-  - releases/REL-20260629/plan.md
 deliverables:
   - Canonical student kiosk specification reflects the accepted prototype-parity runtime contract
   - Final unattended Development VM gate suite passes against the running demo
-  - Release artifacts remain planning-only and operator-usable
 test_data:
   seed: fully integrated Development VM demo deployment after INC-02 through INC-04
   migration_before_state: all in-scope prototype-parity deltas fixed in prior increments
