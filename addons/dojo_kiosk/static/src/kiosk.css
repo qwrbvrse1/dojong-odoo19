@@ -5871,7 +5871,8 @@ body.kiosk-theme-light .k-ai-send {
 }
 
 .k-prototype-home .k-results-grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 220px));
+    justify-content: center;
     gap: 14px;
     max-width: 1120px;
     padding: 2px 0 8px;
@@ -6035,6 +6036,7 @@ body.kiosk-theme-light .k-prototype-home {
 
     .k-prototype-home .k-results-grid {
         grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+        justify-content: stretch;
         gap: 10px;
     }
 

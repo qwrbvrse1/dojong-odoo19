@@ -764,6 +764,182 @@ class DojoKioskService(models.AbstractModel):
     # Roster helpers
     # -------------------------------------------------------------------------
 
+    def _local_day_utc_bounds(self, date=None):
+        tz_name = (
+            self.env.context.get("tz")
+            or self.env.user.tz
+            or self.env.company.partner_id.tz
+            or "UTC"
+        )
+        tz = pytz.timezone(tz_name)
+        if date:
+            try:
+                local_target = datetime.strptime(date, "%Y-%m-%d")
+            except (ValueError, TypeError):
+                local_target = datetime.now(tz).replace(tzinfo=None)
+        else:
+            local_target = datetime.now(tz).replace(tzinfo=None)
+
+        today_start_local = local_target.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end_local = local_target.replace(hour=23, minute=59, second=59, microsecond=999999)
+        today_start = tz.localize(today_start_local).astimezone(pytz.utc).replace(tzinfo=None)
+        today_end = tz.localize(today_end_local).astimezone(pytz.utc).replace(tzinfo=None)
+        return today_start, today_end
+
+    def _student_roster_session_candidates(self, sessions, session_context):
+        seen = set()
+        candidates = []
+
+        def add(session):
+            session_id = session.get("id") if session else None
+            if not session_id or session_id in seen:
+                return
+            seen.add(session_id)
+            candidates.append(session)
+
+        selected_id = (session_context or {}).get("selected_session_id")
+        if selected_id:
+            add(next((session for session in sessions if session.get("id") == selected_id), None))
+
+        for time_state in ("active", "upcoming_soon", "upcoming", "done"):
+            for session in sessions:
+                if session.get("time_state") == time_state:
+                    add(session)
+        for session in sessions:
+            add(session)
+        return candidates
+
+    @api.model
+    def get_student_roster_payload(self, date=None, limit=60):
+        """Return the roster the public student kiosk should show on first load."""
+        sessions = self.get_todays_sessions(date=date)
+        session_context = self.get_session_context_from_payload(sessions)
+        candidates = self._student_roster_session_candidates(sessions, session_context)
+
+        for session in candidates:
+            roster = self.get_session_roster(session.get("id"))
+            if roster:
+                return {
+                    "session": session,
+                    "members": self._student_card_entries(roster),
+                    "source": "session_roster",
+                    "session_context": session_context,
+                }
+
+        fallback_members = self.get_public_student_roster(date=date, limit=limit)
+        return {
+            "session": candidates[0] if candidates else None,
+            "members": self._student_card_entries(fallback_members),
+            "source": "member_roster",
+            "session_context": session_context,
+        }
+
+    def _student_card_entries(self, entries):
+        return [self._student_card_entry(entry) for entry in entries or []]
+
+    def _student_card_entry(self, entry):
+        """Kiosk-safe card dict for the public student roster surface."""
+        card = {
+            "member_id": entry.get("member_id") or None,
+            "lead_id": entry.get("lead_id") or False,
+            "name": entry.get("name") or "Unknown",
+            "member_number": entry.get("member_number") or "",
+            "is_trial": bool(entry.get("is_trial")),
+            "image_url": entry.get("image_url") or "",
+            "belt_rank": entry.get("belt_rank") or "",
+            "belt_color": entry.get("belt_color") or "",
+            "program_name": entry.get("program_name") or entry.get("trial_program") or "",
+            "program_color": entry.get("program_color") or "",
+            "trial_program": entry.get("trial_program") or "",
+            "attendance_state": entry.get("attendance_state") or "pending",
+            "attendance_label": entry.get("attendance_label") or self._attendance_state_label(
+                entry.get("attendance_state") or "pending"
+            ),
+            "membership_state": entry.get("membership_state") or "",
+            "membership_label": entry.get("membership_label") or "",
+        }
+        if entry.get("partner_id"):
+            card["partner_id"] = entry.get("partner_id")
+        if entry.get("trial_session"):
+            card["trial_session"] = entry.get("trial_session")
+        return card
+
+    @api.model
+    def get_public_student_roster(self, date=None, limit=60):
+        """Active-member roster source for the sanitized student first-load payload."""
+        try:
+            limit = max(1, min(int(limit or 60), 120))
+        except (TypeError, ValueError):
+            limit = 60
+
+        Member = self.env["dojo.member"].sudo()
+        domain = []
+        if "active" in Member._fields:
+            domain.append(("active", "=", True))
+        members = Member.search(domain, limit=limit, order="name asc")
+        if not members:
+            return []
+
+        today_start, today_end = self._local_day_utc_bounds(date=date)
+        enrollments = self.env["dojo.class.enrollment"].sudo().search([
+            ("member_id", "in", members.ids),
+            ("status", "=", "registered"),
+            ("session_id.state", "in", ("open", "done")),
+            ("session_id.start_datetime", ">=", fields.Datetime.to_string(today_start)),
+            ("session_id.start_datetime", "<=", fields.Datetime.to_string(today_end)),
+        ])
+        enrollments = enrollments.sorted(
+            key=lambda e: (
+                e.session_id.start_datetime or fields.Datetime.now(),
+                e.id,
+            )
+        )
+
+        logs = self.env["dojo.attendance.log"].sudo().search([
+            ("member_id", "in", members.ids),
+            ("checkin_datetime", ">=", fields.Datetime.to_string(today_start)),
+            ("checkin_datetime", "<=", fields.Datetime.to_string(today_end)),
+        ])
+        log_by_member_session = {
+            (log.member_id.id, log.session_id.id): log.status
+            for log in logs
+        }
+
+        best_by_member = {}
+        state_rank = {
+            "present": 0,
+            "late": 0,
+            "pending": 1,
+            "absent": 2,
+            "excused": 2,
+        }
+        for enrollment in enrollments:
+            member_id = enrollment.member_id.id
+            state = log_by_member_session.get(
+                (member_id, enrollment.session_id.id),
+                enrollment.attendance_state or "pending",
+            )
+            candidate = (
+                state_rank.get(state, 3),
+                enrollment.session_id.start_datetime or fields.Datetime.now(),
+                enrollment.id,
+                enrollment,
+                state,
+            )
+            current = best_by_member.get(member_id)
+            if current is None or candidate[:3] < current[:3]:
+                best_by_member[member_id] = candidate
+
+        result = []
+        for member in members:
+            best = best_by_member.get(member.id)
+            if best:
+                _rank, _start, _id, enrollment, state = best
+                result.append(self._member_roster_entry(member, enrollment, state))
+            else:
+                result.append(self._member_roster_entry(member, None, "pending"))
+        return result
+
     @api.model
     def get_session_roster(self, session_id):
         """Return the enrolled roster for a session with attendance state."""
@@ -801,12 +977,24 @@ class DojoKioskService(models.AbstractModel):
                 if session.template_id and session.template_id.program_id:
                     program_name = session.template_id.program_id.name
                 partner_id = lead.partner_id.id if lead.partner_id else False
+                trial_session = {
+                    "id": session.id,
+                    "name": session.name,
+                    "template_name": session.template_id.name if session.template_id else session.name,
+                    "program_name": program_name,
+                    "program_color": session.template_id.program_id.color if (session.template_id and session.template_id.program_id) else "",
+                    "start": str(session.start_datetime) if session.start_datetime else "",
+                    "end": str(session.end_datetime) if session.end_datetime else "",
+                    "instructor": "",
+                    "time_state": self._session_time_state(session.start_datetime, session.end_datetime),
+                }
                 result.append({
                     "member_id": None,
                     "lead_id": lead.id,
                     "name": lead.contact_name or lead.partner_name or "Unknown",
                     "is_trial": True,
                     "trial_program": program_name,
+                    "trial_session": trial_session,
                     "partner_id": partner_id,
                     "image_url": "/web/image/res.partner/%d/image_128" % partner_id if partner_id else "",
                     "attendance_state": "present" if lead.trial_attended else "pending",

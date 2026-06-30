@@ -99,7 +99,7 @@ class KioskController(http.Controller):
     <meta name="robots" content="noindex,nofollow"/>
     <title>Dojo Kiosk</title>
     <link rel="stylesheet" href="/dojo_theme/static/src/css/tokens.css"/>
-    <link rel="stylesheet" href="/dojo_kiosk/static/src/kiosk.css?v={_static_ver('static/src/kiosk.css')}_s2"/>
+    <link rel="stylesheet" href="/dojo_kiosk/static/src/kiosk.css?v={_static_ver('static/src/kiosk.css')}_s3"/>
     <link rel="stylesheet" href="/dojo_kiosk/static/src/css/kiosk_instructor.css?v={_static_ver('static/src/css/kiosk_instructor.css')}"/>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
@@ -118,7 +118,7 @@ class KioskController(http.Controller):
         }};
     </script>
     <script src="/web/static/lib/owl/owl.js"></script>
-    <script src="/dojo_kiosk/static/src/kiosk_app.js?v={_static_ver('static/src/kiosk_app.js')}_s2"></script>
+    <script src="/dojo_kiosk/static/src/kiosk_app.js?v={_static_ver('static/src/kiosk_app.js')}_s3"></script>
     <script src="/dojo_kiosk/static/src/js/kiosk_instructor.js?v={_static_ver('static/src/js/kiosk_instructor.js')}"></script>
 </body>
 </html>"""
@@ -186,6 +186,14 @@ class KioskController(http.Controller):
             return guard
         svc = request.env["dojo.kiosk.service"].sudo()
         return svc.get_session_roster(session_id)
+
+    @http.route("/kiosk/student_roster", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    def kiosk_student_roster(self, date=None, token=None, **kw):
+        guard = self._guard_token(token, {"session": None, "members": []})
+        if guard is not None:
+            return guard
+        svc = request.env["dojo.kiosk.service"].sudo()
+        return svc.get_student_roster_payload(date=date)
 
     @http.route("/kiosk/api/session_summary", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
     def kiosk_session_summary(self, session_id=None, token=None, **kw):

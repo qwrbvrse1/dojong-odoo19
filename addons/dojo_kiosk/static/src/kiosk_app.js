@@ -10,7 +10,7 @@ const { Component, useState, onMounted, onWillUnmount, mount, xml, useRef } = ow
 // ─── Config identity (per-tablet token from URL) ─────────────────────────────
 const KIOSK_TOKEN = window.KIOSK_TOKEN || null;
 const KIOSK_RELEASE_BRANCH = "rel/REL-20260629";
-const KIOSK_RELEASE_INCREMENT = "INC-02";
+const KIOSK_RELEASE_INCREMENT = "INC-03";
 const CHECKIN_SUCCESS_DISMISS_MS = 4000;
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -1577,6 +1577,10 @@ class MemberCard extends Component {
         <button type="button"
             t-attf-class="k-member-tile #{checkedIn(props.member) ? 'k-member-tile--checked-in' : ''}"
             t-att-aria-label="affordanceLabel(props.member) + ' for ' + props.member.name"
+            t-att-data-student-card="props.member.is_trial ? 'trial' : 'member'"
+            t-att-data-member-id="props.member.member_id || ''"
+            t-att-data-lead-id="props.member.lead_id || ''"
+            t-att-data-attendance-state="props.member.attendance_state || 'pending'"
             t-on-click="() => props.onSelect(props.member)">
             <div class="k-member-tile__avatar-wrap">
                 <img class="k-member-tile__avatar"
@@ -3804,7 +3808,11 @@ class KioskApp extends Component {
             searchQuery: "",
             searchResults: [],
             searchLoading: false,
+            studentRosterCards: [],
+            studentRosterLoading: false,
+            studentRosterLoaded: false,
             studentRosterSessionId: null,
+            studentRosterSessionTitle: "",
             studentRosterError: "",
             checkinModal: null,   // { member, sessions, loading }
             checkinResult: null,
@@ -4088,15 +4096,56 @@ class KioskApp extends Component {
 
     _updateSessionRosterEntry(sessionId, memberId, changes) {
         const roster = this.state.sessionRosters[sessionId];
-        if (!roster) return;
-        let idx;
-        if (typeof memberId === "string" && memberId.startsWith("trial:")) {
-            const leadId = parseInt(memberId.slice(6), 10);
-            idx = roster.findIndex(r => r.is_trial && r.lead_id === leadId);
-        } else {
-            idx = roster.findIndex(r => r.member_id === memberId);
+        const updateRoster = (entries) => {
+            if (!entries) return;
+            let idx;
+            if (typeof memberId === "string" && memberId.startsWith("trial:")) {
+                const leadId = parseInt(memberId.slice(6), 10);
+                idx = entries.findIndex(r => r.is_trial && r.lead_id === leadId);
+            } else {
+                idx = entries.findIndex(r => r.member_id === memberId);
+            }
+            if (idx !== -1) Object.assign(entries[idx], changes);
+        };
+        updateRoster(roster);
+        updateRoster(this.state.studentRosterCards);
+    }
+
+    _studentRosterSessionById(sessionId) {
+        if (!sessionId) return null;
+        return (this.state.sessions || []).find(session => session.id === sessionId) || null;
+    }
+
+    _studentRosterSessionTitleFromPayload(payload) {
+        const session = (payload && payload.session) || null;
+        if (session) {
+            return session.template_name || session.name || "";
         }
-        if (idx !== -1) Object.assign(roster[idx], changes);
+        return "";
+    }
+
+    _studentRosterSessionIdFromPayload(payload) {
+        const session = (payload && payload.session) || null;
+        return session && session.id ? session.id : null;
+    }
+
+    _applyStudentRosterPayload(payload) {
+        const members = (payload && payload.members) || [];
+        const sessionId = this._studentRosterSessionIdFromPayload(payload);
+        this.state.studentRosterCards = members;
+        this.state.studentRosterLoaded = true;
+        this.state.studentRosterSessionId = sessionId;
+        this.state.studentRosterSessionTitle = this._studentRosterSessionTitleFromPayload(payload);
+    }
+
+    _studentRosterSessionIdForDisplay() {
+        return this.state.studentRosterSessionId || this.studentSelectedSessionId();
+    }
+
+    _studentRosterSessionTitleForDisplay() {
+        if (this.state.studentRosterSessionTitle) return this.state.studentRosterSessionTitle;
+        const session = this._studentRosterSessionById(this.state.studentRosterSessionId);
+        return session ? (session.template_name || session.name || "") : "";
     }
 
     // ── Student flow ───────────────────────────────────────────
@@ -4104,6 +4153,9 @@ class KioskApp extends Component {
     studentSelectedSession() {
         const sessions = this.state.sessions || [];
         if (!sessions.length) return null;
+
+        const loadedRosterSession = this._studentRosterSessionById(this.state.studentRosterSessionId);
+        if (loadedRosterSession) return loadedRosterSession;
 
         const ctx = this.state.sessionContext || {};
         const selectedId = ctx.selected_session_id || null;
@@ -4125,21 +4177,25 @@ class KioskApp extends Component {
     }
 
     studentRosterSessionName() {
+        const rosterTitle = this._studentRosterSessionTitleForDisplay();
+        if (rosterTitle) return rosterTitle;
         const session = this.studentSelectedSession();
         if (!session) return "";
         return session.template_name || session.name || "";
     }
 
     studentRosterLoading() {
-        const sessionId = this.studentSelectedSessionId();
+        const sessionId = this._studentRosterSessionIdForDisplay();
         return !!(
-            this.state.searchLoading
+            this.state.studentRosterLoading
+            || this.state.searchLoading
             || (sessionId && this.state.loadingRosters[sessionId])
         );
     }
 
     studentRoster() {
-        const sessionId = this.state.studentRosterSessionId || this.studentSelectedSessionId();
+        if (this.state.studentRosterLoaded) return this.state.studentRosterCards || [];
+        const sessionId = this._studentRosterSessionIdForDisplay();
         if (!sessionId) return this.state.searchResults || [];
         return this.state.sessionRosters[sessionId] || [];
     }
@@ -4167,20 +4223,29 @@ class KioskApp extends Component {
     }
 
     async _loadStudentRoster() {
-        const session = this.studentSelectedSession();
-        const sessionId = session ? session.id : null;
-        this.state.studentRosterSessionId = sessionId || null;
+        this.state.studentRosterLoading = true;
         this.state.studentRosterError = "";
-        if (!sessionId) {
-            this.state.searchResults = [];
-            this.state.searchLoading = false;
-            return;
-        }
         try {
-            await this._loadSessionRoster(sessionId);
+            const payload = await jsonPost("/kiosk/student_roster", {
+                date: this.state.filterDate || todayIso(),
+            });
+            this._applyStudentRosterPayload(payload || {});
         } catch (e) {
             console.error("Kiosk: failed to load student roster", e);
+            const session = this.studentSelectedSession();
+            const sessionId = session ? session.id : null;
+            this.state.studentRosterSessionId = sessionId || null;
+            this.state.studentRosterSessionTitle = session ? (session.template_name || session.name || "") : "";
+            this.state.studentRosterLoaded = false;
+            if (sessionId) {
+                await this._loadSessionRoster(sessionId);
+            } else {
+                this.state.searchResults = [];
+                this.state.searchLoading = false;
+            }
             this.state.studentRosterError = "Could not load the class roster.";
+        } finally {
+            this.state.studentRosterLoading = false;
         }
     }
 
@@ -4188,7 +4253,7 @@ class KioskApp extends Component {
         clearTimeout(this._searchTimer);
         const searchSeq = ++this._searchSeq;
         const q = this.state.searchQuery.trim();
-        if (this.studentSelectedSessionId()) {
+        if (this.state.studentRosterLoaded || this.studentSelectedSessionId()) {
             this.state.searchResults = [];
             this.state.searchLoading = false;
             return;
@@ -4527,6 +4592,9 @@ class KioskApp extends Component {
             this.state.profileMember = { ...this.state.profileMember, image_url: imageUrl };
         }
         for (const entry of this.state.searchResults) {
+            if (entry.member_id === memberId) Object.assign(entry, { image_url: imageUrl });
+        }
+        for (const entry of this.state.studentRosterCards) {
             if (entry.member_id === memberId) Object.assign(entry, { image_url: imageUrl });
         }
         if (this.state.checkinModal && this.state.checkinModal.member && this.state.checkinModal.member.member_id === memberId) {
