@@ -205,9 +205,9 @@ test_data:
 reset:
   - bash testenv/verify.sh
 gate:
-  - bash testenv/scripts/ver-devvm-kiosk-prototype-home.sh
-  - bash testenv/scripts/ver-devvm-kiosk-prototype-roster.sh
-  - bash testenv/scripts/ver-devvm-kiosk-prototype-checkin.sh
+  - bash -lc 'DEMO_KIOSK_EXPECTED_INCREMENT=INC-04 bash testenv/scripts/ver-devvm-kiosk-prototype-home.sh'
+  - bash -lc 'DEMO_KIOSK_EXPECTED_INCREMENT=INC-04 bash testenv/scripts/ver-devvm-kiosk-prototype-roster.sh'
+  - bash -lc 'DEMO_KIOSK_EXPECTED_INCREMENT=INC-04 bash testenv/scripts/ver-devvm-kiosk-prototype-checkin.sh'
 regression_gate:
   - bash testenv/verify.sh
 ```
