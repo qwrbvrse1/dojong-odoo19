@@ -886,6 +886,8 @@ class DojoKioskService(models.AbstractModel):
 
         Member = self.env["dojo.member"].sudo()
         domain = []
+        if "company_id" in Member._fields:
+            domain.append(("company_id", "in", [self.env.company.id, False]))
         if "active" in Member._fields:
             domain.append(("active", "=", True))
         members = Member.search(domain, limit=limit, order="name asc")

@@ -4382,7 +4382,10 @@ class KioskApp extends Component {
             if (result.success) {
                 const status = result.status || "present";
                 if (member.is_trial) {
-                    Object.assign(member, { attendance_state: status, attendance_label: "Present" });
+                    Object.assign(member, {
+                        attendance_state: status,
+                        attendance_label: status === "late" ? "Late" : "Present",
+                    });
                 } else {
                     this._updateSessionRosterEntry(session.id, member.member_id, { attendance_state: status, attendance_label: status === "late" ? "Late" : "Present" });
                 }
