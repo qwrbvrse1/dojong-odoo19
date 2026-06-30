@@ -5769,3 +5769,286 @@ body.kiosk-theme-light .k-ai-send {
     border-color: #cbd5e1;
     color: #374151;
 }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   14. PROTOTYPE-PARITY STUDENT HOME
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.k-prototype-home {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 16px;
+    width: 100%;
+    padding: 20px 24px 24px;
+    overflow: hidden;
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, .18), rgba(0, 0, 0, 0) 160px),
+        var(--k-bg);
+}
+
+.k-prototype-home__topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+.k-prototype-home__title {
+    min-width: 0;
+    font-family: "Bebas Neue", "Barlow Condensed", sans-serif;
+    font-size: 4rem;
+    font-weight: 400;
+    line-height: .95;
+    letter-spacing: 0;
+    color: var(--k-gold);
+    text-transform: uppercase;
+}
+
+.k-prototype-home__exit {
+    min-width: 92px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 2px solid var(--k-border-2);
+    border-radius: var(--k-radius);
+    background: var(--k-surface);
+    color: var(--k-text);
+    font-size: .95rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.k-prototype-home__exit:hover,
+.k-prototype-home__exit:focus-visible {
+    border-color: var(--k-accent);
+    outline: none;
+}
+
+.k-prototype-home__search {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.k-prototype-home__search-wrap {
+    max-width: none;
+    border-width: 2px;
+    border-radius: var(--k-radius);
+}
+
+.k-prototype-home__context {
+    min-height: 24px;
+    color: var(--k-text-2);
+    font-size: .98rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.k-prototype-home__roster {
+    min-height: 0;
+}
+
+.k-prototype-home__error {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 10px 14px;
+    border: 1px solid var(--k-danger);
+    border-radius: var(--k-radius);
+    color: var(--k-danger);
+    background: var(--k-danger-dim);
+    font-weight: 700;
+    text-align: center;
+}
+
+.k-prototype-home .k-home {
+    min-height: 0;
+}
+
+.k-prototype-home .k-results-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+    max-width: 1120px;
+    padding: 2px 0 8px;
+}
+
+.k-prototype-home .k-home__searching {
+    min-height: 220px;
+}
+
+.k-prototype-home .k-home__no-results {
+    min-height: 220px;
+    padding: 28px 16px;
+    border: 1px dashed var(--k-border-2);
+    border-radius: var(--k-radius);
+    background: var(--k-surface);
+    font-weight: 700;
+}
+
+.k-home__no-results-icon {
+    font-family: "Material Symbols Outlined";
+    font-size: 42px;
+    line-height: 1;
+}
+
+.k-prototype-home .k-member-tile {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    align-content: start;
+    gap: 12px;
+    min-height: 232px;
+    padding: 18px 14px 16px;
+    text-align: center;
+}
+
+.k-prototype-home .k-member-tile__avatar-wrap {
+    width: 92px;
+    height: 92px;
+    border-width: 3px;
+}
+
+.k-prototype-home .k-member-tile__body {
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+}
+
+.k-prototype-home .k-member-tile__topline {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    gap: 8px;
+}
+
+.k-prototype-home .k-member-tile__name {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 100%;
+    min-height: 48px;
+    font-size: 1.2rem;
+    line-height: 1.05;
+}
+
+.k-member-tile__name-line {
+    display: block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.k-prototype-home .k-member-tile__details {
+    justify-content: center;
+    min-height: 58px;
+}
+
+.k-prototype-home .k-member-tile__program,
+.k-prototype-home .k-member-tile__belt {
+    justify-content: center;
+    max-width: 100%;
+}
+
+.k-prototype-home .k-member-tile__state {
+    background: var(--k-surface-3);
+    color: var(--k-text-2);
+}
+
+.k-prototype-home .k-member-tile__state--trial {
+    background: var(--k-warning-dim);
+    color: var(--k-warning);
+}
+
+.k-prototype-home .k-member-tile__state--checked-in {
+    background: var(--k-success-dim);
+    color: var(--k-success);
+}
+
+.k-prototype-home .k-member-tile__affordance {
+    align-self: center;
+    min-width: 136px;
+    border-radius: var(--k-radius);
+    text-transform: uppercase;
+    letter-spacing: 0;
+}
+
+.k-prototype-home .k-member-tile--checked-in {
+    border-color: var(--k-success);
+}
+
+.k-prototype-home .k-member-tile--checked-in .k-member-tile__affordance {
+    background: var(--k-success-dim);
+    color: var(--k-success);
+}
+
+body.kiosk-theme-dark .k-prototype-home__exit {
+    background: var(--k-surface-2);
+    border-color: var(--k-border-2);
+}
+
+body.kiosk-theme-dark .k-prototype-home .k-home__no-results {
+    background: var(--k-surface-2);
+    border-color: var(--k-border-2);
+}
+
+body.kiosk-theme-light .k-prototype-home {
+    background:
+        linear-gradient(180deg, rgba(180, 30, 22, .05), rgba(180, 30, 22, 0) 160px),
+        var(--k-bg);
+}
+
+@media (max-width: 720px) {
+    .k-prototype-home {
+        gap: 12px;
+        padding: 14px 14px 18px;
+    }
+
+    .k-prototype-home__topbar {
+        gap: 10px;
+    }
+
+    .k-prototype-home__title {
+        font-size: 3rem;
+    }
+
+    .k-prototype-home__exit {
+        min-width: 74px;
+        min-height: 40px;
+        padding: 0 12px;
+        font-size: .84rem;
+    }
+
+    .k-welcome-search-icon {
+        width: 48px;
+        flex-basis: 48px;
+        font-size: 24px;
+    }
+
+    .k-welcome-search {
+        padding: 15px 16px 15px 12px;
+        font-size: 1.12rem;
+    }
+
+    .k-prototype-home .k-results-grid {
+        grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+        gap: 10px;
+    }
+
+    .k-prototype-home .k-member-tile {
+        min-height: 218px;
+        padding: 14px 10px;
+    }
+
+    .k-prototype-home .k-member-tile__avatar-wrap {
+        width: 82px;
+        height: 82px;
+    }
+
+    .k-prototype-home .k-member-tile__name {
+        font-size: 1.08rem;
+    }
+}

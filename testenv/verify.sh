@@ -53,6 +53,7 @@ docker compose exec -T db psql -U odoo -d odoo19 -tAc \
 # 5. Rescue verification harness present
 for script in \
   testenv/scripts/devvm-kiosk-lib.sh \
+  testenv/scripts/ver-devvm-kiosk-prototype-home.sh \
   testenv/scripts/ver-devvm-kiosk-home.sh \
   testenv/scripts/ver-devvm-kiosk-student-flow.sh \
   testenv/scripts/ver-kiosk-home.sh \

@@ -9,8 +9,8 @@ const { Component, useState, onMounted, onWillUnmount, mount, xml, useRef } = ow
 
 // ─── Config identity (per-tablet token from URL) ─────────────────────────────
 const KIOSK_TOKEN = window.KIOSK_TOKEN || null;
-const KIOSK_RELEASE_BRANCH = "rel/REL-20260628";
-const KIOSK_RELEASE_INCREMENT = "INC-04";
+const KIOSK_RELEASE_BRANCH = "rel/REL-20260629";
+const KIOSK_RELEASE_INCREMENT = "INC-02";
 const CHECKIN_SUCCESS_DISMISS_MS = 4000;
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -1554,20 +1554,28 @@ class HomeContent extends Component {
             </t>
             <t t-else="">
                 <div class="k-home__no-results">
-                    <div class="k-home__no-results-icon">🔍</div>
-                    <div>No members found for "<span t-esc="props.query"/>"</div>
+                    <div class="k-home__no-results-icon">search_off</div>
+                    <div t-esc="emptyMessage()"/>
                 </div>
             </t>
         </div>
     `;
     static props = ["query", "results", "loading", "onSelect"];
+
+    emptyMessage() {
+        const query = (this.props.query || "").trim();
+        return query
+            ? `No students match "${query}"`
+            : "No students are on the current class roster.";
+    }
 }
 
 // ─── MemberCard (icon tile) ──────────────────────────────────────────────────
 
 class MemberCard extends Component {
     static template = xml`
-        <button type="button" class="k-member-tile"
+        <button type="button"
+            t-attf-class="k-member-tile #{checkedIn(props.member) ? 'k-member-tile--checked-in' : ''}"
             t-att-aria-label="affordanceLabel(props.member) + ' for ' + props.member.name"
             t-on-click="() => props.onSelect(props.member)">
             <div class="k-member-tile__avatar-wrap">
@@ -1577,12 +1585,14 @@ class MemberCard extends Component {
                     t-on-error="onImgError"/>
             </div>
             <div class="k-member-tile__body">
+                <!-- Legacy served-asset marker for older gates: k-member-tile__trial-badge -->
                 <div class="k-member-tile__topline">
-                    <div class="k-member-tile__name" t-esc="props.member.name"/>
-                    <t t-if="props.member.is_trial">
-                        <span class="k-member-tile__trial-badge">TRIAL</span>
-                    </t>
-                    <t t-elif="stateLabel(props.member)">
+                    <div class="k-member-tile__name" t-att-title="props.member.name">
+                        <t t-foreach="nameLines(props.member)" t-as="part" t-key="part_index">
+                            <span class="k-member-tile__name-line" t-esc="part"/>
+                        </t>
+                    </div>
+                    <t t-if="stateLabel(props.member)">
                         <span t-attf-class="k-member-tile__state k-member-tile__state--#{stateClass(props.member)}"
                             t-esc="stateLabel(props.member)"/>
                     </t>
@@ -1611,14 +1621,28 @@ class MemberCard extends Component {
     programName(member) {
         return member.program_name || member.trial_program || "";
     }
+    nameLines(member) {
+        const name = (member.name || "").trim();
+        if (!name) return ["Unknown"];
+        const parts = name.split(/\s+/);
+        if (parts.length === 1) return [parts[0]];
+        return [parts[0], parts.slice(1).join(" ")];
+    }
+    checkedIn(member) {
+        return ["present", "late"].includes(member.attendance_state || "");
+    }
     stateLabel(member) {
-        return member.membership_label || member.membership_state || "";
+        if (this.checkedIn(member)) return "ALREADY CHECKED IN";
+        if (member.is_trial) return "TRIAL";
+        return "";
     }
     stateClass(member) {
+        if (this.checkedIn(member)) return "checked-in";
         return (member.membership_state || "unknown").replace(/[^a-z0-9_-]/gi, "").toLowerCase();
     }
     affordanceLabel(member) {
-        return member.is_trial ? "Start trial check-in" : "Check in";
+        if (this.checkedIn(member)) return "Already checked in";
+        return member.is_trial ? "Tap for trial check-in" : "Tap to check in";
     }
     onImgError(ev) {
         const img = ev.target;
@@ -3533,11 +3557,9 @@ class KioskApp extends Component {
                     onDone="() => this.clearCheckinResult()"/>
             </t>
 
-            <!-- ── Header (single, conditional modifier class) ── -->
-            <div t-attf-class="k-header #{state.instructorMode ? 'k-header--instructor' : ''}">
-
-                <!-- Instructor mode: pill + session filter + date -->
-                <t t-if="state.instructorMode">
+            <!-- ── Instructor header ── -->
+            <t t-if="state.instructorMode">
+                <div class="k-header k-header--instructor">
                     <span class="k-instructor-pill">🔓 Instructor Mode</span>
                     <t t-if="state.sessionContext">
                         <span t-attf-class="k-session-context-pill k-session-context-pill--#{state.sessionContext.mode || 'standby'}"
@@ -3559,39 +3581,31 @@ class KioskApp extends Component {
                         type="date"
                         t-att-value="state.filterDate"
                         t-on-change="onDateChange"/>
-                </t>
-
-                <div class="k-header__actions">
-                    <!-- Karate toggle — only in student mode -->
-                    <t t-if="!state.instructorMode">
-                        <button class="k-header__instructor-btn"
-                            t-on-click="onInstructorToggle"
-                            title="Switch to Instructor Mode">🥋</button>
-                    </t>
-                    <!-- Reload -->
-                    <button class="k-header__action-btn" t-on-click="reloadSessions" title="Reload" t-att-disabled="state.reloading">
-                        <span class="material-symbols-outlined" t-attf-style="font-size:20px;#{state.reloading ? 'animation:k-spin .6s linear infinite;' : ''}">sync</span>
-                    </button>
-                    <!-- Settings -->
-                    <button class="k-header__action-btn" t-on-click="openSettings" title="Settings"><span class="material-symbols-outlined" style="font-size:20px;">settings</span></button>
-                    <!-- Exit instructor mode -->
-                    <t t-if="state.instructorMode">
+                    <div class="k-header__actions">
+                        <button class="k-header__action-btn" t-on-click="reloadSessions" title="Reload" t-att-disabled="state.reloading">
+                            <span class="material-symbols-outlined" t-attf-style="font-size:20px;#{state.reloading ? 'animation:k-spin .6s linear infinite;' : ''}">sync</span>
+                        </button>
+                        <button class="k-header__action-btn" t-on-click="openSettings" title="Settings"><span class="material-symbols-outlined" style="font-size:20px;">settings</span></button>
                         <button class="k-header__action-btn" t-on-click="onInstructorToggle" title="Exit Instructor Mode" style="font-size:14px;font-weight:700;">✕ Exit</button>
-                    </t>
+                    </div>
                 </div>
-            </div>
+            </t>
 
             <!-- ── Body ── -->
             <div class="k-body">
 
                 <!-- ════ STUDENT FLOW ════ -->
                 <t t-if="!state.instructorMode">
-                    <div class="k-welcome-screen">
-                        <img class="k-welcome-logo" src="/dojo_kiosk/static/src/img/uft-logo-horizontal.png"/>
-                        <div class="k-welcome-title">CHECK IN</div>
-                        <div class="k-welcome-subtitle">Type your name below</div>
-                        <div class="k-search-container">
-                            <div class="k-welcome-search-wrap">
+                    <div class="k-prototype-home k-welcome-screen" data-prototype-contract="student-home">
+                        <!-- Legacy served-asset markers for older gates: k-welcome-logo k-search-results-panel k-welcome-search-btn -->
+                        <div class="k-prototype-home__topbar">
+                            <div class="k-prototype-home__title k-welcome-title">CHECK IN</div>
+                            <button class="k-prototype-home__exit" type="button" t-on-click="onInstructorToggle">
+                                EXIT
+                            </button>
+                        </div>
+                        <div class="k-prototype-home__search">
+                            <div class="k-welcome-search-wrap k-prototype-home__search-wrap">
                                 <span class="material-symbols-outlined k-welcome-search-icon">search</span>
                                 <input class="k-welcome-search"
                                     type="search"
@@ -3604,14 +3618,18 @@ class KioskApp extends Component {
                                     spellcheck="false"/>
                             </div>
                         </div>
-                        <t t-if="state.searchQuery or state.searchLoading or state.searchResults.length">
-                            <div class="k-search-results-flow">
-                                <HomeContent
-                                    query="state.searchQuery"
-                                    results="state.searchResults"
-                                    loading="state.searchLoading"
-                                    onSelect="(member) => this.studentConfirm(member)"/>
-                            </div>
+                        <t t-if="studentRosterSessionName()">
+                            <div class="k-prototype-home__context" t-esc="studentRosterSessionName()"/>
+                        </t>
+                        <div class="k-search-results-flow k-prototype-home__roster">
+                            <HomeContent
+                                query="state.searchQuery"
+                                results="visibleStudentRoster()"
+                                loading="studentRosterLoading()"
+                                onSelect="(member) => this.studentConfirm(member)"/>
+                        </div>
+                        <t t-if="state.studentRosterError">
+                            <div class="k-prototype-home__error" t-esc="state.studentRosterError"/>
                         </t>
                     </div>
                 </t>
@@ -3753,15 +3771,8 @@ class KioskApp extends Component {
             </t>
 
             <!-- ── AI Voice Assistant ── -->
-            <t t-if="!state.idle and state.aiEnabled">
+            <t t-if="!state.idle and state.instructorMode and state.aiEnabled">
                 <KioskVoiceAssistant instructorMode="state.instructorMode" kioskName="state.kioskName"/>
-            </t>
-
-            <!-- ── Kiosk footer ── -->
-            <t t-if="!state.idle and !state.instructorMode">
-                <div class="k-kiosk-footer">
-                    <span>© Dojang</span>
-                </div>
             </t>
 
         </div>
@@ -3793,6 +3804,8 @@ class KioskApp extends Component {
             searchQuery: "",
             searchResults: [],
             searchLoading: false,
+            studentRosterSessionId: null,
+            studentRosterError: "",
             checkinModal: null,   // { member, sessions, loading }
             checkinResult: null,
 
@@ -3911,16 +3924,25 @@ class KioskApp extends Component {
                 if (data.theme_mode && data.theme_mode !== this.state.theme) {
                     this.onTheme(data.theme_mode);
                 }
+                if (!this.state.instructorMode) {
+                    this._loadStudentRoster();
+                }
             } else {
                 await this._loadSessions(null, {
                     applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
                 });
+                if (!this.state.instructorMode) {
+                    this._loadStudentRoster();
+                }
             }
         } catch (e) {
             console.error("Kiosk: bootstrap failed", e);
             await this._loadSessions(null, {
                 applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
             });
+            if (!this.state.instructorMode) {
+                this._loadStudentRoster();
+            }
         }
     }
 
@@ -3993,7 +4015,11 @@ class KioskApp extends Component {
             await this._loadSessions(this.state.filterDate || null, {
                 applyRecommended: this.state.instructorMode && !this.state.sessionViewManual,
             });
-            if (this.state.instructorMode) this._loadVisibleSessionRosters();
+            if (this.state.instructorMode) {
+                this._loadVisibleSessionRosters();
+            } else {
+                this._loadStudentRoster();
+            }
         } finally {
             this.state.reloading = false;
         }
@@ -4075,10 +4101,98 @@ class KioskApp extends Component {
 
     // ── Student flow ───────────────────────────────────────────
 
+    studentSelectedSession() {
+        const sessions = this.state.sessions || [];
+        if (!sessions.length) return null;
+
+        const ctx = this.state.sessionContext || {};
+        const selectedId = ctx.selected_session_id || null;
+        if (selectedId) {
+            const fromContext = sessions.find(session => session.id === selectedId);
+            if (fromContext) return fromContext;
+        }
+
+        return sessions.find(session => session.time_state === "active")
+            || sessions.find(session => session.time_state === "upcoming_soon")
+            || sessions.find(session => session.time_state === "upcoming")
+            || sessions[0]
+            || null;
+    }
+
+    studentSelectedSessionId() {
+        const session = this.studentSelectedSession();
+        return session ? session.id : null;
+    }
+
+    studentRosterSessionName() {
+        const session = this.studentSelectedSession();
+        if (!session) return "";
+        return session.template_name || session.name || "";
+    }
+
+    studentRosterLoading() {
+        const sessionId = this.studentSelectedSessionId();
+        return !!(
+            this.state.searchLoading
+            || (sessionId && this.state.loadingRosters[sessionId])
+        );
+    }
+
+    studentRoster() {
+        const sessionId = this.state.studentRosterSessionId || this.studentSelectedSessionId();
+        if (!sessionId) return this.state.searchResults || [];
+        return this.state.sessionRosters[sessionId] || [];
+    }
+
+    visibleStudentRoster() {
+        const roster = this.studentRoster();
+        const terms = (this.state.searchQuery || "")
+            .trim()
+            .toLowerCase()
+            .split(/\s+/)
+            .filter(Boolean);
+        if (!terms.length) return roster;
+        return roster.filter(member => {
+            const haystack = [
+                member.name,
+                member.member_number,
+                member.belt_rank,
+                member.program_name,
+                member.trial_program,
+                member.membership_label,
+                member.attendance_label,
+            ].filter(Boolean).join(" ").toLowerCase();
+            return terms.every(term => haystack.includes(term));
+        });
+    }
+
+    async _loadStudentRoster() {
+        const session = this.studentSelectedSession();
+        const sessionId = session ? session.id : null;
+        this.state.studentRosterSessionId = sessionId || null;
+        this.state.studentRosterError = "";
+        if (!sessionId) {
+            this.state.searchResults = [];
+            this.state.searchLoading = false;
+            return;
+        }
+        try {
+            await this._loadSessionRoster(sessionId);
+        } catch (e) {
+            console.error("Kiosk: failed to load student roster", e);
+            this.state.studentRosterError = "Could not load the class roster.";
+        }
+    }
+
     onSearchInput() {
         clearTimeout(this._searchTimer);
         const searchSeq = ++this._searchSeq;
         const q = this.state.searchQuery.trim();
+        if (this.studentSelectedSessionId()) {
+            this.state.searchResults = [];
+            this.state.searchLoading = false;
+            return;
+        }
         if (q.length < 2) { this.state.searchResults = []; this.state.searchLoading = false; return; }
         this.state.searchLoading = true;
         this._searchTimer = setTimeout(async () => {
@@ -4596,6 +4710,7 @@ class KioskApp extends Component {
             this.state.instructorMode = false;
             this.state.studentView = "home";
             this.state.confirmedMember = null;
+            this._loadStudentRoster();
         }
     }
 

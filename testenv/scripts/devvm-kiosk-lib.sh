@@ -38,7 +38,7 @@ devvm_try_local_fallback() {
   export DEMO_KIOSK_URL="http://127.0.0.1:8070/kiosk/${token}"
   export DEMO_KIOSK_TOKEN="$token"
   export DEMO_INSTRUCTOR_PIN="${DEMO_INSTRUCTOR_PIN:-1234}"
-  export DEMO_KIOSK_EXPECTED_INCREMENT="${DEMO_KIOSK_EXPECTED_INCREMENT:-INC-04}"
+  export DEMO_KIOSK_EXPECTED_INCREMENT="${DEMO_KIOSK_EXPECTED_INCREMENT:-INC-02}"
   if [ -z "${DEMO_KIOSK_LOCAL_FALLBACK_NOTIFIED:-}" ]; then
     echo "devvm kiosk gate: DEMO_KIOSK_URL/DEMO_KIOSK_TOKEN not exported; using local Odoo kiosk smoke target" >&2
     export DEMO_KIOSK_LOCAL_FALLBACK_NOTIFIED=1
