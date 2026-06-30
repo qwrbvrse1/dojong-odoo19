@@ -23,8 +23,8 @@ baseline_gate:
   - bash testenv/verify.sh
   - bash -lc 'test -n "${DEMO_KIOSK_URL:-}"'
   - bash -lc 'test -n "${DEMO_KIOSK_TOKEN:-}"'
-  - bash -lc 'curl -fsS "$DEMO_KIOSK_URL" | grep -q "CHECK IN"'
   - bash -lc 'curl -fsS "$DEMO_KIOSK_URL" | grep -q "/dojo_kiosk/static/src/kiosk_app.js"'
+  - bash -lc 'source testenv/scripts/devvm-kiosk-lib.sh; tmp="$(mktemp -d)"; trap "rm -rf \"$tmp\"" EXIT; devvm_fetch_url "$(devvm_kiosk_url)" > "$tmp/shell.html"; devvm_fetch_served_app "$tmp/shell.html" "$tmp/kiosk_app.js"; grep -q "CHECK IN" "$tmp/kiosk_app.js"'
 ```
 
 ## Dependency analysis
@@ -40,7 +40,7 @@ baseline_gate:
 
 ## INC-01 — Re-baseline release artifacts for prototype-parity execution
 
-Lock the release to a prototype-parity contract before any behavior-bearing work is done. This increment is planning-only and must leave a reviewable non-testenv workproduct diff.
+Lock the release to a prototype-parity contract before any behavior-bearing work is done. This increment is planning-only and must leave a reviewable non-testenv workproduct diff that clarifies the unattended Development VM proof contract. It must not add `testenv/` scripts; INC-02 through INC-04 own those assets with the behavior they verify.
 
 ```yaml
 id: INC-01
@@ -53,6 +53,7 @@ deliverables:
   - Release scope explicitly names the HTML prototype as the student kiosk acceptance truth
   - Increment contracts are aligned to unattended Development VM proof expectations
   - Later increments own any new Development VM verification assets under testenv/
+  - Operator-facing pass/fail proof is anchored to live gates against DEMO_KIOSK_URL
 test_data:
   seed: current Development VM demo dataset
   migration_before_state: post-REL-20260628 kiosk deployment
@@ -64,10 +65,12 @@ gate:
   - bash testenv/verify.sh
   - bash -lc 'test -n "${DEMO_KIOSK_URL:-}"'
   - bash -lc 'test -n "${DEMO_KIOSK_TOKEN:-}"'
-  - bash -lc 'curl -fsS "$DEMO_KIOSK_URL" | grep -q "CHECK IN"'
+  - bash -lc 'source testenv/scripts/devvm-kiosk-lib.sh; tmp="$(mktemp -d)"; trap "rm -rf \"$tmp\"" EXIT; devvm_fetch_url "$(devvm_kiosk_url)" > "$tmp/shell.html"; devvm_fetch_served_app "$tmp/shell.html" "$tmp/kiosk_app.js"; grep -q "CHECK IN" "$tmp/kiosk_app.js"'
 regression_gate:
   - bash testenv/verify.sh
 ```
+
+INC-01 establishes the execution boundary only: it is complete when the release artifacts state that prototype parity is judged from the HTML prototype and proven by unattended, SPA-aware live gates against the Development VM. The first new Development VM verification scripts are intentionally deferred to INC-02, INC-03, and INC-04, where each script is paired with the runtime behavior under test.
 
 ---
 

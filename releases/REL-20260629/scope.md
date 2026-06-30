@@ -26,6 +26,8 @@ Interpretation rules:
 - The Development VM demo URL is the primary verification target for this release.
 - Static source grep is supplementary evidence only; it is never sufficient proof for a pass.
 - If the current `dojo_kiosk` behavior and the prototype disagree, the prototype wins unless this scope explicitly says otherwise.
+- A release pass requires live unattended gates against `DEMO_KIOSK_URL`; local source checks are only support evidence.
+- Because the kiosk is served as an Odoo SPA shell, live gates must inspect browser-rendered behavior or the served app asset referenced by that shell rather than treating raw shell HTML as the rendered student surface.
 
 ## Prerequisites (manual steps before harness run)
 
@@ -39,8 +41,9 @@ The following must be completed by the operator before `apev-run.sh` is invoked.
 
 ### Milestone 0 — Prototype parity gate contract
 
-- The release defines unattended Development VM verification gates that prove parity against the accepted HTML prototype instead of only against the current SPA contract.
-- New Development VM verification assets are added under `testenv/scripts/` for:
+- The release defines an unattended Development VM verification contract that proves parity against the accepted HTML prototype instead of only against the current SPA contract.
+- `INC-01` is a planning-only baseline: it locks this contract in the release artifacts and does not create runtime or `testenv/` behavior.
+- Later behavior-bearing increments add Development VM verification assets under `testenv/scripts/` for:
   - first-load student screen composition
   - default roster visibility and search/filter behavior
   - member-card content and checked-in state
@@ -135,3 +138,4 @@ The following must be completed by the operator before `apev-run.sh` is invoked.
 - Tapping a seeded demo member follows the prototype check-in path on the Development VM.
 - Successful student check-in shows the prototype-style success state and dismiss timing.
 - An operator can run the release plan on the unattended Development VM and determine pass/fail from the recorded live gates without subjective interpretation.
+- `INC-01` leaves a reviewable release-artifact diff while deferring all new `testenv/` scripts to the increments that implement the corresponding runtime behavior.
